@@ -5,3 +5,6 @@ export * from './swig/index.js'
 
 // The kill switch. T-D03.
 export * from './kill-switch.js'
+
+// Rule expiry without admin rights. T-D02.
+export * from './expiry.js'
