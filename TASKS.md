@@ -200,9 +200,9 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: none, this blocks everything
 
 ### T-C01, Freeze the three contracts in packages/core
-- Status: open
+- Status: claimed 2026-09-24 | Owner: manjeetsharma0796 | Branch: feature/t-c01-frozen-contracts
 - Depends-on: T-B01
-- Touches: packages/core/
+- Touches: packages/core/, fixtures/contracts/
 - Serves: Functionality (judged) ; 5 tracks in parallel from day 2
 - Acceptance: 3 contracts defined exactly once, (1) check_trade input mint/side/size/wallet and output verdict plus reasons each carrying a rule name and a number, (2) report JSON with metrics, rules, exceptions and their cost, coverage share, unsupported transactions, (3) rule spec consuming mint set, cap, window, trigger type, expiry and producing a Swig role plus a Jupiter order id; that 1 definition generates the MCP tool schemas, API validation, frontend types and fixture checks, proven by 1 deliberate shape change failing in all 4 places
 - Evidence: <PR link showing 4 failures from 1 edit>

@@ -1,0 +1,19 @@
+{
+  "synthetic": true,
+  "verdict": "block",
+  "reasons": [
+    {
+      "rule": "size-vs-median",
+      "message": "4.1x your median size of 0.8 SOL. Stopped.",
+      "observed": 4.1,
+      "limit": 2,
+      "unit": "x-median"
+    },
+    {
+      "rule": "mint-freeze-authority",
+      "message": "This token can freeze your account. Not safe to proceed."
+    }
+  ],
+  "dataSlot": 312904411,
+  "ruleVersion": "profile-2026-09-24-a"
+}
