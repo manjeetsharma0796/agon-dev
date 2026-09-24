@@ -209,7 +209,7 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: none, a frozen contract is why the tracks do not block each other
 
 ### T-B02, Release job, dev to the public main by allowlist
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-b02-release
 - Depends-on: T-B01, OP-7
 - Touches: .github/workflows/release.yml, .publicinclude, scripts/release.mjs
 - Serves: Open source (judged)
@@ -218,7 +218,7 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: none, judges only see the public repo
 
 ### T-C02, Record and replay wrapper with per-call timings
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-c02-record-replay
 - Depends-on: T-B01
 - Touches: packages/core/src/net/, fixtures/recorded/
 - Serves: Functionality (judged) ; Benchmark B latency breakdown
@@ -227,7 +227,7 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: if C slips past day 2 this moves to B, per the PRD load check
 
 ### T-C03, Measure the region for API, RPC and Jev
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-c03-region
 - Depends-on: T-B01
 - Touches: docs/plans/region.md, apps/web/vercel.json
 - Serves: Functionality (judged) ; decision speed
@@ -245,7 +245,7 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: none. Anything not in the script is a candidate to cut at each checkpoint
 
 ### T-E02, Beta waitlist live
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-e02-waitlist
 - Depends-on: T-B01
 - Touches: apps/web/app/waitlist/
 - Serves: Business plan (judged) ; CP3 gate needs 10+ reports
@@ -388,7 +388,7 @@ and latency (a, b).
 - Kill criterion: fallback is our local daemon polling price and executing through Swig, and the UI must then say "runs while your computer is on". The pitch loses 24/7 execution
 
 ### T-B03, Benchmark harness on a pinned mainnet fork
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-b03-harness
 - Depends-on: T-B01, T-E01
 - Touches: benchmark/runner/, benchmark/arms/
 - Serves: Functionality (judged) ; F9
@@ -670,7 +670,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: never used for anything numeric, for deciding a task is done, for approving a merge or deploy, or for anything touching keys or funds. A Jev answer is an input to a rule, never the rule itself. Any use that misses its bar is cut at CP2, not extended
 
 ### T-E12, Build in public, weekly
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-e12-x-plan
 - Depends-on: T-B01
 - Touches: docs/plans/x-plan.md
 - Serves: Potential impact (judged) ; Business plan (judged) ; share rate
