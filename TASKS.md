@@ -197,7 +197,7 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: none, this blocks everything
 
 ### T-C01, Freeze the three contracts in packages/core
-- Status: open
+- Status: claimed 2026-09-24 | Owner: manjeetsharma0796 | Branch: feature/t-c01-frozen-contracts
 - Depends-on: T-B01
 - Touches: packages/core/
 - Serves: Functionality (judged) ; 5 tracks in parallel from day 2
