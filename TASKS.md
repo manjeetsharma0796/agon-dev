@@ -209,7 +209,7 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: none, a frozen contract is why the tracks do not block each other
 
 ### T-B02, Release job, dev to the public main by allowlist
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/17 | Owner: Prithwish | Branch: feature/t-b02-release
+- Status: blocked, see OP-7
 - Depends-on: T-B01, OP-7
 - Touches: .github/workflows/release.yml, .publicinclude, scripts/release.mjs
 - Serves: Open source (judged)
@@ -253,7 +253,7 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: if C slips past day 2 this moves to B, per the PRD load check
 
 ### T-C03, Measure the region for API, RPC and Jev
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/19 | Owner: Prithwish | Branch: feature/t-c03-region
+- Status: blocked, see OP-4
 - Depends-on: T-B01
 - Touches: docs/plans/region.md, apps/web/vercel.json
 - Serves: Functionality (judged) ; decision speed
@@ -282,7 +282,7 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: none. Anything not in the script is a candidate to cut at each checkpoint
 
 ### T-E02, Beta waitlist live
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/21 | Owner: Prithwish | Branch: feature/t-e02-waitlist
+- Status: blocked, see OP-18
 - Depends-on: T-B01
 - Touches: apps/web/app/waitlist/
 - Serves: Business plan (judged) ; CP3 gate needs 10+ reports
@@ -341,7 +341,7 @@ and latency (a, b).
 - Kill criterion: fallback is Jupiter-routed swaps only, with the covered share printed on the report ("based on 83% of your swaps")
 
 ### T-C04, Our own mint check
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/26 | Owner: Prithwish | Branch: feature/t-c04-mint-check
+- Status: done
 - Depends-on: T-C01, T-C02
 - Touches: packages/guard/src/mint-check.ts
 - Serves: Functionality (judged) ; F3
@@ -349,7 +349,7 @@ and latency (a, b).
   transfer hook, transfer fee) read in exactly 1 `getMultipleAccounts` call; mint and freeze
   authority are never cached; RugCheck is enrichment only and is never on the deciding path; an
   unreachable RPC returns `block` with "Couldn't verify this token. Not safe to proceed."
-- Evidence: <PR link, plus the 30-mint test run>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/26, 30 mints in 1 call at slot 450012073, 6 block and 24 pass
 - Finding: the extension being present is not the danger being present. 5 of the 30 recorded mints,
   17 percent, carry the Token-2022 `transferHook` extension with `programId: null`, which means no
   hook is installed. A check that treats the extension list as the finding blocks 5 real tokens for
@@ -366,7 +366,7 @@ and latency (a, b).
 - Kill criterion: none, this is the primary path
 
 ### T-F03, F3 spike, token risk check on 30 labelled mints
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/31 | Owner: Prithwish | Branch: feature/t-f03-token-risk
+- Status: done
 - Depends-on: T-C04
 - Touches: spikes/F03/
 - Serves: Functionality (judged) ; CP1 gate
