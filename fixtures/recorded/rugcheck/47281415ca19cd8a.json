@@ -1,0 +1,22 @@
+{
+  "slot": 450012071,
+  "provider": "rugcheck",
+  "recordedAt": "2026-09-24T11:14:56.900Z",
+  "request": {
+    "method": "GET",
+    "url": "https://api.rugcheck.xyz/v1/tokens/So11111111111111111111111111111111111111112/report/summary",
+    "headers": {},
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "tokenProgram": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+      "tokenType": "",
+      "risks": [],
+      "score": 1,
+      "score_normalised": 1,
+      "lpLockedPct": 0
+    }
+  }
+}

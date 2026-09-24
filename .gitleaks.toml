@@ -1,0 +1,21 @@
+# Extends the default rules, it does not replace them.
+#
+# gitleaks finds this by itself: it looks for .gitleaks.toml in the directory being scanned,
+# and the secrets job scans the repo root. No --config flag, and no workflow change.
+title = "agon"
+
+[extend]
+useDefault = true
+
+# Jupiter route plans name the AMM pool they route through in an "ammKey" field. A pool address is
+# public on-chain data, but the default generic-api-key rule reads any long value under a key
+# called *Key as a secret, so every recorded Jupiter quote fails the scan. Stripping the field
+# would gut the recording the benchmark replays.
+#
+# This forgives the matched text and nothing else. It deliberately does NOT use `paths`: a path
+# allowlist exempts the whole file, and a real key planted in a Jupiter fixture then passes the
+# scan, which was verified before this was written this way. Scoped to the match, a secret under
+# any other name still fails, including in the same file.
+[allowlist]
+regexTarget = "match"
+regexes = ['''ammKey"\s*:\s*"[1-9A-HJ-NP-Za-km-z]{32,44}"''']

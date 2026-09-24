@@ -1,0 +1,72 @@
+{
+  "slot": 450012114,
+  "provider": "jupiter",
+  "recordedAt": "2026-09-24T11:14:23.683Z",
+  "request": {
+    "method": "GET",
+    "url": "https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB&amount=100000000&slippageBps=100",
+    "headers": {
+      "x-api-key": "REDACTED"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "inputMint": "So11111111111111111111111111111111111111112",
+      "inAmount": "100000000",
+      "outputMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+      "outAmount": "11339234",
+      "otherAmountThreshold": "11225842",
+      "swapMode": "ExactIn",
+      "slippageBps": 100,
+      "platformFee": null,
+      "priceImpactPct": "0",
+      "routePlan": [
+        {
+          "swapInfo": {
+            "ammKey": "82RLfDeEAoYtx3rwZF7igAQC1nGsBBvAMkygB5mcJojZ",
+            "label": "Flux",
+            "inputMint": "So11111111111111111111111111111111111111112",
+            "outputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "inAmount": "100000000",
+            "outAmount": "11337137",
+            "updateContextSlot": "450012112"
+          },
+          "percent": 100,
+          "bps": null
+        },
+        {
+          "swapInfo": {
+            "ammKey": "23XoPQqGw9WMsLoqTu8HMzJLD6RnXsufbKyWPLJywsCT",
+            "label": "Byreal",
+            "inputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "outputMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+            "inAmount": "11337137",
+            "outAmount": "11339234",
+            "updateContextSlot": "450012106"
+          },
+          "percent": 100,
+          "bps": null
+        }
+      ],
+      "contextSlot": 450012114,
+      "timeTaken": 0.001726282,
+      "swapUsdValue": "11.333997265919120",
+      "mostReliableAmmsQuoteReport": {
+        "info": {
+          "8sjV1AqBFvFuADBCQHhotaRq5DFFYSjjg1jMyVWMqXvZ": "11337886",
+          "BZtgQEyS6eXUXicYPHecYQ7PybqodXQMvkjUbP4R8mUU": "11335891",
+          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11333194"
+        }
+      },
+      "longtailMarketQuoteReport": null,
+      "useIncurredSlippageForQuoting": null,
+      "useRewards": null,
+      "otherRoutePlans": null,
+      "loadedLongtailToken": false,
+      "instructionVersion": null,
+      "transactionVersion": 0
+    }
+  }
+}

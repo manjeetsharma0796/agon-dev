@@ -1,0 +1,86 @@
+{
+  "slot": 450012164,
+  "provider": "jupiter",
+  "recordedAt": "2026-09-24T11:14:37.008Z",
+  "request": {
+    "method": "GET",
+    "url": "https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R&amount=100000000&slippageBps=100",
+    "headers": {
+      "x-api-key": "REDACTED"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "inputMint": "So11111111111111111111111111111111111111112",
+      "inAmount": "100000000",
+      "outputMint": "4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R",
+      "outAmount": "5754622",
+      "otherAmountThreshold": "5697076",
+      "swapMode": "ExactIn",
+      "slippageBps": 100,
+      "platformFee": null,
+      "priceImpactPct": "0.0003829242322309351252423289",
+      "routePlan": [
+        {
+          "swapInfo": {
+            "ammKey": "hKH9LFREBm3TxTx5Ex6D1nHTKEA8ii3CWfhEkB9s21u",
+            "label": "AlphaQ",
+            "inputMint": "So11111111111111111111111111111111111111112",
+            "outputMint": "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn",
+            "inAmount": "100000000",
+            "outAmount": "76800277",
+            "updateContextSlot": "450012163"
+          },
+          "percent": 100,
+          "bps": null
+        },
+        {
+          "swapInfo": {
+            "ammKey": "HZsTF6VHdQy2W6cfEEqqpoTFKocx7Ch5c4TnWucXkAYv",
+            "label": "Whirlpool",
+            "inputMint": "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn",
+            "outputMint": "mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So",
+            "inAmount": "76800277",
+            "outAmount": "71143802",
+            "updateContextSlot": "450012058"
+          },
+          "percent": 100,
+          "bps": null
+        },
+        {
+          "swapInfo": {
+            "ammKey": "6gpZ9JkLoYvpA5cwdyPZFsDw6tkbPyyXM5FqRqHxMCny",
+            "label": "Raydium",
+            "inputMint": "mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So",
+            "outputMint": "4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R",
+            "inAmount": "71143802",
+            "outAmount": "5754622",
+            "updateContextSlot": "450012078"
+          },
+          "percent": 100,
+          "bps": null
+        }
+      ],
+      "contextSlot": 450012164,
+      "timeTaken": 0.006937587,
+      "swapUsdValue": "11.336448785540810",
+      "mostReliableAmmsQuoteReport": {
+        "info": {
+          "Hp53XEtt4S8SvPCXarsLSdGfZBuUr5mMmZmX2DRNXQKp": "76793132",
+          "8EzbUfvcRT1Q6RL462ekGkgqbxsPmwC5FMLQZhSPMjJ3": "71139469",
+          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11333155",
+          "2AXXcN6oN9bBT5owwmTH53C7QHUXvhLeu718Kqt8rvY2": "5749848"
+        }
+      },
+      "longtailMarketQuoteReport": null,
+      "useIncurredSlippageForQuoting": null,
+      "useRewards": null,
+      "otherRoutePlans": null,
+      "loadedLongtailToken": false,
+      "instructionVersion": null,
+      "transactionVersion": 0
+    }
+  }
+}

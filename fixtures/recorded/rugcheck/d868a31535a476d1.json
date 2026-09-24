@@ -1,0 +1,65 @@
+{
+  "slot": 450012071,
+  "provider": "rugcheck",
+  "recordedAt": "2026-09-24T11:14:57.571Z",
+  "request": {
+    "method": "GET",
+    "url": "https://api.rugcheck.xyz/v1/tokens/CASHx9KJUStyftLFWGvEVf59SGeG9sh5FfcnZMVPCASH/report/summary",
+    "headers": {},
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "tokenProgram": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+      "tokenType": "",
+      "risks": [
+        {
+          "name": "Mint Authority still enabled",
+          "value": "",
+          "description": "More tokens can be minted by the owner",
+          "score": 50000,
+          "level": "danger"
+        },
+        {
+          "name": "Permanent Control Enabled",
+          "value": "",
+          "description": "The token creator can permanently control all tokens",
+          "score": 50000,
+          "level": "danger"
+        },
+        {
+          "name": "Freeze Authority still enabled",
+          "value": "",
+          "description": "Tokens can be frozen and prevented from trading",
+          "score": 25000,
+          "level": "danger"
+        },
+        {
+          "name": "Top 10 holders high ownership",
+          "value": "",
+          "description": "The top 10 users hold more than 70% token supply",
+          "score": 8001,
+          "level": "danger"
+        },
+        {
+          "name": "Single holder ownership",
+          "value": "36.38%",
+          "description": "One user holds a large amount of the token supply",
+          "score": 3638,
+          "level": "warn"
+        },
+        {
+          "name": "Mutable metadata",
+          "value": "",
+          "description": "Token metadata can be changed by the owner",
+          "score": 100,
+          "level": "warn"
+        }
+      ],
+      "score": 136740,
+      "score_normalised": 81,
+      "lpLockedPct": 0.00008495992217988036
+    }
+  }
+}

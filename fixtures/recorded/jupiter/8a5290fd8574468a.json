@@ -1,0 +1,72 @@
+{
+  "slot": 450012159,
+  "provider": "jupiter",
+  "recordedAt": "2026-09-24T11:14:35.798Z",
+  "request": {
+    "method": "GET",
+    "url": "https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN&amount=100000000&slippageBps=100",
+    "headers": {
+      "x-api-key": "REDACTED"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "inputMint": "So11111111111111111111111111111111111111112",
+      "inAmount": "100000000",
+      "outputMint": "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
+      "outAmount": "39411086",
+      "otherAmountThreshold": "39016976",
+      "swapMode": "ExactIn",
+      "slippageBps": 100,
+      "platformFee": null,
+      "priceImpactPct": "0.0003383548729516649673981291",
+      "routePlan": [
+        {
+          "swapInfo": {
+            "ammKey": "7SanaZyHJVdcr56szAJb1Vezsi491bqs4sU8bLLef1YG",
+            "label": "Manifest",
+            "inputMint": "So11111111111111111111111111111111111111112",
+            "outputMint": "bSo13r4TkiE4KumL71LsHTPpL2euBYLFx6h9HP3piy1",
+            "inAmount": "100000000",
+            "outAmount": "75985184",
+            "updateContextSlot": "450012144"
+          },
+          "percent": 100,
+          "bps": null
+        },
+        {
+          "swapInfo": {
+            "ammKey": "6cDtJkcJKFEsGDhptmgvy3XtbwyRqnW3GoGcmnwVzJ7U",
+            "label": "Meteora DLMM",
+            "inputMint": "bSo13r4TkiE4KumL71LsHTPpL2euBYLFx6h9HP3piy1",
+            "outputMint": "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
+            "inAmount": "75985184",
+            "outAmount": "39411086",
+            "updateContextSlot": "449998282"
+          },
+          "percent": 100,
+          "bps": null
+        }
+      ],
+      "contextSlot": 450012159,
+      "timeTaken": 0.011119102,
+      "swapUsdValue": "11.33731947217240",
+      "mostReliableAmmsQuoteReport": {
+        "info": {
+          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11333156",
+          "7SanaZyHJVdcr56szAJb1Vezsi491bqs4sU8bLLef1YG": "75985184",
+          "C8Gr6AUuq9hEdSYJzoEpNcdjpojPZwqG5MtQbeouNNwg": "39300843"
+        }
+      },
+      "longtailMarketQuoteReport": null,
+      "useIncurredSlippageForQuoting": null,
+      "useRewards": null,
+      "otherRoutePlans": null,
+      "loadedLongtailToken": false,
+      "instructionVersion": null,
+      "transactionVersion": 0
+    }
+  }
+}

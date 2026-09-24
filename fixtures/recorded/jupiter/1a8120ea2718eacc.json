@@ -1,0 +1,77 @@
+{
+  "slot": 450012127,
+  "provider": "jupiter",
+  "recordedAt": "2026-09-24T11:14:27.267Z",
+  "request": {
+    "method": "GET",
+    "url": "https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=6GmAFSYs4gk3FDao5FzzySQpPZaWsa4rUJHacpMpUNgx&amount=100000000&slippageBps=100",
+    "headers": {
+      "x-api-key": "REDACTED"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "inputMint": "So11111111111111111111111111111111111111112",
+      "inAmount": "100000000",
+      "outputMint": "6GmAFSYs4gk3FDao5FzzySQpPZaWsa4rUJHacpMpUNgx",
+      "outAmount": "33362073874",
+      "otherAmountThreshold": "33028453136",
+      "swapMode": "ExactIn",
+      "slippageBps": 100,
+      "platformFee": null,
+      "priceImpactPct": "0",
+      "routePlan": [
+        {
+          "swapInfo": {
+            "ammKey": "7yD7gfXv49SFxhx9uTc11dEd7Nj98rGWeYMdZJgheZbG",
+            "label": "Kipseli",
+            "inputMint": "So11111111111111111111111111111111111111112",
+            "outputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "inAmount": "100000000",
+            "outAmount": "11337268",
+            "updateContextSlot": "450012126"
+          },
+          "percent": 100,
+          "bps": null
+        },
+        {
+          "swapInfo": {
+            "ammKey": "GupqDENX2H7xFSUtGwWkvXYNg3eFriX2K3KeHniWTARf",
+            "label": "Whirlpool",
+            "inputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "outputMint": "6GmAFSYs4gk3FDao5FzzySQpPZaWsa4rUJHacpMpUNgx",
+            "inAmount": "11337268",
+            "outAmount": "33362073874",
+            "updateContextSlot": "450012077"
+          },
+          "percent": 100,
+          "bps": null
+        }
+      ],
+      "contextSlot": 450012127,
+      "timeTaken": 0.011728289,
+      "swapUsdValue": "11.334438873248950",
+      "mostReliableAmmsQuoteReport": {
+        "info": {
+          "zxTpi4BtaWX3mgdAPoezkMD1hxx8CdeCfrqXMWvSCLX": "33301306529",
+          "BZtgQEyS6eXUXicYPHecYQ7PybqodXQMvkjUbP4R8mUU": "11336815",
+          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11333169"
+        }
+      },
+      "longtailMarketQuoteReport": null,
+      "useIncurredSlippageForQuoting": null,
+      "useRewards": null,
+      "otherRoutePlans": null,
+      "loadedLongtailToken": false,
+      "instructionVersion": null,
+      "transactionVersion": 0,
+      "additionalIntermediateTokens": [
+        "13TaPTq46Gf3qFo14m9ctBQRfnpQpvAZcab4TWZG1AEp",
+        "2y2n3XWuQU4r3CM4gHbWXDsKe7fHSDLH9MTx996NqYrU",
+        "GpHi1LNFaPnCtb81qVcrNfbzfu4tkw8FpftCy9x7hydN"
+      ]
+    }
+  }
+}
