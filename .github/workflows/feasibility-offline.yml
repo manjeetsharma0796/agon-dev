@@ -15,18 +15,30 @@ permissions:
 jobs:
   spikes:
     runs-on: ubuntu-latest
-    if: hashFiles('package.json') != ''
     steps:
       - uses: actions/checkout@v4
+
+      # hashFiles() is not allowed in a job-level `if`, so the guard is a step.
+      # Until T-B01 lands the scaffold there is nothing to run, and that is not a failure.
+      - name: Is the workspace scaffolded yet?
+        id: ws
+        run: |
+          if [ -f package.json ]; then echo "ready=true" >> "$GITHUB_OUTPUT"; else echo "ready=false" >> "$GITHUB_OUTPUT"; fi
+
       - uses: pnpm/action-setup@v4
+        if: steps.ws.outputs.ready == 'true'
       - uses: actions/setup-node@v4
+        if: steps.ws.outputs.ready == 'true'
         with:
           node-version: 22
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
+      - if: steps.ws.outputs.ready == 'true'
+        run: pnpm install --frozen-lockfile
+      - if: steps.ws.outputs.ready == 'true'
+        run: pnpm build
 
       - name: Every fixture declares where it came from
+        if: steps.ws.outputs.ready == 'true'
         # monad T6.9: benchmark baselines ran on invented data. A fixture with no source slot is
         # invented data until proven otherwise.
         run: |
@@ -38,6 +50,7 @@ jobs:
           [ "$bad" -eq 0 ] || { echo "::error::The fixtures above declare no source slot and no synthetic:true."; exit 1; }
 
       - name: Nothing on the benchmark or demo path reads a synthetic fixture
+        if: steps.ws.outputs.ready == 'true'
         run: |
           set -euo pipefail
           for f in $(grep -rlE '"synthetic"\s*:\s*true' fixtures 2>/dev/null || true); do
@@ -49,20 +62,25 @@ jobs:
           done
 
       - name: F1, golden wallet ledgers match exactly
+        if: steps.ws.outputs.ready == 'true'
         run: pnpm spike:f1 --offline
 
       - name: F2, planted rules found, no rule invented
+        if: steps.ws.outputs.ready == 'true'
         run: pnpm spike:f2 --offline
 
       - name: F4, 20 scripted verdicts
+        if: steps.ws.outputs.ready == 'true'
         run: pnpm spike:f4 --offline
 
       - name: Network call budget
+        if: steps.ws.outputs.ready == 'true'
         # check_trade: 1 account batch, 1 quote, 1 Jev call. History: at most 1 page per 100 txs.
         # The counting wrapper lives in packages/core/src/net, so this is a test, not a new tool.
         run: pnpm test --project=budget --reporter=dot
 
       - name: MCP token budget
+        if: steps.ws.outputs.ready == 'true'
         # get_report 2,000, check_trade 400, on the golden wallets.
         # monad T6.8: a 2.1M-token tool result broke every question the agent could ask.
         run: pnpm test --project=token-budget --reporter=dot

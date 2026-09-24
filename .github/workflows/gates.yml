@@ -24,9 +24,16 @@ jobs:
           fetch-depth: 0
 
       - name: Secret scan
-        uses: gitleaks/gitleaks-action@v2
+        # The whole working tree, not a commit range. The action scans `before..after`, which has no
+        # parent on a first push, and a range also misses a key that landed before the range and is
+        # still sitting in the tree. This is the gate we least want to be clever about.
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_VERSION: 8.24.3
+        run: |
+          set -euo pipefail
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar -xz -C /tmp gitleaks
+          /tmp/gitleaks dir . --redact --no-banner --exit-code 1
 
       - name: No .env or keypair file is committed
         run: |
