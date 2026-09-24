@@ -668,7 +668,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: if (e) passes unexpectedly, numbers still stay on arithmetic. 1 lucky run is not evidence
 
 ### T-C07, MCP server, 4 tools and a stable list
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-c07-mcp
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/80 | Owner: Jishnu | Branch: feature/t-c07-mcp
 - Depends-on: T-C06
 - Touches: packages/mcp/src/
 - Serves: Functionality (judged) ; Open source (judged)
@@ -677,7 +677,27 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   `get_report` 2,000 and `check_trade` 400; every unsure or failed verdict hands back to the user
   with the reason and the numbers and 0 silent retries; `check_trade` is callable by any agent
   (Solana Agent Kit, GMGN agents) and that is proven with 1 third-party client
-- Evidence: <PR link, plus the third-party client transcript>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/80, plus the third-party client transcript in the PR
+  body. Measured on the fixture wallet the mcp and web suites already share: get_report 815 chars,
+  about 204 tokens, 9.8x headroom under the 2,000 budget; check_trade 315 chars, about 79 tokens,
+  5.1x headroom under the 400 budget. `check_trade`'s answer is still T-E03's fixture verdict, not
+  T-C06's arithmetic guard, which lands separately: this PR proves the shape and the transport are
+  correct and stay in budget, not that the verdict is right yet
+- Finding: T-E03's dispatch had no transport, so nothing actually spoke MCP; the 4-tool contract
+  test only proved the internal function existed. Meeting "callable by any agent" needed a real
+  `@modelcontextprotocol/sdk` `McpServer` registering all 4 tools straight from `toolContracts`,
+  then a plain SDK `Client`, the same package a third-party agent framework imports, listing them
+  and calling `check_trade` and `get_report` over an in-memory transport with 0 imports from this
+  repo beyond `@agon/core` to check the answer. `arm_rule` refuses with `isError: true` carrying
+  the exact `NotArmable` message, not a bare protocol error, so a third-party agent still gets the
+  reason and the numbers. Second: the release gate's `OP-\d+` marker scan reads test file comments
+  too, not only prose docs; writing "OP-1" in a code comment explaining why a fixture wallet is
+  used failed `scripts/release.test.mjs` inside `pnpm gates`, before any release tag, which is
+  what that gate is for. Third: `/code-review` at medium on the first commit caught a real drift
+  risk before it shipped, 4 hand-written `registerTool` calls in `TOOLS` order are a second copy
+  of the order this whole feature exists to keep stable, silently divergeable from `TOOLS` itself.
+  It now registers by iterating `TOOLS`, so there is exactly 1 ordered list, not 2 that happen to
+  agree today.
 - Kill criterion: none. monad T6.8: a 2.1M-token tool result broke every question
 
 ### T-C08, Local daemon
