@@ -501,7 +501,7 @@ CP2 evidence required: F1 and F2 complete; F4; F5 in simulation; F6 on mainnet (
 F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, d, e).
 
 ### T-A02, FIFO P&L ledger
-- Status: blocked, see OP-1
+- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-a02-fifo-quote-queues
 - Depends-on: T-A01
 - Touches: packages/decoder/src/pnl.ts
 - Serves: Functionality (judged) ; F1
