@@ -282,3 +282,17 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   arrives at an address someone on the team actually checked, and the URL is in T-E02's `Evidence:`
   line.
 
+### OP-19, A funded devnet keypair
+- Status: open
+- Owner: <unassigned>
+- Needed by: 2026-09-26, T-D03 cannot be evidenced without it
+- Unblocks: T-D03, T-D02, T-F05a, and every other task whose evidence is an on-chain read
+- What exactly: `DEVNET_KEYPAIR`, a throwaway devnet key holding a few SOL, in the local `.env` and
+  as a CI secret for the nightly job. Faucets will not do it: the Helius devnet faucet is capped at
+  1 SOL per project per day and was already exhausted when this was written, and
+  `api.devnet.solana.com` answered `requestAirdrop` with an internal error. Fund it once from a
+  faucet that works, or from an existing devnet balance, and keep it topped up. It is devnet, so
+  the key is worth nothing and can live in CI, unlike every mainnet key.
+- Done when: `agon revoke` runs end to end against 3 devnet wallets that really hold Agon roles,
+  and the roles are really gone afterwards, which is T-D03's Evidence line.
+

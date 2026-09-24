@@ -694,7 +694,21 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   while funds sit in a Trigger order says "Rule revoked. 2.0 SOL is still inside an open Jupiter
   order. Cancel it?" and offers the cancel in the same screen, and never implies the revoke
   returned those funds
-- Evidence: <PR link, plus the devnet run over 3 wallets>
+- Evidence: <PR link; the devnet run over 3 wallets is blocked, see OP-19>
+- Finding: a kill switch can only be wrong in one direction, and the direction matters more than
+  the feature. Removing 1 role too few leaves a capped agent running for another minute. Removing 1
+  too many can take the user's own root authority off their own Swig, and nobody can undo that. So
+  a role is only ever removed when it matches the agent shape exactly, read off the chain, and the
+  shape check is the same function that arms a role rather than a second copy of the rule: the two
+  can then never drift into a state where we grant a shape we will not later revoke. Tested over a
+  mixed account holding a root role, a foreign role and 2 agent roles, and the plan touches 2 of
+  the 4. Second: the root guard turns out to be belt and braces, because assertAgentRoleShape
+  already rejects root as its first check, so removing the explicit guard fails only the test about
+  the wording. Third: "1 wallet signature" is a claim about transaction size, not intent. Above 12
+  removals the removals stop fitting in 1 transaction, and the command refuses and says so rather
+  than quietly splitting a revoke across 2 signatures. Fourth, on wording: revoking a Swig role
+  does not touch funds already inside a Jupiter order, so the open-order sentence is asserted
+  against a list of words it must never contain, "returned", "refunded", "safe", "recovered".
 - Kill criterion: none, this is the last layer
 
 ### T-F05c, F5 spike in mainnet simulation
