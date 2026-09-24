@@ -184,7 +184,14 @@ function lint() {
 }
 
 function changedFiles(base, head) {
-  return git('diff', '--name-only', `${base}..${head}`).split('\n').filter(Boolean)
+  // Three dots, not two. `git diff a..b` compares the two endpoints, so the moment a branch merges
+  // dev in, every file merged to dev since this PR opened counts as changed by this PR. dev
+  // requires branches to be up to date before merging, so every PR must merge dev in, so this
+  // fired on all of them. Found on a board PR that changed 1 file and was told it had changed 15,
+  // including .github/workflows/board.yml, which a board PR may not touch and which that branch
+  // had never opened. Three dots asks what the gate means: what did this branch change since it
+  // forked.
+  return git('diff', '--name-only', `${base}...${head}`).split('\n').filter(Boolean)
 }
 
 // A claim moves a "- Status:" line and nothing else. Shared by the claim-PR path and by any direct

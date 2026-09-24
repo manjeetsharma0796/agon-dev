@@ -23,6 +23,9 @@ export * from './messages.js'
 // one door every external call goes through.
 export * from './net/index.js'
 
+// The provider request builders, so the CLI and the spikes do not each know a provider URL.
+export { heliusTransactions } from './net/record.js'
+
 /** get_report and list_rules both take just an address. */
 export const WalletQuery = z.object({ wallet: Address })
 export type WalletQuery = z.infer<typeof WalletQuery>
