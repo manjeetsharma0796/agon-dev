@@ -343,7 +343,7 @@ and latency (a, b).
 - Kill criterion: none, F1 is existential
 
 ### T-F01a, F1 spike on 2 wallets, for CP1
-- Status: open
+- Status: claimed 2026-09-24 | Owner: manjeetsharma0796 | Branch: feature/t-f01a-decode-2-wallets
 - Depends-on: T-A01
 - Touches: spikes/F01/, fixtures/golden/
 - Serves: Functionality (judged) ; CP1 gate
@@ -411,7 +411,14 @@ and latency (a, b).
   text); 0 numeric questions can reach Jev, enforced by a type that rejects them and a test
   proving it; token category cached forever and globally per mint, metadata for minutes; a
   "looks injected" flag blocks; the answer carries its data slot and rule version
-- Evidence: <PR link, plus the test that rejects a numeric question at compile time>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/27, plus the control run: widening
+  JevQuestion to admit a numeric kind fails typecheck with TS2578, so the guard is the build
+- Finding: the endpoint takes 3 question types, choice, score and noul, and 2 of them return a
+  number. Using score or noul would smuggle a number back out of Jev, which is the thing this task
+  exists to prevent, so all 3 questions are choice with named criteria. noul does not discriminate
+  at all: 0.005 for obvious marketing blob against 0.006 for a concrete trade instruction, and
+  0.0046 to 0.0222 across 5 unrelated questions about the same text. A question wired to noul would
+  have returned a near-zero every time and read as a confident no
 - Kill criterion: fallback is an LLM guard in structured-output mode with a stricter threshold, or Kev-0.5B locally. Arithmetic checks are unaffected either way
 
 ### T-F11a, F11 (a) and (b), Jev schema validity and latency
@@ -509,7 +516,14 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   wallets; decoded events per transaction match unique signature and leg counts on the golden
   wallets, so 0 double counting; every field name matches the value it holds, reviewed by a
   second person
-- Evidence: <PR link; the golden-wallet diff needs OP-1, no wallet has history yet>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/64, plus the reproduction: the same
+  4 swaps reported 0 closed trades before and 1 after
+- Finding: lots were queued per mint, so a lot bought with a different quote than the sale sat
+  at the head of the queue and every later sale of that mint hit it and stopped. 1 cross
+  currency buy froze that mint's P&L permanently: buy BONK with SOL, buy BONK with USDC, sell
+  twice for USDC, and the ledger reports 0 closed trades and 0 realised where the same wallet
+  without the SOL lot reports 1 trade and 10 USDC. Queues are now keyed by mint and quote, so a
+  sale only ever meets lots it can be priced against
 - Finding: the case with no honest answer is the common one. A position bought with SOL and sold
   for USDC has no realised P&L without a price at the fill, because 150 USDC minus 100 SOL is not
   50 of anything, and buying with SOL then taking profit into USDC is ordinary behaviour rather
@@ -663,7 +677,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none. Anything that can move funds fails closed
 
 ### T-D02, Rule expiry without admin rights
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-d02-rule-expiry
 - Depends-on: T-D01
 - Touches: packages/chain/src/expiry.ts
 - Serves: UX (judged) ; F7
