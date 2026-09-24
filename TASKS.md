@@ -340,7 +340,7 @@ and latency (a, b).
 - Kill criterion: none, this is the primary path
 
 ### T-F03, F3 spike, token risk check on 30 labelled mints
-- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-f03-token-risk
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/31 | Owner: Prithwish | Branch: feature/t-f03-token-risk
 - Depends-on: T-C04
 - Touches: spikes/F03/
 - Serves: Functionality (judged) ; CP1 gate
