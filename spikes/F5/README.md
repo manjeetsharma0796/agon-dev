@@ -13,9 +13,21 @@ This is the existential one. If the cap does not hold on-chain then the custody 
 CP1 decides whether Agon ships read-only, so nothing here is worth softening. Nothing in
 `result.json` says the cap holds, and nothing says it does not. No case was exercised.
 
+**The headline is not the empty payer.** That is a faucet problem and it costs 0.0015 SOL to fix.
+The headline is that **the pinned Jupiter program id is not a program on devnet**: it is a 0-byte
+account owned by the system program, `executable: false`. An agent role scoped to
+`programLimit({ programId: JUPITER })` therefore scopes to something that cannot execute there, so
+the 7 cases cannot be exercised on devnet however well funded the payer is. Live arming on devnet
+cannot show the cap stopping a swap, because on devnet there is no swap to stop.
+
+The alternative, named and not implemented here: a **Surfpool mainnet fork** carries the real
+Jupiter program and the real Swig program, costs nothing and needs no mainnet funds, and F9 already
+showed that a committed Surfpool snapshot replays offline with no key. That is a CP1 decision,
+OP-20, not a thing this task should quietly pivot to.
+
 ## What the run does prove
 
-Read from devnet in the same process that wrote `result.json`, at slot 503552939:
+Read from devnet in the same process that wrote `result.json`, at slot 503595691:
 
 | checked | answer |
 |---|---|
@@ -26,7 +38,7 @@ Read from devnet in the same process that wrote `result.json`, at slot 503552939
 So the code path is not the blocker. The transaction serialises, the blockhash is accepted, the
 program loads, and devnet refuses it for exactly one reason: the payer holds 0 lamports.
 
-## Blocker 1, OP-19: no devnet lamports, and the ask is 1,295 times too big
+## The smaller blocker, OP-19: no devnet lamports, and the ask is 1,295 times too big
 
 Every faucet reachable without a browser refuses. The spike asks all of them on every run and puts
 the answers in `result.json` under `funding.faucetAttempts`, so a rerun on a better day needs no
@@ -64,7 +76,7 @@ devnet now quotes 1,178,560 for the same size. The rent rate dropped from 3,480 
 per byte-year at some point, so reading an existing account's balance overstates what a new one
 costs by about 37%.
 
-## Blocker 2, OP-20: Jupiter is not on devnet, so (a), (b) and (e) cannot run as written
+## The blocker that decides the demo, OP-20: Jupiter is not on devnet
 
 The pinned Jupiter id `JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4` **is not a program on devnet.**
 It is a plain wallet: `executable: false`, owned by the system program, 0 bytes, holding 4.51 SOL.
@@ -86,9 +98,13 @@ So funding alone does not make the 7 cases runnable. CP1 has to decide one of:
 
 1. run (b) and (e) against a program that is deployed on devnet and moves the capped mint, and say
    plainly that the Jupiter leg was substituted;
-2. run the cap cases in mainnet simulation, which is already T-F05c, and let T-F05a cover only the
+2. run the whole thing on a **Surfpool mainnet fork**, which carries the real Jupiter program and
+   the real Swig program, costs nothing and needs no mainnet funds. F9 already showed a committed
+   Surfpool snapshot replays offline with no key, so the tooling is in the repo. This is the option
+   that also gives the demo a beat where the cap visibly stops a swap;
+3. run the cap cases in mainnet simulation, which is already T-F05c, and let T-F05a cover only the
    cases that need no Jupiter execution: (c), (d), (f) and (a) as authorisation;
-3. deploy a Jupiter build to devnet, which nobody on this team controls.
+4. deploy a Jupiter build to devnet, which nobody on this team controls.
 
 The case sequence for (c), (d) and (f) is deliberately not written yet. Those three do not need
 Jupiter and would run today given lamports, but writing them against a 7-case shape CP1 is about to

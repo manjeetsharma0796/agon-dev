@@ -318,13 +318,18 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   comparing the Swig account's token balances after the inner instructions run, so with no program
   at that id the transaction fails before the limit is consulted. The run would record a rejection
   and it would be the wrong rejection, with the cap reading as holding when it was never asked.
-  Pick 1 of 3: (1) run (b) and (e) against a program that is deployed on devnet and moves the
-  capped mint, and say in the result that the Jupiter leg was substituted; (2) move the cap cases
-  to mainnet simulation, which is already T-F05c, and let T-F05a cover (c), (d), (f) and (a) as
-  authorisation only; (3) deploy a Jupiter build to devnet, which nobody on this team controls.
+  Pick 1 of 4: (1) run the whole thing on a **Surfpool mainnet fork**, which carries the real
+  Jupiter program and the real Swig program, costs 0 and needs 0 mainnet funds, and whose tooling is
+  already in the repo because F9 proved a committed Surfpool snapshot replays offline with no key;
+  (2) run (b) and (e) on devnet against a program that is deployed there and moves the capped mint,
+  and say in the result that the Jupiter leg was substituted; (3) move the cap cases to mainnet
+  simulation, which is already T-F05c, and let T-F05a cover (c), (d), (f) and (a) as authorisation
+  only; (4) deploy a Jupiter build to devnet, which nobody on this team controls.
 - Done when: the decision is in the PRD Decisions log and T-F05a's `Acceptance:` line says which
   of the 7 cases run on devnet and which moved to T-F05c.
-- Why it cannot wait: the World's Fair demo beat is live arming on devnet. (c), (d) and (f) can be
-  filmed there once OP-19 lands. "The cap stopped an over-cap swap" cannot be filmed on devnet at
-  all, whatever the funding, so the script for that beat depends on this decision.
+- Why it cannot wait: the World's Fair demo beat is live arming on devnet, decided on 2026-09-24.
+  (c), (d) and (f) can be filmed on devnet once OP-19 lands. "The cap stopped an over-cap swap"
+  cannot be filmed on devnet at all, whatever the funding, because there is no swap to stop there.
+  So the most distinctive beat of the demo depends on this decision, and option 1 is the one that
+  keeps it.
 

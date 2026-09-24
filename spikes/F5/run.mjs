@@ -76,7 +76,30 @@ const TWO_ROLE_SWIG_BYTES = 168
 
 const connection = new web3.Connection(RPC, 'confirmed')
 
-const redact = (s) => (heliusKey ? String(s).split(heliusKey).join('<api key>') : String(s))
+/**
+ * Take every api key out of a string before it is recorded or printed.
+ *
+ * Two separate leaks, both of which end in a committed file. The Helius key is interpolated into a
+ * faucet URL, and fetch puts the URL it failed on into its own error message. And `DEVNET_RPC_URL`
+ * is exactly what a person sets when the public devnet RPC rate-limits them, which means they set
+ * it to a keyed endpoint, and web3.js quotes that endpoint back in its errors too. So this strips
+ * the key we know by value and any `api-key` or `apiKey` query parameter by shape, and result.json
+ * records the RPC origin rather than the URL.
+ */
+const redact = (s) => {
+  const withoutKnownKey = heliusKey ? String(s).split(heliusKey).join('<api key>') : String(s)
+  return withoutKnownKey.replace(
+    /([?&](?:api[-_]?key|access[-_]?token)=)[^&\s"'<>]+/gi,
+    '$1<api key>',
+  )
+}
+const rpcOrigin = (() => {
+  try {
+    return new URL(RPC).origin
+  } catch {
+    return redact(RPC)
+  }
+})()
 
 /** What devnet says about a pinned program id. Read from the chain, never from our config. */
 async function programOnDevnet(id) {
@@ -109,10 +132,13 @@ function signer() {
   let bytes
   try {
     bytes = Uint8Array.from(JSON.parse(text))
-  } catch (e) {
+  } catch {
+    // Deliberately not `e.message`. V8 quotes a slice of the input it failed on, and the input
+    // here is a private key, so the parse error would print key material into the CI log.
     throw new Error(
-      `DEVNET_KEYPAIR is neither a 64-number json array nor a path to one: ${e.message}. ` +
-        'Write it the way solana-keygen does, and keep it out of the repo.',
+      'DEVNET_KEYPAIR is neither a 64-number json array nor a path to one, and it did not parse ' +
+        'as json. Write it the way solana-keygen does, and keep it out of the repo. Its contents ' +
+        'are not echoed here on purpose.',
     )
   }
   if (bytes.length !== 64) {
@@ -257,11 +283,18 @@ const pass = ran === 7
 
 const measured =
   `${ran} of 7 cases exercised on devnet at slot ${slot}. ` +
-  `The Swig program is live there (executable ${swigProgram.executable}, owner ${swigProgram.owner}), ` +
-  `the agent role builds and passes assertAgentRoleShape, and the first of the seven transactions ` +
-  `reaches devnet and is answered "${firstTransactionAnswer}". ` +
-  `The payer holds ${balance} lamports against the ${requiredLamports} the seven cases need. ` +
-  `The pinned Jupiter id is ${jupiterProgram.executable ? 'a program on devnet' : `not a program on devnet, it is a ${jupiterProgram.bytes}-byte account owned by ${jupiterProgram.owner}`}.`
+  (jupiterMissing
+    ? `The pinned Jupiter id is not a program on devnet: executable ${jupiterProgram.executable}, ` +
+      `owned by ${jupiterProgram.owner}, ${jupiterProgram.bytes} bytes, against executable true and ` +
+      '36 bytes under the BPF upgradeable loader on mainnet. An agent role scoped to ' +
+      'programLimit(Jupiter) therefore scopes to something that cannot execute on devnet, so the 7 ' +
+      'cases cannot be exercised there however well funded the payer is. '
+    : 'The pinned Jupiter id is a program on devnet. ') +
+  `The Swig program is live (executable ${swigProgram.executable}, owner ${swigProgram.owner}), ` +
+  'the agent role builds and passes assertAgentRoleShape, and the first of the 7 transactions ' +
+  `reaches devnet and is answered "${firstTransactionAnswer}", so nothing in our code is the ` +
+  `blocker. Separately the payer holds ${balance} lamports against the ${requiredLamports} the 7 ` +
+  'cases need.'
 
 const commit = (() => {
   try {
@@ -278,7 +311,7 @@ const result = {
   date: new Date().toISOString().slice(0, 10),
   commit,
   slot,
-  rpc: RPC,
+  rpc: rpcOrigin,
   keySource,
   devnet: { swigProgram, jupiterProgram },
   funding: {
@@ -298,9 +331,12 @@ const result = {
   cases,
   blockedBy: funded ? ['OP-20'] : jupiterMissing ? ['OP-19', 'OP-20'] : ['OP-19'],
   notes:
-    'No case was exercised, so nothing here says the cap holds or that it does not. Two blockers, ' +
-    'one for a person each: OP-19 funds a devnet key, OP-20 is the CP1 decision about cases (a), ' +
-    '(b) and (e), which cannot run on devnet while the pinned Jupiter id is not a program there.',
+    'No case was exercised, so nothing here says the cap holds or that it does not. Two blockers. ' +
+    'OP-20 is the one that matters: the pinned Jupiter id is not a program on devnet, so the 7 ' +
+    'cases are not reachable there at any funding level, and a live-arming demo on devnet cannot ' +
+    'show the cap stopping a swap. A Surfpool mainnet fork carries the real Jupiter program and ' +
+    'the real Swig program, costs nothing and needs no mainnet funds, and F9 already showed a ' +
+    'committed Surfpool snapshot replays offline with no key. OP-19 is the smaller one, lamports.',
 }
 
 writeFileSync(`${here}result.json`, `${JSON.stringify(result, null, 2)}\n`)
