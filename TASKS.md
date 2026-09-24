@@ -791,7 +791,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: below a 70% "rule is right" rate at CP3, the page ships as descriptive statistics and the rule-mining claim comes out of the pitch
 
 ### T-E05, Shareable "what your exceptions cost" card
-- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-e05-share-card
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/61 | Owner: Prithwish | Branch: feature/t-e05-share-card
 - Depends-on: T-E04
 - Touches: apps/web/app/api/card/
 - Serves: Potential impact (judged) ; share rate
