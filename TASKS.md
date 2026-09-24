@@ -315,7 +315,19 @@ and latency (a, b).
 - Acceptance: on staging, pasting an address returns a report built from fixtures, `check_trade`
   returns a fixture verdict, and arming is a no-op on devnet; all 3 legs work end to end by day 2,
   so integration bugs show on day 2 and not day 18
-- Evidence: <staging URL, plus the 3 legs in a recording>
+- Evidence: <staging URL blocked on OP-17; the 3 legs run locally, covered by 13 tests>
+- Finding: the point of doing this on day 2 proved itself on day 1. Wiring the MCP dispatch to the
+  same functions the API routes serve created a project reference cycle, apps/web to packages/mcp
+  and back, which `tsc -b` refuses. It did not show locally, because dist/ was already built from
+  an earlier run, and only appeared on a clean checkout of the stripped tree. That is the exact
+  shape of bug this task exists to surface, and it surfaced 16 days early. Second: the 3 frozen
+  contracts held with 0 changes. get_report, check_trade and arm_rule all round trip from fixture
+  to handler to HTTP to MCP without a single shape edit, and a test asserts the agent side and the
+  web side return byte-identical answers, so they cannot drift. Third: arming cannot return its own
+  contract honestly. ArmedRule names a Swig role id and a Jupiter order id, both claims that
+  something exists on chain, and nothing does, so the leg refuses with 503 rather than answering
+  with the fixture. A no-op that answers is a fabricated verification on the one path that grants
+  spend authority.
 - Kill criterion: none. Monad's worst bugs only appeared end to end (T1.7, T6.8)
 
 ### T-A01, Balance-change decoder
