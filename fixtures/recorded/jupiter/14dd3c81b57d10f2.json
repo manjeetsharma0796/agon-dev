@@ -1,0 +1,76 @@
+{
+  "slot": 450012136,
+  "provider": "jupiter",
+  "recordedAt": "2026-09-24T11:14:29.728Z",
+  "request": {
+    "method": "GET",
+    "url": "https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=HcRLc9VDgjLeK154xDawfb1dmVJ98DoSqcwTHGqiDeJR&amount=100000000&slippageBps=100",
+    "headers": {
+      "x-api-key": "REDACTED"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "inputMint": "So11111111111111111111111111111111111111112",
+      "inAmount": "100000000",
+      "outputMint": "HcRLc9VDgjLeK154xDawfb1dmVJ98DoSqcwTHGqiDeJR",
+      "outAmount": "144941235125",
+      "otherAmountThreshold": "143491822774",
+      "swapMode": "ExactIn",
+      "slippageBps": 100,
+      "platformFee": null,
+      "priceImpactPct": "0.0453160379556139333431940917",
+      "routePlan": [
+        {
+          "swapInfo": {
+            "ammKey": "DB3sUCP2H4icbeKmK6yb6nUxU5ogbcRHtGuq7W2RoRwW",
+            "label": "HumidiFi",
+            "inputMint": "So11111111111111111111111111111111111111112",
+            "outputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "inAmount": "100000000",
+            "outAmount": "11338414",
+            "updateContextSlot": "450012136"
+          },
+          "percent": 100,
+          "bps": null
+        },
+        {
+          "swapInfo": {
+            "ammKey": "CZt61djgJ6ggjA1aCfYskFViBQxcprA9HT3nE7PZdE1X",
+            "label": "Raydium CLMM",
+            "inputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "outputMint": "HcRLc9VDgjLeK154xDawfb1dmVJ98DoSqcwTHGqiDeJR",
+            "inAmount": "11338414",
+            "outAmount": "144941235125",
+            "updateContextSlot": "450012082"
+          },
+          "percent": 100,
+          "bps": null
+        }
+      ],
+      "contextSlot": 450012136,
+      "timeTaken": 0.004780024,
+      "swapUsdValue": "11.333903259687320",
+      "mostReliableAmmsQuoteReport": {
+        "info": {
+          "GuPbekwP9MqB23CghhiMQZTaigPdUJooovo1neCErhM8": "144554251138",
+          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11333157",
+          "BZtgQEyS6eXUXicYPHecYQ7PybqodXQMvkjUbP4R8mUU": "11338455"
+        }
+      },
+      "longtailMarketQuoteReport": null,
+      "useIncurredSlippageForQuoting": null,
+      "useRewards": null,
+      "otherRoutePlans": null,
+      "loadedLongtailToken": false,
+      "instructionVersion": null,
+      "transactionVersion": 0,
+      "additionalIntermediateTokens": [
+        "7pBPhnFP39W8WF7Wo5QPDvDR9avQ1me8QAUHqStHapzh",
+        "CZEdAQ7sbA21M1d6X3KwDU1koBEioCnaBeGQj5Yx2gJt"
+      ]
+    }
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "slot": 450012209,
+  "provider": "jupiter",
+  "recordedAt": "2026-09-24T11:14:49.183Z",
+  "request": {
+    "method": "GET",
+    "url": "https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=7ga6rtE9qSb3wdEiDCpTu2kHqoGVfT52jD8ign1rYTvx&amount=100000000&slippageBps=100",
+    "headers": {
+      "x-api-key": "REDACTED"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "inputMint": "So11111111111111111111111111111111111111112",
+      "inAmount": "100000000",
+      "outputMint": "7ga6rtE9qSb3wdEiDCpTu2kHqoGVfT52jD8ign1rYTvx",
+      "outAmount": "4386233",
+      "otherAmountThreshold": "4342371",
+      "swapMode": "ExactIn",
+      "slippageBps": 100,
+      "platformFee": null,
+      "priceImpactPct": "0.0002871284812967963352711756",
+      "routePlan": [
+        {
+          "swapInfo": {
+            "ammKey": "A9BtY2Ve7eJUYEkxXG21pkfjaYNkvPDL6JDaxHWDdmtY",
+            "label": "Manifest",
+            "inputMint": "So11111111111111111111111111111111111111112",
+            "outputMint": "7ga6rtE9qSb3wdEiDCpTu2kHqoGVfT52jD8ign1rYTvx",
+            "inAmount": "100000000",
+            "outAmount": "4386233",
+            "updateContextSlot": "450012195"
+          },
+          "percent": 100,
+          "bps": null
+        }
+      ],
+      "contextSlot": 450012209,
+      "timeTaken": 0.007297899,
+      "swapUsdValue": "11.337314063618170",
+      "mostReliableAmmsQuoteReport": {
+        "info": {
+          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11333154",
+          "8tp8GJADuYu2czhnaWzXYxpXTq2dwjribGwSav4J4m7e": "4360736"
+        }
+      },
+      "longtailMarketQuoteReport": null,
+      "useIncurredSlippageForQuoting": null,
+      "useRewards": null,
+      "otherRoutePlans": null,
+      "loadedLongtailToken": false,
+      "instructionVersion": null,
+      "transactionVersion": 0,
+      "additionalIntermediateTokens": [
+        "ATJyB1YW9tXQ8ur1xex1JqkDLjdG8pr9UcCDTpWCGVKv",
+        "7Qy2cXpdj4Fu2DUPVWdN3oogM3JSwLUV2LZaKVgVcPZh",
+        "7PjpYczqB887qVEajYY3vXWpWhDjBUHYKDPoL8GiBky2"
+      ]
+    }
+  }
+}

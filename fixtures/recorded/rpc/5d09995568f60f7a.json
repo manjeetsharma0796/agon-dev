@@ -1,0 +1,24 @@
+{
+  "slot": 450012071,
+  "provider": "rpc",
+  "recordedAt": "2026-09-24T11:14:21.044Z",
+  "request": {
+    "method": "POST",
+    "url": "https://mainnet.helius-rpc.com/?api-key=REDACTED",
+    "headers": {},
+    "body": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "method": "getSlot",
+      "params": []
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "id": 1,
+      "jsonrpc": "2.0",
+      "result": 450012073
+    }
+  }
+}

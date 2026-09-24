@@ -1,0 +1,77 @@
+{
+  "slot": 450012140,
+  "provider": "jupiter",
+  "recordedAt": "2026-09-24T11:14:30.997Z",
+  "request": {
+    "method": "GET",
+    "url": "https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=A7bdiYdS5GjqGFtxf17ppRHtDKPkkRqbKtR27dxvQXaS&amount=100000000&slippageBps=100",
+    "headers": {
+      "x-api-key": "REDACTED"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "inputMint": "So11111111111111111111111111111111111111112",
+      "inAmount": "100000000",
+      "outputMint": "A7bdiYdS5GjqGFtxf17ppRHtDKPkkRqbKtR27dxvQXaS",
+      "outAmount": "762558",
+      "otherAmountThreshold": "754933",
+      "swapMode": "ExactIn",
+      "slippageBps": 100,
+      "platformFee": null,
+      "priceImpactPct": "0.0011482287786313484267508637",
+      "routePlan": [
+        {
+          "swapInfo": {
+            "ammKey": "F3ds62W3NNEBQrwi2ZFy2vX3xu5fxL6f7VMtRdmKjoCv",
+            "label": "Flux",
+            "inputMint": "So11111111111111111111111111111111111111112",
+            "outputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "inAmount": "100000000",
+            "outAmount": "11338364",
+            "updateContextSlot": "450012140"
+          },
+          "percent": 100,
+          "bps": null
+        },
+        {
+          "swapInfo": {
+            "ammKey": "HBDaV4ndLuVe6qK1vGCXReon4B1DJKa9UrbqP8cVqywx",
+            "label": "GoonFi V2",
+            "inputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "outputMint": "A7bdiYdS5GjqGFtxf17ppRHtDKPkkRqbKtR27dxvQXaS",
+            "inAmount": "11338364",
+            "outAmount": "762558",
+            "updateContextSlot": "450012140"
+          },
+          "percent": 100,
+          "bps": null
+        }
+      ],
+      "contextSlot": 450012140,
+      "timeTaken": 0.018714712,
+      "swapUsdValue": "11.33634575001340",
+      "mostReliableAmmsQuoteReport": {
+        "info": {
+          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11333157",
+          "GTHKH8s82ZR8GTSFZ1dUu6wfdxhy59wpMShxzG5zjiPm": "761054",
+          "BZtgQEyS6eXUXicYPHecYQ7PybqodXQMvkjUbP4R8mUU": "11327979"
+        }
+      },
+      "longtailMarketQuoteReport": null,
+      "useIncurredSlippageForQuoting": null,
+      "useRewards": null,
+      "otherRoutePlans": null,
+      "loadedLongtailToken": false,
+      "instructionVersion": null,
+      "transactionVersion": 0,
+      "additionalIntermediateTokens": [
+        "63MGSHP5Nr3cyEX9DXa421WC3hXRYP4PRyRMn4KjmKEw",
+        "3X5cDndgtJ2xZHAMrSuJYD1HyrdqCAn2i971FP5eeLwd",
+        "D2epsLMmk5t2TSwCMfDx4KXSy5NbQhu5Mnsaty5vQWk9"
+      ]
+    }
+  }
+}

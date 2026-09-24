@@ -1,0 +1,61 @@
+{
+  "slot": 450012132,
+  "provider": "jupiter",
+  "recordedAt": "2026-09-24T11:14:28.530Z",
+  "request": {
+    "method": "GET",
+    "url": "https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=HiMSSzzwkZkrXJ4PGVJRdtfLaANeAztjjcgk5Dxe7Lwx&amount=100000000&slippageBps=100",
+    "headers": {
+      "x-api-key": "REDACTED"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "inputMint": "So11111111111111111111111111111111111111112",
+      "inAmount": "100000000",
+      "outputMint": "HiMSSzzwkZkrXJ4PGVJRdtfLaANeAztjjcgk5Dxe7Lwx",
+      "outAmount": "401227",
+      "otherAmountThreshold": "397215",
+      "swapMode": "ExactIn",
+      "slippageBps": 100,
+      "platformFee": null,
+      "priceImpactPct": "0.0001117829928659389303811865",
+      "routePlan": [
+        {
+          "swapInfo": {
+            "ammKey": "4RTiwuZd5E9AysFQXQXLPjzS68NcibhjVPd7Q4NztrpK",
+            "label": "Raydium CLMM",
+            "inputMint": "So11111111111111111111111111111111111111112",
+            "outputMint": "HiMSSzzwkZkrXJ4PGVJRdtfLaANeAztjjcgk5Dxe7Lwx",
+            "inAmount": "100000000",
+            "outAmount": "401227",
+            "updateContextSlot": "450012110"
+          },
+          "percent": 100,
+          "bps": null
+        }
+      ],
+      "contextSlot": 450012132,
+      "timeTaken": 0.00361287,
+      "swapUsdValue": "11.334496532829730",
+      "mostReliableAmmsQuoteReport": {
+        "info": {
+          "7iqWWNjubSTjmWXk9eYJViDLZjBN2KjrYt5Z9j8n8exQ": "400271",
+          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11333157"
+        }
+      },
+      "longtailMarketQuoteReport": null,
+      "useIncurredSlippageForQuoting": null,
+      "useRewards": null,
+      "otherRoutePlans": null,
+      "loadedLongtailToken": false,
+      "instructionVersion": null,
+      "transactionVersion": 0,
+      "additionalIntermediateTokens": [
+        "HWVzRAw1n6NhfagfHEEWdGs1tUWThXifH3LDqpUbqY9w"
+      ]
+    }
+  }
+}

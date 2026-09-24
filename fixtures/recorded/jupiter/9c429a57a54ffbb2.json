@@ -1,0 +1,63 @@
+{
+  "slot": 450012168,
+  "provider": "jupiter",
+  "recordedAt": "2026-09-24T11:14:38.270Z",
+  "request": {
+    "method": "GET",
+    "url": "https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=Pren1FvFX6J3E4kXhJuCiAD5aDmGEb7qJRncwA8Lkhw&amount=100000000&slippageBps=100",
+    "headers": {
+      "x-api-key": "REDACTED"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "inputMint": "So11111111111111111111111111111111111111112",
+      "inAmount": "100000000",
+      "outputMint": "Pren1FvFX6J3E4kXhJuCiAD5aDmGEb7qJRncwA8Lkhw",
+      "outAmount": "10922192",
+      "otherAmountThreshold": "10812971",
+      "swapMode": "ExactIn",
+      "slippageBps": 100,
+      "platformFee": null,
+      "priceImpactPct": "0.0126738302328944194235742789",
+      "routePlan": [
+        {
+          "swapInfo": {
+            "ammKey": "61mmsZUgoFNuqzXDsRH9TV2U9zc5aL1H5pKKA2pogsCC",
+            "label": "Manifest",
+            "inputMint": "So11111111111111111111111111111111111111112",
+            "outputMint": "Pren1FvFX6J3E4kXhJuCiAD5aDmGEb7qJRncwA8Lkhw",
+            "inAmount": "100000000",
+            "outAmount": "10922192",
+            "updateContextSlot": "450012159"
+          },
+          "percent": 100,
+          "bps": null
+        }
+      ],
+      "contextSlot": 450012168,
+      "timeTaken": 0.00605695,
+      "swapUsdValue": "11.336694441017360",
+      "mostReliableAmmsQuoteReport": {
+        "info": {
+          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11333155",
+          "EZyszDEx1LZDt7TsSFV8xdPi49sDKC3mdfv2MVMEQLtU": "10782090"
+        }
+      },
+      "longtailMarketQuoteReport": null,
+      "useIncurredSlippageForQuoting": null,
+      "useRewards": null,
+      "otherRoutePlans": null,
+      "loadedLongtailToken": false,
+      "instructionVersion": null,
+      "transactionVersion": 0,
+      "additionalIntermediateTokens": [
+        "6k6PXz3HPd7p8m1D4zVF2zs4z1LkBock2y49nZnt7fmC",
+        "AsSeYCDN6LyHKCGuYvTP2ngd2i9w6DUyVnGguFSZqYEA",
+        "HDhRHgjkKAaDsUith1JqnkiRe5d9UngnWXnHsjDgSTNK"
+      ]
+    }
+  }
+}
