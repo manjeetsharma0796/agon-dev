@@ -306,7 +306,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: `agon revoke` runs end to end against 3 devnet wallets that really hold Agon roles,
   and the roles are really gone afterwards, which is T-D03's Evidence line.
 
-### OP-18, Decide the shape of the World's Fair demo: read-only or live arming
+### OP-20, Decide the shape of the World's Fair demo: read-only or live arming
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-27, CP1, because it changes what Track E builds next
@@ -323,7 +323,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: one option is written in the PRD Decisions log, `docs/demo-script.md` beat 4 and beat 6
   match it, and T-E06 and T-E07 either have a target or are cut with a date and a reason.
 
-### OP-19, Film a thin working slice on devnet before building more
+### OP-21, Film a thin working slice on devnet before building more
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-27, CP1
