@@ -670,7 +670,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: never used for anything numeric, for deciding a task is done, for approving a merge or deploy, or for anything touching keys or funds. A Jev answer is an input to a rule, never the rule itself. Any use that misses its bar is cut at CP2, not extended
 
 ### T-E12, Build in public, weekly
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-e12-x-plan
 - Depends-on: T-B01
 - Touches: docs/plans/x-plan.md
 - Serves: Potential impact (judged) ; Business plan (judged) ; share rate
