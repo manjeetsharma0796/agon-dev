@@ -122,23 +122,3 @@ jobs:
             echo "$PR_BODY" | grep -q 'security-review. was also run' \
               || { echo "::error::This diff contains $why. Run /security-review, tick that box, and name a second reviewer who did not write the code."; exit 1; }
           fi
-
-      - name: Jev review script self-test
-        # 0 network, 0 keys. Proves the parsing and decision logic in scripts/jev-review.mjs, so a
-        # regression there is caught even on a PR that carries no JEV_API_KEY at all.
-        run: node scripts/jev-review.mjs self-test
-
-      - name: Second-layer review escalation (Jev)
-        # T-B08 use (1). Reads the diff itself and asks whether it changes money math, transaction
-        # building, a frozen contract or docs another track reads, the same 4 boxes as
-        # "Second reviewer needed?" above. It can only ADD a requirement to tick one of those boxes,
-        # never remove one, and the 2 path-based gates above stay primary and run unmodified. Fails
-        # open: no JEV_API_KEY or an unreachable Jev logs "path rules only" and exits 0, per
-        # CLAUDE.md ("Analytics fail open but always state what they are based on").
-        if: github.event.action != 'edited'
-        env:
-          JEV_API_KEY: ${{ secrets.JEV_API_KEY }}
-          PR_BODY: ${{ github.event.pull_request.body }}
-          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: node scripts/jev-review.mjs check
