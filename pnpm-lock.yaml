@@ -43,7 +43,11 @@ importers:
 
   packages/decoder: {}
 
-  packages/guard: {}
+  packages/guard:
+    dependencies:
+      '@agon/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/mcp: {}
 

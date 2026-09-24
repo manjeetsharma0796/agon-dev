@@ -304,7 +304,7 @@ and latency (a, b).
 - Kill criterion: fallback is Jupiter-routed swaps only, with the covered share printed on the report ("based on 83% of your swaps")
 
 ### T-C04, Our own mint check
-- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-c04-mint-check
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/26 | Owner: Prithwish | Branch: feature/t-c04-mint-check
 - Depends-on: T-C01, T-C02
 - Touches: packages/guard/src/mint-check.ts
 - Serves: Functionality (judged) ; F3
@@ -313,6 +313,19 @@ and latency (a, b).
   authority are never cached; RugCheck is enrichment only and is never on the deciding path; an
   unreachable RPC returns `block` with "Couldn't verify this token. Not safe to proceed."
 - Evidence: <PR link, plus the 30-mint test run>
+- Finding: the extension being present is not the danger being present. 5 of the 30 recorded mints,
+  17 percent, carry the Token-2022 `transferHook` extension with `programId: null`, which means no
+  hook is installed. A check that treats the extension list as the finding blocks 5 real tokens for
+  something none of them does, and it would have looked like a working safety check while doing it.
+  Second: the 4 mints with a permanent delegate are a subset of the 6 with freeze authority, so the
+  block set over this sample is 6 and not 10, and a check that counted traits rather than mints
+  would have reported 10. Third: a live mint authority must not block. 8 of 30 have one, USDC
+  included, so blocking on it refuses most of what people actually trade; it dilutes, it does not
+  seize, so it is reported. Fourth: Token-2022 carries 2 scheduled transfer fees and which one
+  applies depends on the current epoch, which the mint account does not carry and which
+  `getEpochInfo` would cost a second call to learn, against a budget of exactly 1. So the worse of
+  the 2 is reported: overstating a fee costs the user nothing and understating it costs them the
+  difference. 30 mints, 1 `getMultipleAccounts`, 6 block and 24 pass at slot 450012073.
 - Kill criterion: none, this is the primary path
 
 ### T-F03, F3 spike, token risk check on 30 labelled mints
