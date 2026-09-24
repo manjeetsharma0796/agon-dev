@@ -3,7 +3,6 @@
 // The verdict itself. Pure: it composes the 3 reads below and makes none of its own.
 export {
   LIMITS,
-  RULE_VERSION as CHECK_TRADE_RULE_VERSION,
   STOP_TOLERANCE_POINTS,
   checkTrade,
   type Quote,

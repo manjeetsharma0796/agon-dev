@@ -32,7 +32,9 @@ import {
 import type { JevVerdict, TokenCategory } from './jev/index.js'
 import type { MintCheck } from './mint-check.js'
 
-export const RULE_VERSION = 'check-trade/1'
+/** Stamped onto every verdict beside the mined profile's version. Not exported: it is already in
+ *  every output's `ruleVersion`, so nothing outside needs to read it separately. */
+const RULE_VERSION = 'check-trade/1'
 
 /**
  * Every threshold, in one place, each with where its number comes from. A limit invented here

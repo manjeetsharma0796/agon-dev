@@ -608,7 +608,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none. monad rebuilt full history on every request (T3.6) and switching later was a rewrite
 
 ### T-C06, check_trade guard, arithmetic first
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/77
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/77 | Owner: Jishnu | Branch: feature/t-c06-check-trade
 - Depends-on: T-C04, T-C05, T-A03
 - Touches: packages/guard/src/check-trade.ts
 - Serves: Functionality (judged) ; F4
