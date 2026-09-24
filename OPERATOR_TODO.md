@@ -45,6 +45,9 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   separate CI key used by nightly spikes only, and a paid plan for the hosted app. Write down the
   credit budget for a 2,000-transaction report, for the 5,000-wallet F8 ingest, and for F10
   webhooks. Also `HELIUS_WEBHOOK_SECRET` for F10.
+- Measured 2026-09-24: a local dev key works against `mainnet.helius-rpc.com`. `getHealth` ok,
+  `getSlot` 450004003, p50 389 ms over 10 calls from Mumbai. That is 1 of the 3 keys, and 0 of
+  the 3 credit budgets, so this stays open.
 - Done when: 3 separate keys exist, and the 3 credit budgets are written in `docs/plans/budget.md`
   with the cost per report calculated.
 
@@ -56,6 +59,17 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - What exactly: `JUPITER_API_KEY` from Jupiter Portal for higher rate limits on quotes and
   Trigger orders. The public quote and price API needs no key at low volume, so this is only for
   the 20-route spike and the benchmark runs.
+- Measured 2026-09-24: a Portal key works against `api.jup.ag/swap/v1/quote`, served from
+  `ap-southeast-1`. The limit is **10 requests per 10 seconds** (`x-ratelimit-current` plus
+  `x-ratelimit-remaining` is 10, and `x-ratelimit-reset` minus `date` is 10 s). 20 quotes fired
+  concurrently returned 10 x 200 and 10 x 429. The same 20 paced at 50/min returned 20 x 200 and
+  0 x 429 in 23 s.
+- **The done-when below cannot pass on this tier, and it is the criterion that is wrong, not the
+  key.** A 20-request burst against a 10-per-10s bucket fails by arithmetic. Decide one of: raise
+  the Jupiter tier, or reword the criterion to 20 quotes paced under 1/s with 0 x 429. This is not
+  cosmetic: T-C06 budgets 1 quote per `check_trade`, so on this tier the guard tops out near 1
+  check per second, and Benchmark A v2 (100 scenarios x 5 runs x 3 arms) is about 25 minutes of
+  quote wall time on its own.
 - Done when: the key is in the hosted env and a nightly-only CI secret, and a 20-quote burst does
   not rate-limit.
 
@@ -68,6 +82,16 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   Venice, and confirm the rate limit supports 200-call latency runs at 1, 5 and 20 questions.
   Cloudflare needs `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` scoped to Workers AI
   only. The hosted app proxies `/jev` so users need no key of their own.
+- Measured 2026-09-24 against `usejev.xyz/v1/systemone`, the TypeSafe-direct option: works, p50
+  607 ms over 10 calls from Mumbai (round trip included, so T-C03 still has to measure the
+  region). The question schema is `choice`, `score` or `noul`, each needing a `criteria` field;
+  there is no boolean type. `choice` and `score` return per-option probabilities plus a
+  `confidence`, and `output_tokens` is 0, so it scores rather than generates.
+- **Caution for T-C05 and T-F11b:** on judgement questions it was near chance in a small probe.
+  It called an obvious marketing blob concrete at p 0.90, and scored a deliberately speculative
+  component 1.01 of 2 at confidence 0.056 against 1.81 at confidence 0.533 for a required one.
+  The `confidence` field is the usable signal, which is what the below-threshold-goes-to-a-person
+  rule already assumes. 3 calls is not a measurement, F11 is.
 - Done when: one provider is named in `docs/plans/decisions.md`, the rate limit is written down,
   and a 200-call run completes without a 429.
 
