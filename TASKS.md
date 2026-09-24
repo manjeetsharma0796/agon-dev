@@ -335,7 +335,7 @@ and latency (a, b).
   text); 0 numeric questions can reach Jev, enforced by a type that rejects them and a test
   proving it; token category cached forever and globally per mint, metadata for minutes; a
   "looks injected" flag blocks; the answer carries its data slot and rule version
-- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/26, plus the control run: widening
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/27, plus the control run: widening
   JevQuestion to admit a numeric kind fails typecheck with TS2578, so the guard is the build
 - Finding: the endpoint takes 3 question types, choice, score and noul, and 2 of them return a
   number. Using score or noul would smuggle a number back out of Jev, which is the thing this task
