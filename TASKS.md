@@ -677,13 +677,27 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none. Anything that can move funds fails closed
 
 ### T-D02, Rule expiry without admin rights
-- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-d02-rule-expiry
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/72 | Owner: Prithwish | Branch: feature/t-d02-rule-expiry
 - Depends-on: T-D01
 - Touches: packages/chain/src/expiry.ts
 - Serves: UX (judged) ; F7
 - Acceptance: the agent key holds 0 `manageAuthority` at every point; at arm time the user
   signs a role-removal transaction against a durable nonce and the daemon submits it at expiry
-- Evidence: <PR link, plus the on-chain role read after expiry>
+- Evidence: <PR link; the on-chain role read after expiry needs a funded devnet key, see OP-19>
+- Finding: the durable nonce is what makes expiry possible without admin rights, and it is also
+  what makes the guarantee weaker than it sounds. A blockhash dies in about 2 minutes, so a
+  transaction signed at arm time is refused long before the rule is due and the rule would simply
+  never end; a nonce replaces it with an on-chain value that only moves when the transaction lands,
+  so the signature keeps. But that makes the signed bytes a bearer instrument: Solana has no "not
+  before slot N" field, so anyone holding them can submit early. Refusing to submit early is our
+  policy, not an enforcement, and the honest version of the claim is that the failure is in the
+  safe direction, because a stolen authorisation can only stop the agent trading and cannot extend
+  the rule, raise the cap or move funds. Second: expiry is best effort in the other direction too.
+  If the daemon is not running when the rule is due, nothing submits and the rule does not end, so
+  the user is told at arm time that they can always end it from their own wallet. Third: a user who
+  revokes by hand first leaves the authorisation unspendable, and reading that off a submit error
+  would report a working expiry as broken, so spentness is read from the nonce rather than from a
+  failure. Each of the 4 guards fails its own test when removed.
 - Kill criterion: fallback is no automatic expiry, a short recurring window instead, and the UI says "no end date: revoke from your wallet". Never fall back to giving the agent admin rights
 
 ### T-F07, F7 spike, pre-signed expiry
