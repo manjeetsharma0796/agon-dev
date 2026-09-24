@@ -762,7 +762,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: no named competitor comparison unless their run is in the repo too
 
 ### T-E04, Report page
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/57 | Owner: Prithwish | Branch: feature/t-e04-report-page
+- Status: blocked, see OP-17
 - Depends-on: T-A03, T-E03
 - Touches: apps/web/app/report/
 - Serves: UX (judged)
@@ -771,8 +771,9 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   your swaps") and the count of unsupported transactions with their program ids; 0 blank fields,
   0 "N/A", 0 "something went wrong"; every report asks "Is this rule right about you?" with 3
   answers (yes / no / partly) and stores the answer
-- Evidence: <staging URL needs OP-17 and the 5 real wallet reports need OP-1; the page renders the
-  fixture report end to end, 22 tests>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/57 renders the fixture report end to
+  end with 22 tests. The staging URL needs OP-17, the 5 real wallet reports need OP-1, and storing
+  the answer needs OP-6, which lists T-E04 under Unblocks while this row does not name it.
 - Finding: "0 blank fields" is a property of the empty wallet, not of the happy path. A wallet with
   no history produces 0 closed trades, 3 unfound rules, 0 coverage and 0 exceptions, and every one
   of those is a slot that renders as nothing unless something is written for it, so the test walks
