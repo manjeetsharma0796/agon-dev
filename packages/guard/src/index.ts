@@ -8,3 +8,7 @@ export {
   type MintCheckDeps,
   type MintFacts,
 } from './mint-check.js'
+
+// The Jev client and the injection screen, T-C05. The only part of the guard that asks a model
+// anything, and the only 3 questions it is allowed to ask.
+export * from './jev/index.js'

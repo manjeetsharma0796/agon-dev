@@ -411,7 +411,14 @@ and latency (a, b).
   text); 0 numeric questions can reach Jev, enforced by a type that rejects them and a test
   proving it; token category cached forever and globally per mint, metadata for minutes; a
   "looks injected" flag blocks; the answer carries its data slot and rule version
-- Evidence: <PR link, plus the test that rejects a numeric question at compile time>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/27, plus the control run: widening
+  JevQuestion to admit a numeric kind fails typecheck with TS2578, so the guard is the build
+- Finding: the endpoint takes 3 question types, choice, score and noul, and 2 of them return a
+  number. Using score or noul would smuggle a number back out of Jev, which is the thing this task
+  exists to prevent, so all 3 questions are choice with named criteria. noul does not discriminate
+  at all: 0.005 for obvious marketing blob against 0.006 for a concrete trade instruction, and
+  0.0046 to 0.0222 across 5 unrelated questions about the same text. A question wired to noul would
+  have returned a near-zero every time and read as a confident no
 - Kill criterion: fallback is an LLM guard in structured-output mode with a stricter threshold, or Kev-0.5B locally. Arithmetic checks are unaffected either way
 
 ### T-F11a, F11 (a) and (b), Jev schema validity and latency
