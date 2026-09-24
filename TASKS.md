@@ -453,7 +453,7 @@ and latency (a, b).
 - Kill criterion: none. If the cap does not hold on-chain the custody story is gone, see T-F05a
 
 ### T-F05a, F5 spike, 7 cases on devnet
-- Status: blocked, see OP-19
+- Status: blocked, see OP-20
 - Depends-on: T-D01
 - Touches: spikes/F5/, scripts/board.mjs
 - Serves: Novelty (judged) ; CP1 gate
@@ -735,7 +735,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: fallback is a short recurring window and no end date in the UI
 
 ### T-D03, Kill switch
-- Status: blocked, see OP-19
+- Status: blocked, see OP-20
 - Depends-on: T-D01
 - Touches: packages/chain/src/kill-switch.ts, packages/cli/src/commands/revoke.ts
 - Serves: UX (judged) ; Novelty (judged)
