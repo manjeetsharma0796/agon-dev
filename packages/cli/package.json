@@ -6,6 +6,9 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "dependencies": {
-    "@agon/chain": "workspace:*"
+    "@agon/chain": "workspace:*",
+    "@agon/core": "workspace:*",
+    "@agon/decoder": "workspace:*",
+    "@agon/miner": "workspace:*"
   }
 }

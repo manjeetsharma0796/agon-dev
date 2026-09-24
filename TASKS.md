@@ -743,7 +743,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: fallback is no automatic expiry, a short recurring window instead, and the UI says "no end date: revoke from your wallet". Never fall back to giving the agent admin rights
 
 ### T-F07, F7 spike, pre-signed expiry
-- Status: open
+- Status: claimed 2026-09-25 | Owner: Prithwish | Branch: feature/t-f07-presigned-expiry
 - Depends-on: T-D02
 - Touches: spikes/F07/
 - Serves: UX (judged) ; CP2 gate
@@ -1035,7 +1035,24 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 - Acceptance: installs, registers the MCP server with the user's assistants and starts the
   daemon in 1 command; cold start under 300 ms, asserted in CI; published to npm with
   provenance
-- Evidence: <npm package page, plus the cold-start number in CI>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/76. `agon report` runs the whole
+  path on a real wallet: 100 transactions read, 77 of 80 swaps decoded at 96%, 28 closed trades,
+  3 rules mined, and it replays offline from a recorded fixture with 0 keys. The acceptance
+  itself is NOT met: npm publish and MCP registration need T-C07 and T-C08
+- Finding: the first end to end run threw immediately, and no isolated test could have caught
+  it. Helius has 2 transaction endpoints with different shapes: `getTransaction` returns
+  meta.preTokenBalances and postTokenBalances, and the enhanced endpoint, the only one that
+  pages a wallet's history, returns a flat signature and already-subtracted
+  accountData[].tokenBalanceChanges. Every decoder fixture was recorded in the first shape, so
+  every decoder test passed against a shape the product never fetches. Translated at the edge,
+  in the CLI's io layer, so the decoder stays single shaped and pure. Second finding, from the
+  same PR: the first file larger than 1 MB broke 2 shared gates at once. `scripts/board.mjs`
+  reads the PR diff through `execFileSync`, whose default maxBuffer is 1 MB, so hygiene died
+  with `spawnSync git ENOBUFS` and printed a megabyte of the diff instead of a reason. Raised
+  the buffer and said why in a comment. Separately the Helius enhanced response names token
+  accounts rather than owners, and gitleaks read 885 public base58 addresses as generic API
+  keys, so `tokenAccount`, `fromTokenAccount` and `toTokenAccount` join the match scoped
+  allowlist. Re-verified that a planted key in that same fixture still fails the scan
 - Kill criterion: none, the MCP server is how any agent reaches the guard
 
 ### T-E08, Onboarding
