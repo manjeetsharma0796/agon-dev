@@ -188,7 +188,7 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Touches: package.json, pnpm-workspace.yaml, tsconfig.base.json, apps/, packages/, knip.json, .gitignore, .env.example, vercel.json
 - Serves: Functionality (judged) ; unblocks all 5 tracks
 - Acceptance: `pnpm install && pnpm gates` green on a clean clone with 1 command and 0 keys; the 10 PRD repo paths exist (apps/web, apps/worker, packages/core, decoder, miner, guard, chain, mcp, cli, spikes, fixtures/golden, benchmark); `knip` fails the build on 1 planted unused export; the secret scan fails on 1 planted fake key; CLI cold start measured and under 300 ms; 3 environments wired with their own keys, preview on every PR push against devnet, staging on every merge to dev against devnet plus mainnet read-only, production on a release tag against mainnet
-- Evidence: <PR link, plus the green run and the 2 planted-failure runs>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/3
 - Finding: the planted-key run found 0 leaks until the key was randomly generated. gitleaks
   allowlists the AWS documentation example key, so testing the gate with a well known example
   makes a working scan look dead. Regenerated at random it caught 5 of 5 shapes, including a
@@ -200,21 +200,21 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: none, this blocks everything
 
 ### T-C01, Freeze the three contracts in packages/core
-- Status: claimed 2026-09-24 | Owner: manjeetsharma0796 | Branch: feature/t-c01-frozen-contracts
+- Status: done
 - Depends-on: T-B01
 - Touches: packages/core/, fixtures/contracts/
 - Serves: Functionality (judged) ; 5 tracks in parallel from day 2
 - Acceptance: 3 contracts defined exactly once, (1) check_trade input mint/side/size/wallet and output verdict plus reasons each carrying a rule name and a number, (2) report JSON with metrics, rules, exceptions and their cost, coverage share, unsupported transactions, (3) rule spec consuming mint set, cap, window, trigger type, expiry and producing a Swig role plus a Jupiter order id; that 1 definition generates the MCP tool schemas, API validation, frontend types and fixture checks, proven by 1 deliberate shape change failing in all 4 places
-- Evidence: <PR link showing 4 failures from 1 edit>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/7, plus the 4-place rename experiment in its body: tsc TS2322, the generated MCP schema, .parse() invalid_type, and the fixture test
 - Kill criterion: none, a frozen contract is why the tracks do not block each other
 
 ### T-B02, Release job, dev to the public main by allowlist
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/17 | Owner: Prithwish | Branch: feature/t-b02-release
+- Status: blocked, see OP-7
 - Depends-on: T-B01, OP-7
 - Touches: .github/workflows/release.yml, .publicinclude, scripts/release.mjs
 - Serves: Open source (judged)
 - Acceptance: a `release-*` tag on dev copies only allowlisted paths into a clean public checkout, then installs, builds and passes tests on the stripped tree; 0 of 6 planted internal markers survive (TASKS.md, OPERATOR_TODO.md, FEASIBILITY.md, `OP-`, `.claude`, an internal URL); 1-click web rollback documented; releases run at least 1 per day during a hackathon
-- Evidence: <link to the first release run, blocked on OP-7>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/17
 - Finding: 2 of the 3 release legs were dead on arrival and nothing said so, because the job had
   never been run. The stripped tree failed `pnpm build` with TS5083 on a missing tsconfig.json and
   failed `pnpm test` with "No test files found, exiting with code 1": .publicinclude allowlisted
@@ -244,21 +244,21 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: none, judges only see the public repo
 
 ### T-C02, Record and replay wrapper with per-call timings
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-c02-record-replay
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/11
 - Depends-on: T-B01
 - Touches: packages/core/src/net/, fixtures/recorded/
 - Serves: Functionality (judged) ; Benchmark B latency breakdown
 - Acceptance: 1 wrapper around all 5 external calls (Helius, Jupiter, RPC, RugCheck, Jev); recorded responses for the golden wallets and about 30 tokens, every file stamped with its source slot or `synthetic: true`; the whole offline suite runs with 0 keys and 0 network access, verified with the network blocked; every call logs its duration from the first request
-- Evidence: <PR link, plus a suite run with the network blocked>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/11
 - Kill criterion: if C slips past day 2 this moves to B, per the PRD load check
 
 ### T-C03, Measure the region for API, RPC and Jev
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/19 | Owner: Prithwish | Branch: feature/t-c03-region
+- Status: done
 - Depends-on: T-B01
 - Touches: docs/plans/region.md, apps/web/vercel.json
 - Serves: Functionality (judged) ; decision speed
 - Acceptance: p50 and p95 round trip measured from at least 2 candidate regions to the Helius RPC node and the Jev endpoint, 100 calls each; the chosen region is set in config and both numbers are written down
-- Evidence: docs/plans/region.md, plus the region 2 run
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/19, plus docs/plans/region.md: Helius RPC p50 136.3 ms vs 23.5 ms, p95 267.5 ms vs 39.6 ms, 100 calls per target per region
   https://github.com/manjeetsharma0796/agon-dev/actions/runs/35996972613
 - Finding: deploying near our users is the wrong instinct by 5.8x. Helius p50 is 136.3 ms from
   India against 23.5 ms from the US, p95 267.5 against 39.6, and the Cloudflare edge that Workers
@@ -273,21 +273,21 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: none, it is a setting and not code, so it is measured once and cheap
 
 ### T-E01, Demo script and the committed benchmark scenario list
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-e01-demo-scenarios
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/8
 - Depends-on: none
 - Touches: docs/demo-script.md, benchmark/scenarios/
 - Serves: UX (judged) ; Functionality (judged)
 - Acceptance: a 3-minute script with every beat timed; 100 scenarios written and committed before the first benchmark run, split 40 normal trades inside the profile, 30 dangerous tokens (live freeze authority, permanent delegate, no sell route), 30 rule breaks (4x usual size, past usual stop, prompt injection); the commit hash recorded for the published posts
-- Evidence: <commit hash of benchmark/scenarios/>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/8
 - Kill criterion: none. Anything not in the script is a candidate to cut at each checkpoint
 
 ### T-E02, Beta waitlist live
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/21 | Owner: Prithwish | Branch: feature/t-e02-waitlist
+- Status: blocked, see OP-18
 - Depends-on: T-B01
 - Touches: apps/web/app/waitlist/
 - Serves: Business plan (judged) ; CP3 gate needs 10+ reports
 - Acceptance: live URL collecting an email and a Solana address with 0 login; 1 confirmation email; recruiting starts the same day, because it is the slowest part of CP3
-- Evidence: <live URL, plus the first 5 signups, blocked on OP-18>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/21 and https://github.com/manjeetsharma0796/agon-dev/pull/28, no live URL recorded yet
 - Finding: hand-rolled base58 got the System Program address wrong, and it is the exact shape of
   bug that would have looked like a working validator. Decoding the leading '1's as digits and then
   adding 1 zero byte for each of them counts every one twice, so 11111111111111111111111111111111
@@ -308,14 +308,26 @@ CP1 evidence required: F1 on 2 wallets; F3; F5 on devnet; F6 in simulation; F11 
 and latency (a, b).
 
 ### T-E03, Thin end-to-end version on staging
-- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-e03-thin-e2e
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/38 | Owner: Prithwish | Branch: feature/t-e03-thin-e2e
 - Depends-on: T-C01, T-C02
 - Touches: apps/web/app/report/, apps/web/app/api/, packages/mcp/src/index.ts
 - Serves: Functionality (judged) ; UX (judged)
 - Acceptance: on staging, pasting an address returns a report built from fixtures, `check_trade`
   returns a fixture verdict, and arming is a no-op on devnet; all 3 legs work end to end by day 2,
   so integration bugs show on day 2 and not day 18
-- Evidence: <staging URL, plus the 3 legs in a recording>
+- Evidence: <staging URL blocked on OP-17; the 3 legs run locally, covered by 13 tests>
+- Finding: the point of doing this on day 2 proved itself on day 1. Wiring the MCP dispatch to the
+  same functions the API routes serve created a project reference cycle, apps/web to packages/mcp
+  and back, which `tsc -b` refuses. It did not show locally, because dist/ was already built from
+  an earlier run, and only appeared on a clean checkout of the stripped tree. That is the exact
+  shape of bug this task exists to surface, and it surfaced 16 days early. Second: the 3 frozen
+  contracts held with 0 changes. get_report, check_trade and arm_rule all round trip from fixture
+  to handler to HTTP to MCP without a single shape edit, and a test asserts the agent side and the
+  web side return byte-identical answers, so they cannot drift. Third: arming cannot return its own
+  contract honestly. ArmedRule names a Swig role id and a Jupiter order id, both claims that
+  something exists on chain, and nothing does, so the leg refuses with 503 rather than answering
+  with the fixture. A no-op that answers is a fabricated verification on the one path that grants
+  spend authority.
 - Kill criterion: none. Monad's worst bugs only appeared end to end (T1.7, T6.8)
 
 ### T-A01, Balance-change decoder
@@ -341,7 +353,7 @@ and latency (a, b).
 - Kill criterion: fallback is Jupiter-routed swaps only, with the covered share printed on the report ("based on 83% of your swaps")
 
 ### T-C04, Our own mint check
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/26 | Owner: Prithwish | Branch: feature/t-c04-mint-check
+- Status: done
 - Depends-on: T-C01, T-C02
 - Touches: packages/guard/src/mint-check.ts
 - Serves: Functionality (judged) ; F3
@@ -349,7 +361,7 @@ and latency (a, b).
   transfer hook, transfer fee) read in exactly 1 `getMultipleAccounts` call; mint and freeze
   authority are never cached; RugCheck is enrichment only and is never on the deciding path; an
   unreachable RPC returns `block` with "Couldn't verify this token. Not safe to proceed."
-- Evidence: <PR link, plus the 30-mint test run>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/26, 30 mints in 1 call at slot 450012073, 6 block and 24 pass
 - Finding: the extension being present is not the danger being present. 5 of the 30 recorded mints,
   17 percent, carry the Token-2022 `transferHook` extension with `programId: null`, which means no
   hook is installed. A check that treats the extension list as the finding blocks 5 real tokens for
@@ -366,13 +378,13 @@ and latency (a, b).
 - Kill criterion: none, this is the primary path
 
 ### T-F03, F3 spike, token risk check on 30 labelled mints
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/31 | Owner: Prithwish | Branch: feature/t-f03-token-risk
+- Status: done
 - Depends-on: T-C04
 - Touches: spikes/F03/
 - Serves: Functionality (judged) ; CP1 gate
 - Acceptance: our own check flags all 20 dangerous mints (10 with live freeze or mint authority,
   10 Token-2022 with permanent delegate, transfer hook or transfer fee) and 0 of the 10 blue chips
-- Evidence: spikes/F3/result.json at a commit, measured at slot 450037708
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/31, plus spikes/F3/result.json. FAILED: 10/20 dangerous, 2/10 blue chips. Awaiting the CP1 decision
 - Finding: FAIL, 10 of 20 dangerous flagged and 2 of 10 blue chips flagged, and neither miss is a
   bug in the code. The 2 blue chips are USDC and USDT, flagged for a live freeze authority, which
   is the same trait the dangerous set is labelled by, so 1 rule cannot both disqualify that trait
@@ -461,7 +473,7 @@ and latency (a, b).
 - Kill criterion: fallback is our local daemon polling price and executing through Swig, and the UI must then say "runs while your computer is on". The pitch loses 24/7 execution
 
 ### T-B03, Benchmark harness on a pinned mainnet fork
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-b03-harness
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/15
 - Depends-on: T-B01, T-E01
 - Touches: benchmark/runner/, benchmark/arms/
 - Serves: Functionality (judged) ; F9
@@ -469,7 +481,7 @@ and latency (a, b).
   mainnet fork pinned to 1 slot, so every run sees identical prices and accounts; arms and
   metrics read from the committed scenario files; CI fails if anything under `benchmark/` or the
   demo path reads a fixture marked `synthetic: true`
-- Evidence: <PR link, plus 2 runs with identical verdicts>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/15, the plan only, no runner yet
 - Kill criterion: fallback is publishing only the deterministic half (guardrail verdicts on fixed trades) and dropping the live-agent comparison
 
 ---
@@ -672,7 +684,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: fallback is the local daemon polling price, and the UI says "runs while your computer is on"
 
 ### T-F09, F9 spike, benchmark reproducibility
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-f09-benchmark-repro
 - Depends-on: T-B03
 - Touches: spikes/F09/
 - Serves: Functionality (judged) ; CP2 gate
@@ -743,7 +755,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: never used for anything numeric, for deciding a task is done, for approving a merge or deploy, or for anything touching keys or funds. A Jev answer is an input to a rule, never the rule itself. Any use that misses its bar is cut at CP2, not extended
 
 ### T-B09, Stop the CI gates over-firing
-- Status: claimed 2026-09-24 | Owner: manjeetsharma0796 | Branch: feature/t-b09-gate-overfiring
+- Status: done
 - Depends-on: T-B01
 - Touches: .gitleaks.toml, .github/workflows/board.yml
 - Serves: Functionality (judged) ; unblocks T-A01 and T-E10, and every later PR carrying a fixture
@@ -751,12 +763,12 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   1 finding for each of 2 planted secrets, an 88-character Solana secret key and a uuid api key
   inside a recorded request URL; the frozen-contract gate fires on 0 of 2 PRs that only add a module
   under packages/core, and on 1 of 1 that changes one of the 3 contract files
-- Evidence: <the 4 measured scans and the 3 gate checks, in the PR>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/37, plus the 4 measured scans: 0 findings on the addresses, and 1 each for a planted secret key, a planted uuid api key, and the same base58 under apiKey
 - Kill criterion: none. A gate that cries wolf teaches everyone to tick the box without reading,
   which is worse than no gate
 
 ### T-E12, Build in public, weekly
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-e12-x-plan
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/13
 - Depends-on: T-B01
 - Touches: docs/plans/x-plan.md
 - Serves: Potential impact (judged) ; Business plan (judged) ; share rate
@@ -766,7 +778,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   the 1-command rerun; 0 posts naming a person's wallet, habits or P&L without written consent, 0
   "copy this wallet" or anything reading as a recommendation, and 0 token, points or airdrop
   teasers; user share cards posted only by the user, or by us with written consent
-- Evidence: <docs/plans/x-plan.md with the post links and their commit hashes>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/13
 - Kill criterion: none. It feeds 3 of the 6 judged criteria, and the rules do not restrict marketing or real users (rules s.8)
 
 ### T-E10, Failure-message catalogue
