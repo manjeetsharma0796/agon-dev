@@ -209,12 +209,38 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: none, a frozen contract is why the tracks do not block each other
 
 ### T-B02, Release job, dev to the public main by allowlist
-- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-b02-release
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/17 | Owner: Prithwish | Branch: feature/t-b02-release
 - Depends-on: T-B01, OP-7
 - Touches: .github/workflows/release.yml, .publicinclude, scripts/release.mjs
 - Serves: Open source (judged)
 - Acceptance: a `release-*` tag on dev copies only allowlisted paths into a clean public checkout, then installs, builds and passes tests on the stripped tree; 0 of 6 planted internal markers survive (TASKS.md, OPERATOR_TODO.md, FEASIBILITY.md, `OP-`, `.claude`, an internal URL); 1-click web rollback documented; releases run at least 1 per day during a hackathon
-- Evidence: <link to the first release run>
+- Evidence: <link to the first release run, blocked on OP-7>
+- Finding: 2 of the 3 release legs were dead on arrival and nothing said so, because the job had
+  never been run. The stripped tree failed `pnpm build` with TS5083 on a missing tsconfig.json and
+  failed `pnpm test` with "No test files found, exiting with code 1": .publicinclude allowlisted
+  tsconfig.base.json but not tsconfig.json, and not vitest.config.ts, so the 9 project references
+  and the 3 passWithNoTests projects both vanished from the public tree. 2 allowlist lines fixed
+  the build leg. The marker gate was the T-B01 trap again, a gate quiet on a clean tree and never
+  proven to bite: neutering findInternalMarkers now fails 6 of the 9 cases in
+  scripts/release.test.mjs, so the 6 planted markers are measured and not assumed. Also
+  .publicinclude promised .github/workflows/public-ci.yml, which did not exist, so the public repo
+  would have shipped with 0 CI next to a README that calls tests the evidence. The sharpest one
+  came from reviewing the fix: CHANGELOG-latest.md is built from dev's commit subjects during
+  --push, after --check has already passed, and PR #9 is open titled "Write the measured provider
+  limits into OP-2, OP-3 and OP-4", so the next release would have published an OP- marker through
+  the 1 file the gate never saw. A gate that runs at the wrong moment is worth the same as a gate
+  that does not run. Third dead gate, same shape: every package's dist/ and tsconfig.tsbuildinfo
+  were published, and a published tsbuildinfo tells `tsc -b` on the stripped tree that all 9
+  projects are already up to date, so the step whose only job is proving the public tree compiles
+  compiled nothing and passed. `tsc -b --dry` said "is up to date" for 9 of 9 before the fix and
+  "a non-dry build would build" for 9 of 9 after it. The exclusion has to run inside cpSync and not
+  only on the glob, because `apps/**` yields `apps/web` itself and a recursive copy of a directory
+  carries whatever is in it. Then the gate earned itself inside an hour: rebasing onto the dev that
+  had just taken T-C01 and T-C02, it found 5 live `OP-<n>` references in published source, 1 of
+  them in a string printed to whoever runs the recorder. It also found that the published suite
+  failed 6 of 17 on ENOENT because fixtures/ was not allowlisted, which is worse than shipping no
+  tests: it tells a judge who cloned the repo that the code is broken. All 3 legs now pass end to
+  end, 0 of 6 markers and 17 of 17 tests on the stripped tree. Only the push is unproven, on OP-7.
 - Kill criterion: none, judges only see the public repo
 
 ### T-C02, Record and replay wrapper with per-call timings

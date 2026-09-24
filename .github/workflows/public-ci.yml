@@ -1,0 +1,33 @@
+name: ci
+
+# The one workflow that reaches the public repo, listed in .publicinclude. Judges clone main and
+# read the badge, so the tests they are told are the evidence have to actually run on the tree they
+# cloned. No keys, no fixtures that need them: the public suite is the offline suite.
+#
+# It is skipped on the private repo, where gates.yml already covers the same ground on every push.
+# The condition reads the repo's own visibility rather than naming either repo, because this file is
+# published and a private repo name in the public tree is the leak the release gate exists to stop.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    if: ${{ !github.event.repository.private }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm test -- --reporter=dot
