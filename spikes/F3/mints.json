@@ -1,7 +1,7 @@
 {
   "selected": "2026-09-24, before the spike ran",
   "source": "Jupiter top organic score 24h, first 100, plus the majors a Solana trader would name. Labels are the objective on-chain trait, read once at selection time and re-read by the spike.",
-  "note": "USDC and USDT are in the blue chips on purpose. They are the 2 largest stablecoins on Solana and leaving them out because they might fail would be choosing the test set to fit the answer.",
+  "note": "USDC and USDT are in the blue chips on purpose. They are the 2 largest stablecoins on Solana and leaving them out because they might fail would be choosing the test set to fit the answer. cbBTC moved from dangerousAuthority to blueChip at CP1 on 2026-09-24, when the threshold changed to block seizure rather than freezing. It was the only mint in the seizure group with no permanent delegate.",
   "blueChip": [
     {
       "mint": "So11111111111111111111111111111111111111112",
@@ -28,7 +28,11 @@
       "symbol": "BONK",
       "why": "established memecoin, both authorities revoked"
     },
-    { "mint": "4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R", "symbol": "RAY", "why": "Raydium" },
+    {
+      "mint": "4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R",
+      "symbol": "RAY",
+      "why": "Raydium"
+    },
     {
       "mint": "jtojtomepa8beP8AuQc6eXt5FriJwfFMwQx2v2f9mCL",
       "symbol": "JTO",
@@ -48,6 +52,12 @@
       "mint": "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn",
       "symbol": "jitoSOL",
       "why": "largest LST; mint authority is live and has to be, an LST cannot exist without it"
+    },
+    {
+      "mint": "cbbtcf3aa214zXHbiAZQwf4122FBYbraNdFqgw4iMij",
+      "symbol": "cbBTC",
+      "why": "live freeze and mint authority; Coinbase wrapped BTC, reputable and still carries the trait",
+      "note": "Relabelled at CP1 on 2026-09-24. Coinbase's wrapped BTC: a freeze authority and a live mint authority, no permanent delegate, so nothing can take the position. Same category as USDC, which is why it belongs here and not in the seizure set."
     }
   ],
   "dangerousAuthority": [
@@ -75,11 +85,6 @@
       "mint": "XsoCS1TfEyfFhfvj8EtZ528L3CaKBDBRqRapnBbDF2W",
       "symbol": "SPYx",
       "why": "live freeze and mint authority; a tokenised equity"
-    },
-    {
-      "mint": "cbbtcf3aa214zXHbiAZQwf4122FBYbraNdFqgw4iMij",
-      "symbol": "cbBTC",
-      "why": "live freeze and mint authority; Coinbase wrapped BTC, reputable and still carries the trait"
     },
     {
       "mint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
