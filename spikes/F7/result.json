@@ -1,0 +1,57 @@
+{
+  "id": "F7",
+  "pass": false,
+  "measured": "clause 1 of 4 answered: Swig has a native expiry, 7 of 7 SDK checks as expected. Clauses 2 to 4 need a transaction to land on devnet and there is no funded key, so 0 runs happened and manageAuthority was observed in 0 of 0",
+  "date": "2026-09-24",
+  "commit": "bd1c369bc5058f2259180b8823a9a3258f5d3384",
+  "nativeExpiryExists": true,
+  "versions": {
+    "classic": "2.1.0",
+    "lib": "2.1.0",
+    "coder": "2.1.0"
+  },
+  "checks": [
+    {
+      "question": "Does the wrapper SDK expose any expiry concept?",
+      "answer": false,
+      "asExpected": true
+    },
+    {
+      "question": "Does the protocol lib define a session-based authority?",
+      "answer": true,
+      "asExpected": true
+    },
+    {
+      "question": "Does that authority carry a slot the session expires at?",
+      "answer": true,
+      "asExpected": true
+    },
+    {
+      "question": "And a ceiling on how long a session may last?",
+      "answer": true,
+      "asExpected": true
+    },
+    {
+      "question": "Can a session be created for a separate key, with a duration?",
+      "answer": true,
+      "asExpected": true
+    },
+    {
+      "question": "Is the session key a parameter of createSession rather than its signer?",
+      "answer": true,
+      "asExpected": true
+    },
+    {
+      "question": "Does the coder, the lowest layer, know about session expiration?",
+      "answer": true,
+      "asExpected": true
+    }
+  ],
+  "clauses": {
+    "native expiry field checked and recorded": "done",
+    "pre-signed removal lands after expiry, next agent transaction fails": "not run, no funded devnet key",
+    "earlier manual revoke leaves the pre-signed transaction harmless": "not run, no funded devnet key",
+    "agent key held manageAuthority in 0 of the runs": "not run, 0 runs"
+  },
+  "notes": "Swig has a native expiry: a session based authority carries an expirySlot and a maxDuration, and a session is created for a separate key with a duration. That makes T-D02s pre-signed transaction and durable nonce potentially unnecessary. See README.md in this directory."
+}

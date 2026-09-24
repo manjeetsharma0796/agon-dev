@@ -343,7 +343,7 @@ and latency (a, b).
 - Kill criterion: none, F1 is existential
 
 ### T-F01a, F1 spike on 2 wallets, for CP1
-- Status: blocked, see OP-20
+- Status: blocked, see OP-23
 - Depends-on: T-A01
 - Touches: spikes/F1/, scripts/board.mjs
 - Serves: Functionality (judged) ; CP1 gate
@@ -743,7 +743,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: fallback is no automatic expiry, a short recurring window instead, and the UI says "no end date: revoke from your wallet". Never fall back to giving the agent admin rights
 
 ### T-F07, F7 spike, pre-signed expiry
-- Status: claimed 2026-09-25 | Owner: Prithwish | Branch: feature/t-f07-presigned-expiry
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/83 | Owner: Prithwish | Branch: feature/t-f07-presigned-expiry
 - Depends-on: T-D02
 - Touches: spikes/F07/
 - Serves: UX (judged) ; CP2 gate
@@ -751,11 +751,28 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   answer; then the pre-signed removal lands after expiry and the next agent transaction fails; an
   earlier manual revoke still works and leaves the pre-signed transaction harmless; the agent key
   held `manageAuthority` in 0 of the runs
-- Evidence: <spikes/F07/result.json at a commit>
+- Evidence: spikes/F7/result.json at a commit; clauses 2 to 4 need a funded devnet key, see OP-19
+- Finding: Swig already has a native expiry, and T-D02 may not be needed. `@swig-wallet/lib`
+  defines a session based authority carrying `expirySlot` and `maxDuration`, created for a separate
+  key with `createSession({ roleId, newSessionKey, sessionDuration })`. So the shape Agon wants
+  exists in the program: give the agent a session key rather than an authority of its own, and when
+  the session expires it simply cannot sign. No pre-signed transaction, no durable nonce, no daemon
+  that has to be running at the right moment, and no bearer instrument to steal. The reason nobody
+  saw it is that the wrapper hides it: `@swig-wallet/classic`, which packages/chain imports and
+  which T-D01 and T-D02 were written against, exposes no expiry concept at all and its Actions
+  builder has 26 permission methods with no expiry among them. Checking only the wrapper is exactly
+  how a team concludes there is no native expiry and builds one, which is what happened, and it is
+  why this acceptance line says to check the protocol-level SDK first. The decisive follow-up is
+  whether a session key can renew itself, because a self renewing session is not an expiry: the SDK
+  says it cannot, since `getCreateSessionV1BaseAccountMetasWithAuthority` puts the authority in the
+  signer slot and the new session key is a parameter rather than a signer, but that is inference
+  from a type declaration and not proof from the program, and proving it needs devnet. 7 of 7 SDK
+  checks as expected against 2.1.0, versions recorded so a future release cannot quietly change the
+  answer.
 - Kill criterion: fallback is a short recurring window and no end date in the UI
 
 ### T-D03, Kill switch
-- Status: blocked, see OP-20
+- Status: blocked, see OP-19
 - Depends-on: T-D01
 - Touches: packages/chain/src/kill-switch.ts, packages/cli/src/commands/revoke.ts
 - Serves: UX (judged) ; Novelty (judged)
