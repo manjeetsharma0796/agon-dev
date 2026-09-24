@@ -680,7 +680,11 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: fallback is the local daemon polling price, and the UI says "runs while your computer is on"
 
 ### T-F09, F9 spike, benchmark reproducibility
+<<<<<<< HEAD
 - Status: open
+=======
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/43 | Owner: Prithwish | Branch: feature/t-f09-benchmark-repro
+>>>>>>> 98793aa (T-F09: move the row to in-review)
 - Depends-on: T-B03
 - Touches: spikes/F09/
 - Serves: Functionality (judged) ; CP2 gate
