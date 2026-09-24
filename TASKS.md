@@ -1082,8 +1082,9 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 - Acceptance: installs, registers the MCP server with the user's assistants and starts the
   daemon in 1 command; cold start under 300 ms, asserted in CI; published to npm with
   provenance
-- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/76. `agon report` runs the whole
-  path on a real wallet: 100 transactions read, 77 of 80 swaps decoded at 96%, 28 closed trades,
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/76 and the follow-up adding
+  `agon check`, which refuses a real trade with its numbers and exits 1, pasted in OP-22.
+  `agon report` runs the whole path on a real wallet: 100 transactions read, 77 of 80 swaps decoded at 96%, 28 closed trades,
   3 rules mined, and it replays offline from a recorded fixture with 0 keys. The acceptance
   itself is NOT met: npm publish and MCP registration need T-C07 and T-C08
 - Finding: the first end to end run threw immediately, and no isolated test could have caught
@@ -1100,6 +1101,11 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
   accounts rather than owners, and gitleaks read 885 public base58 addresses as generic API
   keys, so `tokenAccount`, `fromTokenAccount` and `toTokenAccount` join the match scoped
   allowlist. Re-verified that a planted key in that same fixture still fails the scan
+- Finding 3: the slice only refuses once both halves are wired, and wiring them showed the guard
+  cannot say `pass` from the CLI at all today. With no quote and no injection screen, 2 of its 5
+  answers are "not read", and unscreened text is `unsure`, which is not a soft pass. That is the
+  contract behaving correctly and it means `agon check` is a refusal machine until the quote and
+  the screen are wired, which is worth knowing before a demo is built around a green verdict
 - Kill criterion: none, the MCP server is how any agent reaches the guard
 
 ### T-E08, Onboarding

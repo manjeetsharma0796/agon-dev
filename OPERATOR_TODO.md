@@ -381,8 +381,43 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   once, on devnet, with no UI: read a real wallet, decode its swaps, mine one rule, ask check_trade
   about one trade, and have it refuse with a reason. Whatever it takes to make that run is the
   priority, and whatever it does not touch is not.
-- Done when: 1 command produces 1 refusal with a reason, against a real mainnet-fork wallet, and
-  the output is pasted in this row. Read OP-20 before reaching for devnet.
+- Status note 2026-09-25: the read-only half is done and pasted below. `agon check` runs every
+  layer once in 1 command: read a real mainnet wallet, decode its swaps from balance changes, build
+  the FIFO ledger, mine the rules, read the mint's authorities off the chain, and refuse a trade
+  with the numbers behind the refusal. Exit code 1, because a script must not read a refusal as
+  permission.
+
+  ```
+  Wallet HLnpSz9h2S4hiLQ43rnSD9XkcUThA7B8hQMKmDaiTLcC
+  Mined from 16 closed trades: stop none, size 161695414, hold 1
+  Proposed: buy 2000000000 base units of EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+
+  Verdict: block
+    size-vs-median: 12.4x your median size of 0.162 SOL, past your 2x limit. Stopped. Send
+      0.323 SOL or less, or raise the limit. (12.4 against 2 x-median)
+    quote-missing: No quote was taken for this trade, so what the fill costs and how far it
+      moves the price are both unknown. Not safe to proceed. Quote the route and check again.
+    text-not-screened: This token's name and description were not screened, so an instruction
+      hidden in them would have reached your agent unread. Not safe to proceed.
+    mint-freeze-authority: Freeze authority is live on this token, held by
+      7dGbd2QZcCKcTndnHcTL8q7SMVXAkp688NTQYwrRCrar. That key can freeze your balance in place at
+      any time, including while you are trying to sell.
+    mint-authority-live: The supply of this token can still be increased by
+      BJE5MMbqXjVwjAF7oxwPYXnTXDyspzZyt4vwenNw5ruG.
+
+  Stamped check-trade/1+mint-check/1 at slot 450115322.
+  ```
+
+  What this does not prove, stated rather than left to be assumed. Nothing was signed and nothing
+  was armed: this is the guard refusing, not a Swig cap rejecting a transaction on chain, which is
+  still F5 and still OP-20. The quote and the injection screen were both skipped, which is why 2 of
+  the 5 reasons are "not read" rather than a finding, and it is why this command can never print
+  `pass`. The mint reasons are the F3 result showing up in the product: USDC has a live freeze
+  authority, so the guard blocks it, and that is the existential question CP1 has to answer. The
+  numbers moved between 2 runs an hour apart, 28 closed trades to 16, because the wallet kept
+  trading; the recording is stamped so a rerun is comparable.
+- Done when: the arming half also runs, 1 command producing 1 on-chain rejection against a real
+  mainnet-fork wallet, with the output pasted here. Read OP-20 before reaching for devnet.
 
 ### OP-24, Reconcile CLAUDE.md's "3 questions" rule with T-B08's review-escalation questions
 - Status: open
