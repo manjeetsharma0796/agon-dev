@@ -1,30 +1,71 @@
 name: release
 
-# dev -> the public main, by allowlist. Runs on a release-* tag on dev.
-# main is never merged into, never committed to by hand, and never merged back into dev.
-# Code moves left to right only.
+# dev -> the public main, by allowlist. main is never merged into, never committed to by hand, and
+# never merged back into dev. Code moves left to right only.
+#
+# Three ways in, one path through:
+#   1. a release-* tag pushed on dev, the ordinary release
+#   2. the daily schedule, because "at least 1 release per day" is an acceptance number and not a
+#      habit somebody has to remember
+#   3. Run workflow in the Actions tab, which is the rollback
+#
+# ROLLBACK, 1 click from the web UI:
+#   Actions -> release -> Run workflow -> put the last good release-* tag in "rollback_to" -> Run.
+# That republishes the tree of that tag as a new commit on the public main. It rolls forward, so
+# nothing is rewritten and the bad release stays in the history where it can be read. Find the tag
+# in the Releases list of the public repo, or in CHANGELOG-latest.md at the top of the public tree.
 
 on:
   push:
     tags: ['release-*']
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      rollback_to:
+        description: 'ROLLBACK: a previous release-* tag to republish. Leave empty to release dev as it is now.'
+        required: false
+        type: string
+
+# One release at a time. Two runs racing would fight over the public main, and the loser would
+# quietly republish an older tree over a newer one.
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 permissions:
-  contents: read
+  contents: write # the scheduled and dispatched runs tag dev; a tag push only needs read
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Tag must be on dev
+      - name: Work out what is being released
+        id: plan
         run: |
           set -euo pipefail
-          git merge-base --is-ancestor "$GITHUB_SHA" origin/dev \
-            || { echo "::error::This tag is not on dev. Releases come from dev only."; exit 1; }
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "ref=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          else
+            rollback="${{ inputs.rollback_to }}"
+            echo "ref=${rollback:-dev}" >> "$GITHUB_OUTPUT"
+            # Unique per run, so a second rollback on the same day does not collide with the first.
+            echo "tag=release-$(date -u +%Y-%m-%d).${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.plan.outputs.ref }}
+          fetch-depth: 0
+
+      - name: What we release must be on dev
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin dev
+          git merge-base --is-ancestor HEAD origin/dev \
+            || { echo "::error::${{ steps.plan.outputs.ref }} is not on dev. Releases come from dev only."; exit 1; }
 
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
@@ -35,26 +76,29 @@ jobs:
       - name: Copy only the allowlisted paths into a clean tree
         run: node scripts/release.mjs --out /tmp/public
 
-      - name: No internal file survived
-        # An allowlist, not a denylist, so a new internal file stays private by default. This step
-        # is the belt to that braces: it fails on the marker, wherever it came from.
-        run: |
-          set -euo pipefail
-          cd /tmp/public
-          for p in TASKS.md OPERATOR_TODO.md FEASIBILITY.md CLAUDE.md .claude spikes docs/plans; do
-            [ ! -e "$p" ] || { echo "::error::$p reached the public tree."; exit 1; }
-          done
-          if grep -rIlE '\bOP-[0-9]+\b|TASKS\.md|docs/plans/' --exclude-dir=node_modules . ; then
-            echo "::error::An internal marker survived in the files above."
-            exit 1
-          fi
+      - name: No internal marker survived
+        # An allowlist, not a denylist, so a new internal file stays private by default. This is the
+        # belt to those braces: it fails on the marker, wherever it came from. The same function is
+        # what scripts/release.test.mjs plants all 6 markers against, so this step is proven to bite
+        # rather than trusted because it is quiet.
+        run: node scripts/release.mjs --check /tmp/public
 
       - name: The stripped tree must work on its own
         # main has to work, not just look tidy. Judges clone it and run it.
         working-directory: /tmp/public
         run: |
+          set -euo pipefail
           pnpm install --no-frozen-lockfile
           pnpm build
+          tests=$(find . -type f \( -name '*.test.ts' -o -name '*.test.mjs' \) -not -path './node_modules/*' | wc -l)
+          if [ "$tests" -eq 0 ]; then
+            echo "::error::The public tree has 0 test files. Tests are the evidence judges read, so"
+            echo "::error::a public repo with none is not shippable. The internal suite lives in"
+            echo "::error::scripts/, which is not allowlisted. This clears when the first"
+            echo "::error::packages/*/**/*.test.ts lands."
+            exit 1
+          fi
+          echo "public tree: $tests test file(s)"
           pnpm test -- --reporter=dot
 
       - name: Secret scan the public tree
@@ -64,9 +108,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Tag dev with this release
+        # The scheduled and dispatched runs have no tag yet, so the release stays findable on dev.
+        # Pushed with GITHUB_TOKEN, which by design does not start another workflow run, so this
+        # cannot loop back into the release-* trigger above.
+        if: github.event_name != 'push'
+        run: |
+          set -euo pipefail
+          git tag "${{ steps.plan.outputs.tag }}"
+          git push origin "${{ steps.plan.outputs.tag }}"
+
       - name: Push one release commit to the public repo
         env:
           PUBLIC_REPO_TOKEN: ${{ secrets.PUBLIC_REPO_TOKEN }}
+          RELEASE_TAG: ${{ steps.plan.outputs.tag }}
           TAGGER: ${{ github.actor }}
         run: node scripts/release.mjs --push /tmp/public
 

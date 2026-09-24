@@ -18,11 +18,17 @@ LICENSE
 .env.example
 docs/public/**
 
-# Workspace files the stripped tree needs to install and build on its own.
+# Workspace files the stripped tree needs to install and build on its own. Measured, not guessed:
+# without tsconfig.json `pnpm build` is TS5083 on the missing solution file, and without
+# vitest.config.ts `pnpm test` exits 1 with "No test files found" because the three projects that
+# carry passWithNoTests are gone. Both legs of the release job failed on the stripped tree until
+# these two lines existed.
 package.json
 pnpm-workspace.yaml
 pnpm-lock.yaml
+tsconfig.json
 tsconfig.base.json
+vitest.config.ts
 knip.json
 
 # One public CI workflow, so judges see the tests run on the repo they cloned.

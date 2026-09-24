@@ -214,7 +214,17 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Touches: .github/workflows/release.yml, .publicinclude, scripts/release.mjs
 - Serves: Open source (judged)
 - Acceptance: a `release-*` tag on dev copies only allowlisted paths into a clean public checkout, then installs, builds and passes tests on the stripped tree; 0 of 6 planted internal markers survive (TASKS.md, OPERATOR_TODO.md, FEASIBILITY.md, `OP-`, `.claude`, an internal URL); 1-click web rollback documented; releases run at least 1 per day during a hackathon
-- Evidence: <link to the first release run>
+- Evidence: <link to the first release run, blocked on OP-7>
+- Finding: 2 of the 3 release legs were dead on arrival and nothing said so, because the job had
+  never been run. The stripped tree failed `pnpm build` with TS5083 on a missing tsconfig.json and
+  failed `pnpm test` with "No test files found, exiting with code 1": .publicinclude allowlisted
+  tsconfig.base.json but not tsconfig.json, and not vitest.config.ts, so the 9 project references
+  and the 3 passWithNoTests projects both vanished from the public tree. 2 allowlist lines fixed
+  the build leg. The marker gate was the T-B01 trap again, a gate quiet on a clean tree and never
+  proven to bite: neutering findInternalMarkers now fails 6 of the 9 cases in
+  scripts/release.test.mjs, so the 6 planted markers are measured and not assumed. Also
+  .publicinclude promised .github/workflows/public-ci.yml, which did not exist, so the public repo
+  would have shipped with 0 CI next to a README that calls tests the evidence.
 - Kill criterion: none, judges only see the public repo
 
 ### T-C02, Record and replay wrapper with per-call timings
