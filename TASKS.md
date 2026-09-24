@@ -446,7 +446,7 @@ and latency (a, b).
 - Kill criterion: none. If the cap does not hold on-chain the custody story is gone, see T-F05a
 
 ### T-F05a, F5 spike, 7 cases on devnet
-- Status: open
+- Status: claimed 2026-09-24 | Owner: manjeetsharma0796 | Branch: feature/t-f05a-swig-devnet
 - Depends-on: T-D01
 - Touches: spikes/F05/
 - Serves: Novelty (judged) ; CP1 gate
