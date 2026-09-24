@@ -324,7 +324,7 @@ and latency (a, b).
 - Kill criterion: none. Monad's worst bugs only appeared end to end (T1.7, T6.8)
 
 ### T-A01, Balance-change decoder
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-a01-decoder
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/23
 - Depends-on: T-C01, T-C02
 - Touches: packages/decoder/src/
 - Serves: Functionality (judged) ; F1
@@ -343,9 +343,9 @@ and latency (a, b).
 - Kill criterion: none, F1 is existential
 
 ### T-F01a, F1 spike on 2 wallets, for CP1
-- Status: claimed 2026-09-24 | Owner: manjeetsharma0796 | Branch: feature/t-f01a-decode-2-wallets
+- Status: blocked, see OP-20
 - Depends-on: T-A01
-- Touches: spikes/F01/, fixtures/golden/
+- Touches: spikes/F1/, scripts/board.mjs
 - Serves: Functionality (judged) ; CP1 gate
 - Acceptance: on 2 wallets, 50 of 50 randomly sampled transactions classified correctly, amounts
   exact to base units, realised P&L within 1% of a hand-computed FIFO ledger; share of swaps
@@ -402,7 +402,7 @@ and latency (a, b).
 - Kill criterion: RugCheck stays optional either way; a miss on the 20 is a bug to fix, not a scope cut
 
 ### T-C05, Jev client, question schema and the injection screen
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-c05-jev
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/27
 - Depends-on: T-C01, T-C02
 - Touches: packages/guard/src/jev/
 - Serves: Novelty (judged) ; F11
@@ -433,7 +433,7 @@ and latency (a, b).
 - Kill criterion: fallback is an LLM guard with a stricter threshold, or Kev-0.5B locally
 
 ### T-D01, Swig role creation and removal in packages/chain
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-d01-swig-role
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/39
 - Depends-on: T-C01
 - Touches: packages/chain/src/swig/
 - Serves: Novelty (judged) ; F5
@@ -510,7 +510,7 @@ and latency (a, b).
 - Kill criterion: fallback is our local daemon polling price and executing through Swig, and the UI must then say "runs while your computer is on". The pitch loses 24/7 execution
 
 ### T-B03, Benchmark harness on a pinned mainnet fork
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-b03-harness
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/15
 - Depends-on: T-B01, T-E01
 - Touches: benchmark/runner/, benchmark/arms/
 - Serves: Functionality (judged) ; F9
@@ -529,7 +529,7 @@ CP2 evidence required: F1 and F2 complete; F4; F5 in simulation; F6 on mainnet (
 F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, d, e).
 
 ### T-A02, FIFO P&L ledger
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-a02-fifo-quote-queues
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/64
 - Depends-on: T-A01
 - Touches: packages/decoder/src/pnl.ts
 - Serves: Functionality (judged) ; F1
@@ -668,7 +668,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: if (e) passes unexpectedly, numbers still stay on arithmetic. 1 lucky run is not evidence
 
 ### T-C07, MCP server, 4 tools and a stable list
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-c07-mcp
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/80 | Owner: Jishnu | Branch: feature/t-c07-mcp
 - Depends-on: T-C06
 - Touches: packages/mcp/src/
 - Serves: Functionality (judged) ; Open source (judged)
@@ -677,7 +677,27 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   `get_report` 2,000 and `check_trade` 400; every unsure or failed verdict hands back to the user
   with the reason and the numbers and 0 silent retries; `check_trade` is callable by any agent
   (Solana Agent Kit, GMGN agents) and that is proven with 1 third-party client
-- Evidence: <PR link, plus the third-party client transcript>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/80, plus the third-party client transcript in the PR
+  body. Measured on the fixture wallet the mcp and web suites already share: get_report 815 chars,
+  about 204 tokens, 9.8x headroom under the 2,000 budget; check_trade 315 chars, about 79 tokens,
+  5.1x headroom under the 400 budget. `check_trade`'s answer is still T-E03's fixture verdict, not
+  T-C06's arithmetic guard, which lands separately: this PR proves the shape and the transport are
+  correct and stay in budget, not that the verdict is right yet
+- Finding: T-E03's dispatch had no transport, so nothing actually spoke MCP; the 4-tool contract
+  test only proved the internal function existed. Meeting "callable by any agent" needed a real
+  `@modelcontextprotocol/sdk` `McpServer` registering all 4 tools straight from `toolContracts`,
+  then a plain SDK `Client`, the same package a third-party agent framework imports, listing them
+  and calling `check_trade` and `get_report` over an in-memory transport with 0 imports from this
+  repo beyond `@agon/core` to check the answer. `arm_rule` refuses with `isError: true` carrying
+  the exact `NotArmable` message, not a bare protocol error, so a third-party agent still gets the
+  reason and the numbers. Second: the release gate's `OP-\d+` marker scan reads test file comments
+  too, not only prose docs; writing "OP-1" in a code comment explaining why a fixture wallet is
+  used failed `scripts/release.test.mjs` inside `pnpm gates`, before any release tag, which is
+  what that gate is for. Third: `/code-review` at medium on the first commit caught a real drift
+  risk before it shipped, 4 hand-written `registerTool` calls in `TOOLS` order are a second copy
+  of the order this whole feature exists to keep stable, silently divergeable from `TOOLS` itself.
+  It now registers by iterating `TOOLS`, so there is exactly 1 ordered list, not 2 that happen to
+  agree today.
 - Kill criterion: none. monad T6.8: a 2.1M-token tool result broke every question
 
 ### T-C08, Local daemon
@@ -903,7 +923,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: never used for anything numeric, for deciding a task is done, for approving a merge or deploy, or for anything touching keys or funds. A Jev answer is an input to a rule, never the rule itself. Any use that misses its bar is cut at CP2, not extended
 
 ### T-B09, Stop the CI gates over-firing
-- Status: claimed 2026-09-24 | Owner: manjeetsharma0796 | Branch: feature/t-b09-gate-overfiring
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/37
 - Depends-on: T-B01
 - Touches: .gitleaks.toml, .github/workflows/board.yml
 - Serves: Functionality (judged) ; unblocks T-A01 and T-E10, and every later PR carrying a fixture
@@ -916,7 +936,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   which is worse than no gate
 
 ### T-E12, Build in public, weekly
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-e12-x-plan
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/13
 - Depends-on: T-B01
 - Touches: docs/plans/x-plan.md
 - Serves: Potential impact (judged) ; Business plan (judged) ; share rate
@@ -930,7 +950,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none. It feeds 3 of the 6 judged criteria, and the rules do not restrict marketing or real users (rules s.8)
 
 ### T-E10, Failure-message catalogue
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-e10-messages
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/32
 - Depends-on: T-C01
 - Touches: packages/core/src/messages.ts
 - Serves: UX (judged)
@@ -1113,7 +1133,7 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 - Kill criterion: fallback is poll-only triggers at 60 seconds, stated in the UI
 
 ### T-C11, Apply the CP1 decision: freezing is reported, seizure blocks
-- Status: claimed 2026-09-24 | Owner: manjeetsharma0796 | Branch: feature/t-c11-freeze-reports
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/68
 - Depends-on: T-C04, T-F03
 - Touches: packages/guard/src/mint-check.ts, packages/guard/src/mint-check.test.ts, spikes/F3/
 - Serves: Functionality (judged) ; CP1 decision on F3
