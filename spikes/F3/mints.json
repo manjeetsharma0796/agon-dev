@@ -1,0 +1,157 @@
+{
+  "selected": "2026-09-24, before the spike ran",
+  "source": "Jupiter top organic score 24h, first 100, plus the majors a Solana trader would name. Labels are the objective on-chain trait, read once at selection time and re-read by the spike.",
+  "note": "USDC and USDT are in the blue chips on purpose. They are the 2 largest stablecoins on Solana and leaving them out because they might fail would be choosing the test set to fit the answer.",
+  "blueChip": [
+    {
+      "mint": "So11111111111111111111111111111111111111112",
+      "symbol": "SOL",
+      "why": "the native asset"
+    },
+    {
+      "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "symbol": "USDC",
+      "why": "largest stablecoin; has live mint and freeze authority"
+    },
+    {
+      "mint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+      "symbol": "USDT",
+      "why": "second largest stablecoin; has live mint and freeze authority"
+    },
+    {
+      "mint": "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
+      "symbol": "JUP",
+      "why": "the aggregator we build on"
+    },
+    {
+      "mint": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+      "symbol": "BONK",
+      "why": "established memecoin, both authorities revoked"
+    },
+    { "mint": "4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R", "symbol": "RAY", "why": "Raydium" },
+    {
+      "mint": "jtojtomepa8beP8AuQc6eXt5FriJwfFMwQx2v2f9mCL",
+      "symbol": "JTO",
+      "why": "Jito governance"
+    },
+    {
+      "mint": "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
+      "symbol": "WIF",
+      "why": "established memecoin"
+    },
+    {
+      "mint": "HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3",
+      "symbol": "PYTH",
+      "why": "the oracle we read prices from"
+    },
+    {
+      "mint": "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn",
+      "symbol": "jitoSOL",
+      "why": "largest LST; mint authority is live and has to be, an LST cannot exist without it"
+    }
+  ],
+  "dangerousAuthority": [
+    {
+      "mint": "CASHx9KJUStyftLFWGvEVf59SGeG9sh5FfcnZMVPCASH",
+      "symbol": "CASH",
+      "why": "live freeze and mint authority"
+    },
+    {
+      "mint": "HiMSSzzwkZkrXJ4PGVJRdtfLaANeAztjjcgk5Dxe7Lwx",
+      "symbol": "HIMS",
+      "why": "live freeze and mint authority"
+    },
+    {
+      "mint": "Pren1FvFX6J3E4kXhJuCiAD5aDmGEb7qJRncwA8Lkhw",
+      "symbol": "ANTHROPIC",
+      "why": "live freeze and mint authority"
+    },
+    {
+      "mint": "2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH",
+      "symbol": "USDG",
+      "why": "live freeze and mint authority; a regulated stablecoin"
+    },
+    {
+      "mint": "XsoCS1TfEyfFhfvj8EtZ528L3CaKBDBRqRapnBbDF2W",
+      "symbol": "SPYx",
+      "why": "live freeze and mint authority; a tokenised equity"
+    },
+    {
+      "mint": "cbbtcf3aa214zXHbiAZQwf4122FBYbraNdFqgw4iMij",
+      "symbol": "cbBTC",
+      "why": "live freeze and mint authority; Coinbase wrapped BTC, reputable and still carries the trait"
+    },
+    {
+      "mint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+      "symbol": "NVDAx",
+      "why": "live freeze and mint authority; a tokenised equity"
+    },
+    {
+      "mint": "PreweJYECqtQwBtpxHL171nL2K6umo692gTm7Q3rpgF",
+      "symbol": "OPENAI",
+      "why": "live freeze and mint authority"
+    },
+    {
+      "mint": "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo",
+      "symbol": "PYUSD",
+      "why": "live freeze and mint authority; PayPal's stablecoin"
+    },
+    {
+      "mint": "Xsv9hRk1z5ystj9MhnA7Lq4vjSsLwzL2nxrwmwtD3re",
+      "symbol": "GLDx",
+      "why": "live freeze and mint authority; tokenised gold"
+    }
+  ],
+  "dangerousToken2022": [
+    {
+      "mint": "HTmQz7My6MehV7bjhJ6jde8nDND1yvsz68d24LP7YgUQ",
+      "symbol": "GP",
+      "why": "3.00% transfer fee"
+    },
+    {
+      "mint": "HcRLc9VDgjLeK154xDawfb1dmVJ98DoSqcwTHGqiDeJR",
+      "symbol": "ZCAT",
+      "why": "3.00% transfer fee"
+    },
+    {
+      "mint": "4rkGWJNSUPBcMicXMRAzohEyeJLFG8gUjwiWaz7Pddr3",
+      "symbol": "CRACKER",
+      "why": "3.00% transfer fee"
+    },
+    {
+      "mint": "DEW9dSN6QpWyNthphCpMmAbZP1Q4cEKR9xQXAri98WDP",
+      "symbol": "SI",
+      "why": "1.00% transfer fee"
+    },
+    {
+      "mint": "6HU4CmRb15C2nQDx8Ld2f2W2wTdmog6aZiiXdrT5Pzi8",
+      "symbol": "GROK",
+      "why": "3.00% transfer fee"
+    },
+    {
+      "mint": "7Qy2cXpdj4Fu2DUPVWdN3oogM3JSwLUV2LZaKVgVcPZh",
+      "symbol": "HYPERCAT",
+      "why": "3.00% transfer fee"
+    },
+    {
+      "mint": "2Ghxme9RXa2vatoRPGnQgNKCXNZy2N3X7PbH4kzxHYPE",
+      "symbol": "LEVERHYPPO",
+      "why": "3.00% transfer fee"
+    },
+    {
+      "mint": "HhXe2PbtXQHzZ5Ch46MBXf7rEbMgnYsCGaEhktyKGZNT",
+      "symbol": "SCHLONG",
+      "why": "3.00% transfer fee"
+    },
+    {
+      "mint": "72yxYmhLgDGwdyi2b9GjDynBB6VuG3kDxNKqDbzXh5bi",
+      "symbol": "WOW",
+      "why": "3.00% transfer fee"
+    },
+    {
+      "mint": "HMD6LV9hj6SdSKF4oTd7dYTVUhVL8MzYvPZYgb7BQSrW",
+      "symbol": "JIRACHI",
+      "why": "1.00% transfer fee"
+    }
+  ]
+}
