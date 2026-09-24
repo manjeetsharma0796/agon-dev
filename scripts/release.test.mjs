@@ -76,9 +76,16 @@ test('no build output is published, so the public build actually builds', () => 
   ).toEqual([])
 })
 
-test('a clean public tree passes, and says how many markers it checked', () => {
+test('the tree we would publish today is clean', () => {
+  // This one is not about the gate, it is about the repo, and it is the reason the gate is a test
+  // and not only a release step: a leak found at release time is found after the thing that
+  // cannot be unpublished has been published. If this is red, read the paths it prints. It is not
+  // the release tooling failing, it is a real internal marker sitting in a file that goes public,
+  // and the fix is to reword that line.
   const { code, out } = release('--check', clean)
-  expect(out).toContain('0 of 6 internal markers survived')
+  expect(out, `An internal marker is live in published source:\n${out}`).toContain(
+    '0 of 6 internal markers survived',
+  )
   expect(code).toBe(0)
 })
 
