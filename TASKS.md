@@ -453,7 +453,7 @@ and latency (a, b).
 - Kill criterion: none. If the cap does not hold on-chain the custody story is gone, see T-F05a
 
 ### T-F05a, F5 spike, 7 cases on devnet
-- Status: blocked, see OP-19
+- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-f05a-devnet
 - Depends-on: T-D01
 - Touches: spikes/F5/, scripts/board.mjs
 - Serves: Novelty (judged) ; CP1 gate
@@ -608,7 +608,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none. monad rebuilt full history on every request (T3.6) and switching later was a rewrite
 
 ### T-C06, check_trade guard, arithmetic first
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-c06-check-trade
 - Depends-on: T-C04, T-C05, T-A03
 - Touches: packages/guard/src/check-trade.ts
 - Serves: Functionality (judged) ; F4
@@ -647,7 +647,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: if (e) passes unexpectedly, numbers still stay on arithmetic. 1 lucky run is not evidence
 
 ### T-C07, MCP server, 4 tools and a stable list
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-c07-mcp
 - Depends-on: T-C06
 - Touches: packages/mcp/src/
 - Serves: Functionality (judged) ; Open source (judged)
@@ -677,13 +677,28 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none. Anything that can move funds fails closed
 
 ### T-D02, Rule expiry without admin rights
-- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-d02-rule-expiry
+- Status: blocked, see OP-19
 - Depends-on: T-D01
 - Touches: packages/chain/src/expiry.ts
 - Serves: UX (judged) ; F7
 - Acceptance: the agent key holds 0 `manageAuthority` at every point; at arm time the user
   signs a role-removal transaction against a durable nonce and the daemon submits it at expiry
-- Evidence: <PR link, plus the on-chain role read after expiry>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/72, 12 tests. The on-chain role read
+  after expiry needs a funded devnet key, see OP-19.
+- Finding: the durable nonce is what makes expiry possible without admin rights, and it is also
+  what makes the guarantee weaker than it sounds. A blockhash dies in about 2 minutes, so a
+  transaction signed at arm time is refused long before the rule is due and the rule would simply
+  never end; a nonce replaces it with an on-chain value that only moves when the transaction lands,
+  so the signature keeps. But that makes the signed bytes a bearer instrument: Solana has no "not
+  before slot N" field, so anyone holding them can submit early. Refusing to submit early is our
+  policy, not an enforcement, and the honest version of the claim is that the failure is in the
+  safe direction, because a stolen authorisation can only stop the agent trading and cannot extend
+  the rule, raise the cap or move funds. Second: expiry is best effort in the other direction too.
+  If the daemon is not running when the rule is due, nothing submits and the rule does not end, so
+  the user is told at arm time that they can always end it from their own wallet. Third: a user who
+  revokes by hand first leaves the authorisation unspendable, and reading that off a submit error
+  would report a working expiry as broken, so spentness is read from the nonce rather than from a
+  failure. Each of the 4 guards fails its own test when removed.
 - Kill criterion: fallback is no automatic expiry, a short recurring window instead, and the UI says "no end date: revoke from your wallet". Never fall back to giving the agent admin rights
 
 ### T-F07, F7 spike, pre-signed expiry
@@ -844,7 +859,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: share rate under 10% across 10+ reports at CP3, so it stops being a pitch line
 
 ### T-B08, Jev in our own dev workflow, a one-week trial
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-b08-jev-review
 - Depends-on: T-B01, OP-4
 - Touches: scripts/jev-review.mjs, .github/workflows/board.yml, docs/plans/jev-trial.md
 - Serves: unblocks nothing; it is a measured bet on our own speed, kept or cut at CP2
@@ -972,7 +987,7 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 - Kill criterion: if the LLM-guard baseline is not beaten, the speed claim does not get published at all
 
 ### T-C09, agon CLI
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-c09-cli
 - Depends-on: T-C07, T-C08
 - Touches: packages/cli/src/
 - Serves: UX (judged) ; Open source (judged)
