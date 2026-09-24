@@ -7,8 +7,16 @@ import { createRequire } from 'node:module'
 
 const { version } = createRequire(import.meta.url)('../package.json') as { version: string }
 
+const [command] = process.argv.slice(2)
+
 if (process.argv.includes('--version') || process.argv.includes('-v')) {
   console.log(version)
+} else if (command === 'revoke') {
+  // Dynamic, so the chain package and the Swig SDK are only loaded when somebody actually revokes.
+  // Importing them at the top would put the whole SDK inside the 300 ms cold start gate for every
+  // invocation, including `--version`.
+  const { runRevoke } = await import('./commands/revoke.js')
+  process.exitCode = await runRevoke(process.argv.slice(3))
 } else {
-  console.log(`agon ${version}. No commands yet, they arrive with T-C09.`)
+  console.log(`agon ${version}. Commands: revoke. The rest arrive with T-C09.`)
 }
