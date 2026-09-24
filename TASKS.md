@@ -235,7 +235,12 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
   compiled nothing and passed. `tsc -b --dry` said "is up to date" for 9 of 9 before the fix and
   "a non-dry build would build" for 9 of 9 after it. The exclusion has to run inside cpSync and not
   only on the glob, because `apps/**` yields `apps/web` itself and a recursive copy of a directory
-  carries whatever is in it.
+  carries whatever is in it. Then the gate earned itself inside an hour: rebasing onto the dev that
+  had just taken T-C01 and T-C02, it found 5 live `OP-<n>` references in published source, 1 of
+  them in a string printed to whoever runs the recorder. It also found that the published suite
+  failed 6 of 17 on ENOENT because fixtures/ was not allowlisted, which is worse than shipping no
+  tests: it tells a judge who cloned the repo that the code is broken. All 3 legs now pass end to
+  end, 0 of 6 markers and 17 of 17 tests on the stripped tree. Only the push is unproven, on OP-7.
 - Kill criterion: none, judges only see the public repo
 
 ### T-C02, Record and replay wrapper with per-call timings

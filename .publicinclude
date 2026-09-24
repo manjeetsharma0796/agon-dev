@@ -12,6 +12,18 @@ packages/**
 # The benchmark. The claims are only credible if a sceptic can rerun them from the public repo.
 benchmark/**
 
+# What the public tests read. Without these the published suite installs, builds, and then fails 6
+# of 17 on ENOENT, which is worse than shipping no tests: it tells a judge who cloned the repo that
+# the code is broken. The recorder redacts credentials on the way in, checked: the only api-key in
+# here is the literal `api-key=REDACTED`, and neither live key appears in any of the 44 files.
+#
+# fixtures/golden is deliberately NOT here. It is hand-verified ledgers from the team's own test
+# wallets, so publishing it publishes real addresses and their full trading history. It holds only
+# a README today, so this costs nothing yet; whoever lands the first golden ledger decides, and
+# leaving it out means the decision has to be made on purpose rather than by a glob.
+fixtures/contracts/**
+fixtures/recorded/**
+
 # Public docs and the quickstart.
 README.md
 LICENSE
