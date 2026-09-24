@@ -1,0 +1,16 @@
+# GitGuardian reads a high entropy base58 value under a field whose name contains "token" as a
+# Generic High Entropy Secret. In recorded provider responses that means Solana program ids, which
+# are public constants: they are printed in the SPL docs, in every explorer, and in this repo's own
+# config, which pins program ids on purpose.
+#
+# Scoped to the exact values, not to a path. A path ignore would exempt the whole fixture tree, and
+# a real credential landing there would then pass unseen. The same reasoning is in .gitleaks.toml,
+# where a path allowlist was tested and did let a planted secret through.
+version: 2
+
+secret:
+  ignored-matches:
+    - name: SPL Token program id, a public constant
+      match: TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA
+    - name: Token-2022 program id, a public constant
+      match: TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb
