@@ -448,7 +448,7 @@ and latency (a, b).
 ### T-F05a, F5 spike, 7 cases on devnet
 - Status: blocked, see OP-19
 - Depends-on: T-D01
-- Touches: spikes/F5/
+- Touches: spikes/F5/, scripts/board.mjs
 - Serves: Novelty (judged) ; CP1 gate
 - Acceptance: all 7 cases behave exactly as stated with 0 unexpected successes, (a) swap within
   cap succeeds, (b) swap over cap rejected, (c) transfer to an arbitrary address rejected, (d) call

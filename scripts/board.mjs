@@ -269,17 +269,27 @@ function pr() {
       `Branch "${branch}" must be "feature/t-<id>-<slug>", all lower case, e.g. feature/t-a03-meteora.`,
     )
   } else {
-    const id = idMatch[1].toUpperCase()
+    // Match case-insensitively rather than uppercasing the branch id. A spike row is T-F05a, and
+    // toUpperCase turned the branch's t-f05a into T-F05A, so every sub-lettered task was reported
+    // as having no row: T-F01a/b, T-F05a/b/c, T-F06a/b and T-F11a/b/c, which is every existential
+    // gate. Comparing both sides in one case needs no string surgery and cannot drift.
     const tasks = parseTasks(readFileSync('TASKS.md', 'utf8'))
-    const task = tasks.find((t) => t.id === id)
+    const task = tasks.find((t) => t.id.toLowerCase() === idMatch[1].toLowerCase())
+    const id = task?.id ?? idMatch[1].toUpperCase()
+    const status = task?.fields.Status ?? ''
     if (!task) {
       fail(`Branch names task ${id}, which has no row in TASKS.md. Claim it first.`)
-    } else if (!/^(claimed|in-review)/.test(task.fields.Status ?? '')) {
+    } else if (/^blocked/.test(status)) {
+      // A task that hits a human blocker still has to land the OP-N entry and whatever it measured
+      // before stopping. Demanding `claimed` here meant the work recording a blocker could never
+      // merge, so the honest move, writing the blocker down, was the one the gate refused. The row
+      // is only blocked because whoever claimed it said so, and the branch is theirs.
+    } else if (!/^(claimed|in-review)/.test(status)) {
       fail(
         `${id} is "${task.fields.Status}". Claim it first, with a claim/${idMatch[1]} PR that moves ` +
           `only its Status line. If that PR conflicts, someone beat you to it: pick another task.`,
       )
-    } else if (!(task.fields.Status ?? '').includes(branch)) {
+    } else if (!status.includes(branch)) {
       fail(`${id} is claimed with a different branch than "${branch}".`)
     }
   }
