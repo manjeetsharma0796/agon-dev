@@ -52,6 +52,16 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   holds 20 or more closed trades, including a few deliberate exceptions to a stop rule so the
   miner has exceptions to find. Spread the trades across days, not one session.
 - Done when: 5 wallets each show 20+ closed trades spanning 5 or more distinct days.
+- **Escalated 2026-09-24, and this is now the critical path.** Beats 1 and 2 of the demo, the first
+  50 seconds and the only part that is about the user's own history rather than about guardrails,
+  cannot be filmed without this. It is the one blocker on the board that writing code cannot
+  shorten. The arithmetic, from a board pass on 2026-09-24: submission closes 2026-10-11, 17 days
+  out, CP2 is 8 days out. Starting 2026-09-25 and trading daily, 5 distinct days lands 2026-09-29
+  at about 4 closed trades per wallet per day, which is comfortable. Every day nobody trades, the
+  required trades per day rises and the span shortens, and past roughly 2026-10-06 the 5 distinct
+  days cannot fit before submission at all. At that point beats 1 and 2 do not get cut for polish,
+  they become unfilmable. This is the exact failure the PRD cites from monad, whose demo wallet had
+  its whole history inside one 3-hour window.
 - Why it cannot wait: only time produces history. Monad's demo wallet had its whole history in
   one 3-hour window, which broke its period filters (T8.8, T8.9).
 
@@ -296,3 +306,33 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: `agon revoke` runs end to end against 3 devnet wallets that really hold Agon roles,
   and the roles are really gone afterwards, which is T-D03's Evidence line.
 
+### OP-18, Decide the shape of the World's Fair demo: read-only or live arming
+- Status: open
+- Owner: <unassigned>
+- Needed by: 2026-09-27, CP1, because it changes what Track E builds next
+- Unblocks: T-E06, T-E07, T-J01, and the shape of `docs/demo-script.md`
+- What exactly: the demo script currently assumes beat 4 arms a rule for real and beat 6 revokes it
+  from the wallet. Both need on-chain signing, which is gated behind F5, F6 and the T-D04
+  pre-mainnet checklist, and the PRD separately bars any arming UI until F5 and F6 pass. F5 has not
+  run, F6 has no spike directory, and the read-only beta is defined as signing nothing. So the
+  World's Fair cut is one of: (a) read-only, beats 1, 2, 3 and 7, with arming shown in simulation
+  and labelled as simulation; (b) live arming on devnet, which needs F5 to pass and a devnet
+  keypair, and is not the mainnet claim; (c) live arming on mainnet, which needs F5, F6, all 8
+  T-D04 boxes and 2 sign-offs, and OP-5 funds. Decide which, because Track E builds a different
+  screen for each and the demo script has to say the true thing on camera.
+- Done when: one option is written in the PRD Decisions log, `docs/demo-script.md` beat 4 and beat 6
+  match it, and T-E06 and T-E07 either have a target or are cut with a date and a reason.
+
+### OP-19, Film a thin working slice on devnet before building more
+- Status: open
+- Owner: <unassigned>
+- Needed by: 2026-09-27, CP1
+- Unblocks: nothing on paper, and the confidence of everyone reading the board
+- What exactly: about 9,000 lines have merged and no single path runs end to end yet. Every piece is
+  tested in isolation and nothing has been seen working together, which is how a repo arrives at a
+  demo week with 11 green components and no demo. Pick the shortest path that touches every layer
+  once, on devnet, with no UI: read a real wallet, decode its swaps, mine one rule, ask check_trade
+  about one trade, and have it refuse with a reason. Whatever it takes to make that run is the
+  priority, and whatever it does not touch is not.
+- Done when: 1 command produces 1 refusal with a reason, against a real devnet or mainnet-fork
+  wallet, and the output is pasted in this row.
