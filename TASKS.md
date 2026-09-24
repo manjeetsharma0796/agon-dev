@@ -859,7 +859,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: share rate under 10% across 10+ reports at CP3, so it stops being a pitch line
 
 ### T-B08, Jev in our own dev workflow, a one-week trial
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-b08-jev-review
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/79, Branch: feature/t-b08-jev-review
 - Depends-on: T-B01, OP-4
 - Touches: scripts/jev-review.mjs, .github/workflows/board.yml, docs/plans/jev-trial.md
 - Serves: unblocks nothing; it is a measured bet on our own speed, kept or cut at CP2
@@ -878,7 +878,27 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   inside a session, because Claude writing a diff into a call costs more than Jev saves. Both
   candidate MCP servers are unofficial and would hold our TypeSafe key, so pin a commit and read
   the source before installing either.
-- Evidence: <docs/plans/jev-trial.md with the 4 measured numbers, plus the CP2 decision>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/79, docs/plans/jev-trial.md. Use (1)
+  only; uses (2) to (4) are not started, their bars stay open for whoever picks this up next
+- Finding: use (1)'s own bar, 38+/40 hits with 8 or fewer false flags on labelled past diffs, is
+  not measured: this environment has no JEV_API_KEY and OP-4 is still open. What was measured
+  without a key, 2026-09-24: 29 of this repo's 69 merged PRs are real `feature/*` work PRs with a
+  non-empty diff; the other 40 are `claim/*` and `board/*` housekeeping carrying no diff worth
+  measuring. Ground truth pulled from those 29 PRs' own "Second reviewer needed?" checkboxes: 3
+  money math, 4 transaction-building, 0 frozen contract, 11 cross-track docs, so the 40-diff set
+  this bar needs cannot come from `git log` alone, this repo's history alone supplies 0 of the 10
+  frozen-contract positives a balanced 40 would want. Second: `noul`, asked "is this urgent" on 3
+  texts outside this session, scored the real emergency lowest of the 3 at 0.0043, below "repaint
+  the kitchen next spring" at 0.0086, inverted rather than merely weak, a second and independent
+  reason (T-C05 found the first) this script uses `choice` and reads only `confidence`. Third: this
+  PR's own `/code-review` pass, run before any live measurement, caught the harness counting a hit
+  whenever anything was flagged on either side rather than the same category on both, which would
+  have let a money-math diff read as caught by a wrongly flagged transaction-building answer.
+  Fourth: pushing the `board.yml` wiring failed, this session's GitHub token carries `repo` scope
+  and not `workflow`; backed out, the 2 steps to paste in are documented, unapplied, in
+  docs/plans/jev-trial.md. Fifth: CLAUDE.md's "Jev answers only 3 non-numeric questions" line is
+  unqualified and this script asks 4 different ones about a diff, never a trade; written up as
+  OP-20 rather than decided quietly
 - Kill criterion: never used for anything numeric, for deciding a task is done, for approving a merge or deploy, or for anything touching keys or funds. A Jev answer is an input to a rule, never the rule itself. Any use that misses its bar is cut at CP2, not extended
 
 ### T-B09, Stop the CI gates over-firing
