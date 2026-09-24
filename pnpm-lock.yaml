@@ -75,7 +75,14 @@ importers:
         specifier: workspace:*
         version: link:../../apps/web
 
-  packages/miner: {}
+  packages/miner:
+    dependencies:
+      '@agon/core':
+        specifier: workspace:*
+        version: link:../core
+      '@agon/decoder':
+        specifier: workspace:*
+        version: link:../decoder
 
 packages:
 

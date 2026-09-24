@@ -531,7 +531,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: fallback is Jupiter-routed swaps only with the covered share printed on the report
 
 ### T-A03, Rule miner
-- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-a03-rule-miner
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/50 | Owner: Prithwish | Branch: feature/t-a03-rule-miner
 - Depends-on: T-A02
 - Touches: packages/miner/src/
 - Serves: Novelty (judged) ; F2
@@ -540,7 +540,23 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   closed trades before claiming a stop rule and shows sizing and hold time below that ("12
   closed trades. A stop rule needs 20; sizing and hold time are shown"); output is byte-identical
   across 2 runs on the same input
-- Evidence: <PR link, plus the 3 synthetic ledger runs>
+- Evidence: <PR link; the 3 synthetic ledger runs are the planted-stop, scattered-loss and
+  12-trade cases in packages/miner/src/miner.test.ts>
+- Finding: the hard part is refusing, not finding. A median always exists, so a miner that reports
+  one tells somebody they have a 20% stop when they have never used a stop, and they believe it
+  because it arrived with a number. 3 separate gates are needed and each fails its own test when
+  removed: 20 closed trades, at least 5 losing trades, and a median absolute deviation of at most 2
+  percentage points. The middle one is not in the acceptance line and is the one that matters most
+  in practice: 20 closed trades with 2 losses is not a habit whatever those 2 losses agree on. MAD
+  and not standard deviation, because 1 catastrophic exit widens a standard deviation enough to
+  swallow the real stop. Second: hold time is derived and not observed. A closed trade carries
+  slots, not wall-clock timestamps, so seconds come from Solana's 400 ms slot target and are
+  reported as whole numbers, because the next digit would be invented precision. Third, caught by
+  the compiler and not by the tests: Metrics.medianSize and realisedPnl are branded in the frozen
+  contract, so the object has to be parsed rather than cast, which is the brand doing exactly the
+  job it exists for. Fourth: the quote is a required argument, because Metrics.realisedPnl is 1
+  signed number while T-A02 keeps P&L per quote, and summing SOL with USDC produces a total of
+  nothing that looks like a total of something.
 - Kill criterion: fallback is shipping only the metrics that passed and labelling the rest "coming soon" in the demo, never "N/A"
 
 ### T-F02, F2 spike, planted rules and report timing
