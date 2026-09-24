@@ -308,7 +308,7 @@ CP1 evidence required: F1 on 2 wallets; F3; F5 on devnet; F6 in simulation; F11 
 and latency (a, b).
 
 ### T-E03, Thin end-to-end version on staging
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-e03-thin-e2e
 - Depends-on: T-C01, T-C02
 - Touches: apps/web/app/report/, apps/web/app/api/, packages/mcp/src/index.ts
 - Serves: Functionality (judged) ; UX (judged)
