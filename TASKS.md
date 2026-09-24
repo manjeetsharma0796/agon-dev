@@ -304,7 +304,7 @@ and latency (a, b).
 - Kill criterion: fallback is Jupiter-routed swaps only, with the covered share printed on the report ("based on 83% of your swaps")
 
 ### T-C04, Our own mint check
-- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-c04-mint-check
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/26 | Owner: Prithwish | Branch: feature/t-c04-mint-check
 - Depends-on: T-C01, T-C02
 - Touches: packages/guard/src/mint-check.ts
 - Serves: Functionality (judged) ; F3
