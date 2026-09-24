@@ -1103,7 +1103,7 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 - Kill criterion: none, the MCP server is how any agent reaches the guard
 
 ### T-E08, Onboarding
-- Status: open
+- Status: claimed 2026-09-25 | Owner: Prithwish | Branch: feature/t-e08-onboarding
 - Depends-on: T-C09, T-E04
 - Touches: apps/web/app/(onboarding)/, docs/public/quickstart.md
 - Serves: UX (judged)
