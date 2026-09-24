@@ -979,7 +979,17 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 - Acceptance: installs, registers the MCP server with the user's assistants and starts the
   daemon in 1 command; cold start under 300 ms, asserted in CI; published to npm with
   provenance
-- Evidence: <npm package page, plus the cold-start number in CI>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/75. `agon report` runs the whole
+  path on a real wallet: 100 transactions read, 77 of 80 swaps decoded at 96%, 28 closed trades,
+  3 rules mined, and it replays offline from a recorded fixture with 0 keys. The acceptance
+  itself is NOT met: npm publish and MCP registration need T-C07 and T-C08
+- Finding: the first end to end run threw immediately, and no isolated test could have caught
+  it. Helius has 2 transaction endpoints with different shapes: `getTransaction` returns
+  meta.preTokenBalances and postTokenBalances, and the enhanced endpoint, the only one that
+  pages a wallet's history, returns a flat signature and already-subtracted
+  accountData[].tokenBalanceChanges. Every decoder fixture was recorded in the first shape, so
+  every decoder test passed against a shape the product never fetches. Translated at the edge,
+  in the CLI's io layer, so the decoder stays single shaped and pure
 - Kill criterion: none, the MCP server is how any agent reaches the guard
 
 ### T-E08, Onboarding

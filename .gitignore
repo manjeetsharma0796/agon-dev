@@ -24,3 +24,8 @@ next-env.d.ts
 
 # Surfpool writes a run log per simnet start, next to wherever it was invoked.
 .surfpool/
+
+# Agent worktrees. TASKS.md section 3 tells contributors to use git worktrees, and an agent
+# creates them here, so they must not be committable, formatted or scanned. Never ignore all of
+# .claude: the skills and settings under it are checked in on purpose.
+.claude/worktrees/

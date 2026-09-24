@@ -29,9 +29,10 @@ export const rpcCall = (method: string, params: unknown[]): NetRequest => ({
   body: { jsonrpc: '2.0', id: 1, method, params },
 })
 
-// Not exported: nothing outside this file calls it yet, because there is no recording to replay
-// until OP-1 produces a wallet. It becomes part of the public surface when it has a fixture.
-const heliusTransactions = (address: string, limit = 100): NetRequest => ({
+// Exported for `agon report`, which is the one caller. Nothing else in the codebase builds a URL
+// for these providers: a second place that knows the Helius URL is a second place that can leak
+// the key into a fixture or miss the pacing.
+export const heliusTransactions = (address: string, limit = 100): NetRequest => ({
   provider: 'helius',
   url: `https://api.helius.xyz/v0/addresses/${address}/transactions?api-key=${env('HELIUS_API_KEY')}&limit=${limit}`,
 })
