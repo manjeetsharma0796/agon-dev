@@ -22,9 +22,7 @@
     "spike:f4": "node scripts/spike.mjs F4",
     "spike:f5": "node scripts/spike.mjs F5",
     "spike:f10": "node scripts/spike.mjs F10",
-    "spike:f11": "node scripts/spike.mjs F11",
-    "board": "node scripts/board.mjs",
-    "feasibility": "node scripts/feasibility.mjs"
+    "spike:f11": "node scripts/spike.mjs F11"
   },
   "devDependencies": {
     "@types/node": "22.10.5",
