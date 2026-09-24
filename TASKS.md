@@ -346,7 +346,20 @@ and latency (a, b).
 - Serves: Functionality (judged) ; CP1 gate
 - Acceptance: our own check flags all 20 dangerous mints (10 with live freeze or mint authority,
   10 Token-2022 with permanent delegate, transfer hook or transfer fee) and 0 of the 10 blue chips
-- Evidence: <spikes/F03/result.json at a commit>
+- Evidence: spikes/F3/result.json at a commit, measured at slot 450037708
+- Finding: FAIL, 10 of 20 dangerous flagged and 2 of 10 blue chips flagged, and neither miss is a
+  bug in the code. The 2 blue chips are USDC and USDT, flagged for a live freeze authority, which
+  is the same trait the dangerous set is labelled by, so 1 rule cannot both disqualify that trait
+  and wave through the 2 largest stablecoins on Solana. The tokens carrying it say why: PYUSD is
+  PayPal, USDG is Paxos, cbBTC is Coinbase, and SPYx, NVDAx and GLDx are tokenised equities and
+  gold, where a freeze authority and a permanent delegate are how a regulated issuer meets a court
+  order. The other 10 misses are fee-only Token-2022 mints, deliberately reported and not blocked,
+  because a 3% fee is a cost the size rule can price and not a way to take the position. 2 more
+  from the real distribution: 0 of the top 100 mints by organic score has a live transfer hook,
+  every `transferHook` extension found had `programId: null`, so the third danger the acceptance
+  names does not occur at this end of the market; and 8 of the 10 authority-group mints also carry
+  a permanent delegate, so the 2 disjoint groups of 10 the acceptance imagines are 1 overlapping
+  group on chain. The threshold is what needs the decision at CP1, not the check.
 - Kill criterion: RugCheck stays optional either way; a miss on the 20 is a bug to fix, not a scope cut
 
 ### T-C05, Jev client, question schema and the injection screen
