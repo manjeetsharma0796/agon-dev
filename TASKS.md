@@ -707,7 +707,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none. It feeds 3 of the 6 judged criteria, and the rules do not restrict marketing or real users (rules s.8)
 
 ### T-E10, Failure-message catalogue
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-e10-messages
 - Depends-on: T-C01
 - Touches: packages/core/src/messages.ts
 - Serves: UX (judged)
