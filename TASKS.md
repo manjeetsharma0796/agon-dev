@@ -343,7 +343,7 @@ and latency (a, b).
 - Kill criterion: none, F1 is existential
 
 ### T-F01a, F1 spike on 2 wallets, for CP1
-- Status: blocked, see OP-20
+- Status: blocked, see OP-23
 - Depends-on: T-A01
 - Touches: spikes/F1/, scripts/board.mjs
 - Serves: Functionality (judged) ; CP1 gate
@@ -755,7 +755,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: fallback is a short recurring window and no end date in the UI
 
 ### T-D03, Kill switch
-- Status: blocked, see OP-20
+- Status: blocked, see OP-19
 - Depends-on: T-D01
 - Touches: packages/chain/src/kill-switch.ts, packages/cli/src/commands/revoke.ts
 - Serves: UX (judged) ; Novelty (judged)
