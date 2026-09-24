@@ -791,14 +791,15 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: below a 70% "rule is right" rate at CP3, the page ships as descriptive statistics and the rule-mining claim comes out of the pitch
 
 ### T-E05, Shareable "what your exceptions cost" card
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/61 | Owner: Prithwish | Branch: feature/t-e05-share-card
+- Status: blocked, see OP-8
 - Depends-on: T-E04
 - Touches: apps/web/app/api/card/
 - Serves: Potential impact (judged) ; share rate
 - Acceptance: 1 image endpoint rendering the exception cost, generated in 2 seconds or less; the
   card carries 0 third-party wallet addresses and 0 named-person P&L; share rate tracked from
   day 1 of the beta
-- Evidence: <PR link; the share-rate number needs OP-8 and a live beta>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/61, 0.0012 ms per card over 10,000
+  renders and 0 addresses of any kind on it. The share-rate number needs OP-8 and a live beta.
 - Finding: the 2 second budget is not the constraint anyone should watch. An SVG built by string
   concatenation renders in 0.0012 ms over 10,000 renders, 1.6 million times inside the budget, and
   is 924 bytes with 0 dependencies and no font to load. The real constraint is that X, and most
