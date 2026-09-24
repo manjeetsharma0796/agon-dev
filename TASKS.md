@@ -433,7 +433,8 @@ and latency (a, b).
 - Acceptance: creates a role with `program = Jupiter` and `tokenRecurringLimit` and nothing
   else; the agent key holds 0 `manageAuthority`, verified by reading the role on-chain and not
   from our config; Swig and Jupiter program ids pinned in config, 0 read from user input;
-  transactions built as v1 with `@solana/kit` 8.0.0 or later
+  transactions built as v1 with `@solana/kit` ^2.1.0, which is what every published Swig package
+  pins (amended 2026-09-24 by Jishnu, see the T-D01 finding: 8.0.0 was unreachable)
 - Evidence: <PR link, plus the on-chain role read>
 - Kill criterion: none. If the cap does not hold on-chain the custody story is gone, see T-F05a
 
