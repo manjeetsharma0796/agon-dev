@@ -762,7 +762,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: no named competitor comparison unless their run is in the repo too
 
 ### T-E04, Report page
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-e04-report-page
 - Depends-on: T-A03, T-E03
 - Touches: apps/web/app/report/
 - Serves: UX (judged)
