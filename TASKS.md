@@ -762,7 +762,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: no named competitor comparison unless their run is in the repo too
 
 ### T-E04, Report page
-- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-e04-report-page
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/57 | Owner: Prithwish | Branch: feature/t-e04-report-page
 - Depends-on: T-A03, T-E03
 - Touches: apps/web/app/report/
 - Serves: UX (judged)
@@ -771,7 +771,22 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   your swaps") and the count of unsupported transactions with their program ids; 0 blank fields,
   0 "N/A", 0 "something went wrong"; every report asks "Is this rule right about you?" with 3
   answers (yes / no / partly) and stores the answer
-- Evidence: <staging URL, plus 5 real wallet reports>
+- Evidence: <staging URL needs OP-17 and the 5 real wallet reports need OP-1; the page renders the
+  fixture report end to end, 22 tests>
+- Finding: "0 blank fields" is a property of the empty wallet, not of the happy path. A wallet with
+  no history produces 0 closed trades, 3 unfound rules, 0 coverage and 0 exceptions, and every one
+  of those is a slot that renders as nothing unless something is written for it, so the test walks
+  every line of both a full report and an empty one against a banned list of blank, N/A, undefined,
+  null, NaN and "something went wrong". An unfound rule renders its own reason, which is why
+  MinedRule carries one. Second, a contract gap: Report has no quote mint. medianSize and
+  realisedPnl are base units with nothing saying what of, so the page assumes SOL at 9 decimals,
+  which the frozen contract's own example ("your median size of 0.8 SOL") also assumes. That works
+  until the first USDC-denominated wallet and then it is silently wrong by 1000x. Third: the answer
+  to "Is this rule right about you?" is refused with 503 rather than accepted when there is nowhere
+  to store it, because the CP3 gate is a percentage of these answers and one accepted and dropped
+  makes the gate unmeasurable without anyone finding out until the checkpoint. The storage
+  destination is opted into rather than defaulted, because a default that works on a laptop and
+  evaporates on a serverless host is the same silent loss with extra steps.
 - Kill criterion: below a 70% "rule is right" rate at CP3, the page ships as descriptive statistics and the rule-mining claim comes out of the pitch
 
 ### T-E05, Shareable "what your exceptions cost" card
