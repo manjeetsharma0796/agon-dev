@@ -677,13 +677,14 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none. Anything that can move funds fails closed
 
 ### T-D02, Rule expiry without admin rights
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/72 | Owner: Prithwish | Branch: feature/t-d02-rule-expiry
+- Status: blocked, see OP-19
 - Depends-on: T-D01
 - Touches: packages/chain/src/expiry.ts
 - Serves: UX (judged) ; F7
 - Acceptance: the agent key holds 0 `manageAuthority` at every point; at arm time the user
   signs a role-removal transaction against a durable nonce and the daemon submits it at expiry
-- Evidence: <PR link; the on-chain role read after expiry needs a funded devnet key, see OP-19>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/72, 12 tests. The on-chain role read
+  after expiry needs a funded devnet key, see OP-19.
 - Finding: the durable nonce is what makes expiry possible without admin rights, and it is also
   what makes the guarantee weaker than it sounds. A blockhash dies in about 2 minutes, so a
   transaction signed at arm time is refused long before the rule is due and the rule would simply
