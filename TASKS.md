@@ -421,7 +421,7 @@ and latency (a, b).
   else; the agent key holds 0 `manageAuthority`, verified by reading the role on-chain and not
   from our config; Swig and Jupiter program ids pinned in config, 0 read from user input;
   transactions built as v1 with `@solana/kit` 8.0.0 or later
-- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/38, role shape and the no-manageAuthority
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/39, role shape and the no-manageAuthority
   check with 4 negative controls. The on-chain round trip belongs to T-F05a
 - Finding: the last acceptance clause cannot be met. It asks for transactions built with
   `@solana/kit` 8.0.0 or later, and every Swig package at every published version pins
