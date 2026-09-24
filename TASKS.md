@@ -684,7 +684,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: fallback is the local daemon polling price, and the UI says "runs while your computer is on"
 
 ### T-F09, F9 spike, benchmark reproducibility
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-f09-benchmark-repro
 - Depends-on: T-B03
 - Touches: spikes/F09/
 - Serves: Functionality (judged) ; CP2 gate
