@@ -413,7 +413,7 @@ and latency (a, b).
 - Kill criterion: fallback is an LLM guard with a stricter threshold, or Kev-0.5B locally
 
 ### T-D01, Swig role creation and removal in packages/chain
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-d01-swig-role
 - Depends-on: T-C01
 - Touches: packages/chain/src/swig/
 - Serves: Novelty (judged) ; F5
