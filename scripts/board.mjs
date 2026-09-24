@@ -97,7 +97,10 @@ function lint() {
     const serves = t.fields.Serves ?? ''
     if (!serves || PLACEHOLDER.test(serves)) {
       fail(`${at}: "Serves:" is empty. Name a judged criterion or a measured user metric.`)
-    } else if (!JUDGED.some((j) => serves.includes(j)) && !/\b(judged|rate|share|gate|latency|metric|cost|retention|unblocks)\b/i.test(serves)) {
+    } else if (
+      !JUDGED.some((j) => serves.includes(j)) &&
+      !/\b(judged|rate|share|gate|latency|metric|cost|retention|unblocks)\b/i.test(serves)
+    ) {
       fail(`${at}: "Serves: ${serves}" names no judged criterion and no measured metric.`)
     }
 
@@ -116,7 +119,10 @@ function lint() {
     // Depends-on must point at real rows, or a spike cannot be sequenced.
     const deps = (t.fields['Depends-on'] ?? '').trim()
     if (deps && !/^none$/i.test(deps)) {
-      for (const dep of deps.split(/[,;]/).map((d) => d.trim()).filter(Boolean)) {
+      for (const dep of deps
+        .split(/[,;]/)
+        .map((d) => d.trim())
+        .filter(Boolean)) {
         if (dep.startsWith('OP-')) {
           if (!ops.has(dep)) fail(`${at}: Depends-on ${dep}, which is not in OPERATOR_TODO.md.`)
         } else if (!ids.has(dep)) {
@@ -130,14 +136,18 @@ function lint() {
     if (/^blocked/.test(status) && !blocked) {
       fail(`${at}: Status is blocked but does not say "blocked, see OP-N".`)
     } else if (blocked && !ops.has(blocked[1])) {
-      fail(`${at}: blocked on ${blocked[1]}, which is not in OPERATOR_TODO.md. Write it there first.`)
+      fail(
+        `${at}: blocked on ${blocked[1]}, which is not in OPERATOR_TODO.md. Write it there first.`,
+      )
     }
 
     // The lock: one owner per task, and the branch matches the id.
     const claim = /^claimed\s+(\S+)\s*\|\s*Owner:\s*(.+?)\s*\|\s*Branch:\s*(\S+)$/.exec(status)
     if (/^claimed/.test(status)) {
       if (!claim) {
-        fail(`${at}: Status is claimed but not in the form "claimed <date> | Owner: <name> | Branch: <branch>".`)
+        fail(
+          `${at}: Status is claimed but not in the form "claimed <date> | Owner: <name> | Branch: <branch>".`,
+        )
       } else {
         const [, , owner, branch] = claim
         if (PLACEHOLDER.test(owner)) fail(`${at}: claimed with placeholder owner "${owner}".`)
@@ -162,7 +172,9 @@ function lint() {
 
     // A spike with no stated fallback is an unmanaged existential risk.
     if (t.id.startsWith('T-F') && !t.fields['Kill criterion']) {
-      fail(`${at}: a feasibility spike needs a "- Kill criterion:" line naming its fallback or cut.`)
+      fail(
+        `${at}: a feasibility spike needs a "- Kill criterion:" line naming its fallback or cut.`,
+      )
     }
   }
   return tasks
@@ -188,7 +200,8 @@ function assertStatusOnly(base, head, what) {
   for (const line of diff.split('\n')) {
     // Skip the diff own headers only. Do not skip every line whose second character is a dash:
     // markdown list items all start "+-" or "--", which is exactly what this check has to read.
-    if (/^(\+\+\+|---|@@|diff |index |new file|deleted file|similarity|rename )/.test(line)) continue
+    if (/^(\+\+\+|---|@@|diff |index |new file|deleted file|similarity|rename )/.test(line))
+      continue
     if (!/^[+-]/.test(line)) continue
     if (!/^[+-]-\s*(Status|Owner):/.test(line)) {
       fail(`A claim changes only "- Status:" lines. This one changed: ${line.trim().slice(0, 140)}`)
@@ -212,6 +225,24 @@ function pr() {
   const base = process.env.PR_BASE_SHA
   const head = process.env.PR_HEAD_SHA ?? 'HEAD'
 
+  // Adding, cutting or rewording a task is not a claim and not a task. It needs its own path, or
+  // the Friday /ponytail-debt pass and every scope cut has nowhere legal to land.
+  if (branch.startsWith('board/')) {
+    if (!/^board\/[a-z0-9-]+$/.test(branch)) {
+      fail(
+        `Board branch "${branch}" must be "board/<slug>", all lower case, e.g. board/cut-screener.`,
+      )
+    }
+    if (!base || /^0+$/.test(base)) return warn('No PR_BASE_SHA, skipping the board diff check.')
+    const allowed = ['TASKS.md', 'OPERATOR_TODO.md']
+    for (const f of changedFiles(base, head)) {
+      if (!allowed.includes(f)) {
+        fail(`"${f}" changed in a board/ PR, which may only edit ${allowed.join(' and ')}.`)
+      }
+    }
+    return
+  }
+
   // dev requires a pull request, so a claim is a PR too. It carries only the Status line, which is
   // what keeps the race resolvable: the second claim PR conflicts on that exact line.
   if (branch.startsWith('claim/')) {
@@ -224,7 +255,9 @@ function pr() {
 
   const idMatch = /^feature\/(t-[a-z]?\d+[a-z]?)-[a-z0-9-]+$/.exec(branch)
   if (!idMatch) {
-    fail(`Branch "${branch}" must be "feature/t-<id>-<slug>", all lower case, e.g. feature/t-a03-meteora.`)
+    fail(
+      `Branch "${branch}" must be "feature/t-<id>-<slug>", all lower case, e.g. feature/t-a03-meteora.`,
+    )
   } else {
     const id = idMatch[1].toUpperCase()
     const tasks = parseTasks(readFileSync('TASKS.md', 'utf8'))
@@ -241,7 +274,10 @@ function pr() {
     }
   }
 
-  if (!/^\s*\*\*Serves:\*\*|(^|\n)\*\*Serves:\*\*/m.test(body) || /\*\*Serves:\*\*\s*(\n|$)/.test(body)) {
+  if (
+    !/^\s*\*\*Serves:\*\*|(^|\n)\*\*Serves:\*\*/m.test(body) ||
+    /\*\*Serves:\*\*\s*(\n|$)/.test(body)
+  ) {
     fail('The PR body needs a filled-in "**Serves:**" line. What does this move?')
   }
 
@@ -262,18 +298,27 @@ function pr() {
   let changed = 0
   for (const line of stat.split('\n').filter(Boolean)) {
     const [add, del, file] = line.split('\t')
-    if (/^(pnpm-lock\.yaml|package-lock\.json|fixtures\/|benchmark\/results\/|spikes\/\S+\/result\.json)/.test(file ?? '')) continue
+    if (
+      /^(pnpm-lock\.yaml|package-lock\.json|fixtures\/|benchmark\/results\/|spikes\/\S+\/result\.json)/.test(
+        file ?? '',
+      )
+    )
+      continue
     changed += (Number(add) || 0) + (Number(del) || 0)
   }
   if (changed > 600 && !/\*\*Diff-size:\*\*\s*\S/.test(body)) {
-    fail(`Diff is ${changed} changed lines, over 600. Split the PR, or add a "**Diff-size:**" line saying why not.`)
+    fail(
+      `Diff is ${changed} changed lines, over 600. Split the PR, or add a "**Diff-size:**" line saying why not.`,
+    )
   }
 
   // No em dashes or en dashes. Cheap to check, annoying to fix later.
   const full = git('diff', `${base}..${head}`)
   const dashes = full.split('\n').filter((l) => /^\+/.test(l) && /[–—]/.test(l))
   if (dashes.length > 0) {
-    fail(`${dashes.length} added line(s) contain an em dash or en dash. Use a plain hyphen. First: ${dashes[0].trim().slice(0, 120)}`)
+    fail(
+      `${dashes.length} added line(s) contain an em dash or en dash. Use a plain hyphen. First: ${dashes[0].trim().slice(0, 120)}`,
+    )
   }
 }
 
@@ -291,7 +336,8 @@ function summary(tasks) {
   ]
   const table = [
     '<!-- board:start -->',
-    `Board, generated ${new Date().toISOString().slice(0, 10)} by \`scripts/board.mjs\`. Do not hand-edit.`,
+    // No date: it would change daily and CI could not tell a stale summary from a fresh one.
+    'Board, generated by `scripts/board.mjs summary`. Do not hand-edit.',
     '',
     `| ${rows.map(([k]) => k).join(' | ')} |`,
     `|${rows.map(() => '---').join('|')}|`,

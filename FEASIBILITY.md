@@ -8,7 +8,6 @@ written down before the spike started. Vendor docs, a working happy path and "it
 do not count. "Pass" means the measured number met the threshold on **every** listed input, not
 on average.
 
-Last run: 2026-09-24 09:05 UTC.
 
 | Test | What it proves | Threshold, written before the run | Measured | Status | CP | Commit |
 |---|---|---|---|---|---|---|

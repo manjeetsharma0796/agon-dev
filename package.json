@@ -1,0 +1,35 @@
+{
+  "name": "agon",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "oxlint",
+    "typecheck": "tsc -b",
+    "build": "tsc -b",
+    "test": "vitest run",
+    "knip": "knip",
+    "gates": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm build && pnpm test -- --reporter=dot && pnpm knip",
+    "spike:f1": "node scripts/spike.mjs F1",
+    "spike:f2": "node scripts/spike.mjs F2",
+    "spike:f3": "node scripts/spike.mjs F3",
+    "spike:f4": "node scripts/spike.mjs F4",
+    "spike:f5": "node scripts/spike.mjs F5",
+    "spike:f10": "node scripts/spike.mjs F10",
+    "spike:f11": "node scripts/spike.mjs F11"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.5",
+    "knip": "5.41.1",
+    "oxlint": "0.15.7",
+    "prettier": "3.4.2",
+    "typescript": "5.7.3",
+    "vitest": "3.2.4"
+  }
+}

@@ -52,12 +52,15 @@ const md = [
   'do not count. "Pass" means the measured number met the threshold on **every** listed input, not',
   'on average.',
   '',
-  `Last run: ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC.`,
+  // No generation timestamp. It would say when this script ran, not when any spike ran, and it
+  // would make the output differ on every run, so CI could never tell a stale file from a fresh
+  // one. Each row carries its own date and commit, which is the honest answer.
   '',
   '| Test | What it proves | Threshold, written before the run | Measured | Status | CP | Commit |',
   '|---|---|---|---|---|---|---|',
-  ...rows.map((r) =>
-    `| ${r.id}${r.existential ? ' **(existential)**' : ''} | ${cell(r.name)} | ${cell(r.threshold)} | ` +
+  ...rows.map(
+    (r) =>
+      `| ${r.id}${r.existential ? ' **(existential)**' : ''} | ${cell(r.name)} | ${cell(r.threshold)} | ` +
       `${cell(r.measured) || '-'} | ${r.status === 'pass' ? 'pass' : r.status === 'FAIL' ? '**FAIL**' : 'not run'} | ` +
       `${r.checkpoint} | ${r.commit || '-'} |`,
   ),
@@ -100,7 +103,9 @@ for (const r of regressed) {
     `- Threshold, written before the first run: ${r.threshold}`,
     `- Measured this run: ${r.measured || 'see spikes/' + r.id + '/result.json'}`,
     `- Commit: ${r.commit}`,
-    r.existential ? '- **This test is existential.** If it has no workable fallback, the scope changes.' : '',
+    r.existential
+      ? '- **This test is existential.** If it has no workable fallback, the scope changes.'
+      : '',
     '',
     'Do not debate this here. Bring the raw output to the next checkpoint and decide one of: keep,',
     'fallback, cut, extend once. Undecided at the checkpoint defaults to the fallback.',
@@ -108,9 +113,13 @@ for (const r of regressed) {
     .filter(Boolean)
     .join('\n')
 
-  execFileSync('gh', ['issue', 'create', '--title', title, '--body', body, '--label', 'feasibility'], {
-    stdio: 'inherit',
-  })
+  execFileSync(
+    'gh',
+    ['issue', 'create', '--title', title, '--body', body, '--label', 'feasibility'],
+    {
+      stdio: 'inherit',
+    },
+  )
 }
 
 console.log(`feasibility: ${regressed.length} regression(s) reported.`)

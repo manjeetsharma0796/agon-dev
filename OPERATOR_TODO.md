@@ -206,3 +206,18 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   everything else. The most plausible second person is whoever finishes Track D first.
 - Done when: a second name is on Track E and at least 2 of the 6 jobs have moved to them in
   `TASKS.md`.
+
+### OP-17, Hosting project and the 3 environments
+- Status: open
+- Owner: <unassigned>
+- Needed by: 2026-09-26, before T-E03 puts anything on staging
+- Unblocks: T-B01 (its last acceptance clause), T-E03
+- What exactly: create the hosting project and wire 3 environments, each with its own keys:
+  preview on every PR push against devnet, staging on every merge to `dev` against devnet plus
+  mainnet read-only, production on a release tag against mainnet. Needs the keys from OP-2
+  (Helius), OP-3 (Jupiter), OP-4 (Jev) and OP-6 (Neon) to exist first, one set per environment,
+  and `vercel.json` committed by whoever wires it. The scaffold deliberately does not ship a
+  `vercel.json`: an unwired config file that no project reads is a green-looking thing with
+  nothing behind it.
+- Done when: 1 PR shows a preview URL, a merge to `dev` updates staging, and a `release-*` tag
+  updates production, with 3 separate key sets and 0 shared between environments.
