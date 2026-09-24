@@ -742,6 +742,19 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Evidence: <docs/plans/jev-trial.md with the 4 measured numbers, plus the CP2 decision>
 - Kill criterion: never used for anything numeric, for deciding a task is done, for approving a merge or deploy, or for anything touching keys or funds. A Jev answer is an input to a rule, never the rule itself. Any use that misses its bar is cut at CP2, not extended
 
+### T-B09, Stop the CI gates over-firing
+- Status: claimed 2026-09-24 | Owner: manjeetsharma0796 | Branch: feature/t-b09-gate-overfiring
+- Depends-on: T-B01
+- Touches: .gitleaks.toml, .github/workflows/board.yml
+- Serves: Functionality (judged) ; unblocks T-A01 and T-E10, and every later PR carrying a fixture
+- Acceptance: the secret scan reports 0 findings on T-A01's 24 recorded addresses, and still reports
+  1 finding for each of 2 planted secrets, an 88-character Solana secret key and a uuid api key
+  inside a recorded request URL; the frozen-contract gate fires on 0 of 2 PRs that only add a module
+  under packages/core, and on 1 of 1 that changes one of the 3 contract files
+- Evidence: <the 4 measured scans and the 3 gate checks, in the PR>
+- Kill criterion: none. A gate that cries wolf teaches everyone to tick the box without reading,
+  which is worse than no gate
+
 ### T-E12, Build in public, weekly
 - Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-e12-x-plan
 - Depends-on: T-B01
