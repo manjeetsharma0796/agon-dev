@@ -9,7 +9,6 @@
 // read as a measurement that actually happened, so an unimplemented spike leaves no trace.
 
 import { existsSync } from 'node:fs'
-import { pathToFileURL } from 'node:url'
 
 const id = process.argv[2] ?? ''
 if (!/^F\d+$/.test(id)) {
@@ -17,10 +16,14 @@ if (!/^F\d+$/.test(id)) {
   process.exit(2)
 }
 
-const entry = `spikes/${id}/run.mjs`
+// Resolved against this file, not the working directory. Run from anywhere else a cwd-relative
+// path finds nothing and this reports a spike that does exist as "not run", which is the one
+// wrong answer the script is here to prevent.
+const rel = `spikes/${id}/run.mjs`
+const entry = new URL(`../${rel}`, import.meta.url)
 if (!existsSync(entry)) {
-  console.log(`${id}: not run, there is no ${entry} yet. FEASIBILITY.md reports it as not run.`)
+  console.log(`${id}: not run, there is no ${rel} yet. FEASIBILITY.md reports it as not run.`)
   process.exit(0)
 }
 
-await import(pathToFileURL(entry).href)
+await import(entry.href)

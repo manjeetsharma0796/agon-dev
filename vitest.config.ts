@@ -8,7 +8,7 @@ export default defineConfig({
       {
         test: {
           name: 'unit',
-          include: ['{apps,packages}/*/src/**/*.test.ts', 'scripts/**/*.test.mjs'],
+          include: ['{apps,packages}/*/**/*.test.ts', 'scripts/**/*.test.mjs'],
           passWithNoTests: true,
         },
       },
@@ -18,7 +18,7 @@ export default defineConfig({
         // there is nothing to count yet.
         test: {
           name: 'budget',
-          include: ['{apps,packages}/*/src/**/*.budget.test.ts'],
+          include: ['{apps,packages}/*/**/*.budget.test.ts'],
           passWithNoTests: true,
         },
       },
@@ -26,7 +26,7 @@ export default defineConfig({
         // MCP response sizes: get_report 2,000 tokens, check_trade 400. Lands with T-C07.
         test: {
           name: 'token-budget',
-          include: ['{apps,packages}/*/src/**/*.token.test.ts'],
+          include: ['{apps,packages}/*/**/*.token.test.ts'],
           passWithNoTests: true,
         },
       },
