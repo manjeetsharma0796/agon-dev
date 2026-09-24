@@ -28,6 +28,7 @@ line and cannot merge.
 git checkout dev && git pull --ff-only origin dev
 git checkout -b claim/t-a03
 # edit ONLY the `- Status:` line of the task you want, nothing else in the file
+node scripts/board.mjs summary   # the README counts change with your Status line
 git commit -am "claim T-A03" && git push -u origin claim/t-a03
 gh pr create --fill --base dev && gh pr merge --auto --squash --delete-branch
 ```
@@ -46,7 +47,9 @@ Rules the ruleset and the `board` CI job enforce, so do not argue with them:
 
 - **No pushes to `dev`, ever.** No force pushes, no deletion, no bypass for admins.
 - A claim PR is branch `claim/t-<id>` and may change **only** `- Status:` lines in `TASKS.md` and
-  `OPERATOR_TODO.md`. Anything else in that diff fails.
+  `OPERATOR_TODO.md`, plus the `README.md` summary that `node scripts/board.mjs summary`
+  regenerates from them. Anything else in that diff fails. Forget the regenerate step and the
+  `hygiene` job fails on a stale README, so it is part of the claim, not an afterthought.
 - A work PR is branch `feature/t-<id>-<slug>` and must match the `Branch:` in the row you claimed.
 - Adding, cutting or rewording a task is neither of those. It goes in a `board/<slug>` PR that
   touches only `TASKS.md` and `OPERATOR_TODO.md`. That is the path for the Friday

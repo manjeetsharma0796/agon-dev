@@ -187,16 +187,24 @@ function changedFiles(base, head) {
 // A claim moves a "- Status:" line and nothing else. Shared by the claim-PR path and by any direct
 // push, so the rule lives in exactly one place.
 function assertStatusOnly(base, head, what) {
-  const allowed = ['TASKS.md', 'OPERATOR_TODO.md']
+  // README.md is here because the board summary inside it is a pure function of the Status lines
+  // this very change moves. Without it a claim can never merge: moving a Status line changes the
+  // summary counts, the "Generated files are current" job then fails on a stale README, and fixing
+  // that README is forbidden by this check. That deadlocked every claim, which is the first step of
+  // every task. Its content is deliberately not inspected below: the generated-files job already
+  // requires it to equal `board.mjs summary` output exactly, so it cannot smuggle anything in.
+  const edited = ['TASKS.md', 'OPERATOR_TODO.md']
+  const allowed = [...edited, 'README.md']
   for (const f of changedFiles(base, head)) {
     if (!allowed.includes(f)) {
       fail(
         `"${f}" changed in ${what}. A claim may only change "- Status:" lines in TASKS.md or ` +
-          `OPERATOR_TODO.md. Code and prose go in a feature PR of their own.`,
+          `OPERATOR_TODO.md, plus the regenerated README.md summary. Code and prose go in a ` +
+          `feature PR of their own.`,
       )
     }
   }
-  const diff = git('diff', '-U0', `${base}..${head}`, '--', ...allowed)
+  const diff = git('diff', '-U0', `${base}..${head}`, '--', ...edited)
   for (const line of diff.split('\n')) {
     // Skip the diff own headers only. Do not skip every line whose second character is a dash:
     // markdown list items all start "+-" or "--", which is exactly what this check has to read.
@@ -234,10 +242,12 @@ function pr() {
       )
     }
     if (!base || /^0+$/.test(base)) return warn('No PR_BASE_SHA, skipping the board diff check.')
-    const allowed = ['TASKS.md', 'OPERATOR_TODO.md']
+    // Same reason as assertStatusOnly: adding or cutting a task moves the counts in the generated
+    // README summary, so a board PR has to be able to carry the regenerated file with it.
+    const allowed = ['TASKS.md', 'OPERATOR_TODO.md', 'README.md']
     for (const f of changedFiles(base, head)) {
       if (!allowed.includes(f)) {
-        fail(`"${f}" changed in a board/ PR, which may only edit ${allowed.join(' and ')}.`)
+        fail(`"${f}" changed in a board/ PR, which may only edit ${allowed.join(', ')}.`)
       }
     }
     return
