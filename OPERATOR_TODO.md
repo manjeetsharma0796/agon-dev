@@ -51,6 +51,26 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Why it cannot wait: F5 is existential. If the cap does not hold on-chain, CP1 decides whether
   Agon ships read-only, and that decision needs the measurement rather than an opinion.
 
+### OP-20, Pick 2 real trader wallets, and verify 50 rows by hand
+- Status: open
+- Owner: <unassigned>
+- Needed by: 2026-09-26, so F1 has a result before CP1 on 2026-09-27
+- Unblocks: T-F01a, and through it T-F01b and the whole report
+- What exactly: two things, both needing a person.
+  1. **Pick 2 wallets with a real position history.** An automated heuristic keeps finding bots,
+     routers and payout addresses: see `spikes/F1/README.md` for 3 that looked ideal and were not.
+     The test is that the address owns the token balances that move AND opens and closes positions
+     in non-quote assets. The team's own wallets qualify once OP-1 has produced history.
+  2. **Hand-build the 50-row ledger per wallet.** Side, mint, and amount in base units, from the
+     explorer, compared field by field against what the decoder said. The harness prints exactly
+     those 50 rows, so this is verification and not construction: roughly an hour per wallet.
+- Why a script cannot do it: Helius `SWAP` and our `swap` answer different questions. 22 of 50 on
+  one wallet were SOL to USDC rotations, which Helius calls swaps and the decoder correctly does not,
+  because no position opened or closed. Measured, in `spikes/F1/README.md`. A cross-check against
+  the enhanced API would report a disagreement that is a definition, not an error.
+- Done when: `spikes/F1/result.json` shows 50 of 50 classified correctly on each of 2 wallets,
+  amounts exact to base units, with the coverage share recorded per wallet.
+
 ### OP-1, Everyone trades from their test wallet, daily
 - Status: open
 - Owner: all, D coordinates

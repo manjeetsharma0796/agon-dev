@@ -1,0 +1,10 @@
+{
+  "test": "F1",
+  "name": "Decoding trades from balance changes",
+  "threshold": "on 2 public wallets: 50 of 50 randomly sampled transactions classified correctly as buy, sell or not-a-swap, amounts exact to base units, every transaction either decoded or listed as unsupported with a named reason and program id, and 0 silent drops; each wallet has 200+ swaps across 4 or more venues; share of swaps decoded recorded per wallet, and below 95% is a checkpoint finding rather than a pass",
+  "checkpoint": "CP1",
+  "written": "2026-09-24",
+  "existential": true,
+  "notes": "Copied from T-F01a's Acceptance line before the spike ran. This is the 2-public-wallet half of F1; the 3 team wallets need trading history from OP-1 and land with T-F01b. Directory is spikes/F1 and not spikes/F01 because scripts/spike.mjs resolves spikes/${id}/run.mjs from the id in spike:f1. The wallets are used to measure decoding only, never to describe anyone's habits or P&L: the PRD bars that, and nothing here reports a balance, a position or a profit.",
+  "openQuestion": "The PRD compares against a hand-built ledger, which is human work. This run cross-checks against Helius's enhanced-transactions labelling instead, an independent source that classified the same transactions without seeing our decoder. That is a different and weaker claim than a hand-built ledger and is reported as such, never as the hand-built number."
+}
