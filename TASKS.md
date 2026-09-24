@@ -343,7 +343,7 @@ and latency (a, b).
 - Kill criterion: none, F1 is existential
 
 ### T-F01a, F1 spike on 2 wallets, for CP1
-- Status: open
+- Status: claimed 2026-09-24 | Owner: manjeetsharma0796 | Branch: feature/t-f01a-decode-2-wallets
 - Depends-on: T-A01
 - Touches: spikes/F01/, fixtures/golden/
 - Serves: Functionality (judged) ; CP1 gate
