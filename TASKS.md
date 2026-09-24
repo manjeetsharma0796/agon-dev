@@ -677,7 +677,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none. Anything that can move funds fails closed
 
 ### T-D02, Rule expiry without admin rights
-- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-d02-rule-expiry
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/72 | Owner: Prithwish | Branch: feature/t-d02-rule-expiry
 - Depends-on: T-D01
 - Touches: packages/chain/src/expiry.ts
 - Serves: UX (judged) ; F7
