@@ -1,0 +1,65 @@
+{
+  "id": "F1",
+  "pass": false,
+  "measured": "100 transactions decoded across 2 wallets, 0 silent drops; 0 of 50 verified against a hand-built ledger, which is what the acceptance asks for and what OP-20 is; 5CKAa7Wm 0 swaps decoded of 50 sampled over 3 venues; 5Q544fKr 29 swaps decoded of 50 sampled over 7 venues",
+  "date": "2026-09-24",
+  "commit": "97f926ae6e0c1ba66067d17bf2145da6c3ead437",
+  "notes": "FAIL, and not because the decoder is wrong. Two findings, both measured. (1) Helius /addresses/{x}/transactions returns everything INVOLVING x, so an address that is never the owner of a token balance looks like a busy trader: 7xKXtg2C showed 21 swaps per 100 transactions and decoded to 0 of 42, correctly, because no balance of that wallet moved. (2) Even for a real owner, Helius SWAP and our swap mean different things: 22 of 50 on 5Q544fKr were quote-to-quote rotations that open and close no position, which the decoder excludes on purpose. So the enhanced API cannot be the oracle, and the hand-built ledger the PRD asks for is not bureaucracy, it is the only source that settles the question. Neither wallet here is a retail trader either: 5CKAa7Wm is 50 of 50 value-only-arrived, a payout address. Picking the 2 wallets needs a person, which is OP-20.",
+  "perWallet": [
+    {
+      "wallet": "5CKAa7WmJwK2UjgVZXiZHwDD6rJ1nuHMm7Ki2PsrKYPQ",
+      "swapsSeen": 347,
+      "venues": [
+        "BYREAL",
+        "JUPITER",
+        "PUMP_AMM"
+      ],
+      "sampled": 50,
+      "outcomes": {
+        "not-a-swap: value only arrived the wallet, which is a transfer and not a swap": 50
+      },
+      "swapsDecoded": 0,
+      "noSilentDrops": true,
+      "coverage": {
+        "decodedSwaps": 0,
+        "totalSwaps": 0,
+        "share": 1
+      },
+      "unsupported": []
+    },
+    {
+      "wallet": "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1",
+      "swapsSeen": 122,
+      "venues": [
+        "DFLOW",
+        "JUPITER",
+        "OKX_DEX_ROUTER",
+        "PUMP_AMM",
+        "PUMP_FUN",
+        "RAYDIUM",
+        "RAYDIUM_LAUNCHLAB"
+      ],
+      "sampled": 50,
+      "outcomes": {
+        "swap": 29,
+        "not-a-swap: both sides are quote assets, so no position was opened or closed": 14,
+        "not-a-swap: no token balance of this wallet changed": 6,
+        "undecoded: 2 mints left and 1 arrived, so the pairing is ambiguous": 1
+      },
+      "swapsDecoded": 29,
+      "noSilentDrops": true,
+      "coverage": {
+        "decodedSwaps": 29,
+        "totalSwaps": 30,
+        "share": 0.9666666666666667
+      },
+      "unsupported": [
+        {
+          "programId": "ComputeBudget111111111111111111111111111111",
+          "count": 1,
+          "reason": "2 mints left and 1 arrived, so the pairing is ambiguous"
+        }
+      ]
+    }
+  ]
+}
