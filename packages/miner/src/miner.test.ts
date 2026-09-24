@@ -33,7 +33,8 @@ test('a planted stop is found within 1 percentage point', () => {
   const rules = mine(walletWithStop(30, -8), SOL).rules
   const stop = rules.find((r) => r.kind === 'stop')
   expect(stop?.found).toBe(true)
-  expect(Math.abs((stop?.value ?? 0) - -8)).toBeLessThanOrEqual(1)
+  // The trade loses 8%, and the rule reports 8, not -8: a stop is a distance, not a signed return.
+  expect(Math.abs((stop?.value ?? 0) - 8)).toBeLessThanOrEqual(1)
 })
 
 test('a planted stop is found within 1 point even with noise around it', () => {
@@ -42,7 +43,7 @@ test('a planted stop is found within 1 point even with noise around it', () => {
   )
   const stop = mine(noisy, SOL).rules.find((r) => r.kind === 'stop')
   expect(stop?.found).toBe(true)
-  expect(Math.abs((stop?.value ?? 0) - -8)).toBeLessThanOrEqual(1)
+  expect(Math.abs((stop?.value ?? 0) - 8)).toBeLessThanOrEqual(1)
 })
 
 test('scattered losses are said to be no rule, not averaged into one', () => {
@@ -122,4 +123,14 @@ describe('hold time', () => {
     // 100 slots at 400 ms is 40 s.
     expect(metrics.medianHoldSeconds).toBe(40)
   })
+})
+
+test('the mined stop is a positive percentage, the way every other part of the product says it', () => {
+  // It used to be signed, so the miner said -8 where the demo script, the failure messages and the
+  // guard all say 8. A sign that flips between the miner and the check is a comparison that
+  // inverts without erroring.
+  const stop = mine(walletWithStop(24, -8), SOL).rules.find((r) => r.kind === 'stop')
+  expect(stop?.found).toBe(true)
+  expect(stop?.value).toBeGreaterThan(0)
+  expect(stop?.value).toBeCloseTo(8, 1)
 })
