@@ -218,7 +218,7 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: none, judges only see the public repo
 
 ### T-C02, Record and replay wrapper with per-call timings
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-c02-record-replay
 - Depends-on: T-B01
 - Touches: packages/core/src/net/, fixtures/recorded/
 - Serves: Functionality (judged) ; Benchmark B latency breakdown
