@@ -245,7 +245,7 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: none. Anything not in the script is a candidate to cut at each checkpoint
 
 ### T-E02, Beta waitlist live
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-e02-waitlist
 - Depends-on: T-B01
 - Touches: apps/web/app/waitlist/
 - Serves: Business plan (judged) ; CP3 gate needs 10+ reports
