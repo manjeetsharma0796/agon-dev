@@ -177,7 +177,7 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 # P0, day 1. Nothing branches until T-B01 lands.
 
 ### T-B01, Scaffold the workspace, CI and the board
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-b01-scaffold
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/3 | Owner: Jishnu | Branch: feature/t-b01-scaffold
 - Depends-on: OP-7
 - Touches: package.json, pnpm-workspace.yaml, tsconfig.base.json, apps/, packages/, knip.json, .gitignore, .env.example, vercel.json
 - Serves: Functionality (judged) ; unblocks all 5 tracks
