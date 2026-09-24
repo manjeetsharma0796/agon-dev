@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync, appendFileSync } from 'node:fs'
+import { readdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, test } from 'vitest'
@@ -9,6 +10,15 @@ import { afterAll, describe, expect, test } from 'vitest'
 // The release allowlist has the same failure mode, and a worse blast radius, because the thing it
 // leaks cannot be unpublished. So the gate is not trusted for passing on a clean tree. It is
 // trusted only because each of the 6 markers is planted and each one is caught.
+
+const walk = (dir, root = dir, out = []) => {
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, e.name)
+    if (e.isDirectory()) walk(full, root, out)
+    else out.push(full.slice(root.length + 1))
+  }
+  return out
+}
 
 const work = mkdtempSync(join(tmpdir(), 'agon-release-'))
 afterAll(() => rmSync(work, { recursive: true, force: true }))
@@ -50,6 +60,20 @@ test('the allowlist keeps the internal files out in the first place', () => {
   ]) {
     expect(existsSync(join(clean, path)), `${path} reached the public tree`).toBe(false)
   }
+})
+
+test('no build output is published, so the public build actually builds', () => {
+  // Not tidiness. A published tsconfig.tsbuildinfo tells `tsc -b` on the stripped tree that every
+  // project is up to date, so the release step whose whole job is proving the public tree compiles
+  // would compile nothing and pass. Measured before the fix: `tsc -b --dry` said "is up to date"
+  // for all 9 projects.
+  const artifacts = walk(clean).filter(
+    (f) => /(^|\/)(node_modules|dist)(\/|$)/.test(f) || f.endsWith('.tsbuildinfo'),
+  )
+  expect(
+    artifacts,
+    `build output reached the public tree: ${artifacts.slice(0, 5).join(', ')}`,
+  ).toEqual([])
 })
 
 test('a clean public tree passes, and says how many markers it checked', () => {

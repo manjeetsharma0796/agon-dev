@@ -229,7 +229,13 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
   --push, after --check has already passed, and PR #9 is open titled "Write the measured provider
   limits into OP-2, OP-3 and OP-4", so the next release would have published an OP- marker through
   the 1 file the gate never saw. A gate that runs at the wrong moment is worth the same as a gate
-  that does not run.
+  that does not run. Third dead gate, same shape: every package's dist/ and tsconfig.tsbuildinfo
+  were published, and a published tsbuildinfo tells `tsc -b` on the stripped tree that all 9
+  projects are already up to date, so the step whose only job is proving the public tree compiles
+  compiled nothing and passed. `tsc -b --dry` said "is up to date" for 9 of 9 before the fix and
+  "a non-dry build would build" for 9 of 9 after it. The exclusion has to run inside cpSync and not
+  only on the glob, because `apps/**` yields `apps/web` itself and a recursive copy of a directory
+  carries whatever is in it.
 - Kill criterion: none, judges only see the public repo
 
 ### T-C02, Record and replay wrapper with per-call timings

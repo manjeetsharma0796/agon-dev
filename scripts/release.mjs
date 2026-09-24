@@ -18,6 +18,7 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { execFileSync } from 'node:child_process'
+import { cwd } from 'node:process'
 import { dirname, join, relative, sep } from 'node:path'
 
 const run = (cmd, args, opts = {}) => execFileSync(cmd, args, { stdio: 'inherit', ...opts })
@@ -42,6 +43,13 @@ const MARKERS = [
 const INTERNAL_PATHS = ['CLAUDE.md', 'spikes', 'docs/plans', '.env']
 
 const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', '.next', '.turbo'])
+
+// Build output, never source. Publishing it is not a leak, it is worse than untidy: a published
+// tsconfig.tsbuildinfo tells `tsc -b` on the stripped tree that every project is already up to
+// date, so the release step that exists to prove the public tree compiles compiles nothing and
+// passes. Measured: with the artifacts copied, `tsc -b --dry` says "is up to date" for all 9.
+const isArtifact = (path) =>
+  /(^|[\\/])(node_modules|dist|\.next|\.turbo)([\\/]|$)/.test(path) || path.endsWith('.tsbuildinfo')
 
 const walk = (dir, root = dir, out = []) => {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -111,12 +119,13 @@ if (mode === '--out') {
 
   let copied = 0
   for (const pattern of patterns) {
-    for (const src of globSync(pattern, {
-      exclude: (p) => p.includes('node_modules') || p.includes('/dist/'),
-    })) {
+    for (const src of globSync(pattern, { exclude: isArtifact })) {
       const dest = join(out, src)
       mkdirSync(dirname(dest), { recursive: true })
-      cpSync(src, dest, { recursive: true })
+      // The filter has to be here and not only on the glob. `apps/**` yields `apps/web` itself,
+      // and a recursive copy of that directory carries whatever is inside it, so filtering the
+      // glob results alone let every dist/ through.
+      cpSync(src, dest, { recursive: true, filter: (from) => !isArtifact(relative(cwd(), from)) })
       copied++
     }
   }
