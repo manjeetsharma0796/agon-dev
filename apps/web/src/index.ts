@@ -3,5 +3,6 @@
 // compile on the stripped tree. The files under app/ are one line each.
 
 export { FIXTURE_NOTE, NotArmable, armRule, armedRuleExample, checkTrade, report } from './legs.js'
-export { armRoute, checkTradeRoute, reportRoute, ruleFeedbackRoute } from './routes.js'
+export { armRoute, cardRoute, checkTradeRoute, reportRoute, ruleFeedbackRoute } from './routes.js'
+export * from './card.js'
 export * from './present.js'
