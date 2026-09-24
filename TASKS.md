@@ -227,7 +227,7 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: if C slips past day 2 this moves to B, per the PRD load check
 
 ### T-C03, Measure the region for API, RPC and Jev
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-c03-region
 - Depends-on: T-B01
 - Touches: docs/plans/region.md, apps/web/vercel.json
 - Serves: Functionality (judged) ; decision speed
