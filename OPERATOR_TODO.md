@@ -245,3 +245,21 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   nothing behind it.
 - Done when: 1 PR shows a preview URL, a merge to `dev` updates staging, and a `release-*` tag
   updates production, with 3 separate key sets and 0 shared between environments.
+
+### OP-18, Put the waitlist somewhere, and give it an inbox
+- Status: open
+- Owner: <unassigned>
+- Needed by: 2026-09-24, the same day, because recruiting is the slowest part of CP3
+- Unblocks: T-E02, and through it OP-8
+- What exactly: the page is built and tested at `apps/web/app/waitlist/` and needs 2 things only a
+  human can do. (1) Somewhere to receive a POST of `{email, address}` that returns 2xx and sends 1
+  confirmation email; any form backend will do, and it must not wait on Neon (OP-6) or on the
+  hosting project (OP-17), because both are slower than recruiting can afford. (2) A static deploy
+  of that directory, then `ENDPOINT` in `index.html` set to the URL from (1). The form deliberately
+  refuses to pretend while `ENDPOINT` is empty: it validates and then tells the visitor nothing was
+  sent, because a waitlist that silently drops people is the one failure this task cannot recover
+  from.
+- Done when: a live URL takes an email and a Solana address with 0 login, 1 confirmation email
+  arrives at an address someone on the team actually checked, and the URL is in T-E02's `Evidence:`
+  line.
+

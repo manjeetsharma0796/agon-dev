@@ -11,8 +11,9 @@ on average.
 
 | Test | What it proves | Threshold, written before the run | Measured | Status | CP | Commit |
 |---|---|---|---|---|---|---|
+| F3 **(existential)** | Token risk check on 30 labelled mints | flags 20/20 dangerous mints (10 live freeze or mint authority, 10 Token-2022 with permanent delegate, transfer hook or transfer fee) and 0/10 blue chips | 10/20 dangerous flagged, 2/10 blue chips flagged (USDC, USDT) | **FAIL** | CP1 | 3d3551ef |
 
-0 of 0 passing, 0 failing, 0 not run.
+0 of 1 passing, 1 failing, 0 not run.
 
 A failing test is not debated when it fails. It is decided at the next checkpoint, one of: keep,
 fallback, cut, or extend once with a new date. An undecided test at a checkpoint defaults to its

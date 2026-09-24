@@ -7,10 +7,14 @@ title = "agon"
 [extend]
 useDefault = true
 
-# Jupiter route plans name the AMM pool they route through in an "ammKey" field. A pool address is
-# public on-chain data, but the default generic-api-key rule reads any long value under a key
-# called *Key as a secret, so every recorded Jupiter quote fails the scan. Stripping the field
-# would gut the recording the benchmark replays.
+# Two on-chain address fields whose names end in "Key", which the default generic-api-key rule reads
+# as a secret because the value is long and high entropy:
+#
+#   ammKey      the AMM pool a Jupiter route plan goes through.
+#   accountKey  an account in an RPC transaction response. 24 of these blocked T-A01, the decoder,
+#               which is the existential F1 path.
+#
+# Both are public on-chain data. Stripping either would gut the recording the benchmark replays.
 #
 # This forgives the matched text and nothing else. It deliberately does NOT use `paths`: a path
 # allowlist exempts the whole file, and a real key planted in a Jupiter fixture then passes the
@@ -18,4 +22,4 @@ useDefault = true
 # any other name still fails, including in the same file.
 [allowlist]
 regexTarget = "match"
-regexes = ['''ammKey"\s*:\s*"[1-9A-HJ-NP-Za-km-z]{32,44}"''']
+regexes = ['''(ammKey|accountKey)"\s*:\s*"[1-9A-HJ-NP-Za-km-z]{32,44}"''']

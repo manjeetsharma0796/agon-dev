@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Agon beta waitlist</title>
+    <meta
+      name="description"
+      content="Agon turns your own trading history into a spending limit your AI agent has to trade inside."
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #fbfbfa;
+        --fg: #16161d;
+        --muted: #5c5c68;
+        --line: #d9d9d4;
+        --accent: #1f5f4f;
+        --bad: #9b2226;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #131316;
+          --fg: #ecece8;
+          --muted: #9a9aa4;
+          --line: #32323a;
+          --accent: #7fd1b9;
+          --bad: #ff9b93;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 2rem 1rem 4rem;
+        background: var(--bg);
+        color: var(--fg);
+        font:
+          16px/1.55 ui-sans-serif,
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          sans-serif;
+        display: flex;
+        justify-content: center;
+      }
+      main {
+        width: 100%;
+        max-width: 34rem;
+      }
+      h1 {
+        font-size: 1.6rem;
+        line-height: 1.2;
+        margin: 0 0 0.5rem;
+      }
+      .lede {
+        color: var(--muted);
+        margin: 0 0 2rem;
+      }
+      label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.3rem;
+      }
+      .hint {
+        color: var(--muted);
+        font-size: 0.875rem;
+        margin: 0 0 0.4rem;
+      }
+      input {
+        width: 100%;
+        padding: 0.6rem 0.7rem;
+        font: inherit;
+        color: inherit;
+        background: transparent;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+      }
+      input:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 1px;
+      }
+      input[aria-invalid='true'] {
+        border-color: var(--bad);
+      }
+      .field {
+        margin-bottom: 1.25rem;
+      }
+      .error {
+        color: var(--bad);
+        font-size: 0.875rem;
+        margin-top: 0.35rem;
+      }
+      .error:empty {
+        display: none;
+      }
+      button {
+        font: inherit;
+        font-weight: 600;
+        padding: 0.65rem 1.2rem;
+        color: var(--bg);
+        background: var(--accent);
+        border: 1px solid transparent;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      button:focus-visible {
+        outline: 2px solid var(--fg);
+        outline-offset: 2px;
+      }
+      button[disabled] {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      #status {
+        margin-top: 1.25rem;
+      }
+      #status:empty {
+        display: none;
+      }
+      .ok {
+        color: var(--accent);
+      }
+      .bad {
+        color: var(--bad);
+      }
+      footer {
+        margin-top: 2.5rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.875rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Agon beta</h1>
+      <p class="lede">
+        Agon reads your own trading history and turns it into a spending limit your AI agent has to
+        trade inside. Your key never leaves your wallet. The beta is a read-only report: you sign
+        nothing.
+      </p>
+
+      <form id="waitlist" novalidate>
+        <div class="field">
+          <label for="email">Email</label>
+          <p class="hint" id="email-hint">Where your report goes. Nothing else is sent here.</p>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autocomplete="email"
+            aria-describedby="email-hint email-error"
+            required
+          />
+          <p class="error" id="email-error" role="alert"></p>
+        </div>
+
+        <div class="field">
+          <label for="address">Solana address</label>
+          <p class="hint" id="address-hint">
+            The wallet whose history you want read. Read-only: we never ask for a key, a signature
+            or a connection.
+          </p>
+          <input
+            id="address"
+            name="address"
+            type="text"
+            inputmode="text"
+            spellcheck="false"
+            autocapitalize="off"
+            aria-describedby="address-hint address-error"
+            required
+          />
+          <p class="error" id="address-error" role="alert"></p>
+        </div>
+
+        <button type="submit" id="submit">Join the beta</button>
+        <p id="status" role="status" aria-live="polite"></p>
+      </form>
+
+      <footer>
+        No account, no password, no wallet connection. We store your email and address so we can
+        send you one report and ask whether it got you right.
+      </footer>
+    </main>
+
+    <script type="module">
+      import { checkSignup } from './validate.mjs'
+
+      // Set by whoever deploys this, to a URL that takes a POST and sends the confirmation. Left
+      // empty on purpose: a waitlist that looks like it accepted you and quietly dropped you is
+      // worse than one that is plainly not open yet, and it is the harder of the two to recover
+      // from, because that person does not come back.
+      const ENDPOINT = ''
+
+      const form = document.getElementById('waitlist')
+      const submit = document.getElementById('submit')
+      const status = document.getElementById('status')
+      const fields = ['email', 'address']
+
+      const show = (errors = {}) => {
+        for (const field of fields) {
+          const input = document.getElementById(field)
+          const slot = document.getElementById(`${field}-error`)
+          const message = errors[field] ?? ''
+          slot.textContent = message
+          input.setAttribute('aria-invalid', message ? 'true' : 'false')
+        }
+        const first = fields.find((f) => errors[f])
+        if (first) document.getElementById(first).focus()
+      }
+
+      const say = (text, kind) => {
+        status.textContent = text
+        status.className = kind
+      }
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault()
+        say('', '')
+
+        const checked = checkSignup({
+          email: form.email.value,
+          address: form.address.value,
+        })
+        if (!checked.ok) return show(checked.errors)
+        show()
+
+        if (!ENDPOINT) {
+          say(
+            'The waitlist is not collecting signups yet. Your details look right and nothing was ' +
+              'sent, so please try again shortly rather than assuming you are on the list.',
+            'bad',
+          )
+          return
+        }
+
+        submit.disabled = true
+        say('Sending.', '')
+        try {
+          const response = await fetch(ENDPOINT, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(checked.value),
+          })
+          if (!response.ok) {
+            say(
+              `The waitlist returned ${response.status} and did not record you. Nothing was saved, ` +
+                `so try again in a minute.`,
+              'bad',
+            )
+            return
+          }
+          form.reset()
+          say(`You are on the list. A confirmation is on its way to ${checked.value.email}.`, 'ok')
+        } catch (error) {
+          say(
+            `The request did not reach us (${error.name}) and nothing was saved. Check your ` +
+              `connection and try again.`,
+            'bad',
+          )
+        } finally {
+          submit.disabled = false
+        }
+      })
+    </script>
+  </body>
+</html>

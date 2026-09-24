@@ -1,0 +1,266 @@
+{
+  "id": "F3",
+  "pass": false,
+  "measured": "10/20 dangerous flagged, 2/10 blue chips flagged (USDC, USDT)",
+  "date": "2026-09-24",
+  "commit": "3d3551ef190242d640e84dbc92858b9fe472cd92",
+  "dataSlot": 450037708,
+  "notes": "The 2 blue chips flagged are USDC and USDT, both for a live freeze authority, which is the same trait the dangerous set is labelled by. The 10 fee-only Token-2022 mints are reported and not blocked, because a fee is a cost and not a way to take the position. Both are stated in full in spikes/F3/README.md.",
+  "perMint": {
+    "blueChip": [
+      {
+        "symbol": "SOL",
+        "mint": "So11111111111111111111111111111111111111112",
+        "flagged": false,
+        "rules": []
+      },
+      {
+        "symbol": "USDC",
+        "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "flagged": true,
+        "rules": [
+          "mint-freeze-authority",
+          "mint-authority-live"
+        ]
+      },
+      {
+        "symbol": "USDT",
+        "mint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+        "flagged": true,
+        "rules": [
+          "mint-freeze-authority",
+          "mint-authority-live"
+        ]
+      },
+      {
+        "symbol": "JUP",
+        "mint": "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
+        "flagged": false,
+        "rules": []
+      },
+      {
+        "symbol": "BONK",
+        "mint": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+        "flagged": false,
+        "rules": []
+      },
+      {
+        "symbol": "RAY",
+        "mint": "4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R",
+        "flagged": false,
+        "rules": []
+      },
+      {
+        "symbol": "JTO",
+        "mint": "jtojtomepa8beP8AuQc6eXt5FriJwfFMwQx2v2f9mCL",
+        "flagged": false,
+        "rules": []
+      },
+      {
+        "symbol": "WIF",
+        "mint": "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
+        "flagged": false,
+        "rules": []
+      },
+      {
+        "symbol": "PYTH",
+        "mint": "HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3",
+        "flagged": false,
+        "rules": []
+      },
+      {
+        "symbol": "jitoSOL",
+        "mint": "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn",
+        "flagged": false,
+        "rules": [
+          "mint-authority-live"
+        ]
+      }
+    ],
+    "dangerousAuthority": [
+      {
+        "symbol": "CASH",
+        "mint": "CASHx9KJUStyftLFWGvEVf59SGeG9sh5FfcnZMVPCASH",
+        "flagged": true,
+        "rules": [
+          "mint-freeze-authority",
+          "mint-permanent-delegate",
+          "mint-authority-live"
+        ]
+      },
+      {
+        "symbol": "HIMS",
+        "mint": "HiMSSzzwkZkrXJ4PGVJRdtfLaANeAztjjcgk5Dxe7Lwx",
+        "flagged": true,
+        "rules": [
+          "mint-freeze-authority",
+          "mint-permanent-delegate",
+          "mint-authority-live"
+        ]
+      },
+      {
+        "symbol": "ANTHROPIC",
+        "mint": "Pren1FvFX6J3E4kXhJuCiAD5aDmGEb7qJRncwA8Lkhw",
+        "flagged": true,
+        "rules": [
+          "mint-freeze-authority",
+          "mint-permanent-delegate",
+          "mint-authority-live",
+          "mint-transfer-fee"
+        ]
+      },
+      {
+        "symbol": "USDG",
+        "mint": "2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH",
+        "flagged": true,
+        "rules": [
+          "mint-freeze-authority",
+          "mint-permanent-delegate",
+          "mint-authority-live"
+        ]
+      },
+      {
+        "symbol": "SPYx",
+        "mint": "XsoCS1TfEyfFhfvj8EtZ528L3CaKBDBRqRapnBbDF2W",
+        "flagged": true,
+        "rules": [
+          "mint-freeze-authority",
+          "mint-permanent-delegate",
+          "mint-authority-live"
+        ]
+      },
+      {
+        "symbol": "cbBTC",
+        "mint": "cbbtcf3aa214zXHbiAZQwf4122FBYbraNdFqgw4iMij",
+        "flagged": true,
+        "rules": [
+          "mint-freeze-authority",
+          "mint-authority-live"
+        ]
+      },
+      {
+        "symbol": "NVDAx",
+        "mint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "flagged": true,
+        "rules": [
+          "mint-freeze-authority",
+          "mint-permanent-delegate",
+          "mint-authority-live"
+        ]
+      },
+      {
+        "symbol": "OPENAI",
+        "mint": "PreweJYECqtQwBtpxHL171nL2K6umo692gTm7Q3rpgF",
+        "flagged": true,
+        "rules": [
+          "mint-freeze-authority",
+          "mint-permanent-delegate",
+          "mint-authority-live",
+          "mint-transfer-fee"
+        ]
+      },
+      {
+        "symbol": "PYUSD",
+        "mint": "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo",
+        "flagged": true,
+        "rules": [
+          "mint-freeze-authority",
+          "mint-permanent-delegate",
+          "mint-authority-live"
+        ]
+      },
+      {
+        "symbol": "GLDx",
+        "mint": "Xsv9hRk1z5ystj9MhnA7Lq4vjSsLwzL2nxrwmwtD3re",
+        "flagged": true,
+        "rules": [
+          "mint-freeze-authority",
+          "mint-permanent-delegate",
+          "mint-authority-live"
+        ]
+      }
+    ],
+    "dangerousToken2022": [
+      {
+        "symbol": "GP",
+        "mint": "HTmQz7My6MehV7bjhJ6jde8nDND1yvsz68d24LP7YgUQ",
+        "flagged": false,
+        "rules": [
+          "mint-transfer-fee"
+        ]
+      },
+      {
+        "symbol": "ZCAT",
+        "mint": "HcRLc9VDgjLeK154xDawfb1dmVJ98DoSqcwTHGqiDeJR",
+        "flagged": false,
+        "rules": [
+          "mint-transfer-fee"
+        ]
+      },
+      {
+        "symbol": "CRACKER",
+        "mint": "4rkGWJNSUPBcMicXMRAzohEyeJLFG8gUjwiWaz7Pddr3",
+        "flagged": false,
+        "rules": [
+          "mint-transfer-fee"
+        ]
+      },
+      {
+        "symbol": "SI",
+        "mint": "DEW9dSN6QpWyNthphCpMmAbZP1Q4cEKR9xQXAri98WDP",
+        "flagged": false,
+        "rules": [
+          "mint-transfer-fee"
+        ]
+      },
+      {
+        "symbol": "GROK",
+        "mint": "6HU4CmRb15C2nQDx8Ld2f2W2wTdmog6aZiiXdrT5Pzi8",
+        "flagged": false,
+        "rules": [
+          "mint-transfer-fee"
+        ]
+      },
+      {
+        "symbol": "HYPERCAT",
+        "mint": "7Qy2cXpdj4Fu2DUPVWdN3oogM3JSwLUV2LZaKVgVcPZh",
+        "flagged": false,
+        "rules": [
+          "mint-transfer-fee"
+        ]
+      },
+      {
+        "symbol": "LEVERHYPPO",
+        "mint": "2Ghxme9RXa2vatoRPGnQgNKCXNZy2N3X7PbH4kzxHYPE",
+        "flagged": false,
+        "rules": [
+          "mint-transfer-fee"
+        ]
+      },
+      {
+        "symbol": "SCHLONG",
+        "mint": "HhXe2PbtXQHzZ5Ch46MBXf7rEbMgnYsCGaEhktyKGZNT",
+        "flagged": false,
+        "rules": [
+          "mint-transfer-fee"
+        ]
+      },
+      {
+        "symbol": "WOW",
+        "mint": "72yxYmhLgDGwdyi2b9GjDynBB6VuG3kDxNKqDbzXh5bi",
+        "flagged": false,
+        "rules": [
+          "mint-transfer-fee"
+        ]
+      },
+      {
+        "symbol": "JIRACHI",
+        "mint": "HMD6LV9hj6SdSKF4oTd7dYTVUhVL8MzYvPZYgb7BQSrW",
+        "flagged": false,
+        "rules": [
+          "mint-transfer-fee"
+        ]
+      }
+    ]
+  }
+}
