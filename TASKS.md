@@ -133,7 +133,7 @@ waste in the standup.
 ## 4. Task row format
 
 ```
-### T-A03, Decode Meteora DLMM swaps
+### T-X01, Decode Meteora DLMM swaps
 - Status: open
 - Depends-on: T-A01
 - Touches: packages/decoder/src/venues/meteora.ts, fixtures/golden/
@@ -142,6 +142,11 @@ waste in the standup.
 - Evidence: <link to spikes/F1/result.json at a commit, or the PR>
 - Kill criterion: coverage gain under 2 points after 1 day, so cut and list Meteora as unsupported
 ```
+
+`T-X` on purpose: X is not one of the tracks, so this example can never collide with a real row.
+It used to read `T-A03`, which is a real task, and `scripts/board.mjs` reads the whole file when it
+checks a `feature/` branch against its row. It found this block first, saw `Status: open`, and
+refused the PR for the actual T-A03 with "claim it first" after the claim had already merged.
 
 `Serves:` must name a judged criterion (Functionality, Potential impact, Novelty, UX, Open
 source, Business plan) or a measured user metric. `Acceptance:` must contain a number. Both
