@@ -531,7 +531,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: fallback is Jupiter-routed swaps only with the covered share printed on the report
 
 ### T-A03, Rule miner
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/50 | Owner: Prithwish | Branch: feature/t-a03-rule-miner
+- Status: done
 - Depends-on: T-A02
 - Touches: packages/miner/src/
 - Serves: Novelty (judged) ; F2
@@ -540,8 +540,8 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   closed trades before claiming a stop rule and shows sizing and hold time below that ("12
   closed trades. A stop rule needs 20; sizing and hold time are shown"); output is byte-identical
   across 2 runs on the same input
-- Evidence: <PR link; the 3 synthetic ledger runs are the planted-stop, scattered-loss and
-  12-trade cases in packages/miner/src/miner.test.ts>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/50; the 3 synthetic ledger runs are
+  the planted-stop, scattered-loss and 12-trade cases in packages/miner/src/miner.test.ts
 - Finding: the hard part is refusing, not finding. A median always exists, so a miner that reports
   one tells somebody they have a 20% stop when they have never used a stop, and they believe it
   because it arrived with a number. 3 separate gates are needed and each fails its own test when
