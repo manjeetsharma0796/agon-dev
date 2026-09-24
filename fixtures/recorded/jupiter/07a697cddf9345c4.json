@@ -1,7 +1,7 @@
 {
-  "slot": 450012192,
+  "slot": 450031214,
   "provider": "jupiter",
-  "recordedAt": "2026-09-24T11:14:44.365Z",
+  "recordedAt": "2026-09-24T12:38:35.605Z",
   "request": {
     "method": "GET",
     "url": "https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=Dz9mQ9NzkBcCsuGPFJ3r1bS4wgqKMHBPiVuniW8Mbonk&amount=100000000&slippageBps=100",
@@ -16,48 +16,34 @@
       "inputMint": "So11111111111111111111111111111111111111112",
       "inAmount": "100000000",
       "outputMint": "Dz9mQ9NzkBcCsuGPFJ3r1bS4wgqKMHBPiVuniW8Mbonk",
-      "outAmount": "40270365",
-      "otherAmountThreshold": "39867662",
+      "outAmount": "41540000",
+      "otherAmountThreshold": "41124600",
       "swapMode": "ExactIn",
       "slippageBps": 100,
       "platformFee": null,
-      "priceImpactPct": "0.0017697778139723123363976764",
+      "priceImpactPct": "0.001738527929291375101542788",
       "routePlan": [
         {
           "swapInfo": {
-            "ammKey": "82RLfDeEAoYtx3rwZF7igAQC1nGsBBvAMkygB5mcJojZ",
-            "label": "Flux",
+            "ammKey": "6ojmJoQCQ9mof4JuuMJHBtL5VvrZG8BcbM6PAhZB8hLU",
+            "label": "Scorch",
             "inputMint": "So11111111111111111111111111111111111111112",
-            "outputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-            "inAmount": "100000000",
-            "outAmount": "11339000",
-            "updateContextSlot": "450012192"
-          },
-          "percent": 100,
-          "bps": null
-        },
-        {
-          "swapInfo": {
-            "ammKey": "BDqQBspbipXxnTX2kw4FPM9pzfcf9kwieGCy4yUZ9tCC",
-            "label": "TesseraV",
-            "inputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
             "outputMint": "Dz9mQ9NzkBcCsuGPFJ3r1bS4wgqKMHBPiVuniW8Mbonk",
-            "inAmount": "11339000",
-            "outAmount": "40270365",
-            "updateContextSlot": "450012192"
+            "inAmount": "100000000",
+            "outAmount": "41540000",
+            "updateContextSlot": "450031214"
           },
           "percent": 100,
           "bps": null
         }
       ],
-      "contextSlot": 450012192,
-      "timeTaken": 0.006941852,
-      "swapUsdValue": "11.337064153050820",
+      "contextSlot": 450031214,
+      "timeTaken": 0.006635841,
+      "swapUsdValue": "11.323357333293430",
       "mostReliableAmmsQuoteReport": {
         "info": {
-          "BZtgQEyS6eXUXicYPHecYQ7PybqodXQMvkjUbP4R8mUU": "11338477",
-          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11333154",
-          "Q2sPHPdUWFMg7M7wwrQKLrn619cAucfRsmhVJffodSp": "40168086"
+          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11321128",
+          "Q2sPHPdUWFMg7M7wwrQKLrn619cAucfRsmhVJffodSp": "41455496"
         }
       },
       "longtailMarketQuoteReport": null,
@@ -68,9 +54,7 @@
       "instructionVersion": null,
       "transactionVersion": 0,
       "additionalIntermediateTokens": [
-        "A9jLtg9Fyu4FoEkWGpX88zMLcYARx6JXYJ1zcryDbonk",
-        "7aVdAZ7RCVKKcL93QvxftxesueYuyLouLbz2tHghhkGf",
-        "6Mmpe862mSEcDgWMwh3Y4pE1afBFsJtD8LFVDkixHCVJ"
+        "7aVdAZ7RCVKKcL93QvxftxesueYuyLouLbz2tHghhkGf"
       ]
     }
   }

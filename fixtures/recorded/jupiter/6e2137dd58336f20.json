@@ -1,7 +1,7 @@
 {
-  "slot": 450012132,
+  "slot": 450031138,
   "provider": "jupiter",
-  "recordedAt": "2026-09-24T11:14:28.530Z",
+  "recordedAt": "2026-09-24T12:38:16.212Z",
   "request": {
     "method": "GET",
     "url": "https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=HiMSSzzwkZkrXJ4PGVJRdtfLaANeAztjjcgk5Dxe7Lwx&amount=100000000&slippageBps=100",
@@ -16,12 +16,12 @@
       "inputMint": "So11111111111111111111111111111111111111112",
       "inAmount": "100000000",
       "outputMint": "HiMSSzzwkZkrXJ4PGVJRdtfLaANeAztjjcgk5Dxe7Lwx",
-      "outAmount": "401227",
-      "otherAmountThreshold": "397215",
+      "outAmount": "401060",
+      "otherAmountThreshold": "397050",
       "swapMode": "ExactIn",
       "slippageBps": 100,
       "platformFee": null,
-      "priceImpactPct": "0.0001117829928659389303811865",
+      "priceImpactPct": "0.003038840553010234013704014",
       "routePlan": [
         {
           "swapInfo": {
@@ -30,20 +30,20 @@
             "inputMint": "So11111111111111111111111111111111111111112",
             "outputMint": "HiMSSzzwkZkrXJ4PGVJRdtfLaANeAztjjcgk5Dxe7Lwx",
             "inAmount": "100000000",
-            "outAmount": "401227",
-            "updateContextSlot": "450012110"
+            "outAmount": "401060",
+            "updateContextSlot": "450031082"
           },
           "percent": 100,
           "bps": null
         }
       ],
-      "contextSlot": 450012132,
-      "timeTaken": 0.00361287,
-      "swapUsdValue": "11.334496532829730",
+      "contextSlot": 450031138,
+      "timeTaken": 0.003718601,
+      "swapUsdValue": "11.323396571515210",
       "mostReliableAmmsQuoteReport": {
         "info": {
-          "7iqWWNjubSTjmWXk9eYJViDLZjBN2KjrYt5Z9j8n8exQ": "400271",
-          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11333157"
+          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11321091",
+          "7iqWWNjubSTjmWXk9eYJViDLZjBN2KjrYt5Z9j8n8exQ": "399842"
         }
       },
       "longtailMarketQuoteReport": null,
@@ -54,6 +54,7 @@
       "instructionVersion": null,
       "transactionVersion": 0,
       "additionalIntermediateTokens": [
+        "HSUMi4rMgjrx7zRUabw3ogGu1pa5hmF2eVcXj9Apump",
         "HWVzRAw1n6NhfagfHEEWdGs1tUWThXifH3LDqpUbqY9w"
       ]
     }

@@ -1,7 +1,7 @@
 {
-  "slot": 450012127,
+  "slot": 450031133,
   "provider": "jupiter",
-  "recordedAt": "2026-09-24T11:14:27.267Z",
+  "recordedAt": "2026-09-24T12:38:14.998Z",
   "request": {
     "method": "GET",
     "url": "https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=6GmAFSYs4gk3FDao5FzzySQpPZaWsa4rUJHacpMpUNgx&amount=100000000&slippageBps=100",
@@ -16,48 +16,48 @@
       "inputMint": "So11111111111111111111111111111111111111112",
       "inAmount": "100000000",
       "outputMint": "6GmAFSYs4gk3FDao5FzzySQpPZaWsa4rUJHacpMpUNgx",
-      "outAmount": "33362073874",
-      "otherAmountThreshold": "33028453136",
+      "outAmount": "32019815178",
+      "otherAmountThreshold": "31699617027",
       "swapMode": "ExactIn",
       "slippageBps": 100,
       "platformFee": null,
-      "priceImpactPct": "0",
+      "priceImpactPct": "0.0002256803243055288390482838",
       "routePlan": [
         {
           "swapInfo": {
-            "ammKey": "7yD7gfXv49SFxhx9uTc11dEd7Nj98rGWeYMdZJgheZbG",
-            "label": "Kipseli",
+            "ammKey": "FksffEqnBRixYGR791Qw2MgdU7zNCpHVFYBL4Fa4qVuH",
+            "label": "HumidiFi",
             "inputMint": "So11111111111111111111111111111111111111112",
             "outputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
             "inAmount": "100000000",
-            "outAmount": "11337268",
-            "updateContextSlot": "450012126"
+            "outAmount": "11325664",
+            "updateContextSlot": "450031133"
           },
           "percent": 100,
           "bps": null
         },
         {
           "swapInfo": {
-            "ammKey": "GupqDENX2H7xFSUtGwWkvXYNg3eFriX2K3KeHniWTARf",
-            "label": "Whirlpool",
+            "ammKey": "36SpkkrsnyUgjPC24KU993r8T3whkJaPgoEeAmbBj9uB",
+            "label": "Meteora DLMM",
             "inputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
             "outputMint": "6GmAFSYs4gk3FDao5FzzySQpPZaWsa4rUJHacpMpUNgx",
-            "inAmount": "11337268",
-            "outAmount": "33362073874",
-            "updateContextSlot": "450012077"
+            "inAmount": "11325664",
+            "outAmount": "32019815178",
+            "updateContextSlot": "450031131"
           },
           "percent": 100,
           "bps": null
         }
       ],
-      "contextSlot": 450012127,
-      "timeTaken": 0.011728289,
-      "swapUsdValue": "11.334438873248950",
+      "contextSlot": 450031133,
+      "timeTaken": 0.011405778,
+      "swapUsdValue": "11.323086360193740",
       "mostReliableAmmsQuoteReport": {
         "info": {
-          "zxTpi4BtaWX3mgdAPoezkMD1hxx8CdeCfrqXMWvSCLX": "33301306529",
-          "BZtgQEyS6eXUXicYPHecYQ7PybqodXQMvkjUbP4R8mUU": "11336815",
-          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11333169"
+          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11321091",
+          "BZtgQEyS6eXUXicYPHecYQ7PybqodXQMvkjUbP4R8mUU": "11325208",
+          "zxTpi4BtaWX3mgdAPoezkMD1hxx8CdeCfrqXMWvSCLX": "31932811867"
         }
       },
       "longtailMarketQuoteReport": null,
@@ -68,9 +68,9 @@
       "instructionVersion": null,
       "transactionVersion": 0,
       "additionalIntermediateTokens": [
-        "13TaPTq46Gf3qFo14m9ctBQRfnpQpvAZcab4TWZG1AEp",
         "2y2n3XWuQU4r3CM4gHbWXDsKe7fHSDLH9MTx996NqYrU",
-        "GpHi1LNFaPnCtb81qVcrNfbzfu4tkw8FpftCy9x7hydN"
+        "GpHi1LNFaPnCtb81qVcrNfbzfu4tkw8FpftCy9x7hydN",
+        "13TaPTq46Gf3qFo14m9ctBQRfnpQpvAZcab4TWZG1AEp"
       ]
     }
   }

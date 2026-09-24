@@ -1,7 +1,7 @@
 {
-  "slot": 450012071,
+  "slot": 450031073,
   "provider": "rugcheck",
-  "recordedAt": "2026-09-24T11:14:57.741Z",
+  "recordedAt": "2026-09-24T12:38:46.938Z",
   "request": {
     "method": "GET",
     "url": "https://api.rugcheck.xyz/v1/tokens/Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB/report/summary",

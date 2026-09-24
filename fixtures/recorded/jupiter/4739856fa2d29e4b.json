@@ -1,7 +1,7 @@
 {
-  "slot": 450012105,
+  "slot": 450031108,
   "provider": "jupiter",
-  "recordedAt": "2026-09-24T11:14:21.238Z",
+  "recordedAt": "2026-09-24T12:38:08.857Z",
   "request": {
     "method": "GET",
     "url": "https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&amount=100000000&slippageBps=100",
@@ -16,8 +16,8 @@
       "inputMint": "So11111111111111111111111111111111111111112",
       "inAmount": "100000000",
       "outputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-      "outAmount": "11337277",
-      "otherAmountThreshold": "11223905",
+      "outAmount": "11326936",
+      "otherAmountThreshold": "11213667",
       "swapMode": "ExactIn",
       "slippageBps": 100,
       "platformFee": null,
@@ -25,25 +25,25 @@
       "routePlan": [
         {
           "swapInfo": {
-            "ammKey": "7yD7gfXv49SFxhx9uTc11dEd7Nj98rGWeYMdZJgheZbG",
-            "label": "Kipseli",
+            "ammKey": "F3ds62W3NNEBQrwi2ZFy2vX3xu5fxL6f7VMtRdmKjoCv",
+            "label": "Flux",
             "inputMint": "So11111111111111111111111111111111111111112",
             "outputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
             "inAmount": "100000000",
-            "outAmount": "11337277",
-            "updateContextSlot": "450012104"
+            "outAmount": "11326936",
+            "updateContextSlot": "450031108"
           },
           "percent": 100,
           "bps": null
         }
       ],
-      "contextSlot": 450012105,
-      "timeTaken": 0.001414231,
-      "swapUsdValue": "11.334862523072480",
+      "contextSlot": 450031108,
+      "timeTaken": 0.001284484,
+      "swapUsdValue": "11.32427108553810",
       "mostReliableAmmsQuoteReport": {
         "info": {
-          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11333195",
-          "BZtgQEyS6eXUXicYPHecYQ7PybqodXQMvkjUbP4R8mUU": "11335947"
+          "BZtgQEyS6eXUXicYPHecYQ7PybqodXQMvkjUbP4R8mUU": "11326273",
+          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11321101"
         }
       },
       "longtailMarketQuoteReport": null,
