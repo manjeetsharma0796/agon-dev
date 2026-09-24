@@ -296,3 +296,21 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: `agon revoke` runs end to end against 3 devnet wallets that really hold Agon roles,
   and the roles are really gone afterwards, which is T-D03's Evidence line.
 
+### OP-20, Reconcile CLAUDE.md's "3 questions" rule with T-B08's review-escalation questions
+- Status: open
+- Owner: <unassigned>
+- Needed by: CP2, 2026-10-02, alongside the T-B08 keep or cut decision
+- Unblocks: T-B08 (documentation only, not the code)
+- What exactly: CLAUDE.md's Non-negotiable section reads "Jev answers only 3 non-numeric
+  questions: token category, impersonation, injection screen", unqualified. `scripts/jev-review.mjs`
+  (T-B08 use 1) asks Jev 4 different `choice` questions (money math, transaction building, a
+  frozen contract, cross-track docs) about a PR diff, never about a trade. TASKS.md's own T-B08 row
+  describes exactly this design and was merged with it, so the row and CLAUDE.md's wording disagree
+  on paper even though neither touches the trading path: T-B08's questions never reach check_trade,
+  never carry a number, and its own kill criterion repeats the same "never numeric, never the rule
+  itself" constraint in different words. An agent should not silently decide whether the "3
+  questions" line is scoped to the trading guard or to every use of Jev anywhere in the repo; a
+  person should either reword CLAUDE.md to say "the trading guard asks Jev only 3 questions" or say
+  T-B08 does not get an exception.
+- Done when: CLAUDE.md's wording and TASKS.md's T-B08 row agree, in either direction.
+

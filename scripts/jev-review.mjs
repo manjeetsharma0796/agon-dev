@@ -130,7 +130,7 @@ function readDotEnvKey(name) {
   if (!existsSync('.env')) return undefined
   for (const line of readFileSync('.env', 'utf8').split(/\r?\n/)) {
     const m = /^([A-Z_][A-Z0-9_]*)=(.*)$/.exec(line)
-    if (m && m[1] === name) return m[2].trim()
+    if (m && m[1] === name) return m[2].trim().replace(/^(['"])(.*)\1$/, '$2')
   }
   return undefined
 }
@@ -181,7 +181,18 @@ async function check() {
     return
   }
 
-  const diff = git('diff', `${base}..${head}`)
+  let diff
+  try {
+    diff = git('diff', `${base}..${head}`)
+  } catch (e) {
+    // Fails open, same as an unreachable Jev below: a local git problem (a shallow checkout
+    // missing the base sha, a malformed sha on a rerun) is not a reason to block a PR.
+    console.log(
+      `note: could not read the diff (${e instanceof Error ? e.message : String(e)}). ` +
+        'Jev review escalation skipped; path rules only.',
+    )
+    return
+  }
   if (!diff.trim()) {
     console.log('note: empty diff, nothing to ask Jev.')
     return
@@ -280,6 +291,11 @@ async function measure(limitArg) {
     return
   }
 
+  // A "hit" requires Jev to flag the SAME category a human already ticked, not just any category
+  // on a diff that happens to need some review; matching on "any flag vs any truth" would count a
+  // diff as caught when Jev flagged transaction-building on a diff that only needed a money-math
+  // reviewer, which is not what check() rewards: missingReviewers() compares per category, and
+  // that is the unit this harness measures against too.
   let hits = 0
   let falseFlags = 0
   let misses = 0
@@ -295,16 +311,19 @@ async function measure(limitArg) {
       )
       continue
     }
-    const anyTrueFlag = Object.keys(CATEGORIES).some((k) => d.truth[k])
-    const anyJevFlag = Object.keys(CATEGORIES).some((k) => answers[k].flagged)
-    if (anyTrueFlag && anyJevFlag) hits++
-    else if (!anyTrueFlag && anyJevFlag) falseFlags++
-    else if (anyTrueFlag && !anyJevFlag) misses++
+    const keys = Object.keys(CATEGORIES)
+    const needsReview = keys.some((k) => d.truth[k])
+    const caughtTheRightCategory = keys.some((k) => d.truth[k] && answers[k].flagged)
+    const flaggedAWrongCategory = keys.some((k) => !d.truth[k] && answers[k].flagged)
+    if (needsReview && caughtTheRightCategory) hits++
+    if (needsReview && !caughtTheRightCategory) misses++
+    if (flaggedAWrongCategory) falseFlags++
   }
   console.log(
     `\nmeasure: ${called} of ${dataset.length} diffs called. ${hits} hits, ${falseFlags} false ` +
       `flags, ${misses} misses, against the bar of 38+/40 hits with 8 or fewer false flags on 40 ` +
-      'labelled diffs.',
+      'labelled diffs. A hit needs Jev to flag the same category a human ticked, not merely any ' +
+      'category on a diff that needed one.',
   )
 }
 

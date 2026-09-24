@@ -33,15 +33,37 @@ That is the whole mechanism, and it is deliberately narrow:
   This is analytics, not a funds-moving path. A missing `JEV_API_KEY` or an unreachable endpoint
   logs a note ("path rules only") and exits 0, rather than blocking every PR on a third party's
   uptime.
-- **Nothing numeric ever comes back.** All 4 questions are `choice`, matching T-C05's own reason
-  for banning `score` and `noul`: they smuggle a number out of Jev, and every numeric decision in
-  this product stays arithmetic. The `confidence` field is read, but only to compare against a
-  threshold before adding a checkbox requirement, never surfaced as a score of anything.
+- **Nothing numeric ever comes back.** All 4 questions in `scripts/jev-review.mjs` are `choice`,
+  never `score` and never `noul`. `parseAnswers()` reads exactly 2 fields off each answer, `choice`
+  and `confidence`, and `confidence` is only ever compared against a threshold before adding a
+  checkbox requirement, never surfaced as a score of anything or written anywhere numeric matters.
 
 Request shape reused from `packages/guard/src/jev/index.ts` (T-C05): one batched call, `state` is
 the diff text (capped at 20,000 characters so a huge diff does not turn into a slow or expensive
 call the endpoint's undocumented rate limit was never measured against), `questions` is a record of
 `choice` questions each with a `criteria` object of exactly 2 named options, `yes` and `no`.
+
+`noul` was considered and rejected again here, on top of T-C05's own reason. A fresh data point,
+not from this session (no live key), asked `noul` "Is this urgent?" on 3 texts: "the checkout has
+been down for an hour" scored 0.0226, "repaint the office kitchen next spring" scored 0.0086, and
+"every customer payment is failing and we are losing money right now" scored 0.0043, the lowest of
+the 3 for the most urgent case. `noul` is not merely weak here, it is inverted: ranking these 3 by
+`noul` score puts the actual emergency last. `choice` with named criteria, on the same shape of
+question, returns a `confidence` that was 0.998 on an obvious case and 0.001 when it was guessing,
+which is why `scripts/jev-review.mjs` uses `choice` exclusively and treats `confidence` as the only
+usable signal, same as T-C05.
+
+**A tension with CLAUDE.md worth reading, not hiding.** CLAUDE.md's Non-negotiable section reads
+"Jev answers only 3 non-numeric questions: token category, impersonation, injection screen",
+unqualified. This script asks Jev 4 different questions, none of the 3. Both the row in TASKS.md
+and this session's task brief describe exactly this design, so it is deliberate and not an
+oversight in this PR, but the written rule in CLAUDE.md does not carve out an exception for it, and
+an agent should not quietly decide on its own whether the 3-question line means "the trading guard"
+or "everywhere". Written up as OP-20 in `OPERATOR_TODO.md` for a person to resolve either by
+scoping CLAUDE.md's wording to the trading guard, or by saying T-B08 does not get an exception. The
+one thing this script does keep, regardless of that decision: it never reads a number back from
+Jev, only a `choice` and a `confidence` used as a threshold gate, the same non-negotiable that
+motivates the 3-question rule in the first place.
 
 ## The row's own bar, and what was actually measured
 
@@ -61,7 +83,12 @@ What could be measured without a key, and was:
 repo's own history instead of an invented set. It pulls every merged `feature/*` PR (the trivial
 one-line `claim/*` and `board/*` PRs are excluded, they carry no real diff), reads each one's own
 PR body for its ground truth (whichever of the 4 "Second reviewer needed?" boxes a human actually
-ticked at review time), and would call Jev on each diff if a key were present.
+ticked at review time), and would call Jev on each diff if a key were present. A "hit" only counts
+when Jev flags the same category a human actually ticked, not merely any category on a diff that
+needed some review; the first version of this comparison counted a diff as caught whenever both
+sides flagged anything at all, which would have let a money-math diff read as a hit off a wrongly
+flagged transaction-building answer. Caught in this PR's own `/code-review` pass before anything
+was measured against a real key, not after.
 
 Real, measured, 2026-09-24, 0 keys:
 
