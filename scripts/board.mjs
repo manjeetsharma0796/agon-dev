@@ -30,7 +30,7 @@ const JUDGED = [
 ]
 const PLACEHOLDER = /^(<.*>|tbd|todo|n\/a|none|-|\?+)$/i
 
-function parseTasks(text) {
+function parseTasks(text, lineOffset = 0) {
   const tasks = []
   let current = null
   let field = null // the field a wrapped continuation line belongs to
@@ -39,7 +39,7 @@ function parseTasks(text) {
   for (const [i, line] of text.split(/\r?\n/).entries()) {
     const head = /^### (T-[A-Z]?\d+[a-z]?|OP-\d+),\s*(.+)$/.exec(line)
     if (head) {
-      current = { id: head[1], title: head[2], line: i + 1, fields: {} }
+      current = { id: head[1], title: head[2], line: lineOffset + i + 1, fields: {} }
       tasks.push(current)
       field = null
       continue
@@ -68,8 +68,11 @@ function lint() {
   if (!existsSync('TASKS.md')) return fail('TASKS.md is missing. It is the board.')
   const text = readFileSync('TASKS.md', 'utf8')
   // Section 4 shows the row format inside a fenced block. Skip it or every rule trips on the example.
-  const body = text.split(/\r?\n## 5\./).slice(1).join('\n## 5.') || text
-  const tasks = parseTasks(body)
+  const [before, ...rest] = text.split(/\r?\n## 5\./)
+  const body = rest.length > 0 ? rest.join('\n## 5.') : text
+  // Report the line as it appears in the file, not in the sliced body, or the lint sends people to
+  // the wrong line.
+  const tasks = parseTasks(body, rest.length > 0 ? before.split(/\r?\n/).length : 0)
   if (tasks.length === 0) return fail('No task rows found in TASKS.md below section 5.')
 
   const ops = existsSync('OPERATOR_TODO.md')
