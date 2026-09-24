@@ -188,11 +188,15 @@ const readAccount = (mint: string, account: unknown, slot: number): MintCheck =>
     })
   }
 
-  const blocking = new Set([
-    'mint-freeze-authority',
-    'mint-permanent-delegate',
-    'mint-transfer-hook',
-  ])
+  // What blocks is what can take a position or immobilise it. A freeze authority is reported with
+  // its own reason and does not block, decided at CP1 on 2026-09-24 after F3 measured USDC and USDT
+  // flagged by it. Both have a live freeze authority, as do PYUSD, USDG, cbBTC and the tokenised
+  // equities: for a regulated issuer it is how a court order is obeyed, and for a memecoin deployer
+  // it is how your position is taken. The mint account cannot tell those apart, so the check states
+  // the fact and lets the trade through, and a guard that blocks the most traded token on Solana
+  // gets switched off by its user on day 1. Telling Circle from a stranger needs an issuer
+  // allowlist, which is T-C06 work with a threshold of its own.
+  const blocking = new Set(['mint-permanent-delegate', 'mint-transfer-hook'])
   const verdict: Verdict = reasons.some((r) => blocking.has(r.rule)) ? 'block' : 'pass'
   return { mint, verdict, reasons, dataSlot: slot, ruleVersion: RULE_VERSION, facts }
 }
