@@ -24,6 +24,25 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 
 ---
 
+### OP-19, Fund a throwaway devnet keypair
+- Status: open
+- Owner: <unassigned>
+- Needed by: 2026-09-26, so F5 has a result before CP1 on 2026-09-27
+- Unblocks: T-F05a, T-F05b, T-F06a, and through them T-E06, the arming UI
+- What exactly: 1 throwaway devnet keypair with about 2 devnet SOL. The public faucet is dry, so it
+  needs either the web faucet at faucet.solana.com, which wants a browser, or a devnet key you
+  already have. Devnet SOL has no value, so this is not the mainnet funding step in OP-5 and needs
+  none of its checklist. Put the key in the repo-ignored `.devnet/agon-f5.json` and set
+  `DEVNET_KEYPAIR` in the CI secrets from the same file. It is a throwaway: it must never hold
+  anything and must never be reused on mainnet.
+- Also, by hand, once F5 has run: case (g) of F5 is "removal done from Phantom, not only our CLI".
+  Connect the devnet Swig wallet in Phantom, remove the Agon role from there, and confirm the next
+  agent transaction fails. A script cannot assert that a person used a wallet, so this stays here.
+- Done when: `spikes/F5/result.json` exists with all 7 cases and 0 unexpected successes, and the
+  Phantom removal in (g) is recorded with the signature that failed after it.
+- Why it cannot wait: F5 is existential. If the cap does not hold on-chain, CP1 decides whether
+  Agon ships read-only, and that decision needs the measurement rather than an opinion.
+
 ### OP-1, Everyone trades from their test wallet, daily
 - Status: open
 - Owner: all, D coordinates

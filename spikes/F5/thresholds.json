@@ -1,0 +1,9 @@
+{
+  "test": "F5",
+  "name": "Swig role enforces the cap on-chain",
+  "threshold": "all 7 cases behave exactly as stated with 0 unexpected successes: (a) a Jupiter-program instruction within cap is authorised, (b) a swap over cap is rejected, (c) a transfer to an arbitrary address is rejected, (d) a call to a non-Jupiter program is rejected, (e) the allowance is restored at the expected slot after the window, (f) root removes the role and the next agent transaction fails, (g) removal done from Phantom and not only our CLI",
+  "checkpoint": "CP1",
+  "written": "2026-09-24",
+  "existential": true,
+  "notes": "Copied from T-F05a's Acceptance line before the spike ran. Directory is spikes/F5 and not spikes/F05 because scripts/spike.mjs resolves spikes/${id}/run.mjs from the id in spike:f5, so a spike in spikes/F05 is never executed; T-F05a's Touches line says F05 and is corrected in this PR. Cases (a) to (f) test what Swig authorises, not what Jupiter then does: devnet has no Jupiter liquidity, so (a) passing means the Swig program let the instruction through to Jupiter, not that a swap filled. Case (g) needs a human with Phantom and is an operator item, not something this script can assert."
+}
