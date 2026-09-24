@@ -17,7 +17,12 @@ const warnings = []
 const fail = (m) => errors.push(m)
 const warn = (m) => warnings.push(m)
 
-const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim()
+// maxBuffer, because the default is 1 MB and `git diff` on a PR that adds a recorded provider
+// response goes past it. When it does, execFileSync throws ERR_CHILD_PROCESS_STDIO_MAXBUFFER with
+// the diff itself embedded in the message, so the job fails with a megabyte of JSON and no reason,
+// which is how this was found. A lint that cannot read a large diff has to say so, not crash.
+const git = (...args) =>
+  execFileSync('git', args, { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 }).trim()
 
 const FIELDS = ['Status', 'Depends-on', 'Touches', 'Serves', 'Acceptance', 'Evidence']
 const JUDGED = [

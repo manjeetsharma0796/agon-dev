@@ -1004,7 +1004,14 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
   pages a wallet's history, returns a flat signature and already-subtracted
   accountData[].tokenBalanceChanges. Every decoder fixture was recorded in the first shape, so
   every decoder test passed against a shape the product never fetches. Translated at the edge,
-  in the CLI's io layer, so the decoder stays single shaped and pure
+  in the CLI's io layer, so the decoder stays single shaped and pure. Second finding, from the
+  same PR: the first file larger than 1 MB broke 2 shared gates at once. `scripts/board.mjs`
+  reads the PR diff through `execFileSync`, whose default maxBuffer is 1 MB, so hygiene died
+  with `spawnSync git ENOBUFS` and printed a megabyte of the diff instead of a reason. Raised
+  the buffer and said why in a comment. Separately the Helius enhanced response names token
+  accounts rather than owners, and gitleaks read 885 public base58 addresses as generic API
+  keys, so `tokenAccount`, `fromTokenAccount` and `toTokenAccount` join the match scoped
+  allowlist. Re-verified that a planted key in that same fixture still fails the scan
 - Kill criterion: none, the MCP server is how any agent reaches the guard
 
 ### T-E08, Onboarding
