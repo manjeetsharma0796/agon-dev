@@ -509,7 +509,14 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   wallets; decoded events per transaction match unique signature and leg counts on the golden
   wallets, so 0 double counting; every field name matches the value it holds, reviewed by a
   second person
-- Evidence: <PR link; the golden-wallet diff needs OP-1, no wallet has history yet>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/64, plus the reproduction: the same
+  4 swaps reported 0 closed trades before and 1 after
+- Finding: lots were queued per mint, so a lot bought with a different quote than the sale sat
+  at the head of the queue and every later sale of that mint hit it and stopped. 1 cross
+  currency buy froze that mint's P&L permanently: buy BONK with SOL, buy BONK with USDC, sell
+  twice for USDC, and the ledger reports 0 closed trades and 0 realised where the same wallet
+  without the SOL lot reports 1 trade and 10 USDC. Queues are now keyed by mint and quote, so a
+  sale only ever meets lots it can be priced against
 - Finding: the case with no honest answer is the common one. A position bought with SOL and sold
   for USDC has no realised P&L without a price at the fill, because 150 USDC minus 100 SOL is not
   50 of anything, and buying with SOL then taking profit into USDC is ordinary behaviour rather

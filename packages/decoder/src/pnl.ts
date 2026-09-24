@@ -74,8 +74,17 @@ export function fifoLedger(
   const quotes = new Set(quoteMints)
   const closedTrades: ClosedTrade[] = []
   const exceptions: LedgerException[] = []
-  /** Open lots per mint, oldest first. FIFO is the order of this array and nothing else. */
+  /**
+   * Open lots per mint AND quote, oldest first. FIFO is the order of this array and nothing else.
+   *
+   * Keyed by both because a lot bought with SOL and a lot bought with USDC are costs in different
+   * currencies, and there is no fill price here to convert between them. One queue per pair means
+   * a sale always meets lots it can actually be priced against. Keying by mint alone put a lot
+   * that could never be matched at the head of the queue, where every later sale of that mint hit
+   * it and stopped: one cross-quote buy froze the mint's P&L permanently.
+   */
   const lots = new Map<string, Lot[]>()
+  const queueKey = (mint: string, quote: string): string => `${mint}|${quote}`
 
   const seen = new Set<string>()
   const ordered = [...swaps]
@@ -102,8 +111,10 @@ export function fifoLedger(
     const quote = swap.side === 'buy' ? swap.soldMint : swap.boughtMint
     if (quotes.has(asset) || !quotes.has(quote)) continue
 
+    const key = queueKey(asset, quote)
+
     if (swap.side === 'buy') {
-      const open = lots.get(asset) ?? []
+      const open = lots.get(key) ?? []
       open.push({
         mint: asset,
         quoteMint: quote,
@@ -112,11 +123,11 @@ export function fifoLedger(
         openedSlot: swap.slot,
         openedBySignature: swap.signature,
       })
-      lots.set(asset, open)
+      lots.set(key, open)
       continue
     }
 
-    const open = lots.get(asset) ?? []
+    const open = lots.get(key) ?? []
     let remaining = BigInt(swap.soldAmount)
     const proceeds = BigInt(swap.boughtAmount)
     const total = remaining
@@ -126,20 +137,6 @@ export function fifoLedger(
 
     while (remaining > 0n && open.length > 0) {
       const lot = open[0] as Lot
-      if (lot.quoteMint !== quote) {
-        // 150 USDC minus 100 SOL is not 50 of anything, and there is no fill price here to convert
-        // with. Leaving the lot open and saying so beats inventing the number.
-        exceptions.push({
-          kind: 'quote-mismatch',
-          signature: swap.signature,
-          mint: asset,
-          detail:
-            `Bought with ${lot.quoteMint} and sold for ${quote}, so the ${lot.amount} base units ` +
-            `still open cannot be closed without a price at the fill. No P&L was realised and the ` +
-            `lot stays open.`,
-        })
-        break
-      }
       if (matched === 0n) openedSlot = lot.openedSlot
 
       const take = remaining < BigInt(lot.amount) ? remaining : BigInt(lot.amount)
@@ -157,18 +154,36 @@ export function fifoLedger(
         lot.costBasis = (BigInt(lot.costBasis) - takeCost).toString()
       }
     }
-    lots.set(asset, open)
+    lots.set(key, open)
 
-    if (remaining > 0n && !exceptions.some((e) => e.signature === swap.signature)) {
-      exceptions.push({
-        kind: 'sold-more-than-held',
-        signature: swap.signature,
-        mint: asset,
-        detail:
-          `Sold ${total} base units but only ${matched} have a cost in the decoded history, so ` +
-          `${remaining} are unaccounted. They most often arrived by airdrop or transfer. Only the ` +
-          `matched units are in the realised total, because the rest would be pure invented profit.`,
-      })
+    if (remaining > 0n) {
+      // Units of this mint still open, but bought with a different currency. Naming that is the
+      // difference between "we cannot price this" and "you got these for free", which are very
+      // different things to tell someone about their own money.
+      const otherQuotes = [...lots]
+        .filter(([k, v]) => k.startsWith(`${asset}|`) && k !== key && v.length > 0)
+        .map(([k]) => k.split('|')[1] ?? '')
+      if (otherQuotes.length > 0) {
+        exceptions.push({
+          kind: 'quote-mismatch',
+          signature: swap.signature,
+          mint: asset,
+          detail:
+            `Sold ${total} base units for ${quote} but ${remaining} of them were bought with ` +
+            `${otherQuotes.join(' and ')}. Those units stay open, because closing them needs a ` +
+            `price at the fill to convert between the two currencies and there is none here.`,
+        })
+      } else {
+        exceptions.push({
+          kind: 'sold-more-than-held',
+          signature: swap.signature,
+          mint: asset,
+          detail:
+            `Sold ${total} base units but only ${matched} have a cost in the decoded history, so ` +
+            `${remaining} are unaccounted. They most often arrived by airdrop or transfer. Only the ` +
+            `matched units are in the realised total, because the rest would be pure invented profit.`,
+        })
+      }
     }
 
     if (matched === 0n) continue

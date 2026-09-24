@@ -169,3 +169,28 @@ test('cost is conserved across many partial sells, so no basis leaks to rounding
     'basis leaked between the closed trades and the open lot',
   ).toBe('1000000001')
 })
+
+test('a lot bought in another currency does not freeze the rest of the mint forever', () => {
+  // The bug this test exists for: lots were queued per mint, so a SOL bought lot sat at the head
+  // of the queue and every later USDC sale hit it and stopped. One cross currency buy silently
+  // zeroed that mint's P&L for good, and the user was told they had made nothing.
+  const led = fifoLedger([
+    buy(BONK, '100', SOL, '1000000000'),
+    buy(BONK, '100', USDC, '50000000'),
+    sell(BONK, '100', USDC, '60000000'),
+    sell(BONK, '100', USDC, '70000000'),
+  ])
+
+  // The USDC lot closes against the USDC sale, which is the whole point.
+  expect(led.closedTrades, 'the matchable lot must still close').toHaveLength(1)
+  expect(led.realisedPnlByQuote[USDC]).toBe('10000000')
+
+  // The SOL bought lot stays open, because converting it still needs a price at the fill.
+  expect(led.openLots).toHaveLength(1)
+  expect(led.openLots[0]?.quoteMint).toBe(SOL)
+
+  // And the second sale says why, naming the currency rather than implying the units were free.
+  const mismatch = led.exceptions.find((e) => e.kind === 'quote-mismatch')
+  expect(mismatch?.detail).toContain('bought with')
+  expect(led.exceptions.some((e) => e.kind === 'sold-more-than-held')).toBe(false)
+})
