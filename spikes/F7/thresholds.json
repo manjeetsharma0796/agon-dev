@@ -1,0 +1,9 @@
+{
+  "test": "F7",
+  "name": "Pre-signed expiry",
+  "threshold": "Swig's protocol-level SDK checked for a native expiry field and the answer recorded; the pre-signed removal lands after expiry and the next agent transaction fails; an earlier manual revoke still works and leaves the pre-signed transaction harmless; the agent key held manageAuthority in 0 of the runs",
+  "checkpoint": "CP2",
+  "existential": false,
+  "written": "2026-09-25",
+  "notes": "Copied from T-F07's Acceptance line before anything ran. Clause 1 is answerable offline by reading the SDK. Clauses 2 to 4 each need a transaction to land on devnet, and there is no funded devnet key, which is OP-19. Expect a partial result reported as FAIL rather than a pass on the half that could run. Directory is spikes/F7 and not spikes/F07, for the reason recorded in T-F03."
+}
