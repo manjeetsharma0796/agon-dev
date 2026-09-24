@@ -82,7 +82,7 @@ jobs:
       - name: Test
         if: steps.ws.outputs.ready == 'true'
         # Offline: packages/core wraps every external call, so the suite needs no key and no network.
-        run: pnpm test --reporter=dot
+        run: pnpm test -- --reporter=dot
 
       - name: Build
         if: steps.ws.outputs.ready == 'true'

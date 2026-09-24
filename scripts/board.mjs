@@ -229,7 +229,9 @@ function pr() {
   // the Friday /ponytail-debt pass and every scope cut has nowhere legal to land.
   if (branch.startsWith('board/')) {
     if (!/^board\/[a-z0-9-]+$/.test(branch)) {
-      fail(`Board branch "${branch}" must be "board/<slug>", all lower case, e.g. board/cut-screener.`)
+      fail(
+        `Board branch "${branch}" must be "board/<slug>", all lower case, e.g. board/cut-screener.`,
+      )
     }
     if (!base || /^0+$/.test(base)) return warn('No PR_BASE_SHA, skipping the board diff check.')
     const allowed = ['TASKS.md', 'OPERATOR_TODO.md']

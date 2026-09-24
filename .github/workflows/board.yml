@@ -94,13 +94,26 @@ jobs:
           fi
 
       - name: Signing code needs a security review
+        # The PRD asks a human to read anything that builds a transaction or a Swig instruction. It
+        # does not ask them to read an empty stub, so the path alone is not the trigger: a scaffold
+        # PR that creates packages/chain/src/index.ts holding `export {}` needs no security review,
+        # and firing on it teaches people to tick the box without reading. The trigger is a path that
+        # is unambiguously key material, or an added line that actually signs or moves value.
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
           BASE: ${{ github.event.pull_request.base.sha }}
           HEAD: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
-          if git diff --name-only "$BASE".."$HEAD" | grep -Eq '^packages/(chain|cli)/|daemon|keychain'; then
+          why=""
+          if git diff --name-only "$BASE".."$HEAD" | grep -Eq 'daemon|keychain|keypair'; then
+            why="a path naming the daemon, the keychain or a keypair"
+          elif git diff "$BASE".."$HEAD" -- 'packages/chain/**' 'packages/cli/**' \
+               | grep -E '^\+' | grep -vE '^\+\s*(//|\*|/\*)' \
+               | grep -Eq '(Keypair|secretKey|signTransaction|sendTransaction|partialSign|sendRawTransaction|Swig|tokenRecurringLimit|manageAuthority|durableNonce)'; then
+            why="an added line that signs, or that builds a Swig role or instruction"
+          fi
+          if [ -n "$why" ]; then
             echo "$PR_BODY" | grep -q 'security-review. was also run' \
-              || { echo "::error::This diff touches chain, the daemon or keys. Run /security-review, tick the box, and name a second reviewer who did not write it."; exit 1; }
+              || { echo "::error::This diff contains $why. Run /security-review, tick that box, and name a second reviewer who did not write the code."; exit 1; }
           fi

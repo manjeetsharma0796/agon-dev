@@ -77,10 +77,10 @@ jobs:
         if: steps.ws.outputs.ready == 'true'
         # check_trade: 1 account batch, 1 quote, 1 Jev call. History: at most 1 page per 100 txs.
         # The counting wrapper lives in packages/core/src/net, so this is a test, not a new tool.
-        run: pnpm test --project=budget --reporter=dot
+        run: pnpm test -- --project=budget --reporter=dot
 
       - name: MCP token budget
         if: steps.ws.outputs.ready == 'true'
         # get_report 2,000, check_trade 400, on the golden wallets.
         # monad T6.8: a 2.1M-token tool result broke every question the agent could ask.
-        run: pnpm test --project=token-budget --reporter=dot
+        run: pnpm test -- --project=token-budget --reporter=dot

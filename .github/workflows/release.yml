@@ -55,7 +55,7 @@ jobs:
         run: |
           pnpm install --no-frozen-lockfile
           pnpm build
-          pnpm test --reporter=dot
+          pnpm test -- --reporter=dot
 
       - name: Secret scan the public tree
         uses: gitleaks/gitleaks-action@v2
