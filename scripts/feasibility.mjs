@@ -52,7 +52,9 @@ const md = [
   'do not count. "Pass" means the measured number met the threshold on **every** listed input, not',
   'on average.',
   '',
-  `Last run: ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC.`,
+  // No generation timestamp. It would say when this script ran, not when any spike ran, and it
+  // would make the output differ on every run, so CI could never tell a stale file from a fresh
+  // one. Each row carries its own date and commit, which is the honest answer.
   '',
   '| Test | What it proves | Threshold, written before the run | Measured | Status | CP | Commit |',
   '|---|---|---|---|---|---|---|',
