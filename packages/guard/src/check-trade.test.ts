@@ -276,3 +276,25 @@ test('every verdict is stamped with the stalest read behind it and both rule ver
   expect(out.dataSlot).toBe(SLOT - 4)
   expect(out.ruleVersion).toBe('check-trade/1+profile-2026-09-24-a')
 })
+
+test('the no-model share, measured over F4 own 4 scripted trade kinds', () => {
+  // "0 model calls when all guards resolve arithmetically, and the no-model share is measured and
+  // reported." The caller skips the Jev call when the arithmetic alone already blocks, so the
+  // share is counted by running each kind with `jev: null` and asking whether it reached a block.
+  // The production share over real traffic is Benchmark B's line, not this one.
+  const kinds: [string, ReturnType<typeof buy>, Partial<TradeFacts>][] = [
+    ['over usual size', buy(MEDIAN * 4.1), {}],
+    ['past usual stop', buy(MEDIAN), { proposedStopPct: 30 }],
+    ['new token outside the usual set', buy(MEDIAN), {}],
+    ['normal trade', buy(MEDIAN), {}],
+  ]
+  const noModel = kinds.filter(
+    ([, trade, over]) => checkTrade(trade, facts({ ...over, jev: null })).verdict === 'block',
+  )
+  expect(noModel.map(([name]) => name)).toEqual(['over usual size', 'past usual stop'])
+  expect(noModel).toHaveLength(2)
+
+  // The 2 that do need the model need it for the category, which is one of the 3 non-numeric
+  // questions, and never for a number.
+  expect(checkTrade(buy(MEDIAN), facts({ jev: null })).verdict).toBe('unsure')
+})

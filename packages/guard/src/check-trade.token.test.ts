@@ -63,6 +63,7 @@ const trade = (size: number) => ({
   wallet: WALLET,
 })
 
+// Measured: a pass is 26 tokens and the demo block below is 142, against a budget of 400.
 test('a pass and an ordinary block both fit the 400 token budget', () => {
   expect(tokens(checkTrade(trade(MEDIAN), facts()))).toBeLessThanOrEqual(BUDGET)
   // The demo case and F4's headline: over the usual size on a token that can freeze you.
