@@ -434,7 +434,15 @@ and latency (a, b).
   else; the agent key holds 0 `manageAuthority`, verified by reading the role on-chain and not
   from our config; Swig and Jupiter program ids pinned in config, 0 read from user input;
   transactions built as v1 with `@solana/kit` 8.0.0 or later
-- Evidence: <PR link, plus the on-chain role read>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/39, role shape and the no-manageAuthority
+  check with 4 negative controls. The on-chain round trip belongs to T-F05a
+- Finding: the last acceptance clause cannot be met. It asks for transactions built with
+  `@solana/kit` 8.0.0 or later, and every Swig package at every published version pins
+  `@solana/kit ^2.1.0`: classic, lib and coder, 20 versions each. Installing both puts 2
+  incompatible copies of kit in the tree (2.3.0 and 8.3.0) whose branded Address and Instruction
+  types do not interoperate. This is a CP1 decision, not a refactor: either the clause moves to
+  ^2.1.0, which is what the only available SDK supports, or the Swig instructions get built by hand
+  against the coder to decouple from its kit version
 - Kill criterion: none. If the cap does not hold on-chain the custody story is gone, see T-F05a
 
 ### T-F05a, F5 spike, 7 cases on devnet
