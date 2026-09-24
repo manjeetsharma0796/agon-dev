@@ -1,0 +1,1406 @@
+{
+  "slot": 450012073,
+  "provider": "rpc",
+  "recordedAt": "2026-09-24T11:14:20.951Z",
+  "request": {
+    "method": "POST",
+    "url": "https://mainnet.helius-rpc.com/?api-key=REDACTED",
+    "headers": {},
+    "body": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "method": "getMultipleAccounts",
+      "params": [
+        [
+          "So11111111111111111111111111111111111111112",
+          "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "CASHx9KJUStyftLFWGvEVf59SGeG9sh5FfcnZMVPCASH",
+          "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+          "HTmQz7My6MehV7bjhJ6jde8nDND1yvsz68d24LP7YgUQ",
+          "pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn",
+          "6GmAFSYs4gk3FDao5FzzySQpPZaWsa4rUJHacpMpUNgx",
+          "HiMSSzzwkZkrXJ4PGVJRdtfLaANeAztjjcgk5Dxe7Lwx",
+          "HcRLc9VDgjLeK154xDawfb1dmVJ98DoSqcwTHGqiDeJR",
+          "A7bdiYdS5GjqGFtxf17ppRHtDKPkkRqbKtR27dxvQXaS",
+          "4rkGWJNSUPBcMicXMRAzohEyeJLFG8gUjwiWaz7Pddr3",
+          "UpBBfyC75u3kxDGWmmmW2yauk9YY3CqZhdt1KUDkids",
+          "METvsvVRapdj9cFLzq4Tr43xK4tAjQfwX76z3n6mWQL",
+          "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
+          "4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R",
+          "Pren1FvFX6J3E4kXhJuCiAD5aDmGEb7qJRncwA8Lkhw",
+          "HSUMi4rMgjrx7zRUabw3ogGu1pa5hmF2eVcXj9Apump",
+          "GTBxUiw6wJdmmkCGZgRHLyYxqu1vG4KtRpeox6yDpump",
+          "2PENPmfgJfq6CG3k4byj4oWwHf8SerqakmYHMkUupump",
+          "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+          "Dz9mQ9NzkBcCsuGPFJ3r1bS4wgqKMHBPiVuniW8Mbonk",
+          "DEW9dSN6QpWyNthphCpMmAbZP1Q4cEKR9xQXAri98WDP",
+          "6HU4CmRb15C2nQDx8Ld2f2W2wTdmog6aZiiXdrT5Pzi8",
+          "2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH",
+          "7ga6rtE9qSb3wdEiDCpTu2kHqoGVfT52jD8ign1rYTvx",
+          "7Qy2cXpdj4Fu2DUPVWdN3oogM3JSwLUV2LZaKVgVcPZh",
+          "2Ghxme9RXa2vatoRPGnQgNKCXNZy2N3X7PbH4kzxHYPE",
+          "HhXe2PbtXQHzZ5Ch46MBXf7rEbMgnYsCGaEhktyKGZNT",
+          "72yxYmhLgDGwdyi2b9GjDynBB6VuG3kDxNKqDbzXh5bi",
+          "5dvXTZ5qwgafnHtwu3Ls3QrWx1U4LQsFeCuJgkk4QEC6"
+        ],
+        {
+          "encoding": "jsonParsed"
+        }
+      ]
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "jsonrpc": "2.0",
+      "result": {
+        "context": {
+          "slot": 450012073,
+          "apiVersion": "4.3.0-alpha.2"
+        },
+        "value": [
+          {
+            "lamports": 1845175756975,
+            "data": {
+              "program": "spl-token",
+              "parsed": {
+                "info": {
+                  "decimals": 9,
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": null,
+                  "supply": "0"
+                },
+                "type": "mint"
+              },
+              "space": 82
+            },
+            "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 82
+          },
+          {
+            "lamports": 534788257985,
+            "data": {
+              "program": "spl-token",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "freezeAuthority": "7dGbd2QZcCKcTndnHcTL8q7SMVXAkp688NTQYwrRCrar",
+                  "isInitialized": true,
+                  "mintAuthority": "BJE5MMbqXjVwjAF7oxwPYXnTXDyspzZyt4vwenNw5ruG",
+                  "supply": "8402949631472042"
+                },
+                "type": "mint"
+              },
+              "space": 82
+            },
+            "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 82
+          },
+          {
+            "lamports": 218589788,
+            "data": {
+              "program": "spl-token-2022",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "extensions": [
+                    {
+                      "extension": "mintCloseAuthority",
+                      "state": {
+                        "closeAuthority": "E7JdFMP5AqdndJKstZV2mHdekLwAQbNWRHMpoozyB3qw"
+                      }
+                    },
+                    {
+                      "extension": "permanentDelegate",
+                      "state": {
+                        "delegate": "E7JdFMP5AqdndJKstZV2mHdekLwAQbNWRHMpoozyB3qw"
+                      }
+                    },
+                    {
+                      "extension": "defaultAccountState",
+                      "state": {
+                        "accountState": "initialized"
+                      }
+                    },
+                    {
+                      "extension": "confidentialTransferMint",
+                      "state": {
+                        "auditorElgamalPubkey": null,
+                        "authority": "E7JdFMP5AqdndJKstZV2mHdekLwAQbNWRHMpoozyB3qw",
+                        "autoApproveNewAccounts": false
+                      }
+                    },
+                    {
+                      "extension": "transferHook",
+                      "state": {
+                        "authority": "3etmwgxP4Lt2LLEyYpN2f9oKKi1onGy5XHRSP4BRq2vb",
+                        "programId": null
+                      }
+                    },
+                    {
+                      "extension": "metadataPointer",
+                      "state": {
+                        "authority": "3etmwgxP4Lt2LLEyYpN2f9oKKi1onGy5XHRSP4BRq2vb",
+                        "metadataAddress": "CASHx9KJUStyftLFWGvEVf59SGeG9sh5FfcnZMVPCASH"
+                      }
+                    },
+                    {
+                      "extension": "tokenMetadata",
+                      "state": {
+                        "additionalMetadata": [],
+                        "mint": "CASHx9KJUStyftLFWGvEVf59SGeG9sh5FfcnZMVPCASH",
+                        "name": "CASH",
+                        "symbol": "CASH",
+                        "updateAuthority": "3etmwgxP4Lt2LLEyYpN2f9oKKi1onGy5XHRSP4BRq2vb",
+                        "uri": "https://token-metadata.bridge.xyz/solana/cash.json"
+                      }
+                    }
+                  ],
+                  "freezeAuthority": "AyCP3oW19DHZKvx8oU6mvseW2qn7XfmQ5STrXPa6prY5",
+                  "isInitialized": true,
+                  "mintAuthority": "HJT2TXrhbWta2ax7V86vcnmX7ZmAVzua4v2yrGwchXB7",
+                  "supply": "128832456351352"
+                },
+                "type": "mint"
+              },
+              "space": 590
+            },
+            "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 590
+          },
+          {
+            "lamports": 212997226126,
+            "data": {
+              "program": "spl-token",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "freezeAuthority": "Q6XprfkF8RQQKoQVG33xT88H7wi8Uk1B1CC7YAs69Gi",
+                  "isInitialized": true,
+                  "mintAuthority": "Q6XprfkF8RQQKoQVG33xT88H7wi8Uk1B1CC7YAs69Gi",
+                  "supply": "3839903682849567"
+                },
+                "type": "mint"
+              },
+              "space": 82
+            },
+            "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 82
+          },
+          {
+            "lamports": 40139586,
+            "data": {
+              "program": "spl-token-2022",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "extensions": [
+                    {
+                      "extension": "metadataPointer",
+                      "state": {
+                        "authority": null,
+                        "metadataAddress": "HTmQz7My6MehV7bjhJ6jde8nDND1yvsz68d24LP7YgUQ"
+                      }
+                    },
+                    {
+                      "extension": "transferFeeConfig",
+                      "state": {
+                        "newerTransferFee": {
+                          "epoch": 1030,
+                          "maximumFee": 1000000000000000,
+                          "transferFeeBasisPoints": 300
+                        },
+                        "olderTransferFee": {
+                          "epoch": 1030,
+                          "maximumFee": 1000000000000000,
+                          "transferFeeBasisPoints": 300
+                        },
+                        "transferFeeConfigAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
+                        "withdrawWithheldAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
+                        "withheldAmount": 4295309548
+                      }
+                    },
+                    {
+                      "extension": "tokenMetadata",
+                      "state": {
+                        "additionalMetadata": [],
+                        "mint": "HTmQz7My6MehV7bjhJ6jde8nDND1yvsz68d24LP7YgUQ",
+                        "name": "RuneScape Gold",
+                        "symbol": "GP",
+                        "updateAuthority": "WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh",
+                        "uri": "https://gateway.irys.xyz/Fjfok9wcUYoUr6cJtWY344WmLSCnbTApPHcg9WaRCULi"
+                      }
+                    }
+                  ],
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": null,
+                  "supply": "993557106049085"
+                },
+                "type": "mint"
+              },
+              "space": 515
+            },
+            "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 515
+          },
+          {
+            "lamports": 8426655782,
+            "data": {
+              "program": "spl-token-2022",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "extensions": [
+                    {
+                      "extension": "transferHook",
+                      "state": {
+                        "authority": "DMdBa812dBW1CHVhmTyUyVcrBnSbZbfoFC7U14k4riH1",
+                        "programId": null
+                      }
+                    },
+                    {
+                      "extension": "metadataPointer",
+                      "state": {
+                        "authority": null,
+                        "metadataAddress": "pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn"
+                      }
+                    },
+                    {
+                      "extension": "tokenMetadata",
+                      "state": {
+                        "additionalMetadata": [],
+                        "mint": "pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn",
+                        "name": "Pump",
+                        "symbol": "PUMP",
+                        "updateAuthority": null,
+                        "uri": "https://ipfs.io/ipfs/bafkreibcglldkfdekdkxgumlveoe6qv3pbiceypkwtli33clbzul7leo4m"
+                      }
+                    }
+                  ],
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": null,
+                  "supply": "832216615206689509"
+                },
+                "type": "mint"
+              },
+              "space": 474
+            },
+            "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 474
+          },
+          {
+            "lamports": 46648575914,
+            "data": {
+              "program": "spl-token",
+              "parsed": {
+                "info": {
+                  "decimals": 9,
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": null,
+                  "supply": "820955104939310804"
+                },
+                "type": "mint"
+              },
+              "space": 82
+            },
+            "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 82
+          },
+          {
+            "lamports": 5811600,
+            "data": {
+              "program": "spl-token-2022",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "extensions": [
+                    {
+                      "extension": "metadataPointer",
+                      "state": {
+                        "authority": "2cVYpagTt7ZGc3mmTXBa7fAznUtx5DUu6aCq8uVDaf4a",
+                        "metadataAddress": "HiMSSzzwkZkrXJ4PGVJRdtfLaANeAztjjcgk5Dxe7Lwx"
+                      }
+                    },
+                    {
+                      "extension": "permanentDelegate",
+                      "state": {
+                        "delegate": "2cVYpagTt7ZGc3mmTXBa7fAznUtx5DUu6aCq8uVDaf4a"
+                      }
+                    },
+                    {
+                      "extension": "defaultAccountState",
+                      "state": {
+                        "accountState": "initialized"
+                      }
+                    },
+                    {
+                      "extension": "pausableConfig",
+                      "state": {
+                        "authority": "2cVYpagTt7ZGc3mmTXBa7fAznUtx5DUu6aCq8uVDaf4a",
+                        "paused": false
+                      }
+                    },
+                    {
+                      "extension": "confidentialTransferMint",
+                      "state": {
+                        "auditorElgamalPubkey": null,
+                        "authority": "2cVYpagTt7ZGc3mmTXBa7fAznUtx5DUu6aCq8uVDaf4a",
+                        "autoApproveNewAccounts": false
+                      }
+                    },
+                    {
+                      "extension": "transferHook",
+                      "state": {
+                        "authority": "2cVYpagTt7ZGc3mmTXBa7fAznUtx5DUu6aCq8uVDaf4a",
+                        "programId": null
+                      }
+                    },
+                    {
+                      "extension": "scaledUiAmountConfig",
+                      "state": {
+                        "authority": "AQGfwosRHg8uZGf7cCPe1yax8fVoWKnW6r3odYVJuC31",
+                        "multiplier": "1",
+                        "newMultiplier": "1",
+                        "newMultiplierEffectiveTimestamp": 0
+                      }
+                    },
+                    {
+                      "extension": "tokenMetadata",
+                      "state": {
+                        "additionalMetadata": [],
+                        "mint": "HiMSSzzwkZkrXJ4PGVJRdtfLaANeAztjjcgk5Dxe7Lwx",
+                        "name": "Hims & Hers Health - Backpack Securities",
+                        "symbol": "HIMS",
+                        "updateAuthority": "2cVYpagTt7ZGc3mmTXBa7fAznUtx5DUu6aCq8uVDaf4a",
+                        "uri": "https://trek-labs.github.io/heart-metadata/stocks/hims.us.json"
+                      }
+                    }
+                  ],
+                  "freezeAuthority": "2cVYpagTt7ZGc3mmTXBa7fAznUtx5DUu6aCq8uVDaf4a",
+                  "isInitialized": true,
+                  "mintAuthority": "AQGfwosRHg8uZGf7cCPe1yax8fVoWKnW6r3odYVJuC31",
+                  "supply": "10350489432"
+                },
+                "type": "mint"
+              },
+              "space": 699
+            },
+            "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 699
+          },
+          {
+            "lamports": 20154493914,
+            "data": {
+              "program": "spl-token-2022",
+              "parsed": {
+                "info": {
+                  "decimals": 9,
+                  "extensions": [
+                    {
+                      "extension": "transferFeeConfig",
+                      "state": {
+                        "newerTransferFee": {
+                          "epoch": 1025,
+                          "maximumFee": 1000000000000000000,
+                          "transferFeeBasisPoints": 300
+                        },
+                        "olderTransferFee": {
+                          "epoch": 1025,
+                          "maximumFee": 1000000000000000000,
+                          "transferFeeBasisPoints": 300
+                        },
+                        "transferFeeConfigAuthority": null,
+                        "withdrawWithheldAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
+                        "withheldAmount": 486906769273546
+                      }
+                    },
+                    {
+                      "extension": "metadataPointer",
+                      "state": {
+                        "authority": null,
+                        "metadataAddress": "HcRLc9VDgjLeK154xDawfb1dmVJ98DoSqcwTHGqiDeJR"
+                      }
+                    },
+                    {
+                      "extension": "tokenMetadata",
+                      "state": {
+                        "additionalMetadata": [],
+                        "mint": "HcRLc9VDgjLeK154xDawfb1dmVJ98DoSqcwTHGqiDeJR",
+                        "name": "Anonymous Cat",
+                        "symbol": "ZCAT",
+                        "updateAuthority": null,
+                        "uri": "https://gateway.irys.xyz/GNy6d9dhhEuxFBqKb8Egm5beiRML4fDUS6zuKQuTs7Ys"
+                      }
+                    }
+                  ],
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": null,
+                  "supply": "968069832409620019"
+                },
+                "type": "mint"
+              },
+              "space": 516
+            },
+            "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 516
+          },
+          {
+            "lamports": 1475318946,
+            "data": {
+              "program": "spl-token",
+              "parsed": {
+                "info": {
+                  "decimals": 8,
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": "FvULawNPGBbuwYus74ECaQoV1oH9Tk6XPN7VPN51NYds",
+                  "supply": "10032315997296"
+                },
+                "type": "mint"
+              },
+              "space": 82
+            },
+            "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 82
+          },
+          {
+            "lamports": 3307080,
+            "data": {
+              "program": "spl-token-2022",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "extensions": [
+                    {
+                      "extension": "metadataPointer",
+                      "state": {
+                        "authority": null,
+                        "metadataAddress": "4rkGWJNSUPBcMicXMRAzohEyeJLFG8gUjwiWaz7Pddr3"
+                      }
+                    },
+                    {
+                      "extension": "transferFeeConfig",
+                      "state": {
+                        "newerTransferFee": {
+                          "epoch": 1036,
+                          "maximumFee": 1000000000000000,
+                          "transferFeeBasisPoints": 300
+                        },
+                        "olderTransferFee": {
+                          "epoch": 1036,
+                          "maximumFee": 1000000000000000,
+                          "transferFeeBasisPoints": 300
+                        },
+                        "transferFeeConfigAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
+                        "withdrawWithheldAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
+                        "withheldAmount": 9911616054
+                      }
+                    },
+                    {
+                      "extension": "tokenMetadata",
+                      "state": {
+                        "additionalMetadata": [],
+                        "mint": "4rkGWJNSUPBcMicXMRAzohEyeJLFG8gUjwiWaz7Pddr3",
+                        "name": "Christmas Cracker",
+                        "symbol": "CRACKER",
+                        "updateAuthority": "WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh",
+                        "uri": "https://gateway.irys.xyz/5TuSQmVCdn76nd2v8i67xigBbGKJ4d3jt98YUpFcZnmx"
+                      }
+                    }
+                  ],
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": null,
+                  "supply": "496510309965826"
+                },
+                "type": "mint"
+              },
+              "space": 523
+            },
+            "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 523
+          },
+          {
+            "lamports": 1066800,
+            "data": {
+              "program": "spl-token",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": null,
+                  "supply": "962999417909348"
+                },
+                "type": "mint"
+              },
+              "space": 82
+            },
+            "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 82
+          },
+          {
+            "lamports": 2951789571,
+            "data": {
+              "program": "spl-token",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": null,
+                  "supply": "997732560473995"
+                },
+                "type": "mint"
+              },
+              "space": 82
+            },
+            "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 82
+          },
+          {
+            "lamports": 74276338103,
+            "data": {
+              "program": "spl-token",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": null,
+                  "supply": "6861486598475931"
+                },
+                "type": "mint"
+              },
+              "space": 82
+            },
+            "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 82
+          },
+          {
+            "lamports": 346696437393,
+            "data": {
+              "program": "spl-token",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": null,
+                  "supply": "554997453248544"
+                },
+                "type": "mint"
+              },
+              "space": 82
+            },
+            "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 82
+          },
+          {
+            "lamports": 7231441,
+            "data": {
+              "program": "spl-token-2022",
+              "parsed": {
+                "info": {
+                  "decimals": 9,
+                  "extensions": [
+                    {
+                      "extension": "permanentDelegate",
+                      "state": {
+                        "delegate": "WV9PJN7XTmTLVwbutCLFxp8TyePee6Xq5mRq6Fti5Wc"
+                      }
+                    },
+                    {
+                      "extension": "defaultAccountState",
+                      "state": {
+                        "accountState": "initialized"
+                      }
+                    },
+                    {
+                      "extension": "transferFeeConfig",
+                      "state": {
+                        "newerTransferFee": {
+                          "epoch": 1039,
+                          "maximumFee": 18446744073709552000,
+                          "transferFeeBasisPoints": 100
+                        },
+                        "olderTransferFee": {
+                          "epoch": 1032,
+                          "maximumFee": 18446744073709552000,
+                          "transferFeeBasisPoints": 50
+                        },
+                        "transferFeeConfigAuthority": "WV9PJN7XTmTLVwbutCLFxp8TyePee6Xq5mRq6Fti5Wc",
+                        "withdrawWithheldAuthority": "WV9PJN7XTmTLVwbutCLFxp8TyePee6Xq5mRq6Fti5Wc",
+                        "withheldAmount": 9909918993
+                      }
+                    },
+                    {
+                      "extension": "confidentialTransferMint",
+                      "state": {
+                        "auditorElgamalPubkey": null,
+                        "authority": "WV9PJN7XTmTLVwbutCLFxp8TyePee6Xq5mRq6Fti5Wc",
+                        "autoApproveNewAccounts": false
+                      }
+                    },
+                    {
+                      "extension": "confidentialTransferFeeConfig",
+                      "state": {
+                        "authority": "WV9PJN7XTmTLVwbutCLFxp8TyePee6Xq5mRq6Fti5Wc",
+                        "harvestToMintEnabled": true,
+                        "withdrawWithheldAuthorityElgamalPubkey": "YIHVbuQq0xDvW8g8vW1enaIBxIdrm7v+7EyEiMaHDmM=",
+                        "withheldAmount": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+                      }
+                    },
+                    {
+                      "extension": "transferHook",
+                      "state": {
+                        "authority": "WV9PJN7XTmTLVwbutCLFxp8TyePee6Xq5mRq6Fti5Wc",
+                        "programId": null
+                      }
+                    },
+                    {
+                      "extension": "scaledUiAmountConfig",
+                      "state": {
+                        "authority": "WV9PJN7XTmTLVwbutCLFxp8TyePee6Xq5mRq6Fti5Wc",
+                        "multiplier": "1",
+                        "newMultiplier": "1",
+                        "newMultiplierEffectiveTimestamp": 0
+                      }
+                    },
+                    {
+                      "extension": "metadataPointer",
+                      "state": {
+                        "authority": "WV9PJN7XTmTLVwbutCLFxp8TyePee6Xq5mRq6Fti5Wc",
+                        "metadataAddress": "Pren1FvFX6J3E4kXhJuCiAD5aDmGEb7qJRncwA8Lkhw"
+                      }
+                    },
+                    {
+                      "extension": "pausableConfig",
+                      "state": {
+                        "authority": "WV9PJN7XTmTLVwbutCLFxp8TyePee6Xq5mRq6Fti5Wc",
+                        "paused": false
+                      }
+                    },
+                    {
+                      "extension": "tokenMetadata",
+                      "state": {
+                        "additionalMetadata": [],
+                        "mint": "Pren1FvFX6J3E4kXhJuCiAD5aDmGEb7qJRncwA8Lkhw",
+                        "name": "Anthropic PreStocks",
+                        "symbol": "ANTHROPIC",
+                        "updateAuthority": "WV9PJN7XTmTLVwbutCLFxp8TyePee6Xq5mRq6Fti5Wc",
+                        "uri": "https://prestocks.com/metadata/anthropic.json"
+                      }
+                    }
+                  ],
+                  "freezeAuthority": "WV9PJN7XTmTLVwbutCLFxp8TyePee6Xq5mRq6Fti5Wc",
+                  "isInitialized": true,
+                  "mintAuthority": "WV9PJN7XTmTLVwbutCLFxp8TyePee6Xq5mRq6Fti5Wc",
+                  "supply": "7381812011365"
+                },
+                "type": "mint"
+              },
+              "space": 911
+            },
+            "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 911
+          },
+          {
+            "lamports": 4575584857,
+            "data": {
+              "program": "spl-token-2022",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "extensions": [
+                    {
+                      "extension": "metadataPointer",
+                      "state": {
+                        "authority": null,
+                        "metadataAddress": "HSUMi4rMgjrx7zRUabw3ogGu1pa5hmF2eVcXj9Apump"
+                      }
+                    },
+                    {
+                      "extension": "tokenMetadata",
+                      "state": {
+                        "additionalMetadata": [],
+                        "mint": "HSUMi4rMgjrx7zRUabw3ogGu1pa5hmF2eVcXj9Apump",
+                        "name": "goon",
+                        "symbol": "goon",
+                        "updateAuthority": null,
+                        "uri": "https://ipfs.io/ipfs/bafkreiadvtqpad63zbm2l6ukouasuchfkpwu3r645y7g5fx7ycztlbusdi"
+                      }
+                    }
+                  ],
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": null,
+                  "supply": "977177507979676"
+                },
+                "type": "mint"
+              },
+              "space": 406
+            },
+            "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 406
+          },
+          {
+            "lamports": 1413187734,
+            "data": {
+              "program": "spl-token-2022",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "extensions": [
+                    {
+                      "extension": "metadataPointer",
+                      "state": {
+                        "authority": null,
+                        "metadataAddress": "GTBxUiw6wJdmmkCGZgRHLyYxqu1vG4KtRpeox6yDpump"
+                      }
+                    },
+                    {
+                      "extension": "tokenMetadata",
+                      "state": {
+                        "additionalMetadata": [],
+                        "mint": "GTBxUiw6wJdmmkCGZgRHLyYxqu1vG4KtRpeox6yDpump",
+                        "name": "Jean Phil",
+                        "symbol": "JEANPHIL",
+                        "updateAuthority": null,
+                        "uri": "https://ipfs.io/ipfs/QmZ5DoDK7cuNdH2WtoLzNqZD1daDjsnyEqTZzzYgR9hA3S"
+                      }
+                    }
+                  ],
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": null,
+                  "supply": "969492848152130"
+                },
+                "type": "mint"
+              },
+              "space": 402
+            },
+            "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 402
+          },
+          {
+            "lamports": 132799080,
+            "data": {
+              "program": "spl-token-2022",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "extensions": [
+                    {
+                      "extension": "metadataPointer",
+                      "state": {
+                        "authority": null,
+                        "metadataAddress": "2PENPmfgJfq6CG3k4byj4oWwHf8SerqakmYHMkUupump"
+                      }
+                    },
+                    {
+                      "extension": "tokenMetadata",
+                      "state": {
+                        "additionalMetadata": [],
+                        "mint": "2PENPmfgJfq6CG3k4byj4oWwHf8SerqakmYHMkUupump",
+                        "name": "familiars.family",
+                        "symbol": "familiars",
+                        "updateAuthority": null,
+                        "uri": "https://ipfs.io/ipfs/bafkreibdxp2tvjswii22w5qkelanqngqwucochtpvvu3xe4l2tfkmushaa"
+                      }
+                    }
+                  ],
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": null,
+                  "supply": "950693801235900"
+                },
+                "type": "mint"
+              },
+              "space": 423
+            },
+            "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 423
+          },
+          {
+            "lamports": 1092249446731,
+            "data": {
+              "program": "spl-token",
+              "parsed": {
+                "info": {
+                  "decimals": 5,
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": null,
+                  "supply": "8799438624271363686"
+                },
+                "type": "mint"
+              },
+              "space": 82
+            },
+            "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 82
+          },
+          {
+            "lamports": 87495180208,
+            "data": {
+              "program": "spl-token",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": null,
+                  "supply": "999079292912917"
+                },
+                "type": "mint"
+              },
+              "space": 82
+            },
+            "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 82
+          },
+          {
+            "lamports": 20109499610,
+            "data": {
+              "program": "spl-token-2022",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "extensions": [
+                    {
+                      "extension": "metadataPointer",
+                      "state": {
+                        "authority": null,
+                        "metadataAddress": "DEW9dSN6QpWyNthphCpMmAbZP1Q4cEKR9xQXAri98WDP"
+                      }
+                    },
+                    {
+                      "extension": "transferFeeConfig",
+                      "state": {
+                        "newerTransferFee": {
+                          "epoch": 1039,
+                          "maximumFee": 1000000000000000,
+                          "transferFeeBasisPoints": 100
+                        },
+                        "olderTransferFee": {
+                          "epoch": 1039,
+                          "maximumFee": 1000000000000000,
+                          "transferFeeBasisPoints": 100
+                        },
+                        "transferFeeConfigAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
+                        "withdrawWithheldAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
+                        "withheldAmount": 4955906146
+                      }
+                    },
+                    {
+                      "extension": "tokenMetadata",
+                      "state": {
+                        "additionalMetadata": [],
+                        "mint": "DEW9dSN6QpWyNthphCpMmAbZP1Q4cEKR9xQXAri98WDP",
+                        "name": "Super Inu",
+                        "symbol": "SI",
+                        "updateAuthority": "WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh",
+                        "uri": "https://m.rapidlaunch.io/m/if5VgbxOC"
+                      }
+                    }
+                  ],
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": null,
+                  "supply": "999221116154728"
+                },
+                "type": "mint"
+              },
+              "space": 477
+            },
+            "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 477
+          },
+          {
+            "lamports": 63126550,
+            "data": {
+              "program": "spl-token-2022",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "extensions": [
+                    {
+                      "extension": "metadataPointer",
+                      "state": {
+                        "authority": null,
+                        "metadataAddress": "6HU4CmRb15C2nQDx8Ld2f2W2wTdmog6aZiiXdrT5Pzi8"
+                      }
+                    },
+                    {
+                      "extension": "transferFeeConfig",
+                      "state": {
+                        "newerTransferFee": {
+                          "epoch": 1039,
+                          "maximumFee": 1000000000000000,
+                          "transferFeeBasisPoints": 300
+                        },
+                        "olderTransferFee": {
+                          "epoch": 1039,
+                          "maximumFee": 1000000000000000,
+                          "transferFeeBasisPoints": 300
+                        },
+                        "transferFeeConfigAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
+                        "withdrawWithheldAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
+                        "withheldAmount": 7446416281
+                      }
+                    },
+                    {
+                      "extension": "tokenMetadata",
+                      "state": {
+                        "additionalMetadata": [],
+                        "mint": "6HU4CmRb15C2nQDx8Ld2f2W2wTdmog6aZiiXdrT5Pzi8",
+                        "name": "Grokification",
+                        "symbol": "GROK",
+                        "updateAuthority": "WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh",
+                        "uri": "https://metadata.j7tracker.io/metadata/24e7fa07cf714896.json"
+                      }
+                    }
+                  ],
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": null,
+                  "supply": "999711174199441"
+                },
+                "type": "mint"
+              },
+              "space": 507
+            },
+            "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 507
+          },
+          {
+            "lamports": 562701269,
+            "data": {
+              "program": "spl-token-2022",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "extensions": [
+                    {
+                      "extension": "mintCloseAuthority",
+                      "state": {
+                        "closeAuthority": "2apBGMsS6ti9RyF5TwQTDswXBWskiJP2LD4cUEDqYJjk"
+                      }
+                    },
+                    {
+                      "extension": "permanentDelegate",
+                      "state": {
+                        "delegate": "2apBGMsS6ti9RyF5TwQTDswXBWskiJP2LD4cUEDqYJjk"
+                      }
+                    },
+                    {
+                      "extension": "transferFeeConfig",
+                      "state": {
+                        "newerTransferFee": {
+                          "epoch": 722,
+                          "maximumFee": 0,
+                          "transferFeeBasisPoints": 0
+                        },
+                        "olderTransferFee": {
+                          "epoch": 722,
+                          "maximumFee": 0,
+                          "transferFeeBasisPoints": 0
+                        },
+                        "transferFeeConfigAuthority": "2apBGMsS6ti9RyF5TwQTDswXBWskiJP2LD4cUEDqYJjk",
+                        "withdrawWithheldAuthority": "2apBGMsS6ti9RyF5TwQTDswXBWskiJP2LD4cUEDqYJjk",
+                        "withheldAmount": 0
+                      }
+                    },
+                    {
+                      "extension": "confidentialTransferMint",
+                      "state": {
+                        "auditorElgamalPubkey": null,
+                        "authority": "2apBGMsS6ti9RyF5TwQTDswXBWskiJP2LD4cUEDqYJjk",
+                        "autoApproveNewAccounts": false
+                      }
+                    },
+                    {
+                      "extension": "confidentialTransferFeeConfig",
+                      "state": {
+                        "authority": "2apBGMsS6ti9RyF5TwQTDswXBWskiJP2LD4cUEDqYJjk",
+                        "harvestToMintEnabled": true,
+                        "withdrawWithheldAuthorityElgamalPubkey": "JtHMep09Cn/hbtk35WhESnMWz/fHSkVULuCwpLLu7m0=",
+                        "withheldAmount": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+                      }
+                    },
+                    {
+                      "extension": "transferHook",
+                      "state": {
+                        "authority": "2apBGMsS6ti9RyF5TwQTDswXBWskiJP2LD4cUEDqYJjk",
+                        "programId": null
+                      }
+                    },
+                    {
+                      "extension": "metadataPointer",
+                      "state": {
+                        "authority": "2apBGMsS6ti9RyF5TwQTDswXBWskiJP2LD4cUEDqYJjk",
+                        "metadataAddress": "2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH"
+                      }
+                    },
+                    {
+                      "extension": "tokenMetadata",
+                      "state": {
+                        "additionalMetadata": [],
+                        "mint": "2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH",
+                        "name": "Global Dollar",
+                        "symbol": "USDG",
+                        "updateAuthority": "2apBGMsS6ti9RyF5TwQTDswXBWskiJP2LD4cUEDqYJjk",
+                        "uri": "https://token-metadata.paxos.com/usdg_metadata/prod/solana/usdg_metadata.json"
+                      }
+                    }
+                  ],
+                  "freezeAuthority": "2apBGMsS6ti9RyF5TwQTDswXBWskiJP2LD4cUEDqYJjk",
+                  "isInitialized": true,
+                  "mintAuthority": "3YJL8sesK3ooPpJddypvFUhCvnvaQ1oF8This4J3bhxR",
+                  "supply": "632782042298715"
+                },
+                "type": "mint"
+              },
+              "space": 866
+            },
+            "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 866
+          },
+          {
+            "lamports": 1461600,
+            "data": {
+              "program": "spl-token",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": "BKdLWcUDE1Kmga2BfSNaMR2wbXSL4YouTbNQ8mTdcqTp",
+                  "supply": "490991300907"
+                },
+                "type": "mint"
+              },
+              "space": 82
+            },
+            "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 82
+          },
+          {
+            "lamports": 125410881,
+            "data": {
+              "program": "spl-token-2022",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "extensions": [
+                    {
+                      "extension": "metadataPointer",
+                      "state": {
+                        "authority": null,
+                        "metadataAddress": "7Qy2cXpdj4Fu2DUPVWdN3oogM3JSwLUV2LZaKVgVcPZh"
+                      }
+                    },
+                    {
+                      "extension": "transferFeeConfig",
+                      "state": {
+                        "newerTransferFee": {
+                          "epoch": 1041,
+                          "maximumFee": 1000000000000000,
+                          "transferFeeBasisPoints": 300
+                        },
+                        "olderTransferFee": {
+                          "epoch": 1041,
+                          "maximumFee": 1000000000000000,
+                          "transferFeeBasisPoints": 300
+                        },
+                        "transferFeeConfigAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
+                        "withdrawWithheldAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
+                        "withheldAmount": 1333545526
+                      }
+                    },
+                    {
+                      "extension": "tokenMetadata",
+                      "state": {
+                        "additionalMetadata": [],
+                        "mint": "7Qy2cXpdj4Fu2DUPVWdN3oogM3JSwLUV2LZaKVgVcPZh",
+                        "name": "HYPERCAT",
+                        "symbol": "HYPERCAT",
+                        "updateAuthority": "WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh",
+                        "uri": "https://gateway.irys.xyz/6cYaph91tm19dp1rtdDMrymew4DcvgHLY1jydVEXc5az"
+                      }
+                    }
+                  ],
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": null,
+                  "supply": "993672150141659"
+                },
+                "type": "mint"
+              },
+              "space": 515
+            },
+            "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 515
+          },
+          {
+            "lamports": 3149600,
+            "data": {
+              "program": "spl-token-2022",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "extensions": [
+                    {
+                      "extension": "metadataPointer",
+                      "state": {
+                        "authority": null,
+                        "metadataAddress": "2Ghxme9RXa2vatoRPGnQgNKCXNZy2N3X7PbH4kzxHYPE"
+                      }
+                    },
+                    {
+                      "extension": "transferFeeConfig",
+                      "state": {
+                        "newerTransferFee": {
+                          "epoch": 1041,
+                          "maximumFee": 1000000000000000,
+                          "transferFeeBasisPoints": 300
+                        },
+                        "olderTransferFee": {
+                          "epoch": 1041,
+                          "maximumFee": 1000000000000000,
+                          "transferFeeBasisPoints": 300
+                        },
+                        "transferFeeConfigAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
+                        "withdrawWithheldAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
+                        "withheldAmount": 230833474869
+                      }
+                    },
+                    {
+                      "extension": "tokenMetadata",
+                      "state": {
+                        "additionalMetadata": [],
+                        "mint": "2Ghxme9RXa2vatoRPGnQgNKCXNZy2N3X7PbH4kzxHYPE",
+                        "name": "LeverHyppo",
+                        "symbol": "LEVERHYPPO",
+                        "updateAuthority": "WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh",
+                        "uri": "https://leverhyppo.com/token/metadata.json"
+                      }
+                    }
+                  ],
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": null,
+                  "supply": "999957045790636"
+                },
+                "type": "mint"
+              },
+              "space": 492
+            },
+            "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 492
+          },
+          {
+            "lamports": 3180080,
+            "data": {
+              "program": "spl-token-2022",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "extensions": [
+                    {
+                      "extension": "metadataPointer",
+                      "state": {
+                        "authority": null,
+                        "metadataAddress": "HhXe2PbtXQHzZ5Ch46MBXf7rEbMgnYsCGaEhktyKGZNT"
+                      }
+                    },
+                    {
+                      "extension": "transferFeeConfig",
+                      "state": {
+                        "newerTransferFee": {
+                          "epoch": 1041,
+                          "maximumFee": 1000000000000000,
+                          "transferFeeBasisPoints": 300
+                        },
+                        "olderTransferFee": {
+                          "epoch": 1041,
+                          "maximumFee": 1000000000000000,
+                          "transferFeeBasisPoints": 300
+                        },
+                        "transferFeeConfigAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
+                        "withdrawWithheldAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
+                        "withheldAmount": 608338221619
+                      }
+                    },
+                    {
+                      "extension": "tokenMetadata",
+                      "state": {
+                        "additionalMetadata": [],
+                        "mint": "HhXe2PbtXQHzZ5Ch46MBXf7rEbMgnYsCGaEhktyKGZNT",
+                        "name": "SCHLONG",
+                        "symbol": "SCHLONG",
+                        "updateAuthority": "WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh",
+                        "uri": "https://metadata.j7tracker.io/metadata/OhGmvyizxw.json"
+                      }
+                    }
+                  ],
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": null,
+                  "supply": "999895465482654"
+                },
+                "type": "mint"
+              },
+              "space": 498
+            },
+            "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 498
+          },
+          {
+            "lamports": 574425618,
+            "data": {
+              "program": "spl-token-2022",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "extensions": [
+                    {
+                      "extension": "metadataPointer",
+                      "state": {
+                        "authority": null,
+                        "metadataAddress": "72yxYmhLgDGwdyi2b9GjDynBB6VuG3kDxNKqDbzXh5bi"
+                      }
+                    },
+                    {
+                      "extension": "transferFeeConfig",
+                      "state": {
+                        "newerTransferFee": {
+                          "epoch": 1034,
+                          "maximumFee": 1000000000000000,
+                          "transferFeeBasisPoints": 300
+                        },
+                        "olderTransferFee": {
+                          "epoch": 1034,
+                          "maximumFee": 1000000000000000,
+                          "transferFeeBasisPoints": 300
+                        },
+                        "transferFeeConfigAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
+                        "withdrawWithheldAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
+                        "withheldAmount": 13665674900
+                      }
+                    },
+                    {
+                      "extension": "tokenMetadata",
+                      "state": {
+                        "additionalMetadata": [],
+                        "mint": "72yxYmhLgDGwdyi2b9GjDynBB6VuG3kDxNKqDbzXh5bi",
+                        "name": "WoW Gold",
+                        "symbol": "WOW",
+                        "updateAuthority": "WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh",
+                        "uri": "https://gateway.irys.xyz/A78XUib2Nv6DzWDEn1ZJpRvnfNHd2PQDQQvtEJXgBtYN"
+                      }
+                    }
+                  ],
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": null,
+                  "supply": "999555529968017"
+                },
+                "type": "mint"
+              },
+              "space": 510
+            },
+            "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 510
+          },
+          {
+            "lamports": 2674907806,
+            "data": {
+              "program": "spl-token",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": null,
+                  "supply": "990276306751331"
+                },
+                "type": "mint"
+              },
+              "space": 82
+            },
+            "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 82
+          }
+        ]
+      },
+      "id": 1
+    }
+  }
+}

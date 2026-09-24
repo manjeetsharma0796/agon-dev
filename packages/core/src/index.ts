@@ -15,6 +15,10 @@ export * from './check-trade.js'
 export * from './report.js'
 export * from './rule.js'
 
+// The record and replay wrapper, T-C02. Everything above is the frozen contract; this is the
+// one door every external call goes through.
+export * from './net/index.js'
+
 /** get_report and list_rules both take just an address. */
 export const WalletQuery = z.object({ wallet: Address })
 export type WalletQuery = z.infer<typeof WalletQuery>

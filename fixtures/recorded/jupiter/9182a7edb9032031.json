@@ -1,0 +1,63 @@
+{
+  "slot": 450012176,
+  "provider": "jupiter",
+  "recordedAt": "2026-09-24T11:14:40.669Z",
+  "request": {
+    "method": "GET",
+    "url": "https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=GTBxUiw6wJdmmkCGZgRHLyYxqu1vG4KtRpeox6yDpump&amount=100000000&slippageBps=100",
+    "headers": {
+      "x-api-key": "REDACTED"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "inputMint": "So11111111111111111111111111111111111111112",
+      "inAmount": "100000000",
+      "outputMint": "GTBxUiw6wJdmmkCGZgRHLyYxqu1vG4KtRpeox6yDpump",
+      "outAmount": "2413235057",
+      "otherAmountThreshold": "2389102707",
+      "swapMode": "ExactIn",
+      "slippageBps": 100,
+      "platformFee": null,
+      "priceImpactPct": "0.0002792725105343712880620002",
+      "routePlan": [
+        {
+          "swapInfo": {
+            "ammKey": "AfB8eEPVvHJDHY4Vwu9wrjuGQPsRtMAmqoBW6TMwwZDT",
+            "label": "Manifest",
+            "inputMint": "So11111111111111111111111111111111111111112",
+            "outputMint": "GTBxUiw6wJdmmkCGZgRHLyYxqu1vG4KtRpeox6yDpump",
+            "inAmount": "100000000",
+            "outAmount": "2413235057",
+            "updateContextSlot": "450012144"
+          },
+          "percent": 100,
+          "bps": null
+        }
+      ],
+      "contextSlot": 450012176,
+      "timeTaken": 0.00541306,
+      "swapUsdValue": "11.335759300134850",
+      "mostReliableAmmsQuoteReport": {
+        "info": {
+          "GTBxUiw6wJdmmkCGZgRHLyYxqu1vG4KtRpeox6yDpump": "Not found",
+          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11333154"
+        }
+      },
+      "longtailMarketQuoteReport": null,
+      "useIncurredSlippageForQuoting": null,
+      "useRewards": null,
+      "otherRoutePlans": null,
+      "loadedLongtailToken": false,
+      "instructionVersion": null,
+      "transactionVersion": 0,
+      "additionalIntermediateTokens": [
+        "3CETkuLMuc4zGqgoGXAJKcUc7LM7CAJed2amPTx4gG8F",
+        "DHkVnUByHq4BWmQZgBNGafJ8ypPzuiHnswELfG2Apump",
+        "78FFaUARDk7PSbvPyvR5tiXpeCT8SnQ3wB6emHsjQVdn"
+      ]
+    }
+  }
+}

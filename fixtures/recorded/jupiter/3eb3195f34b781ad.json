@@ -1,0 +1,75 @@
+{
+  "slot": 450012173,
+  "provider": "jupiter",
+  "recordedAt": "2026-09-24T11:14:39.465Z",
+  "request": {
+    "method": "GET",
+    "url": "https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=HSUMi4rMgjrx7zRUabw3ogGu1pa5hmF2eVcXj9Apump&amount=100000000&slippageBps=100",
+    "headers": {
+      "x-api-key": "REDACTED"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "inputMint": "So11111111111111111111111111111111111111112",
+      "inAmount": "100000000",
+      "outputMint": "HSUMi4rMgjrx7zRUabw3ogGu1pa5hmF2eVcXj9Apump",
+      "outAmount": "20885805802",
+      "otherAmountThreshold": "20676947744",
+      "swapMode": "ExactIn",
+      "slippageBps": 100,
+      "platformFee": null,
+      "priceImpactPct": "0.0274545854294304292121273357",
+      "routePlan": [
+        {
+          "swapInfo": {
+            "ammKey": "4RTiwuZd5E9AysFQXQXLPjzS68NcibhjVPd7Q4NztrpK",
+            "label": "Raydium CLMM",
+            "inputMint": "So11111111111111111111111111111111111111112",
+            "outputMint": "HiMSSzzwkZkrXJ4PGVJRdtfLaANeAztjjcgk5Dxe7Lwx",
+            "inAmount": "100000000",
+            "outAmount": "401288",
+            "updateContextSlot": "450012155"
+          },
+          "percent": 100,
+          "bps": null
+        },
+        {
+          "swapInfo": {
+            "ammKey": "9PYormkWiWYAALGWkNNBjSEqKk79HPoRaLgQhMfY4fuv",
+            "label": "Pump.fun Amm",
+            "inputMint": "HiMSSzzwkZkrXJ4PGVJRdtfLaANeAztjjcgk5Dxe7Lwx",
+            "outputMint": "HSUMi4rMgjrx7zRUabw3ogGu1pa5hmF2eVcXj9Apump",
+            "inAmount": "401288",
+            "outAmount": "20885805802",
+            "updateContextSlot": "450012154"
+          },
+          "percent": 100,
+          "bps": null
+        }
+      ],
+      "contextSlot": 450012173,
+      "timeTaken": 0.003877262,
+      "swapUsdValue": "11.337207398104810",
+      "mostReliableAmmsQuoteReport": {
+        "info": {
+          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11333154",
+          "7iqWWNjubSTjmWXk9eYJViDLZjBN2KjrYt5Z9j8n8exQ": "400334",
+          "HSUMi4rMgjrx7zRUabw3ogGu1pa5hmF2eVcXj9Apump": "Not found"
+        }
+      },
+      "longtailMarketQuoteReport": null,
+      "useIncurredSlippageForQuoting": null,
+      "useRewards": null,
+      "otherRoutePlans": null,
+      "loadedLongtailToken": false,
+      "instructionVersion": null,
+      "transactionVersion": 0,
+      "additionalIntermediateTokens": [
+        "HiMSSzzwkZkrXJ4PGVJRdtfLaANeAztjjcgk5Dxe7Lwx"
+      ]
+    }
+  }
+}

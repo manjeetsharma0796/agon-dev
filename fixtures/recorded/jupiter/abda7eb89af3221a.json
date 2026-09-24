@@ -1,0 +1,62 @@
+{
+  "slot": 450012145,
+  "provider": "jupiter",
+  "recordedAt": "2026-09-24T11:14:32.199Z",
+  "request": {
+    "method": "GET",
+    "url": "https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=4rkGWJNSUPBcMicXMRAzohEyeJLFG8gUjwiWaz7Pddr3&amount=100000000&slippageBps=100",
+    "headers": {
+      "x-api-key": "REDACTED"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "inputMint": "So11111111111111111111111111111111111111112",
+      "inAmount": "100000000",
+      "outputMint": "4rkGWJNSUPBcMicXMRAzohEyeJLFG8gUjwiWaz7Pddr3",
+      "outAmount": "1542734804",
+      "otherAmountThreshold": "1527307456",
+      "swapMode": "ExactIn",
+      "slippageBps": 100,
+      "platformFee": null,
+      "priceImpactPct": "0.0072867852218117437683011599",
+      "routePlan": [
+        {
+          "swapInfo": {
+            "ammKey": "81L9PsUMDDkcnyy9Y7kwLG9PV8fFxv8tvoVJPUxaQN7i",
+            "label": "Manifest",
+            "inputMint": "So11111111111111111111111111111111111111112",
+            "outputMint": "4rkGWJNSUPBcMicXMRAzohEyeJLFG8gUjwiWaz7Pddr3",
+            "inAmount": "100000000",
+            "outAmount": "1542734804",
+            "updateContextSlot": "450012144"
+          },
+          "percent": 100,
+          "bps": null
+        }
+      ],
+      "contextSlot": 450012145,
+      "timeTaken": 0.003230081,
+      "swapUsdValue": "11.336335140452880",
+      "mostReliableAmmsQuoteReport": {
+        "info": {
+          "4rkGWJNSUPBcMicXMRAzohEyeJLFG8gUjwiWaz7Pddr3": "Not found",
+          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11333157"
+        }
+      },
+      "longtailMarketQuoteReport": null,
+      "useIncurredSlippageForQuoting": null,
+      "useRewards": null,
+      "otherRoutePlans": null,
+      "loadedLongtailToken": false,
+      "instructionVersion": null,
+      "transactionVersion": 0,
+      "additionalIntermediateTokens": [
+        "79GwPPmTXxdNKnosLWB2MhgnnA2FE7nggMpT4QStD3rm",
+        "6gxc6ZWCMA2XzwWFGD9CKFHe8UMBmPxdKDHC1w3HfzDw"
+      ]
+    }
+  }
+}

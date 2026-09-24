@@ -1,0 +1,61 @@
+{
+  "slot": 450012150,
+  "provider": "jupiter",
+  "recordedAt": "2026-09-24T11:14:33.399Z",
+  "request": {
+    "method": "GET",
+    "url": "https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=UpBBfyC75u3kxDGWmmmW2yauk9YY3CqZhdt1KUDkids&amount=100000000&slippageBps=100",
+    "headers": {
+      "x-api-key": "REDACTED"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "inputMint": "So11111111111111111111111111111111111111112",
+      "inAmount": "100000000",
+      "outputMint": "UpBBfyC75u3kxDGWmmmW2yauk9YY3CqZhdt1KUDkids",
+      "outAmount": "2579634680",
+      "otherAmountThreshold": "2553838334",
+      "swapMode": "ExactIn",
+      "slippageBps": 100,
+      "platformFee": null,
+      "priceImpactPct": "0.0001756811586255437046822424",
+      "routePlan": [
+        {
+          "swapInfo": {
+            "ammKey": "6raVjeVS2RUvcnv2SJnrWt6f5u19rTZ8ZLw99BoUYMom",
+            "label": "Meteora DLMM",
+            "inputMint": "So11111111111111111111111111111111111111112",
+            "outputMint": "UpBBfyC75u3kxDGWmmmW2yauk9YY3CqZhdt1KUDkids",
+            "inAmount": "100000000",
+            "outAmount": "2579634680",
+            "updateContextSlot": "450012145"
+          },
+          "percent": 100,
+          "bps": null
+        }
+      ],
+      "contextSlot": 450012150,
+      "timeTaken": 0.003496085,
+      "swapUsdValue": "11.336050932238540",
+      "mostReliableAmmsQuoteReport": {
+        "info": {
+          "82BHvVSeHgcGNtiH8fGTaYRsKbbjF53beAZp8LCATXsc": "2543897871",
+          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11333157"
+        }
+      },
+      "longtailMarketQuoteReport": null,
+      "useIncurredSlippageForQuoting": null,
+      "useRewards": null,
+      "otherRoutePlans": null,
+      "loadedLongtailToken": false,
+      "instructionVersion": null,
+      "transactionVersion": 0,
+      "additionalIntermediateTokens": [
+        "F7TqwMzP33m7RTZLhPrhpyGiqevZSVssAX9rmkwF2rD"
+      ]
+    }
+  }
+}
