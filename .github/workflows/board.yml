@@ -84,13 +84,18 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
           BASE: ${{ github.event.pull_request.base.sha }}
           HEAD: ${{ github.event.pull_request.head.sha }}
+        # The three frozen contracts are four files, not the whole package. Keyed on the package, this
+        # fired on T-E10 for adding a new messages module and then demanded a fixture change that
+        # nothing had invalidated. A gate that cries wolf teaches everyone to tick the box without
+        # reading, which is worse than no gate.
         run: |
           set -euo pipefail
-          if git diff --name-only "$BASE".."$HEAD" -- packages/core | grep -q .; then
+          CONTRACTS="packages/core/src/check-trade.ts packages/core/src/report.ts packages/core/src/rule.ts packages/core/src/primitives.ts"
+          if git diff --name-only "$BASE".."$HEAD" -- $CONTRACTS | grep -q .; then
             echo "$PR_BODY" | grep -q 'Changes a frozen contract in .packages/core.' \
-              || { echo "::error::This PR touches packages/core. Tick the frozen-contract box, name the reviewer, and change the fixtures in the same commit."; exit 1; }
+              || { echo "::error::This PR changes one of the frozen contracts. Tick the frozen-contract box, name the reviewer, and change the fixtures in the same commit."; exit 1; }
             git diff --name-only "$BASE".."$HEAD" -- fixtures/ | grep -q . \
-              || { echo "::error::packages/core changed but no fixture changed with it. A shape change must fail loudly wherever it breaks."; exit 1; }
+              || { echo "::error::A frozen contract changed but no fixture changed with it. A shape change must fail loudly wherever it breaks."; exit 1; }
           fi
 
       - name: Signing code needs a security review

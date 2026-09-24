@@ -1,14 +1,32 @@
 {
   "files": [],
   "references": [
-    { "path": "packages/core" },
-    { "path": "packages/decoder" },
-    { "path": "packages/miner" },
-    { "path": "packages/guard" },
-    { "path": "packages/chain" },
-    { "path": "packages/mcp" },
-    { "path": "packages/cli" },
-    { "path": "apps/web" },
-    { "path": "apps/worker" }
+    {
+      "path": "packages/core"
+    },
+    {
+      "path": "packages/decoder"
+    },
+    {
+      "path": "packages/miner"
+    },
+    {
+      "path": "packages/guard"
+    },
+    {
+      "path": "packages/chain"
+    },
+    {
+      "path": "packages/mcp"
+    },
+    {
+      "path": "packages/cli"
+    },
+    {
+      "path": "apps/web/tsconfig.lib.json"
+    },
+    {
+      "path": "apps/worker"
+    }
   ]
 }

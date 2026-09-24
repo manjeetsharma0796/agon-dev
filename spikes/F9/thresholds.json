@@ -1,0 +1,9 @@
+{
+  "test": "F9",
+  "name": "Benchmark reproducibility on a pinned mainnet fork",
+  "threshold": "2 runs from a clean checkout produce identical guardrail verdicts on every scenario; agent-side variance reported over 5+ runs per scenario; 1 command reproduces everything",
+  "checkpoint": "CP2",
+  "existential": false,
+  "written": "2026-09-24",
+  "notes": "Copied from T-F09's Acceptance line before anything ran. The agent-side half needs a pinned model and a key, which is OP-9 and not issued, so the documented fallback in the Kill criterion (publish the deterministic half, drop the live-agent comparison) is the likely outcome and will be reported as such rather than as a pass. Directory is spikes/F9 and not spikes/F09, for the reason recorded in T-F03."
+}

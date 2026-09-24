@@ -1,7 +1,7 @@
 {
-  "slot": 450012155,
+  "slot": 450031179,
   "provider": "jupiter",
-  "recordedAt": "2026-09-24T11:14:34.598Z",
+  "recordedAt": "2026-09-24T12:38:27.153Z",
   "request": {
     "method": "GET",
     "url": "https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=METvsvVRapdj9cFLzq4Tr43xK4tAjQfwX76z3n6mWQL&amount=100000000&slippageBps=100",
@@ -16,34 +16,34 @@
       "inputMint": "So11111111111111111111111111111111111111112",
       "inAmount": "100000000",
       "outputMint": "METvsvVRapdj9cFLzq4Tr43xK4tAjQfwX76z3n6mWQL",
-      "outAmount": "33898664",
-      "otherAmountThreshold": "33559678",
+      "outAmount": "33902440",
+      "otherAmountThreshold": "33563416",
       "swapMode": "ExactIn",
       "slippageBps": 100,
       "platformFee": null,
-      "priceImpactPct": "0.0002785885242891784111835271",
+      "priceImpactPct": "0.0000802722163279262777203534",
       "routePlan": [
         {
           "swapInfo": {
-            "ammKey": "GYqytuXSiX3GaPuCkLMY4jeRR3mAtyAuQqhD32d45g5y",
+            "ammKey": "3sVrUSPny3dHukHuBeivBp87rqGQ8heBdHA48iZEDmwG",
             "label": "Meteora DLMM",
             "inputMint": "So11111111111111111111111111111111111111112",
             "outputMint": "METvsvVRapdj9cFLzq4Tr43xK4tAjQfwX76z3n6mWQL",
             "inAmount": "100000000",
-            "outAmount": "33898664",
-            "updateContextSlot": "450012148"
+            "outAmount": "33902440",
+            "updateContextSlot": "450031135"
           },
           "percent": 100,
           "bps": null
         }
       ],
-      "contextSlot": 450012155,
-      "timeTaken": 0.010607335,
-      "swapUsdValue": "11.336191041449620",
+      "contextSlot": 450031179,
+      "timeTaken": 0.01167498,
+      "swapUsdValue": "11.321820763206410",
       "mostReliableAmmsQuoteReport": {
         "info": {
-          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11333157",
-          "BnztueWcXv93mgW7yJe8WYpnCxpz34nujPhfjQT6SLu1": "33795623"
+          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11321127",
+          "BnztueWcXv93mgW7yJe8WYpnCxpz34nujPhfjQT6SLu1": "33454962"
         }
       },
       "longtailMarketQuoteReport": null,
@@ -54,9 +54,9 @@
       "instructionVersion": null,
       "transactionVersion": 0,
       "additionalIntermediateTokens": [
-        "5cpZRte1wFFGRqh6WV1Trkh7smMJ9RY3YVmWfsRZBBVe",
         "84HTGiwoqncWgxfMtMBFUeE8mU4rXpBjyyiHJJrkcook",
-        "WoXRh9x2RkMcH2gTQ9UrXhmdmPtZAGTCkUDzY1ryysf"
+        "WoXRh9x2RkMcH2gTQ9UrXhmdmPtZAGTCkUDzY1ryysf",
+        "5cpZRte1wFFGRqh6WV1Trkh7smMJ9RY3YVmWfsRZBBVe"
       ]
     }
   }

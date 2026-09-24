@@ -1,0 +1,7 @@
+{
+  "slot": 450049160,
+  "accounts": 295,
+  "mintsTouched": 30,
+  "recorded": "2026-09-24",
+  "note": "snapshot.json is the bare account map surfpool --snapshot takes. It is copied as text, never re-serialised, because a JS round trip changes rentEpoch."
+}

@@ -1,0 +1,77 @@
+{
+  "slot": 450031241,
+  "provider": "jupiter",
+  "recordedAt": "2026-09-24T12:38:42.973Z",
+  "request": {
+    "method": "GET",
+    "url": "https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=CARDSccUMFKoPRZxt5vt3ksUbxEFEcnZ3H2pd3dKxYjp&amount=100000000&slippageBps=100",
+    "headers": {
+      "x-api-key": "REDACTED"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "inputMint": "So11111111111111111111111111111111111111112",
+      "inAmount": "100000000",
+      "outputMint": "CARDSccUMFKoPRZxt5vt3ksUbxEFEcnZ3H2pd3dKxYjp",
+      "outAmount": "71171930",
+      "otherAmountThreshold": "70460211",
+      "swapMode": "ExactIn",
+      "slippageBps": 100,
+      "platformFee": null,
+      "priceImpactPct": "0.0020957827957218734411786553",
+      "routePlan": [
+        {
+          "swapInfo": {
+            "ammKey": "9GTj99g9tbz9U6UYDsX6YeRTgUnkYG6GTnHv3qLa5aXq",
+            "label": "Byreal",
+            "inputMint": "So11111111111111111111111111111111111111112",
+            "outputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "inAmount": "100000000",
+            "outAmount": "11326483",
+            "updateContextSlot": "450031241"
+          },
+          "percent": 100,
+          "bps": null
+        },
+        {
+          "swapInfo": {
+            "ammKey": "F3DAAusn8mob9swWaX4ehaRrhi2Q3XJScKkuUpXdvn2i",
+            "label": "Raydium CLMM",
+            "inputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "outputMint": "CARDSccUMFKoPRZxt5vt3ksUbxEFEcnZ3H2pd3dKxYjp",
+            "inAmount": "11326483",
+            "outAmount": "71171930",
+            "updateContextSlot": "450031228"
+          },
+          "percent": 100,
+          "bps": null
+        }
+      ],
+      "contextSlot": 450031241,
+      "timeTaken": 0.00795444,
+      "swapUsdValue": "11.322804775813270",
+      "mostReliableAmmsQuoteReport": {
+        "info": {
+          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11321187",
+          "BZtgQEyS6eXUXicYPHecYQ7PybqodXQMvkjUbP4R8mUU": "11325828",
+          "HnhpJPJgBG2KwniMTNW8cVBHvk1hFog3RC3kjnyc23tD": "70862529"
+        }
+      },
+      "longtailMarketQuoteReport": null,
+      "useIncurredSlippageForQuoting": null,
+      "useRewards": null,
+      "otherRoutePlans": null,
+      "loadedLongtailToken": false,
+      "instructionVersion": null,
+      "transactionVersion": 0,
+      "additionalIntermediateTokens": [
+        "9UfySjMsSz4tyQR9X2SCgPaWagQL5eYPpw9y9Nr2STNK",
+        "89kgGLVAH88tv7MjE9WSyD2KMcuM5N8ujGYkJczVVCA1",
+        "51R8zB5zPiy4VHC5t83dEpCs2pQExktyC5MHJftChvRP"
+      ]
+    }
+  }
+}

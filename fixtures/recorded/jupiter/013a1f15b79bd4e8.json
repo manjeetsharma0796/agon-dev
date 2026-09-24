@@ -1,7 +1,7 @@
 {
-  "slot": 450012197,
+  "slot": 450031195,
   "provider": "jupiter",
-  "recordedAt": "2026-09-24T11:14:45.567Z",
+  "recordedAt": "2026-09-24T12:38:30.800Z",
   "request": {
     "method": "GET",
     "url": "https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=DEW9dSN6QpWyNthphCpMmAbZP1Q4cEKR9xQXAri98WDP&amount=100000000&slippageBps=100",
@@ -16,34 +16,34 @@
       "inputMint": "So11111111111111111111111111111111111111112",
       "inAmount": "100000000",
       "outputMint": "DEW9dSN6QpWyNthphCpMmAbZP1Q4cEKR9xQXAri98WDP",
-      "outAmount": "1833374243",
-      "otherAmountThreshold": "1815040501",
+      "outAmount": "1382369470",
+      "otherAmountThreshold": "1368545776",
       "swapMode": "ExactIn",
       "slippageBps": 100,
       "platformFee": null,
-      "priceImpactPct": "0",
+      "priceImpactPct": "0.0027316042583991443434340885",
       "routePlan": [
         {
           "swapInfo": {
-            "ammKey": "9VtiFNQrxyVLHjMRX3AyrDZtZwDAgix65fgHLJEbEvvV",
-            "label": "Manifest",
+            "ammKey": "AG1EhPjsBrkxQWkViuLXF6pQnHwfr9f9sdNneeoykcEJ",
+            "label": "Meteora DLMM",
             "inputMint": "So11111111111111111111111111111111111111112",
             "outputMint": "DEW9dSN6QpWyNthphCpMmAbZP1Q4cEKR9xQXAri98WDP",
             "inAmount": "100000000",
-            "outAmount": "1833374243",
-            "updateContextSlot": "450012144"
+            "outAmount": "1382369470",
+            "updateContextSlot": "450031194"
           },
           "percent": 100,
           "bps": null
         }
       ],
-      "contextSlot": 450012197,
-      "timeTaken": 0.003983775,
-      "swapUsdValue": "11.335730904418160",
+      "contextSlot": 450031195,
+      "timeTaken": 0.004130873,
+      "swapUsdValue": "11.321777920773230",
       "mostReliableAmmsQuoteReport": {
         "info": {
-          "DEW9dSN6QpWyNthphCpMmAbZP1Q4cEKR9xQXAri98WDP": "Not found",
-          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11333154"
+          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11321127",
+          "DEW9dSN6QpWyNthphCpMmAbZP1Q4cEKR9xQXAri98WDP": "Not found"
         }
       },
       "longtailMarketQuoteReport": null,
