@@ -60,7 +60,9 @@ test('scattered losses are said to be no rule, not averaged into one', () => {
 test('under 20 closed trades it says so in the words the acceptance fixes', () => {
   const stop = mine(walletWithStop(12, -8), SOL).rules.find((r) => r.kind === 'stop')
   expect(stop?.found).toBe(false)
-  expect(stop?.reason).toBe('12 closed trades. A stop rule needs 20; sizing and hold time are shown')
+  expect(stop?.reason).toBe(
+    '12 closed trades. A stop rule needs 20; sizing and hold time are shown',
+  )
   expect(stop?.sampleSize).toBe(12)
   expect(stop?.requiredSampleSize).toBe(STOP_MIN_TRADES)
 })
