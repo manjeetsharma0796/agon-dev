@@ -225,6 +225,22 @@ function pr() {
   const base = process.env.PR_BASE_SHA
   const head = process.env.PR_HEAD_SHA ?? 'HEAD'
 
+  // Adding, cutting or rewording a task is not a claim and not a task. It needs its own path, or
+  // the Friday /ponytail-debt pass and every scope cut has nowhere legal to land.
+  if (branch.startsWith('board/')) {
+    if (!/^board\/[a-z0-9-]+$/.test(branch)) {
+      fail(`Board branch "${branch}" must be "board/<slug>", all lower case, e.g. board/cut-screener.`)
+    }
+    if (!base || /^0+$/.test(base)) return warn('No PR_BASE_SHA, skipping the board diff check.')
+    const allowed = ['TASKS.md', 'OPERATOR_TODO.md']
+    for (const f of changedFiles(base, head)) {
+      if (!allowed.includes(f)) {
+        fail(`"${f}" changed in a board/ PR, which may only edit ${allowed.join(' and ')}.`)
+      }
+    }
+    return
+  }
+
   // dev requires a pull request, so a claim is a PR too. It carries only the Status line, which is
   // what keeps the race resolvable: the second claim PR conflicts on that exact line.
   if (branch.startsWith('claim/')) {

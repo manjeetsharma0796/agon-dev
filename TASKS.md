@@ -48,6 +48,9 @@ Rules the ruleset and the `board` CI job enforce, so do not argue with them:
 - A claim PR is branch `claim/t-<id>` and may change **only** `- Status:` lines in `TASKS.md` and
   `OPERATOR_TODO.md`. Anything else in that diff fails.
 - A work PR is branch `feature/t-<id>-<slug>` and must match the `Branch:` in the row you claimed.
+- Adding, cutting or rewording a task is neither of those. It goes in a `board/<slug>` PR that
+  touches only `TASKS.md` and `OPERATOR_TODO.md`. That is the path for the Friday
+  `/ponytail-debt` pass and for every checkpoint cut.
 - Two owners on one task fails the lint.
 - `Status: done` without a real `Evidence:` link fails the lint.
 - `secrets`, `checks`, `hygiene` and `spikes` must all be green, on a branch up to date with `dev`.
