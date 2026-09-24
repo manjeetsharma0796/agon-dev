@@ -685,7 +685,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: fallback is a short recurring window and no end date in the UI
 
 ### T-D03, Kill switch
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/66 | Owner: Prithwish | Branch: feature/t-d03-kill-switch
+- Status: blocked, see OP-19
 - Depends-on: T-D01
 - Touches: packages/chain/src/kill-switch.ts, packages/cli/src/commands/revoke.ts
 - Serves: UX (judged) ; Novelty (judged)
@@ -694,7 +694,8 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   while funds sit in a Trigger order says "Rule revoked. 2.0 SOL is still inside an open Jupiter
   order. Cancel it?" and offers the cancel in the same screen, and never implies the revoke
   returned those funds
-- Evidence: <PR link; the devnet run over 3 wallets is blocked, see OP-19>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/66, 29 tests. The devnet run over 3
+  wallets needs a funded key, see OP-19.
 - Finding: a kill switch can only be wrong in one direction, and the direction matters more than
   the feature. Removing 1 role too few leaves a capped agent running for another minute. Removing 1
   too many can take the user's own root authority off their own Swig, and nobody can undo that. So
