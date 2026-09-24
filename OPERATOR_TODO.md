@@ -316,8 +316,13 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   pre-mainnet checklist, and the PRD separately bars any arming UI until F5 and F6 pass. F5 has not
   run, F6 has no spike directory, and the read-only beta is defined as signing nothing. So the
   World's Fair cut is one of: (a) read-only, beats 1, 2, 3 and 7, with arming shown in simulation
-  and labelled as simulation; (b) live arming on devnet, which needs F5 to pass and a devnet
-  keypair, and is not the mainnet claim; (c) live arming on mainnet, which needs F5, F6, all 8
+  and labelled as simulation; (b) live arming on a Surfpool mainnet fork. NOT devnet: F5
+  ran on 2026-09-24 and measured that the pinned Jupiter program id is a 0 byte account owned by
+  the system program on devnet and is not executable, so a role scoped to Jupiter scopes to a non
+  program there and the 7 cases cannot be exercised however well funded the payer is. Both
+  programs are executable on mainnet, checked directly against both clusters. A fork serves real
+  mainnet accounts, so it has the real Jupiter and the real Swig, costs nothing, risks no funds,
+  and F9 already proved a committed Surfpool snapshot replays offline with no key; (c) live arming on mainnet, which needs F5, F6, all 8
   T-D04 boxes and 2 sign-offs, and OP-5 funds. Decide which, because Track E builds a different
   screen for each and the demo script has to say the true thing on camera.
 - Done when: one option is written in the PRD Decisions log, `docs/demo-script.md` beat 4 and beat 6
@@ -334,5 +339,5 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   once, on devnet, with no UI: read a real wallet, decode its swaps, mine one rule, ask check_trade
   about one trade, and have it refuse with a reason. Whatever it takes to make that run is the
   priority, and whatever it does not touch is not.
-- Done when: 1 command produces 1 refusal with a reason, against a real devnet or mainnet-fork
-  wallet, and the output is pasted in this row.
+- Done when: 1 command produces 1 refusal with a reason, against a real mainnet-fork wallet, and
+  the output is pasted in this row. Read the F5 finding in OP-20 before reaching for devnet.
