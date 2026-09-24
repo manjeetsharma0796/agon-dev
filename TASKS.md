@@ -715,7 +715,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   the cause, the number involved and what the user can do next; a test asserts 0 messages
   containing "N/A", "something went wrong" or an empty field; anything that can move funds fails
   closed, analytics fail open but always state what they are based on
-- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/31, 11 of 11 rows, 65 tests green
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/32, 11 of 11 rows, 65 tests green
 - Finding: 1 of the 11 rows in the PRD carries no number. The RugCheck row reads "didn't answer in
   time", which leaves a reader unable to tell a 200 ms blip from a 30 s outage, and that changes
   whether they wait and retry. The test that asserts every message names its number caught it, and
