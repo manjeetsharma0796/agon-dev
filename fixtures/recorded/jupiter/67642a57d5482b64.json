@@ -1,7 +1,7 @@
 {
-  "slot": 450012150,
+  "slot": 450031151,
   "provider": "jupiter",
-  "recordedAt": "2026-09-24T11:14:33.399Z",
+  "recordedAt": "2026-09-24T12:38:19.823Z",
   "request": {
     "method": "GET",
     "url": "https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=UpBBfyC75u3kxDGWmmmW2yauk9YY3CqZhdt1KUDkids&amount=100000000&slippageBps=100",
@@ -16,12 +16,12 @@
       "inputMint": "So11111111111111111111111111111111111111112",
       "inAmount": "100000000",
       "outputMint": "UpBBfyC75u3kxDGWmmmW2yauk9YY3CqZhdt1KUDkids",
-      "outAmount": "2579634680",
-      "otherAmountThreshold": "2553838334",
+      "outAmount": "3866664831",
+      "otherAmountThreshold": "3827998183",
       "swapMode": "ExactIn",
       "slippageBps": 100,
       "platformFee": null,
-      "priceImpactPct": "0.0001756811586255437046822424",
+      "priceImpactPct": "0.0410764150344759593145857456",
       "routePlan": [
         {
           "swapInfo": {
@@ -30,20 +30,20 @@
             "inputMint": "So11111111111111111111111111111111111111112",
             "outputMint": "UpBBfyC75u3kxDGWmmmW2yauk9YY3CqZhdt1KUDkids",
             "inAmount": "100000000",
-            "outAmount": "2579634680",
-            "updateContextSlot": "450012145"
+            "outAmount": "3866664831",
+            "updateContextSlot": "450031142"
           },
           "percent": 100,
           "bps": null
         }
       ],
-      "contextSlot": 450012150,
-      "timeTaken": 0.003496085,
-      "swapUsdValue": "11.336050932238540",
+      "contextSlot": 450031151,
+      "timeTaken": 0.002910894,
+      "swapUsdValue": "11.322700834225850",
       "mostReliableAmmsQuoteReport": {
         "info": {
-          "82BHvVSeHgcGNtiH8fGTaYRsKbbjF53beAZp8LCATXsc": "2543897871",
-          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11333157"
+          "82BHvVSeHgcGNtiH8fGTaYRsKbbjF53beAZp8LCATXsc": "3832260809",
+          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11321109"
         }
       },
       "longtailMarketQuoteReport": null,

@@ -66,6 +66,28 @@ export const jevAsk = (state: string, questions: unknown): NetRequest => ({
   body: { state, questions },
 })
 
+/**
+ * Real mainnet swaps, pinned by signature so a re-record fetches the same 5 transactions rather
+ * than whatever the pool did most recently. Two buys, two sells, and one SOL to USDC rotation,
+ * which is the case that has no direction at all and is the most common shape on the chain.
+ *
+ * Chosen from AMM pool activity because the team wallets from OP-1 have no history yet. These are
+ * individual public swaps, not anyone's trading history.
+ */
+const PINNED_SWAPS = [
+  '5jYeUs2KMuGoJcwuAtGSQrDEB1y6SvAS4nX95FnMso5xnCtvU7CfwZfg8i2m8M3ioBM4fb6j2wB3omRPa729fiFC',
+  '2WKps9WjidkM7meN4EoHoqGbMjQ5QQs1j2fEgPsfXcdWb3op61YWMhxbFEsMZfATwgieVSYLJDUNH5DZBYHT7PjN',
+  '58PvmyKJeQEvUphgy3RG1YM1hZuWRJFJyCJ4ys9MAycasAQNc1wBkAE8THtdieZJQEhHGe5wc3fcmGGErBW8w81D',
+  'NXfZV1Ec9RA45zHhULWYcB1MTysLfDE5J59CEGYm6rHnj4L3FBWhri4NB6WNC4FZH7qSvqNz8whsqv1epmE31AW',
+  '35SY47kNv5319aLjo9i8oCE92ss3mQvNd8quPr6Ayp1yHkrxAqNr6saMswiFf4DFvKdDG9AqJJoVh2GdVE53PmRJ',
+] as const
+
+const getTransaction = (signature: string): NetRequest =>
+  rpcCall('getTransaction', [
+    signature,
+    { encoding: 'jsonParsed', maxSupportedTransactionVersion: 2 },
+  ])
+
 const SOL = 'So11111111111111111111111111111111111111112'
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
 
@@ -134,6 +156,10 @@ async function recordAll(): Promise<void> {
     )
   } else {
     log('helius transactions', await call(heliusTransactions(wallet), at))
+  }
+
+  for (const sig of PINNED_SWAPS) {
+    log(`rpc getTransaction ${sig.slice(0, 8)}`, await call(getTransaction(sig), at))
   }
 
   for (const mint of mints.slice(0, 5)) {

@@ -1,0 +1,9 @@
+{
+  "test": "F3",
+  "name": "Token risk check on 30 labelled mints",
+  "threshold": "flags 20/20 dangerous mints (10 live freeze or mint authority, 10 Token-2022 with permanent delegate, transfer hook or transfer fee) and 0/10 blue chips",
+  "checkpoint": "CP1",
+  "written": "2026-09-24",
+  "existential": true,
+  "notes": "Copied from T-F03's Acceptance line before the spike ran. The 30 mints are labelled in mints.json in this directory, also before the run. Directory is spikes/F3 and not spikes/F03 because package.json's spike:f3 resolves node scripts/spike.mjs F3 to spikes/F3/run.mjs; a spike in spikes/F03 is never executed by the nightly job and spike.mjs exits 0 saying so."
+}

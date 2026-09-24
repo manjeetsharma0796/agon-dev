@@ -1,7 +1,7 @@
 {
-  "slot": 450012187,
+  "slot": 450031199,
   "provider": "jupiter",
-  "recordedAt": "2026-09-24T11:14:43.166Z",
+  "recordedAt": "2026-09-24T12:38:32.003Z",
   "request": {
     "method": "GET",
     "url": "https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263&amount=100000000&slippageBps=100",
@@ -16,34 +16,34 @@
       "inputMint": "So11111111111111111111111111111111111111112",
       "inAmount": "100000000",
       "outputMint": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
-      "outAmount": "320033982202",
-      "otherAmountThreshold": "316833642380",
+      "outAmount": "322800000000",
+      "otherAmountThreshold": "319572000000",
       "swapMode": "ExactIn",
       "slippageBps": 100,
       "platformFee": null,
-      "priceImpactPct": "0.000632712214422584333834635",
+      "priceImpactPct": "0.0008894482010928677718968254",
       "routePlan": [
         {
           "swapInfo": {
-            "ammKey": "5zpyutJu9ee6jFymDGoK7F6S5Kczqtc9FomP3ueKuyA9",
-            "label": "Whirlpool",
+            "ammKey": "EcARjmSG7K8AWxG2bT91qgD7cjFgDofSou3dyuWCZTv3",
+            "label": "Scorch",
             "inputMint": "So11111111111111111111111111111111111111112",
             "outputMint": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
             "inAmount": "100000000",
-            "outAmount": "320033982202",
-            "updateContextSlot": "450012128"
+            "outAmount": "322800000000",
+            "updateContextSlot": "450031199"
           },
           "percent": 100,
           "bps": null
         }
       ],
-      "contextSlot": 450012187,
-      "timeTaken": 0.009918404,
-      "swapUsdValue": "11.335519220025530",
+      "contextSlot": 450031199,
+      "timeTaken": 0.009207362,
+      "swapUsdValue": "11.321756625043780",
       "mostReliableAmmsQuoteReport": {
         "info": {
-          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11333154",
-          "8B8KYcFPMjZyDtJ1BENsqhW3fEmMrB4ekoEQJiM6z3SC": "319731098278"
+          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11321127",
+          "8B8KYcFPMjZyDtJ1BENsqhW3fEmMrB4ekoEQJiM6z3SC": "322742688292"
         }
       },
       "longtailMarketQuoteReport": null,

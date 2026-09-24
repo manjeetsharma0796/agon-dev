@@ -1,0 +1,21 @@
+{
+  "id": "F9",
+  "pass": false,
+  "measured": "30/30 guardrail verdicts identical across 2 runs from a clean surfpool on the snapshot pinned at slot 450049160, with no Helius key; agent-side variance 0 of the required 5 runs per scenario, because OP-9 has not pinned a model",
+  "date": "2026-09-24",
+  "commit": "84cd3e1fe6a86a723555045a038e015f983bc5c7",
+  "snapshotSlot": 450049160,
+  "snapshotAccounts": 295,
+  "runs": [
+    {
+      "slot": 0
+    },
+    {
+      "slot": 0
+    }
+  ],
+  "differing": [],
+  "deterministicHalf": "pass",
+  "agentHalf": "not run, OP-9 open",
+  "notes": "Deterministic half only, which is the fallback the kill criterion names. Each run is its own surfpool process started with --offline from the committed snapshot, so no datasource call is possible and no Helius key is needed."
+}

@@ -15,6 +15,19 @@ pnpm-lock.yaml
 # evidence to satisfy a style rule.
 fixtures/recorded/
 
+# Same argument, for what a spike writes. result.json comes out of JSON.stringify, which always
+# expands arrays, and prettier always collapses the short ones, so every spike run would leave the
+# tree unformatted and every re-run would undo the fix. A spike's own recorded responses are
+# evidence for the same reason the ones above are. The hand written parts of a spike,
+# thresholds.json, mints.json and run.mjs, are formatted normally.
+spikes/*/result.json
+spikes/*/recorded/
+# Recorded chain state, written by a recorder as raw bytes. Prettier does preserve number literals
+# verbatim, checked, so this is churn rather than damage: every re-pin writes the file unformatted
+# again and leaves the tree dirty. The numbers are the reason it is written as raw bytes in the
+# first place, since rentEpoch is u64::MAX and does not survive a JSON round trip.
+spikes/*/snapshot.json
+
 # Hand written, and owned by other tasks. The comments in these carry the reasoning for each gate
 # and prettier would rewrap them.
 .github/

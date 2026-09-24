@@ -133,7 +133,7 @@ waste in the standup.
 ## 4. Task row format
 
 ```
-### T-A03, Decode Meteora DLMM swaps
+### T-X01, Decode Meteora DLMM swaps
 - Status: open
 - Depends-on: T-A01
 - Touches: packages/decoder/src/venues/meteora.ts, fixtures/golden/
@@ -142,6 +142,11 @@ waste in the standup.
 - Evidence: <link to spikes/F1/result.json at a commit, or the PR>
 - Kill criterion: coverage gain under 2 points after 1 day, so cut and list Meteora as unsupported
 ```
+
+`T-X` on purpose: X is not one of the tracks, so this example can never collide with a real row.
+It used to read `T-A03`, which is a real task, and `scripts/board.mjs` reads the whole file when it
+checks a `feature/` branch against its row. It found this block first, saw `Status: open`, and
+refused the PR for the actual T-A03 with "claim it first" after the claim had already merged.
 
 `Serves:` must name a judged criterion (Functionality, Potential impact, Novelty, UX, Open
 source, Business plan) or a measured user metric. `Acceptance:` must contain a number. Both
@@ -183,12 +188,12 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 # P0, day 1. Nothing branches until T-B01 lands.
 
 ### T-B01, Scaffold the workspace, CI and the board
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/3 | Owner: Jishnu | Branch: feature/t-b01-scaffold
+- Status: blocked, see OP-17
 - Depends-on: OP-7
 - Touches: package.json, pnpm-workspace.yaml, tsconfig.base.json, apps/, packages/, knip.json, .gitignore, .env.example, vercel.json
 - Serves: Functionality (judged) ; unblocks all 5 tracks
 - Acceptance: `pnpm install && pnpm gates` green on a clean clone with 1 command and 0 keys; the 10 PRD repo paths exist (apps/web, apps/worker, packages/core, decoder, miner, guard, chain, mcp, cli, spikes, fixtures/golden, benchmark); `knip` fails the build on 1 planted unused export; the secret scan fails on 1 planted fake key; CLI cold start measured and under 300 ms; 3 environments wired with their own keys, preview on every PR push against devnet, staging on every merge to dev against devnet plus mainnet read-only, production on a release tag against mainnet
-- Evidence: <PR link, plus the green run and the 2 planted-failure runs>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/3 merged, gates green from a clean clone in 14 s with 0 keys. The last acceptance clause, 3 wired environments, is OP-17
 - Finding: the planted-key run found 0 leaks until the key was randomly generated. gitleaks
   allowlists the AWS documentation example key, so testing the gate with a well known example
   makes a working scan look dead. Regenerated at random it caught 5 of 5 shapes, including a
@@ -209,43 +214,80 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: none, a frozen contract is why the tracks do not block each other
 
 ### T-B02, Release job, dev to the public main by allowlist
-- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-b02-release
+- Status: blocked, see OP-7
 - Depends-on: T-B01, OP-7
 - Touches: .github/workflows/release.yml, .publicinclude, scripts/release.mjs
 - Serves: Open source (judged)
 - Acceptance: a `release-*` tag on dev copies only allowlisted paths into a clean public checkout, then installs, builds and passes tests on the stripped tree; 0 of 6 planted internal markers survive (TASKS.md, OPERATOR_TODO.md, FEASIBILITY.md, `OP-`, `.claude`, an internal URL); 1-click web rollback documented; releases run at least 1 per day during a hackathon
-- Evidence: <link to the first release run>
+- Evidence: <link to the first release run, blocked on OP-7>
+- Finding: 2 of the 3 release legs were dead on arrival and nothing said so, because the job had
+  never been run. The stripped tree failed `pnpm build` with TS5083 on a missing tsconfig.json and
+  failed `pnpm test` with "No test files found, exiting with code 1": .publicinclude allowlisted
+  tsconfig.base.json but not tsconfig.json, and not vitest.config.ts, so the 9 project references
+  and the 3 passWithNoTests projects both vanished from the public tree. 2 allowlist lines fixed
+  the build leg. The marker gate was the T-B01 trap again, a gate quiet on a clean tree and never
+  proven to bite: neutering findInternalMarkers now fails 6 of the 9 cases in
+  scripts/release.test.mjs, so the 6 planted markers are measured and not assumed. Also
+  .publicinclude promised .github/workflows/public-ci.yml, which did not exist, so the public repo
+  would have shipped with 0 CI next to a README that calls tests the evidence. The sharpest one
+  came from reviewing the fix: CHANGELOG-latest.md is built from dev's commit subjects during
+  --push, after --check has already passed, and PR #9 is open titled "Write the measured provider
+  limits into OP-2, OP-3 and OP-4", so the next release would have published an OP- marker through
+  the 1 file the gate never saw. A gate that runs at the wrong moment is worth the same as a gate
+  that does not run. Third dead gate, same shape: every package's dist/ and tsconfig.tsbuildinfo
+  were published, and a published tsbuildinfo tells `tsc -b` on the stripped tree that all 9
+  projects are already up to date, so the step whose only job is proving the public tree compiles
+  compiled nothing and passed. `tsc -b --dry` said "is up to date" for 9 of 9 before the fix and
+  "a non-dry build would build" for 9 of 9 after it. The exclusion has to run inside cpSync and not
+  only on the glob, because `apps/**` yields `apps/web` itself and a recursive copy of a directory
+  carries whatever is in it. Then the gate earned itself inside an hour: rebasing onto the dev that
+  had just taken T-C01 and T-C02, it found 5 live `OP-<n>` references in published source, 1 of
+  them in a string printed to whoever runs the recorder. It also found that the published suite
+  failed 6 of 17 on ENOENT because fixtures/ was not allowlisted, which is worse than shipping no
+  tests: it tells a judge who cloned the repo that the code is broken. All 3 legs now pass end to
+  end, 0 of 6 markers and 17 of 17 tests on the stripped tree. Only the push is unproven, on OP-7.
 - Kill criterion: none, judges only see the public repo
 
 ### T-C02, Record and replay wrapper with per-call timings
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-c02-record-replay
+- Status: blocked, see OP-1
 - Depends-on: T-B01
 - Touches: packages/core/src/net/, fixtures/recorded/
 - Serves: Functionality (judged) ; Benchmark B latency breakdown
 - Acceptance: 1 wrapper around all 5 external calls (Helius, Jupiter, RPC, RugCheck, Jev); recorded responses for the golden wallets and about 30 tokens, every file stamped with its source slot or `synthetic: true`; the whole offline suite runs with 0 keys and 0 network access, verified with the network blocked; every call logs its duration from the first request
-- Evidence: <PR link, plus a suite run with the network blocked>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/11 merged, 43 fixtures across 4 providers, suite green with fetch stubbed to throw and 0 keys set. Golden-wallet recordings need OP-1
 - Kill criterion: if C slips past day 2 this moves to B, per the PRD load check
 
 ### T-C03, Measure the region for API, RPC and Jev
-- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-c03-region
+- Status: done
 - Depends-on: T-B01
 - Touches: docs/plans/region.md, apps/web/vercel.json
 - Serves: Functionality (judged) ; decision speed
 - Acceptance: p50 and p95 round trip measured from at least 2 candidate regions to the Helius RPC node and the Jev endpoint, 100 calls each; the chosen region is set in config and both numbers are written down
-- Evidence: <docs/plans/region.md at a commit>
+- Evidence: docs/plans/region.md, plus the region 2 run
+  https://github.com/manjeetsharma0796/agon-dev/actions/runs/35996972613
+- Finding: deploying near our users is the wrong instinct by 5.8x. Helius p50 is 136.3 ms from
+  India against 23.5 ms from the US, p95 267.5 against 39.6, and the Cloudflare edge that Workers
+  AI runs on is 210.8 ms against 12.9 ms, a 16.3x gap. A 2,000 transaction report is 20 sequential
+  history calls, so that is 2.7 s of pure network from India against 0.5 s from the US, paid before
+  anything is decoded, while the distance to the user is paid once. Second finding, about method:
+  the CI probe cannot carry a key (OP-2), so the unkeyed 401 was checked against the keyed call on
+  the same machine before it was trusted, 140.4 against 136.3 p50, inside 3 percent. Third: the
+  first Cloudflare probe read 442.2 ms and was wrong, because api.cloudflare.com is the control
+  plane and is not served from the nearest colo, 2.1x the real edge number. A probe that looks
+  reasonable and measures the wrong machine is worth less than no probe.
 - Kill criterion: none, it is a setting and not code, so it is measured once and cheap
 
 ### T-E01, Demo script and the committed benchmark scenario list
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-e01-demo-scenarios
+- Status: done
 - Depends-on: none
 - Touches: docs/demo-script.md, benchmark/scenarios/
 - Serves: UX (judged) ; Functionality (judged)
 - Acceptance: a 3-minute script with every beat timed; 100 scenarios written and committed before the first benchmark run, split 40 normal trades inside the profile, 30 dangerous tokens (live freeze authority, permanent delegate, no sell route), 30 rule breaks (4x usual size, past usual stop, prompt injection); the commit hash recorded for the published posts
-- Evidence: <commit hash of benchmark/scenarios/>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/8, benchmark/scenarios/scenarios.json, 100 scenarios split 40/30/30
 - Kill criterion: none. Anything not in the script is a candidate to cut at each checkpoint
 
 ### T-E02, Beta waitlist live
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/21 | Owner: Prithwish | Branch: feature/t-e02-waitlist
+- Status: blocked, see OP-18
 - Depends-on: T-B01
 - Touches: apps/web/app/waitlist/
 - Serves: Business plan (judged) ; CP3 gate needs 10+ reports
@@ -271,7 +313,7 @@ CP1 evidence required: F1 on 2 wallets; F3; F5 on devnet; F6 in simulation; F11 
 and latency (a, b).
 
 ### T-E03, Thin end-to-end version on staging
-- Status: open
+- Status: blocked, see OP-17
 - Depends-on: T-C01, T-C02
 - Touches: apps/web/app/report/, apps/web/app/api/, packages/mcp/src/index.ts
 - Serves: Functionality (judged) ; UX (judged)
@@ -289,7 +331,15 @@ and latency (a, b).
 - Acceptance: every transaction is classified buy, sell or not-a-swap from pre/post token
   balances with amounts exact to base units; 0 silent drops, every undecoded transaction listed
   with a named reason and a program id; runs as pure functions with 0 network calls inside
-- Evidence: <PR link, plus the golden-wallet regression run>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/23, 5 real mainnet transactions replayed offline. The golden-wallet regression run needs OP-1
+- Finding: transactions taken from AMM pool activity are router and MEV flow, not retail swaps. The
+  fee payer was the trader in 0 of 5, and each transaction had 2 to 4 separate owners with
+  two-sided balance movement, so the wallet has to be named rather than derived: decoding the
+  wrong owner returns a confident wrong answer instead of an error. Separately, 3 of the first 4
+  transactions pinned were SOL to USDC, both sides quote assets. Classifying those as undecoded
+  would have put the most common shape on the chain into the unsupported list and deflated
+  coverage on transactions we read perfectly well, so they are not-a-swap with a stated reason and
+  do not count against coverage.
 - Kill criterion: none, F1 is existential
 
 ### T-F01a, F1 spike on 2 wallets, for CP1
@@ -304,7 +354,7 @@ and latency (a, b).
 - Kill criterion: fallback is Jupiter-routed swaps only, with the covered share printed on the report ("based on 83% of your swaps")
 
 ### T-C04, Our own mint check
-- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-c04-mint-check
+- Status: done
 - Depends-on: T-C01, T-C02
 - Touches: packages/guard/src/mint-check.ts
 - Serves: Functionality (judged) ; F3
@@ -312,17 +362,43 @@ and latency (a, b).
   transfer hook, transfer fee) read in exactly 1 `getMultipleAccounts` call; mint and freeze
   authority are never cached; RugCheck is enrichment only and is never on the deciding path; an
   unreachable RPC returns `block` with "Couldn't verify this token. Not safe to proceed."
-- Evidence: <PR link, plus the 30-mint test run>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/26, 30 mints in 1 call at slot 450012073, 6 block and 24 pass
+- Finding: the extension being present is not the danger being present. 5 of the 30 recorded mints,
+  17 percent, carry the Token-2022 `transferHook` extension with `programId: null`, which means no
+  hook is installed. A check that treats the extension list as the finding blocks 5 real tokens for
+  something none of them does, and it would have looked like a working safety check while doing it.
+  Second: the 4 mints with a permanent delegate are a subset of the 6 with freeze authority, so the
+  block set over this sample is 6 and not 10, and a check that counted traits rather than mints
+  would have reported 10. Third: a live mint authority must not block. 8 of 30 have one, USDC
+  included, so blocking on it refuses most of what people actually trade; it dilutes, it does not
+  seize, so it is reported. Fourth: Token-2022 carries 2 scheduled transfer fees and which one
+  applies depends on the current epoch, which the mint account does not carry and which
+  `getEpochInfo` would cost a second call to learn, against a budget of exactly 1. So the worse of
+  the 2 is reported: overstating a fee costs the user nothing and understating it costs them the
+  difference. 30 mints, 1 `getMultipleAccounts`, 6 block and 24 pass at slot 450012073.
 - Kill criterion: none, this is the primary path
 
 ### T-F03, F3 spike, token risk check on 30 labelled mints
-- Status: open
+- Status: done
 - Depends-on: T-C04
 - Touches: spikes/F03/
 - Serves: Functionality (judged) ; CP1 gate
 - Acceptance: our own check flags all 20 dangerous mints (10 with live freeze or mint authority,
   10 Token-2022 with permanent delegate, transfer hook or transfer fee) and 0 of the 10 blue chips
-- Evidence: <spikes/F03/result.json at a commit>
+- Evidence: spikes/F3/result.json at a commit, measured at slot 450037708
+- Finding: FAIL, 10 of 20 dangerous flagged and 2 of 10 blue chips flagged, and neither miss is a
+  bug in the code. The 2 blue chips are USDC and USDT, flagged for a live freeze authority, which
+  is the same trait the dangerous set is labelled by, so 1 rule cannot both disqualify that trait
+  and wave through the 2 largest stablecoins on Solana. The tokens carrying it say why: PYUSD is
+  PayPal, USDG is Paxos, cbBTC is Coinbase, and SPYx, NVDAx and GLDx are tokenised equities and
+  gold, where a freeze authority and a permanent delegate are how a regulated issuer meets a court
+  order. The other 10 misses are fee-only Token-2022 mints, deliberately reported and not blocked,
+  because a 3% fee is a cost the size rule can price and not a way to take the position. 2 more
+  from the real distribution: 0 of the top 100 mints by organic score has a live transfer hook,
+  every `transferHook` extension found had `programId: null`, so the third danger the acceptance
+  names does not occur at this end of the market; and 8 of the 10 authority-group mints also carry
+  a permanent delegate, so the 2 disjoint groups of 10 the acceptance imagines are 1 overlapping
+  group on chain. The threshold is what needs the decision at CP1, not the check.
 - Kill criterion: RugCheck stays optional either way; a miss on the 20 is a bug to fix, not a scope cut
 
 ### T-C05, Jev client, question schema and the injection screen
@@ -357,7 +433,7 @@ and latency (a, b).
 - Kill criterion: fallback is an LLM guard with a stricter threshold, or Kev-0.5B locally
 
 ### T-D01, Swig role creation and removal in packages/chain
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-d01-swig-role
 - Depends-on: T-C01
 - Touches: packages/chain/src/swig/
 - Serves: Novelty (judged) ; F5
@@ -424,7 +500,7 @@ CP2 evidence required: F1 and F2 complete; F4; F5 in simulation; F6 on mainnet (
 F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, d, e).
 
 ### T-A02, FIFO P&L ledger
-- Status: open
+- Status: blocked, see OP-1
 - Depends-on: T-A01
 - Touches: packages/decoder/src/pnl.ts
 - Serves: Functionality (judged) ; F1
@@ -432,7 +508,21 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   wallets; decoded events per transaction match unique signature and leg counts on the golden
   wallets, so 0 double counting; every field name matches the value it holds, reviewed by a
   second person
-- Evidence: <PR link, plus the golden-wallet diff>
+- Evidence: <PR link; the golden-wallet diff needs OP-1, no wallet has history yet>
+- Finding: the case with no honest answer is the common one. A position bought with SOL and sold
+  for USDC has no realised P&L without a price at the fill, because 150 USDC minus 100 SOL is not
+  50 of anything, and buying with SOL then taking profit into USDC is ordinary behaviour rather
+  than an edge case. It is an exception and the lot stays open; realised P&L is keyed by quote and
+  never summed across quotes. Same for selling more than the decoded lots hold, which is what an
+  airdrop or an incoming transfer looks like from here: only the matched units are realised and the
+  proceeds are apportioned to them, because realising the whole sale would invent profit out of
+  units that cost nothing on paper. Second, measured: apportioning a lot's cost by amount truncates
+  under integer division, so the remainder is subtracted from the lot rather than recomputed from
+  the original numbers. Over 333 partial sells of an awkward size that conserves 1000000001 base
+  units exactly, 0 lost; recomputing would have leaked basis on every sell and the loss would have
+  looked like rounding while inflating P&L. Third: BigInt throughout, because a lamport count above
+  2^53 loses its low digits in a float and the 2 that separate 9007199254740993 from
+  9007199254740995 are the whole answer.
 - Kill criterion: none. monad T3.7 shipped "positions" that were trade flow, off by 67x
 
 ### T-F01b, F1 spike complete, 5 wallets
@@ -448,7 +538,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: fallback is Jupiter-routed swaps only with the covered share printed on the report
 
 ### T-A03, Rule miner
-- Status: open
+- Status: done
 - Depends-on: T-A02
 - Touches: packages/miner/src/
 - Serves: Novelty (judged) ; F2
@@ -457,7 +547,23 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   closed trades before claiming a stop rule and shows sizing and hold time below that ("12
   closed trades. A stop rule needs 20; sizing and hold time are shown"); output is byte-identical
   across 2 runs on the same input
-- Evidence: <PR link, plus the 3 synthetic ledger runs>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/50; the 3 synthetic ledger runs are
+  the planted-stop, scattered-loss and 12-trade cases in packages/miner/src/miner.test.ts
+- Finding: the hard part is refusing, not finding. A median always exists, so a miner that reports
+  one tells somebody they have a 20% stop when they have never used a stop, and they believe it
+  because it arrived with a number. 3 separate gates are needed and each fails its own test when
+  removed: 20 closed trades, at least 5 losing trades, and a median absolute deviation of at most 2
+  percentage points. The middle one is not in the acceptance line and is the one that matters most
+  in practice: 20 closed trades with 2 losses is not a habit whatever those 2 losses agree on. MAD
+  and not standard deviation, because 1 catastrophic exit widens a standard deviation enough to
+  swallow the real stop. Second: hold time is derived and not observed. A closed trade carries
+  slots, not wall-clock timestamps, so seconds come from Solana's 400 ms slot target and are
+  reported as whole numbers, because the next digit would be invented precision. Third, caught by
+  the compiler and not by the tests: Metrics.medianSize and realisedPnl are branded in the frozen
+  contract, so the object has to be parsed rather than cast, which is the brand doing exactly the
+  job it exists for. Fourth: the quote is a required argument, because Metrics.realisedPnl is 1
+  signed number while T-A02 keeps P&L per quote, and summing SOL with USDC produces a total of
+  nothing that looks like a total of something.
 - Kill criterion: fallback is shipping only the metrics that passed and labelling the rest "coming soon" in the demo, never "N/A"
 
 ### T-F02, F2 spike, planted rules and report timing
@@ -616,14 +722,29 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: fallback is the local daemon polling price, and the UI says "runs while your computer is on"
 
 ### T-F09, F9 spike, benchmark reproducibility
-- Status: open
+- Status: done
 - Depends-on: T-B03
 - Touches: spikes/F09/
 - Serves: Functionality (judged) ; CP2 gate
 - Acceptance: run the benchmark twice from a clean checkout on a mainnet fork pinned to 1 slot;
   guardrail verdicts identical across runs; agent-side variance reported across at least 5 runs per
   scenario; 1 command reproduces everything
-- Evidence: <spikes/F09/result.json at a commit>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/43, spikes/F9/result.json, snapshot pinned at slot 450049160
+- Finding: the pinned state cannot be round-tripped through JavaScript, and the corruption looks
+  fine. `surfnet_exportSnapshot` returns rentEpoch as u64::MAX, 18446744073709551615, which is
+  above Number.MAX_SAFE_INTEGER, so JSON.parse holds it as a float and JSON.stringify writes back
+  18446744073709552000, a different integer wrong by 385 that still reads as an ordinary u64. It
+  occurs 31 times in a 295 account snapshot. The first version of this spike did exactly that and
+  the file looked correct; surfpool refused it only because a second attempt serialised in
+  scientific notation, so a more forgiving importer would have pinned state that quietly disagreed
+  with the chain it came from and every later run would have been reproducibly wrong. The recorder
+  now moves the bytes as text and never parses them. Second: the CLI help says --snapshot takes the
+  surfnet_exportSnapshot output, and it does not; the RPC returns {context, value} and the importer
+  wants the bare map, so the export verbatim fails on `missing field lamports`. Third, measured:
+  30/30 verdicts identical across 2 clean runs with no Helius key, which is what makes the number
+  rerunnable by a sceptic. Reported FAIL, not pass: agent-side variance is 0 of the required 5 runs
+  per scenario because OP-9 has not pinned a model, and taking the documented fallback is a CP2
+  decision rather than one the spike awards itself.
 - Kill criterion: fallback is publishing only the deterministic half and dropping the live-agent comparison
 
 ### T-B04, Benchmark A v1, agents with and without guardrails
@@ -686,6 +807,19 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Evidence: <docs/plans/jev-trial.md with the 4 measured numbers, plus the CP2 decision>
 - Kill criterion: never used for anything numeric, for deciding a task is done, for approving a merge or deploy, or for anything touching keys or funds. A Jev answer is an input to a rule, never the rule itself. Any use that misses its bar is cut at CP2, not extended
 
+### T-B09, Stop the CI gates over-firing
+- Status: claimed 2026-09-24 | Owner: manjeetsharma0796 | Branch: feature/t-b09-gate-overfiring
+- Depends-on: T-B01
+- Touches: .gitleaks.toml, .github/workflows/board.yml
+- Serves: Functionality (judged) ; unblocks T-A01 and T-E10, and every later PR carrying a fixture
+- Acceptance: the secret scan reports 0 findings on T-A01's 24 recorded addresses, and still reports
+  1 finding for each of 2 planted secrets, an 88-character Solana secret key and a uuid api key
+  inside a recorded request URL; the frozen-contract gate fires on 0 of 2 PRs that only add a module
+  under packages/core, and on 1 of 1 that changes one of the 3 contract files
+- Evidence: <the 4 measured scans and the 3 gate checks, in the PR>
+- Kill criterion: none. A gate that cries wolf teaches everyone to tick the box without reading,
+  which is worse than no gate
+
 ### T-E12, Build in public, weekly
 - Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-e12-x-plan
 - Depends-on: T-B01
@@ -701,7 +835,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none. It feeds 3 of the 6 judged criteria, and the rules do not restrict marketing or real users (rules s.8)
 
 ### T-E10, Failure-message catalogue
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-e10-messages
 - Depends-on: T-C01
 - Touches: packages/core/src/messages.ts
 - Serves: UX (judged)
@@ -709,7 +843,11 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   the cause, the number involved and what the user can do next; a test asserts 0 messages
   containing "N/A", "something went wrong" or an empty field; anything that can move funds fails
   closed, analytics fail open but always state what they are based on
-- Evidence: <PR link, plus the 11 rendered messages>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/32, 11 of 11 rows, 65 tests green
+- Finding: 1 of the 11 rows in the PRD carries no number. The RugCheck row reads "didn't answer in
+  time", which leaves a reader unable to tell a 200 ms blip from a 30 s outage, and that changes
+  whether they wait and retry. The test that asserts every message names its number caught it, and
+  the message now carries the timeout, because for a timeout the timeout is the number involved
 - Kill criterion: none, this is the difference between a demo and a product
 
 ---

@@ -1,7 +1,7 @@
 {
-  "slot": 450012209,
+  "slot": 450031218,
   "provider": "jupiter",
-  "recordedAt": "2026-09-24T11:14:49.183Z",
+  "recordedAt": "2026-09-24T12:38:36.877Z",
   "request": {
     "method": "GET",
     "url": "https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=7ga6rtE9qSb3wdEiDCpTu2kHqoGVfT52jD8ign1rYTvx&amount=100000000&slippageBps=100",
@@ -16,12 +16,12 @@
       "inputMint": "So11111111111111111111111111111111111111112",
       "inAmount": "100000000",
       "outputMint": "7ga6rtE9qSb3wdEiDCpTu2kHqoGVfT52jD8ign1rYTvx",
-      "outAmount": "4386233",
-      "otherAmountThreshold": "4342371",
+      "outAmount": "4360074",
+      "otherAmountThreshold": "4316474",
       "swapMode": "ExactIn",
       "slippageBps": 100,
       "platformFee": null,
-      "priceImpactPct": "0.0002871284812967963352711756",
+      "priceImpactPct": "0.0038500477620719097606378407",
       "routePlan": [
         {
           "swapInfo": {
@@ -30,20 +30,20 @@
             "inputMint": "So11111111111111111111111111111111111111112",
             "outputMint": "7ga6rtE9qSb3wdEiDCpTu2kHqoGVfT52jD8ign1rYTvx",
             "inAmount": "100000000",
-            "outAmount": "4386233",
-            "updateContextSlot": "450012195"
+            "outAmount": "4360074",
+            "updateContextSlot": "450031212"
           },
           "percent": 100,
           "bps": null
         }
       ],
-      "contextSlot": 450012209,
-      "timeTaken": 0.007297899,
-      "swapUsdValue": "11.337314063618170",
+      "contextSlot": 450031218,
+      "timeTaken": 0.006601429,
+      "swapUsdValue": "11.323184295563160",
       "mostReliableAmmsQuoteReport": {
         "info": {
-          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11333154",
-          "8tp8GJADuYu2czhnaWzXYxpXTq2dwjribGwSav4J4m7e": "4360736"
+          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11321128",
+          "8tp8GJADuYu2czhnaWzXYxpXTq2dwjribGwSav4J4m7e": "4312495"
         }
       },
       "longtailMarketQuoteReport": null,
@@ -54,9 +54,9 @@
       "instructionVersion": null,
       "transactionVersion": 0,
       "additionalIntermediateTokens": [
-        "ATJyB1YW9tXQ8ur1xex1JqkDLjdG8pr9UcCDTpWCGVKv",
         "7Qy2cXpdj4Fu2DUPVWdN3oogM3JSwLUV2LZaKVgVcPZh",
-        "7PjpYczqB887qVEajYY3vXWpWhDjBUHYKDPoL8GiBky2"
+        "87MGdKoaYui4eRbbnE6Uuu2ZByRT4N9HqoSbipqQ2hbc",
+        "8dnA3uotwGL4kgCoraKTypU4owcWSgkdBBXzXWykLL5h"
       ]
     }
   }

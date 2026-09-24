@@ -1,7 +1,7 @@
 {
-  "slot": 450012223,
+  "slot": 450031232,
   "provider": "jupiter",
-  "recordedAt": "2026-09-24T11:14:52.765Z",
+  "recordedAt": "2026-09-24T12:38:40.580Z",
   "request": {
     "method": "GET",
     "url": "https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=HhXe2PbtXQHzZ5Ch46MBXf7rEbMgnYsCGaEhktyKGZNT&amount=100000000&slippageBps=100",
@@ -16,12 +16,12 @@
       "inputMint": "So11111111111111111111111111111111111111112",
       "inAmount": "100000000",
       "outputMint": "HhXe2PbtXQHzZ5Ch46MBXf7rEbMgnYsCGaEhktyKGZNT",
-      "outAmount": "262966175714",
-      "otherAmountThreshold": "260336513957",
+      "outAmount": "228779650834",
+      "otherAmountThreshold": "226491854326",
       "swapMode": "ExactIn",
       "slippageBps": 100,
       "platformFee": null,
-      "priceImpactPct": "0.0321680865252542076203215679",
+      "priceImpactPct": "0.0480148145761509065261919954",
       "routePlan": [
         {
           "swapInfo": {
@@ -30,8 +30,8 @@
             "inputMint": "So11111111111111111111111111111111111111112",
             "outputMint": "7ga6rtE9qSb3wdEiDCpTu2kHqoGVfT52jD8ign1rYTvx",
             "inAmount": "100000000",
-            "outAmount": "4386233",
-            "updateContextSlot": "450012195"
+            "outAmount": "4359410",
+            "updateContextSlot": "450031231"
           },
           "percent": 100,
           "bps": null
@@ -42,22 +42,22 @@
             "label": "Raydium CP",
             "inputMint": "7ga6rtE9qSb3wdEiDCpTu2kHqoGVfT52jD8ign1rYTvx",
             "outputMint": "HhXe2PbtXQHzZ5Ch46MBXf7rEbMgnYsCGaEhktyKGZNT",
-            "inAmount": "4386233",
-            "outAmount": "262966175714",
-            "updateContextSlot": "450011698"
+            "inAmount": "4359410",
+            "outAmount": "228779650834",
+            "updateContextSlot": "450030891"
           },
           "percent": 100,
           "bps": null
         }
       ],
-      "contextSlot": 450012223,
-      "timeTaken": 0.003406468,
-      "swapUsdValue": "11.336999800846420",
+      "contextSlot": 450031232,
+      "timeTaken": 0.003250621,
+      "swapUsdValue": "11.324032243558320",
       "mostReliableAmmsQuoteReport": {
         "info": {
+          "8tp8GJADuYu2czhnaWzXYxpXTq2dwjribGwSav4J4m7e": "4313360",
           "HhXe2PbtXQHzZ5Ch46MBXf7rEbMgnYsCGaEhktyKGZNT": "Not found",
-          "8tp8GJADuYu2czhnaWzXYxpXTq2dwjribGwSav4J4m7e": "4360803",
-          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11333159"
+          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11321108"
         }
       },
       "longtailMarketQuoteReport": null,
