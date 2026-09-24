@@ -22,6 +22,11 @@ fixtures/recorded/
 # thresholds.json, mints.json and run.mjs, are formatted normally.
 spikes/*/result.json
 spikes/*/recorded/
+# Recorded chain state, written by a recorder as raw bytes. Prettier does preserve number literals
+# verbatim, checked, so this is churn rather than damage: every re-pin writes the file unformatted
+# again and leaves the tree dirty. The numbers are the reason it is written as raw bytes in the
+# first place, since rentEpoch is u64::MAX and does not survive a JSON round trip.
+spikes/*/snapshot.json
 
 # Hand written, and owned by other tasks. The comments in these carry the reasoning for each gate
 # and prettier would rewrap them.
