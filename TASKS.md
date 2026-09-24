@@ -343,7 +343,7 @@ and latency (a, b).
 - Kill criterion: none, F1 is existential
 
 ### T-F01a, F1 spike on 2 wallets, for CP1
-- Status: blocked, see OP-20
+- Status: blocked, see OP-23
 - Depends-on: T-A01
 - Touches: spikes/F1/, scripts/board.mjs
 - Serves: Functionality (judged) ; CP1 gate
@@ -629,7 +629,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none. monad rebuilt full history on every request (T3.6) and switching later was a rewrite
 
 ### T-C06, check_trade guard, arithmetic first
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-c06-check-trade
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/77 | Owner: Jishnu | Branch: feature/t-c06-check-trade
 - Depends-on: T-C04, T-C05, T-A03
 - Touches: packages/guard/src/check-trade.ts
 - Serves: Functionality (judged) ; F4
@@ -639,7 +639,16 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   call (1 account batch, 1 quote, 1 Jev call), asserted by a counting wrapper in tests; every
   verdict names the rule and the number ("4.1x your median size of 0.8 SOL") and is stamped with
   its data slot and rule version; response stays inside the 400-token budget on the golden wallets
-- Evidence: <PR link, plus the network-count and token-budget tests>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/77, with the counting wrapper in
+  packages/guard/src/check-trade.budget.test.ts (3 calls, 0 of them the guard's) and the budget in
+  packages/guard/src/check-trade.token.test.ts. Measured: 5 of 5 numeric checks arithmetic, 2 of 4
+  of F4's scripted trade kinds resolved with 0 model answers, 3 network calls, 395 tokens worst
+  case against 400. Golden wallets do not exist yet, so the budget is measured on worst cases
+- Finding: the worst case verdict was 417 tokens against the 400 budget, 4.3% over, and fits at 395
+  only after this file's own 4 messages lost 88 characters. 621 of those 1,578 characters, 39%, are
+  3 mint-check messages T-C06 does not own, so the guard controls about 61% of its own budget.
+  Separately, the 6 token categories the PRD freezes and the 6 T-C05 shipped share 0 names, and
+  style fit is arithmetic keyed on exactly those names
 - Kill criterion: none, a failure here is a bug and not a feasibility problem
 
 ### T-F04, F4 spike, 20 scripted verdicts
@@ -743,7 +752,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: fallback is no automatic expiry, a short recurring window instead, and the UI says "no end date: revoke from your wallet". Never fall back to giving the agent admin rights
 
 ### T-F07, F7 spike, pre-signed expiry
-- Status: open
+- Status: blocked, see OP-19
 - Depends-on: T-D02
 - Touches: spikes/F07/
 - Serves: UX (judged) ; CP2 gate
@@ -751,11 +760,29 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   answer; then the pre-signed removal lands after expiry and the next agent transaction fails; an
   earlier manual revoke still works and leaves the pre-signed transaction harmless; the agent key
   held `manageAuthority` in 0 of the runs
-- Evidence: <spikes/F07/result.json at a commit>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/83, spikes/F7/result.json, 7 of 7 SDK
+  checks. Clauses 2 to 4 need a funded devnet key, see OP-19.
+- Finding: Swig already has a native expiry, and T-D02 may not be needed. `@swig-wallet/lib`
+  defines a session based authority carrying `expirySlot` and `maxDuration`, created for a separate
+  key with `createSession({ roleId, newSessionKey, sessionDuration })`. So the shape Agon wants
+  exists in the program: give the agent a session key rather than an authority of its own, and when
+  the session expires it simply cannot sign. No pre-signed transaction, no durable nonce, no daemon
+  that has to be running at the right moment, and no bearer instrument to steal. The reason nobody
+  saw it is that the wrapper hides it: `@swig-wallet/classic`, which packages/chain imports and
+  which T-D01 and T-D02 were written against, exposes no expiry concept at all and its Actions
+  builder has 26 permission methods with no expiry among them. Checking only the wrapper is exactly
+  how a team concludes there is no native expiry and builds one, which is what happened, and it is
+  why this acceptance line says to check the protocol-level SDK first. The decisive follow-up is
+  whether a session key can renew itself, because a self renewing session is not an expiry: the SDK
+  says it cannot, since `getCreateSessionV1BaseAccountMetasWithAuthority` puts the authority in the
+  signer slot and the new session key is a parameter rather than a signer, but that is inference
+  from a type declaration and not proof from the program, and proving it needs devnet. 7 of 7 SDK
+  checks as expected against 2.1.0, versions recorded so a future release cannot quietly change the
+  answer.
 - Kill criterion: fallback is a short recurring window and no end date in the UI
 
 ### T-D03, Kill switch
-- Status: blocked, see OP-20
+- Status: blocked, see OP-19
 - Depends-on: T-D01
 - Touches: packages/chain/src/kill-switch.ts, packages/cli/src/commands/revoke.ts
 - Serves: UX (judged) ; Novelty (judged)
@@ -900,7 +927,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: share rate under 10% across 10+ reports at CP3, so it stops being a pitch line
 
 ### T-B08, Jev in our own dev workflow, a one-week trial
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-b08-jev-review
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/79, Branch: feature/t-b08-jev-review
 - Depends-on: T-B01, OP-4
 - Touches: scripts/jev-review.mjs, .github/workflows/board.yml, docs/plans/jev-trial.md
 - Serves: unblocks nothing; it is a measured bet on our own speed, kept or cut at CP2
@@ -919,7 +946,27 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   inside a session, because Claude writing a diff into a call costs more than Jev saves. Both
   candidate MCP servers are unofficial and would hold our TypeSafe key, so pin a commit and read
   the source before installing either.
-- Evidence: <docs/plans/jev-trial.md with the 4 measured numbers, plus the CP2 decision>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/79, docs/plans/jev-trial.md. Use (1)
+  only; uses (2) to (4) are not started, their bars stay open for whoever picks this up next
+- Finding: use (1)'s own bar, 38+/40 hits with 8 or fewer false flags on labelled past diffs, is
+  not measured: this environment has no JEV_API_KEY and OP-4 is still open. What was measured
+  without a key, 2026-09-24: 29 of this repo's 69 merged PRs are real `feature/*` work PRs with a
+  non-empty diff; the other 40 are `claim/*` and `board/*` housekeeping carrying no diff worth
+  measuring. Ground truth pulled from those 29 PRs' own "Second reviewer needed?" checkboxes: 3
+  money math, 4 transaction-building, 0 frozen contract, 11 cross-track docs, so the 40-diff set
+  this bar needs cannot come from `git log` alone, this repo's history alone supplies 0 of the 10
+  frozen-contract positives a balanced 40 would want. Second: `noul`, asked "is this urgent" on 3
+  texts outside this session, scored the real emergency lowest of the 3 at 0.0043, below "repaint
+  the kitchen next spring" at 0.0086, inverted rather than merely weak, a second and independent
+  reason (T-C05 found the first) this script uses `choice` and reads only `confidence`. Third: this
+  PR's own `/code-review` pass, run before any live measurement, caught the harness counting a hit
+  whenever anything was flagged on either side rather than the same category on both, which would
+  have let a money-math diff read as caught by a wrongly flagged transaction-building answer.
+  Fourth: pushing the `board.yml` wiring failed, this session's GitHub token carries `repo` scope
+  and not `workflow`; backed out, the 2 steps to paste in are documented, unapplied, in
+  docs/plans/jev-trial.md. Fifth: CLAUDE.md's "Jev answers only 3 non-numeric questions" line is
+  unqualified and this script asks 4 different ones about a diff, never a trade; written up as
+  OP-20 rather than decided quietly
 - Kill criterion: never used for anything numeric, for deciding a task is done, for approving a merge or deploy, or for anything touching keys or funds. A Jev answer is an input to a rule, never the rule itself. Any use that misses its bar is cut at CP2, not extended
 
 ### T-B09, Stop the CI gates over-firing
