@@ -1050,7 +1050,7 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 ### T-C11, Apply the CP1 decision: freezing is reported, seizure blocks
 - Status: claimed 2026-09-24 | Owner: manjeetsharma0796 | Branch: feature/t-c11-freeze-reports
 - Depends-on: T-C04, T-F03
-- Touches: packages/guard/src/mint-check.ts, spikes/F3/
+- Touches: packages/guard/src/mint-check.ts, packages/guard/src/mint-check.test.ts, spikes/F3/
 - Serves: Functionality (judged) ; CP1 decision on F3
 - Acceptance: with `mint-freeze-authority` out of the blocking set, the F3 spike measures 9 of 9
   seizure mints blocked, 0 of 11 blue chips blocked with cbBTC relabelled as the regulated issuer it

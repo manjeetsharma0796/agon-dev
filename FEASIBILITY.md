@@ -11,11 +11,11 @@ on average.
 
 | Test | What it proves | Threshold, written before the run | Measured | Status | CP | Commit |
 |---|---|---|---|---|---|---|
-| F3 **(existential)** | Token risk check on 30 labelled mints | flags 20/20 dangerous mints (10 live freeze or mint authority, 10 Token-2022 with permanent delegate, transfer hook or transfer fee) and 0/10 blue chips | 10/20 dangerous flagged, 2/10 blue chips flagged (USDC, USDT) | **FAIL** | CP1 | 3d3551ef |
+| F3 **(existential)** | Token risk check on 30 labelled mints | blocks 9/9 seizure mints (a permanent delegate or a live transfer hook, either of which can take or immobilise the position), 0/11 blue chips, and 0/10 fee-only Token-2022 mints, which are reported with their basis points rather than blocked; a freeze authority is reported with its own reason and never blocks on its own | 9/9 seizure mints blocked, 0/11 blue chips blocked, 0/10 fee-only blocked (none) | pass | CP1 | b1edc344 |
 | F5 **(existential)** | Swig role enforces the cap on-chain | all 7 cases behave exactly as stated with 0 unexpected successes: (a) a Jupiter-program instruction within cap is authorised, (b) a swap over cap is rejected, (c) a transfer to an arbitrary address is rejected, (d) a call to a non-Jupiter program is rejected, (e) the allowance is restored at the expected slot after the window, (f) root removes the role and the next agent transaction fails, (g) removal done from Phantom and not only our CLI | - | not run | CP1 | - |
 | F9 | Benchmark reproducibility on a pinned mainnet fork | 2 runs from a clean checkout produce identical guardrail verdicts on every scenario; agent-side variance reported over 5+ runs per scenario; 1 command reproduces everything | 30/30 guardrail verdicts identical across 2 runs from a clean surfpool on the snapshot pinned at slot 450049160, with no Helius key; agent-side variance 0 of the required 5 runs per scenario, because OP-9 has not pinned a model | **FAIL** | CP2 | 84cd3e1f |
 
-0 of 3 passing, 2 failing, 1 not run.
+1 of 3 passing, 1 failing, 1 not run.
 
 A failing test is not debated when it fails. It is decided at the next checkpoint, one of: keep,
 fallback, cut, or extend once with a new date. An undecided test at a checkpoint defaults to its

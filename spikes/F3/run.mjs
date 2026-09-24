@@ -44,12 +44,15 @@ const per = Object.fromEntries(
   }),
 )
 
-const dangerous = [...per.dangerousAuthority, ...per.dangerousToken2022]
-const caught = dangerous.filter((r) => r.flagged).length
+// The threshold, exactly as spikes/F3/thresholds.json states it after the CP1 decision: every
+// seizure mint blocked, no blue chip blocked, and no fee-only mint blocked, because a fee is a cost
+// and gets reported with its basis points instead.
+const seizure = per.dangerousAuthority
+const caught = seizure.filter((r) => r.flagged).length
 const blueFlagged = per.blueChip.filter((r) => r.flagged)
+const feeBlocked = per.dangerousToken2022.filter((r) => r.flagged)
 
-// The threshold, exactly as spikes/F3/thresholds.json states it: 20 of 20, and 0 of 10.
-const pass = caught === 20 && blueFlagged.length === 0
+const pass = caught === seizure.length && blueFlagged.length === 0 && feeBlocked.length === 0
 
 const commit = (() => {
   try {
@@ -62,17 +65,20 @@ const commit = (() => {
 const result = {
   id: 'F3',
   pass,
-  measured: `${caught}/20 dangerous flagged, ${blueFlagged.length}/10 blue chips flagged (${
+  measured: `${caught}/${seizure.length} seizure mints blocked, ${blueFlagged.length}/${per.blueChip.length} blue chips blocked, ${feeBlocked.length}/${per.dangerousToken2022.length} fee-only blocked (${
     blueFlagged.map((r) => r.symbol).join(', ') || 'none'
   })`,
   date: new Date().toISOString().slice(0, 10),
   commit,
   dataSlot: checks.get(mints[0])?.dataSlot ?? null,
   notes:
-    'The 2 blue chips flagged are USDC and USDT, both for a live freeze authority, which is the ' +
-    'same trait the dangerous set is labelled by. The 10 fee-only Token-2022 mints are reported ' +
-    'and not blocked, because a fee is a cost and not a way to take the position. Both are stated ' +
-    'in full in spikes/F3/README.md.',
+    'Blocks on seizure only, decided at CP1 on 2026-09-24. USDC, USDT and cbBTC carry a live ' +
+    'freeze authority and pass, each with that fact reported as its own reason, because for a ' +
+    'regulated issuer it is how a court order is obeyed and the mint account cannot tell that ' +
+    'apart from a deployer taking your position. The 10 fee-only Token-2022 mints are reported ' +
+    'with their basis points and not blocked, because a fee is a cost and not a seizure. What ' +
+    'this does not catch: a mint that can freeze but not seize passes with a warning. The full ' +
+    'reasoning, and what would close that, is in spikes/F3/README.md.',
   perMint: per,
 }
 

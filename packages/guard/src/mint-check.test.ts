@@ -37,8 +37,10 @@ test('30 real mints, read in one pass', async () => {
   const checks = await checkMints(MINTS)
   expect(checks.size).toBe(30)
   const blocked = [...checks.values()].filter((c) => c.verdict === 'block')
-  expect(blocked).toHaveLength(6)
-  expect([...checks.values()].filter((c) => c.verdict === 'pass')).toHaveLength(24)
+  // 4, not 6. The 2 that can freeze but not seize pass with the fact reported, decided at CP1 on
+  // 2026-09-24. See the test below and spikes/F3/README.md.
+  expect(blocked).toHaveLength(4)
+  expect([...checks.values()].filter((c) => c.verdict === 'pass')).toHaveLength(26)
   for (const check of checks.values()) {
     expect(check.dataSlot, `${check.mint} was not stamped with the slot it was read at`).toBe(SLOT)
   }
@@ -79,7 +81,12 @@ test('a transfer hook extension with no hook set is not a transfer hook', async 
   }
 })
 
-test('freeze authority and a permanent delegate each block, and say who holds them', async () => {
+test('a permanent delegate blocks, a freeze authority is reported, and both say who holds them', async () => {
+  // The CP1 decision of 2026-09-24. Blocking a freeze authority would block USDC, USDT and cbBTC,
+  // which all carry a live one: for a regulated issuer it is how a court order is obeyed, and the
+  // mint account cannot tell that apart from a deployer taking your position. So seizure blocks and
+  // freezing is reported. The reporting half is the part worth pinning: dropping the reason instead
+  // of the block would hide the fact entirely, which is the failure this test exists to catch.
   const checks = await checkMints(MINTS)
   const freeze = [...checks.values()].filter(
     (c) => c.facts?.freezeAuthority !== null && c.facts !== null,
@@ -87,16 +94,28 @@ test('freeze authority and a permanent delegate each block, and say who holds th
   const delegate = [...checks.values()].filter((c) => c.facts?.permanentDelegate != null)
   expect(freeze).toHaveLength(6)
   expect(delegate).toHaveLength(4)
-  for (const check of [...freeze, ...delegate]) {
-    expect(check.verdict).toBe('block')
-    const rules = check.reasons.map((r) => r.rule)
-    expect(
-      rules.some((r) => r === 'mint-freeze-authority' || r === 'mint-permanent-delegate'),
-    ).toBe(true)
+
+  for (const check of delegate) {
+    expect(check.verdict, `${check.mint} can be seized and was not blocked`).toBe('block')
+    expect(check.reasons.map((r) => r.rule)).toContain('mint-permanent-delegate')
   }
-  const one = freeze[0]
-  const reason = one?.reasons.find((r) => r.rule === 'mint-freeze-authority')
-  expect(reason?.message).toContain(one?.facts?.freezeAuthority ?? 'missing')
+
+  // Freeze but no delegate: passes, and still says so.
+  const freezeOnly = freeze.filter((c) => c.facts?.permanentDelegate == null)
+  expect(freezeOnly).toHaveLength(2)
+  for (const check of freezeOnly) {
+    expect(check.verdict, `${check.mint} was blocked for a freeze authority alone`).toBe('pass')
+    expect(
+      check.reasons.map((r) => r.rule),
+      `${check.mint} passed without reporting that it can be frozen`,
+    ).toContain('mint-freeze-authority')
+  }
+
+  // Whoever holds it is named, blocked or not.
+  for (const one of freeze) {
+    const reason = one.reasons.find((r) => r.rule === 'mint-freeze-authority')
+    expect(reason?.message).toContain(one.facts?.freezeAuthority ?? 'missing')
+  }
 })
 
 test('a live mint authority is reported and does not block, because USDC has one', async () => {
