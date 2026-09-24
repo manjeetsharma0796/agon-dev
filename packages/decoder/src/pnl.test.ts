@@ -91,7 +91,9 @@ test('selling more than the lots hold is an exception, not a silent zero', () =>
   // is not in the decoded history. Realising the whole sale as profit would invent P&L.
   const led = fifoLedger([buy(BONK, '100', SOL, '10'), sell(BONK, '500', SOL, '200')])
   expect(led.exceptions.map((e) => e.kind)).toContain('sold-more-than-held')
-  expect(led.closedTrades[0]?.soldAmount, 'only the units we have a cost for are closed').toBe('100')
+  expect(led.closedTrades[0]?.soldAmount, 'only the units we have a cost for are closed').toBe(
+    '100',
+  )
   expect(led.closedTrades[0]?.realisedPnl).toBe('30')
 })
 
@@ -147,4 +149,23 @@ describe('field names say what the value is', () => {
     ])
     expect(led.closedTrades).toHaveLength(1)
   })
+})
+
+test('cost is conserved across many partial sells, so no basis leaks to rounding', () => {
+  // Apportioning a lot's cost by amount uses integer division, which truncates. Recomputing the
+  // remainder from the original numbers would drop those truncated units on every partial sell and
+  // the loss would look like rounding while quietly inflating P&L. Subtracting what was taken puts
+  // the remainder back into the lot instead. Measured: 333 partial sells of an awkward size, 0 lost.
+  const swaps: Swap[] = [buy(BONK, '333333333', SOL, '1000000001', 1)]
+  for (let i = 0; i < 333; i++) swaps.push(sell(BONK, '1000001', SOL, '3000000', 2 + i))
+  const led = fifoLedger(swaps)
+
+  const closed = led.closedTrades.reduce((a, t) => a + BigInt(t.costBasis), 0n)
+  const open = led.openLots.reduce((a, l) => a + BigInt(l.costBasis), 0n)
+  expect(led.closedTrades).toHaveLength(333)
+  expect(led.exceptions).toEqual([])
+  expect(
+    (closed + open).toString(),
+    'basis leaked between the closed trades and the open lot',
+  ).toBe('1000000001')
 })

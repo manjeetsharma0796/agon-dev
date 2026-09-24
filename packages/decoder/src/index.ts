@@ -251,3 +251,6 @@ export function decodeAll(
     },
   }
 }
+
+// Realised P&L over decoded swaps, FIFO. T-A02.
+export * from './pnl.js'
