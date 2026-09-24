@@ -743,7 +743,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: fallback is no automatic expiry, a short recurring window instead, and the UI says "no end date: revoke from your wallet". Never fall back to giving the agent admin rights
 
 ### T-F07, F7 spike, pre-signed expiry
-- Status: claimed 2026-09-25 | Owner: Prithwish | Branch: feature/t-f07-presigned-expiry
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/83 | Owner: Prithwish | Branch: feature/t-f07-presigned-expiry
 - Depends-on: T-D02
 - Touches: spikes/F07/
 - Serves: UX (judged) ; CP2 gate
