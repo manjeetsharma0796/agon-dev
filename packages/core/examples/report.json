@@ -1,0 +1,45 @@
+{
+  "wallet": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+  "range": {
+    "readTransactions": 1240,
+    "estimatedTotal": 2000,
+    "throughSlot": 312904411,
+    "complete": false,
+    "stoppedBecause": "Helius returned 429"
+  },
+  "metrics": {
+    "closedTrades": 34,
+    "medianSize": "800000000",
+    "medianHoldSeconds": 9420,
+    "realisedPnl": "-1420000000"
+  },
+  "rules": [
+    {
+      "kind": "stop",
+      "found": true,
+      "value": -8,
+      "sampleSize": 22,
+      "requiredSampleSize": 20,
+      "reason": null
+    },
+    {
+      "kind": "hold",
+      "found": false,
+      "value": null,
+      "sampleSize": 12,
+      "requiredSampleSize": 20,
+      "reason": "no consistent hold time"
+    }
+  ],
+  "exceptions": { "count": 2, "cost": "-3100000000" },
+  "coverage": { "decodedSwaps": 83, "totalSwaps": 100, "share": 0.83 },
+  "unsupported": [
+    {
+      "programId": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo",
+      "count": 37,
+      "reason": "Meteora DLMM not decoded yet"
+    }
+  ],
+  "dataSlot": 312904411,
+  "ruleVersion": "profile-2026-09-24-a"
+}
