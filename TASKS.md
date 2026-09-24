@@ -209,12 +209,38 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: none, a frozen contract is why the tracks do not block each other
 
 ### T-B02, Release job, dev to the public main by allowlist
-- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-b02-release
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/17 | Owner: Prithwish | Branch: feature/t-b02-release
 - Depends-on: T-B01, OP-7
 - Touches: .github/workflows/release.yml, .publicinclude, scripts/release.mjs
 - Serves: Open source (judged)
 - Acceptance: a `release-*` tag on dev copies only allowlisted paths into a clean public checkout, then installs, builds and passes tests on the stripped tree; 0 of 6 planted internal markers survive (TASKS.md, OPERATOR_TODO.md, FEASIBILITY.md, `OP-`, `.claude`, an internal URL); 1-click web rollback documented; releases run at least 1 per day during a hackathon
-- Evidence: <link to the first release run>
+- Evidence: <link to the first release run, blocked on OP-7>
+- Finding: 2 of the 3 release legs were dead on arrival and nothing said so, because the job had
+  never been run. The stripped tree failed `pnpm build` with TS5083 on a missing tsconfig.json and
+  failed `pnpm test` with "No test files found, exiting with code 1": .publicinclude allowlisted
+  tsconfig.base.json but not tsconfig.json, and not vitest.config.ts, so the 9 project references
+  and the 3 passWithNoTests projects both vanished from the public tree. 2 allowlist lines fixed
+  the build leg. The marker gate was the T-B01 trap again, a gate quiet on a clean tree and never
+  proven to bite: neutering findInternalMarkers now fails 6 of the 9 cases in
+  scripts/release.test.mjs, so the 6 planted markers are measured and not assumed. Also
+  .publicinclude promised .github/workflows/public-ci.yml, which did not exist, so the public repo
+  would have shipped with 0 CI next to a README that calls tests the evidence. The sharpest one
+  came from reviewing the fix: CHANGELOG-latest.md is built from dev's commit subjects during
+  --push, after --check has already passed, and PR #9 is open titled "Write the measured provider
+  limits into OP-2, OP-3 and OP-4", so the next release would have published an OP- marker through
+  the 1 file the gate never saw. A gate that runs at the wrong moment is worth the same as a gate
+  that does not run. Third dead gate, same shape: every package's dist/ and tsconfig.tsbuildinfo
+  were published, and a published tsbuildinfo tells `tsc -b` on the stripped tree that all 9
+  projects are already up to date, so the step whose only job is proving the public tree compiles
+  compiled nothing and passed. `tsc -b --dry` said "is up to date" for 9 of 9 before the fix and
+  "a non-dry build would build" for 9 of 9 after it. The exclusion has to run inside cpSync and not
+  only on the glob, because `apps/**` yields `apps/web` itself and a recursive copy of a directory
+  carries whatever is in it. Then the gate earned itself inside an hour: rebasing onto the dev that
+  had just taken T-C01 and T-C02, it found 5 live `OP-<n>` references in published source, 1 of
+  them in a string printed to whoever runs the recorder. It also found that the published suite
+  failed 6 of 17 on ENOENT because fixtures/ was not allowlisted, which is worse than shipping no
+  tests: it tells a judge who cloned the repo that the code is broken. All 3 legs now pass end to
+  end, 0 of 6 markers and 17 of 17 tests on the stripped tree. Only the push is unproven, on OP-7.
 - Kill criterion: none, judges only see the public repo
 
 ### T-C02, Record and replay wrapper with per-call timings
@@ -227,12 +253,23 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: if C slips past day 2 this moves to B, per the PRD load check
 
 ### T-C03, Measure the region for API, RPC and Jev
-- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-c03-region
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/19 | Owner: Prithwish | Branch: feature/t-c03-region
 - Depends-on: T-B01
 - Touches: docs/plans/region.md, apps/web/vercel.json
 - Serves: Functionality (judged) ; decision speed
 - Acceptance: p50 and p95 round trip measured from at least 2 candidate regions to the Helius RPC node and the Jev endpoint, 100 calls each; the chosen region is set in config and both numbers are written down
-- Evidence: <docs/plans/region.md at a commit>
+- Evidence: docs/plans/region.md, plus the region 2 run
+  https://github.com/manjeetsharma0796/agon-dev/actions/runs/35996972613
+- Finding: deploying near our users is the wrong instinct by 5.8x. Helius p50 is 136.3 ms from
+  India against 23.5 ms from the US, p95 267.5 against 39.6, and the Cloudflare edge that Workers
+  AI runs on is 210.8 ms against 12.9 ms, a 16.3x gap. A 2,000 transaction report is 20 sequential
+  history calls, so that is 2.7 s of pure network from India against 0.5 s from the US, paid before
+  anything is decoded, while the distance to the user is paid once. Second finding, about method:
+  the CI probe cannot carry a key (OP-2), so the unkeyed 401 was checked against the keyed call on
+  the same machine before it was trusted, 140.4 against 136.3 p50, inside 3 percent. Third: the
+  first Cloudflare probe read 442.2 ms and was wrong, because api.cloudflare.com is the control
+  plane and is not served from the nearest colo, 2.1x the real edge number. A probe that looks
+  reasonable and measures the wrong machine is worth less than no probe.
 - Kill criterion: none, it is a setting and not code, so it is measured once and cheap
 
 ### T-E01, Demo script and the committed benchmark scenario list
@@ -271,7 +308,7 @@ CP1 evidence required: F1 on 2 wallets; F3; F5 on devnet; F6 in simulation; F11 
 and latency (a, b).
 
 ### T-E03, Thin end-to-end version on staging
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-e03-thin-e2e
 - Depends-on: T-C01, T-C02
 - Touches: apps/web/app/report/, apps/web/app/api/, packages/mcp/src/index.ts
 - Serves: Functionality (judged) ; UX (judged)
@@ -329,13 +366,26 @@ and latency (a, b).
 - Kill criterion: none, this is the primary path
 
 ### T-F03, F3 spike, token risk check on 30 labelled mints
-- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-f03-token-risk
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/31 | Owner: Prithwish | Branch: feature/t-f03-token-risk
 - Depends-on: T-C04
 - Touches: spikes/F03/
 - Serves: Functionality (judged) ; CP1 gate
 - Acceptance: our own check flags all 20 dangerous mints (10 with live freeze or mint authority,
   10 Token-2022 with permanent delegate, transfer hook or transfer fee) and 0 of the 10 blue chips
-- Evidence: <spikes/F03/result.json at a commit>
+- Evidence: spikes/F3/result.json at a commit, measured at slot 450037708
+- Finding: FAIL, 10 of 20 dangerous flagged and 2 of 10 blue chips flagged, and neither miss is a
+  bug in the code. The 2 blue chips are USDC and USDT, flagged for a live freeze authority, which
+  is the same trait the dangerous set is labelled by, so 1 rule cannot both disqualify that trait
+  and wave through the 2 largest stablecoins on Solana. The tokens carrying it say why: PYUSD is
+  PayPal, USDG is Paxos, cbBTC is Coinbase, and SPYx, NVDAx and GLDx are tokenised equities and
+  gold, where a freeze authority and a permanent delegate are how a regulated issuer meets a court
+  order. The other 10 misses are fee-only Token-2022 mints, deliberately reported and not blocked,
+  because a 3% fee is a cost the size rule can price and not a way to take the position. 2 more
+  from the real distribution: 0 of the top 100 mints by organic score has a live transfer hook,
+  every `transferHook` extension found had `programId: null`, so the third danger the acceptance
+  names does not occur at this end of the market; and 8 of the 10 authority-group mints also carry
+  a permanent delegate, so the 2 disjoint groups of 10 the acceptance imagines are 1 overlapping
+  group on chain. The threshold is what needs the decision at CP1, not the check.
 - Kill criterion: RugCheck stays optional either way; a miss on the 20 is a bug to fix, not a scope cut
 
 ### T-C05, Jev client, question schema and the injection screen
@@ -363,7 +413,7 @@ and latency (a, b).
 - Kill criterion: fallback is an LLM guard with a stricter threshold, or Kev-0.5B locally
 
 ### T-D01, Swig role creation and removal in packages/chain
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-d01-swig-role
 - Depends-on: T-C01
 - Touches: packages/chain/src/swig/
 - Serves: Novelty (judged) ; F5
@@ -691,6 +741,19 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   the source before installing either.
 - Evidence: <docs/plans/jev-trial.md with the 4 measured numbers, plus the CP2 decision>
 - Kill criterion: never used for anything numeric, for deciding a task is done, for approving a merge or deploy, or for anything touching keys or funds. A Jev answer is an input to a rule, never the rule itself. Any use that misses its bar is cut at CP2, not extended
+
+### T-B09, Stop the CI gates over-firing
+- Status: claimed 2026-09-24 | Owner: manjeetsharma0796 | Branch: feature/t-b09-gate-overfiring
+- Depends-on: T-B01
+- Touches: .gitleaks.toml, .github/workflows/board.yml
+- Serves: Functionality (judged) ; unblocks T-A01 and T-E10, and every later PR carrying a fixture
+- Acceptance: the secret scan reports 0 findings on T-A01's 24 recorded addresses, and still reports
+  1 finding for each of 2 planted secrets, an 88-character Solana secret key and a uuid api key
+  inside a recorded request URL; the frozen-contract gate fires on 0 of 2 PRs that only add a module
+  under packages/core, and on 1 of 1 that changes one of the 3 contract files
+- Evidence: <the 4 measured scans and the 3 gate checks, in the PR>
+- Kill criterion: none. A gate that cries wolf teaches everyone to tick the box without reading,
+  which is worse than no gate
 
 ### T-E12, Build in public, weekly
 - Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-e12-x-plan
