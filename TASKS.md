@@ -488,7 +488,7 @@ CP2 evidence required: F1 and F2 complete; F4; F5 in simulation; F6 on mainnet (
 F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, d, e).
 
 ### T-A02, FIFO P&L ledger
-- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-a02-fifo-pnl
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/47 | Owner: Prithwish | Branch: feature/t-a02-fifo-pnl
 - Depends-on: T-A01
 - Touches: packages/decoder/src/pnl.ts
 - Serves: Functionality (judged) ; F1
@@ -496,7 +496,21 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   wallets; decoded events per transaction match unique signature and leg counts on the golden
   wallets, so 0 double counting; every field name matches the value it holds, reviewed by a
   second person
-- Evidence: <PR link, plus the golden-wallet diff>
+- Evidence: <PR link; the golden-wallet diff needs OP-1, no wallet has history yet>
+- Finding: the case with no honest answer is the common one. A position bought with SOL and sold
+  for USDC has no realised P&L without a price at the fill, because 150 USDC minus 100 SOL is not
+  50 of anything, and buying with SOL then taking profit into USDC is ordinary behaviour rather
+  than an edge case. It is an exception and the lot stays open; realised P&L is keyed by quote and
+  never summed across quotes. Same for selling more than the decoded lots hold, which is what an
+  airdrop or an incoming transfer looks like from here: only the matched units are realised and the
+  proceeds are apportioned to them, because realising the whole sale would invent profit out of
+  units that cost nothing on paper. Second, measured: apportioning a lot's cost by amount truncates
+  under integer division, so the remainder is subtracted from the lot rather than recomputed from
+  the original numbers. Over 333 partial sells of an awkward size that conserves 1000000001 base
+  units exactly, 0 lost; recomputing would have leaked basis on every sell and the loss would have
+  looked like rounding while inflating P&L. Third: BigInt throughout, because a lamport count above
+  2^53 loses its low digits in a float and the 2 that separate 9007199254740993 from
+  9007199254740995 are the whole answer.
 - Kill criterion: none. monad T3.7 shipped "positions" that were trade flow, off by 67x
 
 ### T-F01b, F1 spike complete, 5 wallets
