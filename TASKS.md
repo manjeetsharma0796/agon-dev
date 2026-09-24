@@ -326,7 +326,7 @@ and latency (a, b).
 - Kill criterion: RugCheck stays optional either way; a miss on the 20 is a bug to fix, not a scope cut
 
 ### T-C05, Jev client, question schema and the injection screen
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-c05-jev
 - Depends-on: T-C01, T-C02
 - Touches: packages/guard/src/jev/
 - Serves: Novelty (judged) ; F11
