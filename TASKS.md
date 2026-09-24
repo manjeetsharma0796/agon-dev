@@ -245,12 +245,22 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: none. Anything not in the script is a candidate to cut at each checkpoint
 
 ### T-E02, Beta waitlist live
-- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-e02-waitlist
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/21 | Owner: Prithwish | Branch: feature/t-e02-waitlist
 - Depends-on: T-B01
 - Touches: apps/web/app/waitlist/
 - Serves: Business plan (judged) ; CP3 gate needs 10+ reports
 - Acceptance: live URL collecting an email and a Solana address with 0 login; 1 confirmation email; recruiting starts the same day, because it is the slowest part of CP3
-- Evidence: <live URL, plus the first 5 signups>
+- Evidence: <live URL, plus the first 5 signups, blocked on OP-18>
+- Finding: hand-rolled base58 got the System Program address wrong, and it is the exact shape of
+  bug that would have looked like a working validator. Decoding the leading '1's as digits and then
+  adding 1 zero byte for each of them counts every one twice, so 11111111111111111111111111111111
+  decoded to 33 bytes instead of 32 and a real address was rejected as malformed. It was caught by
+  testing against 6 real mainnet addresses instead of invented ones; 5 of the 6 passed either way,
+  because only the 2 with leading zero bytes exercise that path. Second: an address has no
+  checksum, so shape is the only thing that can be rejected and a typo decoding to 32 bytes is
+  indistinguishable from a real address, which is why the confirmation email is the real check and
+  not decoration. Third: the form refuses to pretend while it has no endpoint, because a waitlist
+  that silently drops a signup is the one failure recruiting cannot recover from.
 - Kill criterion: none, CP3 cannot pass without a cohort
 
 ---
