@@ -1,4 +1,5 @@
 {
+  "synthetic": true,
   "wallet": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
   "range": {
     "readTransactions": 1240,
@@ -31,8 +32,15 @@
       "reason": "no consistent hold time"
     }
   ],
-  "exceptions": { "count": 2, "cost": "-3100000000" },
-  "coverage": { "decodedSwaps": 83, "totalSwaps": 100, "share": 0.83 },
+  "exceptions": {
+    "count": 2,
+    "cost": "-3100000000"
+  },
+  "coverage": {
+    "decodedSwaps": 83,
+    "totalSwaps": 100,
+    "share": 0.83
+  },
   "unsupported": [
     {
       "programId": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo",

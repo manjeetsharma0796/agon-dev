@@ -14,8 +14,17 @@ import {
   toolJsonSchemas,
 } from './index.js'
 
-const example = (name: string) =>
-  JSON.parse(readFileSync(new URL(`../examples/${name}.json`, import.meta.url), 'utf8'))
+/**
+ * Read a contract fixture, dropping the `synthetic` marker every file under fixtures/ carries to
+ * declare where it came from. The marker is provenance, not part of any contract.
+ */
+const example = (name: string) => {
+  const { synthetic, ...body } = JSON.parse(
+    readFileSync(new URL(`../../../fixtures/contracts/${name}.json`, import.meta.url), 'utf8'),
+  )
+  if (synthetic !== true) throw new Error(`${name}.json must declare synthetic: true`)
+  return body
+}
 
 // Consumer 4 of 4: the examples. A renamed or retyped field fails here with the field name in the
 // error, which is what makes a shape change loud instead of quiet.
