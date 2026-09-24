@@ -14,7 +14,9 @@
 
 import { call, heliusTransactions } from '@agon/core'
 import type { RawTransaction } from '@agon/decoder'
+import { checkMints, type MintCheck } from '@agon/guard'
 import type { ReportIo } from './report.js'
+import type { CheckIo } from './check.js'
 
 /** Helius returns newest first and one page is 100, which is enough to mine a habit from. */
 const PAGE = 100
@@ -25,7 +27,7 @@ interface EnhancedChange {
   mint?: string
   rawTokenAmount?: { tokenAmount?: string }
 }
-interface EnhancedTransaction {
+export interface EnhancedTransaction {
   signature?: string
   slot?: number
   transactionError?: unknown
@@ -63,6 +65,28 @@ export function fromEnhanced(tx: EnhancedTransaction): RawTransaction {
       err: tx.transactionError ?? null,
       preTokenBalances: [],
       postTokenBalances: post,
+    },
+  }
+}
+
+/**
+ * The same reads, plus the mint check `agon check` needs.
+ *
+ * `checkMints` already fails closed and already goes through the recorded and replayed wrapper, so
+ * there is nothing to add here beyond taking the one verdict out of the batch it returns.
+ */
+export function liveCheckIo(): CheckIo {
+  return {
+    ...liveIo(),
+    async loadMintCheck(mint: string): Promise<MintCheck> {
+      const check = (await checkMints([mint])).get(mint)
+      if (check === undefined) {
+        throw new Error(
+          `The mint check returned 0 verdicts for ${mint}, where 1 was asked for. Nothing was ` +
+            `read about this token, so it is not a token we can say anything about.`,
+        )
+      }
+      return check
     },
   }
 }
