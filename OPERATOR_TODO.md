@@ -53,7 +53,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Why it cannot wait: F5 is existential. If the cap does not hold on-chain, CP1 decides whether
   Agon ships read-only, and that decision needs the measurement rather than an opinion.
 
-### OP-20, Pick 2 real trader wallets, and verify 50 rows by hand
+### OP-23, Pick 2 real trader wallets, and verify 50 rows by hand
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-26, so F1 has a result before CP1 on 2026-09-27
