@@ -191,6 +191,19 @@ const log = capture('git', [
 ])
 writeFileSync(join(out, 'CHANGELOG-latest.md'), `# ${tag}\n\n${log}\n`)
 
+// The changelog is the one file that reaches the public tree after --check ran, and it is built
+// from dev's commit subjects, which carry OP-<n> and task ids as a matter of course. Checking the
+// tree before the changelog exists checks the wrong tree, so check again, now, and fail closed.
+const late = findInternalMarkers(out)
+if (late.length > 0) {
+  for (const survivor of late) console.error(`::error::${survivor}`)
+  console.error(
+    `release: the changelog for ${tag} carries ${late.length} internal marker(s). Nothing was ` +
+      `published. Reword the commit subject on dev, then tag again.`,
+  )
+  process.exit(1)
+}
+
 const clone = '/tmp/public-repo'
 rmSync(clone, { recursive: true, force: true })
 run('git', [

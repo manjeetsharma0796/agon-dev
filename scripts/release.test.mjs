@@ -92,6 +92,21 @@ describe('every planted internal marker is caught', () => {
   }
 })
 
+// The changelog is generated from dev's commit subjects during --push, which is after --check has
+// already looked at the tree. Commit subjects carry OP-<n> and task ids as a matter of course, so
+// this is the one file that can walk past a gate that has already said yes.
+test('a marker in the changelog is caught, because it arrives after the first check', () => {
+  const tree = plant('changelog', (t) =>
+    writeFileSync(
+      join(t, 'CHANGELOG-latest.md'),
+      '# release-2026-09-25\n\n- Write the measured provider limits into OP-2, OP-3 and OP-4\n',
+    ),
+  )
+  const { code, out } = release('--check', tree)
+  expect(out).toContain('CHANGELOG-latest.md')
+  expect(code).toBe(1)
+})
+
 test('an empty allowlist refuses to publish rather than publishing nothing', () => {
   // The worst outcome is not a leak, it is a green release that replaced the public repo with an
   // empty tree. Copying 0 paths has to be an error, never a successful no-op.

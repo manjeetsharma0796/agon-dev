@@ -34,25 +34,67 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write # the scheduled and dispatched runs tag dev; a tag push only needs read
+  contents: read
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     environment: production
+    # Read only, deliberately. This job runs `pnpm install` on the stripped tree, which executes
+    # every dependency's lifecycle scripts next to PUBLIC_REPO_TOKEN and NPM_TOKEN. Handing that a
+    # writable repo token would let a compromised transitive dependency push to dev, which is
+    # otherwise protected against every human on the team. Tagging happens in the `tag` job below.
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.plan.outputs.tag }}
+      sha: ${{ steps.resolve.outputs.sha }}
     steps:
       - name: Work out what is being released
         id: plan
+        # Both values arrive through env, never interpolated into the script. This job holds
+        # PUBLIC_REPO_TOKEN and NPM_TOKEN, so a ${{ }} expansion inside run: would let whoever
+        # dispatches the workflow write shell that runs next to those secrets.
+        env:
+          EVENT: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          ROLLBACK_TO: ${{ inputs.rollback_to }}
+          RUN_NUMBER: ${{ github.run_number }}
         run: |
           set -euo pipefail
-          if [ "${{ github.event_name }}" = "push" ]; then
-            echo "ref=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
-            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          if [ "$EVENT" = "push" ]; then
+            echo "ref=$REF_NAME" >> "$GITHUB_OUTPUT"
+            echo "tag=$REF_NAME" >> "$GITHUB_OUTPUT"
           else
-            rollback="${{ inputs.rollback_to }}"
-            echo "ref=${rollback:-dev}" >> "$GITHUB_OUTPUT"
+            # A strict charset, not a `release-*` glob. The glob matches `release-"; curl ...; #`
+            # just as happily, and this value becomes a step output that a later step echoes, so a
+            # loose match here reopens the injection that the env block above closes. A newline
+            # would be worse still: it would let the input write extra lines into GITHUB_OUTPUT and
+            # forge the `tag` this job publishes under.
+            # A strict charset, not a bare `release-*` glob. The glob matches
+            # `release-"; curl ...; #` just as happily, and this value becomes a step output that a
+            # later step reads, so a loose match here reopens the injection the env block closes. A
+            # newline would be worse: it would write extra lines into GITHUB_OUTPUT and forge the
+            # `tag` this job publishes under. No extglob, which bash does not enable by default.
+            case "${ROLLBACK_TO:-}" in
+              '') ref=dev ;;
+              release-*)
+                case "$ROLLBACK_TO" in
+                  *[!A-Za-z0-9._-]*) bad=1 ;;
+                  *) bad=0 ;;
+                esac
+                ;;
+              *) bad=1 ;;
+            esac
+            if [ "${bad:-0}" = 1 ]; then
+              echo "::error::rollback_to must be a release-* tag made of letters, digits, dot,"
+              echo "::error::dash or underscore only. Nothing was released."
+              exit 1
+            fi
+            [ -z "${ROLLBACK_TO:-}" ] || ref="$ROLLBACK_TO"
+            echo "ref=$ref" >> "$GITHUB_OUTPUT"
             # Unique per run, so a second rollback on the same day does not collide with the first.
-            echo "tag=release-$(date -u +%Y-%m-%d).${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+            echo "tag=release-$(date -u +%Y-%m-%d).$RUN_NUMBER" >> "$GITHUB_OUTPUT"
           fi
 
       - uses: actions/checkout@v4
@@ -61,11 +103,15 @@ jobs:
           fetch-depth: 0
 
       - name: What we release must be on dev
+        id: resolve
+        env:
+          REF: ${{ steps.plan.outputs.ref }}
         run: |
           set -euo pipefail
           git fetch --no-tags origin dev
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           git merge-base --is-ancestor HEAD origin/dev \
-            || { echo "::error::${{ steps.plan.outputs.ref }} is not on dev. Releases come from dev only."; exit 1; }
+            || { echo "::error::$REF is not on dev. Releases come from dev only."; exit 1; }
 
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
@@ -90,7 +136,7 @@ jobs:
           set -euo pipefail
           pnpm install --no-frozen-lockfile
           pnpm build
-          tests=$(find . -type f \( -name '*.test.ts' -o -name '*.test.mjs' \) -not -path './node_modules/*' | wc -l)
+          tests=$(find . -type f \( -name '*.test.ts' -o -name '*.test.mjs' \) -not -path '*/node_modules/*' | wc -l)
           if [ "$tests" -eq 0 ]; then
             echo "::error::The public tree has 0 test files. Tests are the evidence judges read, so"
             echo "::error::a public repo with none is not shippable. The internal suite lives in"
@@ -108,16 +154,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Tag dev with this release
-        # The scheduled and dispatched runs have no tag yet, so the release stays findable on dev.
-        # Pushed with GITHUB_TOKEN, which by design does not start another workflow run, so this
-        # cannot loop back into the release-* trigger above.
-        if: github.event_name != 'push'
-        run: |
-          set -euo pipefail
-          git tag "${{ steps.plan.outputs.tag }}"
-          git push origin "${{ steps.plan.outputs.tag }}"
-
       - name: Push one release commit to the public repo
         env:
           PUBLIC_REPO_TOKEN: ${{ secrets.PUBLIC_REPO_TOKEN }}
@@ -129,3 +165,27 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: pnpm --filter './packages/{cli,mcp}' publish --access public --provenance --no-git-checks
+
+  tag:
+    # Only after the public push succeeded. A tag on dev for a release that never published is not
+    # cosmetic: the next changelog starts at `git describe --abbrev=0`, so a phantom tag silently
+    # truncates the release that does work.
+    needs: publish
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.publish.outputs.sha }}
+
+      - name: Tag the commit that was published
+        # Pushed with GITHUB_TOKEN, which by design does not start another workflow run, so this
+        # cannot loop back into the release-* trigger above.
+        env:
+          TAG: ${{ needs.publish.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git tag "$TAG"
+          git push origin "$TAG"
