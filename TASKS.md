@@ -1109,14 +1109,25 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 - Kill criterion: none, the MCP server is how any agent reaches the guard
 
 ### T-E08, Onboarding
-- Status: claimed 2026-09-25 | Owner: Prithwish | Branch: feature/t-e08-onboarding
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/88 | Owner: Prithwish | Branch: feature/t-e08-onboarding
 - Depends-on: T-C09, T-E04
 - Touches: apps/web/app/(onboarding)/, docs/public/quickstart.md
 - Serves: UX (judged)
 - Acceptance: a new user goes from the landing page to a report in 3 steps or fewer, measured
   on 5 beta users with 0 help from us; the quickstart and the MCP tool reference are in
   `docs/public/` so they reach the public repo
-- Evidence: <5 timed walkthroughs>
+- Evidence: <PR link; the 5 timed walkthroughs need beta users, see OP-8>
+- Finding: there was no front door. `/` was a 404, because apps/web/app held api, report and
+  waitlist and no root page at all, so the landing page the acceptance measures from did not exist.
+  Worse, the public README already told a judge to "start with docs/public/quickstart.md", and
+  docs/public did not exist either, so the repo anybody clones opened with a dead link. Both are
+  now there and both reach the public tree, checked by running the release copy. Second: the MCP
+  tool reference is generated from the frozen contracts rather than written beside them. T-C01's
+  argument is 1 definition with 4 consumers proven by 1 shape change failing in all 4, and a
+  hand-written reference would be a fifth consumer that fails nowhere, still describing the old
+  shape, in the public repo, to the agent authors we want integrating. A test fails when the
+  committed file is stale. Third: the path is 2 actions and not 3, because the report reads the
+  address off the query string and starts itself, so arriving is not something the user does.
 - Kill criterion: none, UX is a judged criterion
 
 ### T-E09, Beta cohort, 10 to 20 read-only users
