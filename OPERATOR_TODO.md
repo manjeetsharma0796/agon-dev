@@ -28,20 +28,50 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-26, so F5 has a result before CP1 on 2026-09-27
-- Unblocks: T-F05a, T-F05b, T-F06a, and through them T-E06, the arming UI
-- What exactly: 1 throwaway devnet keypair with about 2 devnet SOL. The public faucet is dry, so it
-  needs either the web faucet at faucet.solana.com, which wants a browser, or a devnet key you
-  already have. Devnet SOL has no value, so this is not the mainnet funding step in OP-5 and needs
-  none of its checklist. Put the key in the repo-ignored `.devnet/agon-f5.json` and set
-  `DEVNET_KEYPAIR` in the CI secrets from the same file. It is a throwaway: it must never hold
-  anything and must never be reused on mainnet.
+- Unblocks: T-F05a, T-F05b, T-F06a, T-D02, T-D03, and through them T-E06, the arming UI,
+  and every other task whose evidence is an on-chain read
+- What exactly: 1 throwaway devnet keypair with **0.01 devnet SOL**. Not 2 SOL: the F5 run measured
+  what the 7 cases actually cost and it is 1,543,680 lamports, 0.0015 SOL, which is 1,503,680 of
+  rent for the 168-byte two-role Swig account plus 5,000 a transaction for 8 transactions. 0.01
+  covers several reruns. That changes who can unblock this: it does not need a faucet with a big
+  allowance, only somebody holding a dusting of devnet SOL. All 7 faucets reachable without a
+  browser refuse, listed in `spikes/F5/result.json` under `funding.faucetAttempts`, and 0.1 SOL was
+  refused as flatly as 1 SOL, so the limit is per day and not per amount. The web faucet at
+  faucet.solana.com wants a browser and a captcha. Devnet SOL has no value, so this is not the
+  mainnet funding step in OP-5 and needs none of its checklist. Put the key in the repo-ignored
+  `.devnet/agon-f5.json` and set `DEVNET_KEYPAIR` in the CI secrets from the same file. It is a
+  throwaway: it must never hold anything and must never be reused on mainnet.
+- Funding alone does not make F5 runnable. OP-20 is the other half.
 - Also, by hand, once F5 has run: case (g) of F5 is "removal done from Phantom, not only our CLI".
   Connect the devnet Swig wallet in Phantom, remove the Agon role from there, and confirm the next
   agent transaction fails. A script cannot assert that a person used a wallet, so this stays here.
-- Done when: `spikes/F5/result.json` exists with all 7 cases and 0 unexpected successes, and the
-  Phantom removal in (g) is recorded with the signature that failed after it.
+- Done when: `spikes/F5/result.json` exists with all 7 cases and 0 unexpected successes, the
+  Phantom removal in (g) is recorded with the signature that failed after it, and `agon revoke`
+  has run end to end against 3 devnet wallets that really held Agon roles with the roles really
+  gone afterwards, which is T-D03's Evidence line. That last clause arrived from a second OP-19
+  filed by another session for the same wall; the two rows are merged here.
 - Why it cannot wait: F5 is existential. If the cap does not hold on-chain, CP1 decides whether
   Agon ships read-only, and that decision needs the measurement rather than an opinion.
+
+### OP-23, Pick 2 real trader wallets, and verify 50 rows by hand
+- Status: open
+- Owner: <unassigned>
+- Needed by: 2026-09-26, so F1 has a result before CP1 on 2026-09-27
+- Unblocks: T-F01a, and through it T-F01b and the whole report
+- What exactly: two things, both needing a person.
+  1. **Pick 2 wallets with a real position history.** An automated heuristic keeps finding bots,
+     routers and payout addresses: see `spikes/F1/README.md` for 3 that looked ideal and were not.
+     The test is that the address owns the token balances that move AND opens and closes positions
+     in non-quote assets. The team's own wallets qualify once OP-1 has produced history.
+  2. **Hand-build the 50-row ledger per wallet.** Side, mint, and amount in base units, from the
+     explorer, compared field by field against what the decoder said. The harness prints exactly
+     those 50 rows, so this is verification and not construction: roughly an hour per wallet.
+- Why a script cannot do it: Helius `SWAP` and our `swap` answer different questions. 22 of 50 on
+  one wallet were SOL to USDC rotations, which Helius calls swaps and the decoder correctly does not,
+  because no position opened or closed. Measured, in `spikes/F1/README.md`. A cross-check against
+  the enhanced API would report a disagreement that is a definition, not an error.
+- Done when: `spikes/F1/result.json` shows 50 of 50 classified correctly on each of 2 wallets,
+  amounts exact to base units, with the coverage share recorded per wallet.
 
 ### OP-1, Everyone trades from their test wallet, daily
 - Status: open
@@ -52,6 +82,16 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   holds 20 or more closed trades, including a few deliberate exceptions to a stop rule so the
   miner has exceptions to find. Spread the trades across days, not one session.
 - Done when: 5 wallets each show 20+ closed trades spanning 5 or more distinct days.
+- **Escalated 2026-09-24, and this is now the critical path.** Beats 1 and 2 of the demo, the first
+  50 seconds and the only part that is about the user's own history rather than about guardrails,
+  cannot be filmed without this. It is the one blocker on the board that writing code cannot
+  shorten. The arithmetic, from a board pass on 2026-09-24: submission closes 2026-10-11, 17 days
+  out, CP2 is 8 days out. Starting 2026-09-25 and trading daily, 5 distinct days lands 2026-09-29
+  at about 4 closed trades per wallet per day, which is comfortable. Every day nobody trades, the
+  required trades per day rises and the span shortens, and past roughly 2026-10-06 the 5 distinct
+  days cannot fit before submission at all. At that point beats 1 and 2 do not get cut for polish,
+  they become unfilmable. This is the exact failure the PRD cites from monad, whose demo wallet had
+  its whole history inside one 3-hour window.
 - Why it cannot wait: only time produces history. Monad's demo wallet had its whole history in
   one 3-hour window, which broke its period filters (T8.8, T8.9).
 
@@ -282,17 +322,64 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   arrives at an address someone on the team actually checked, and the URL is in T-E02's `Evidence:`
   line.
 
-### OP-19, A funded devnet keypair
+### OP-20, CP1 decision: Jupiter is not on devnet, so F5 cases (a), (b) and (e) cannot run there
 - Status: open
 - Owner: <unassigned>
-- Needed by: 2026-09-26, T-D03 cannot be evidenced without it
-- Unblocks: T-D03, T-D02, T-F05a, and every other task whose evidence is an on-chain read
-- What exactly: `DEVNET_KEYPAIR`, a throwaway devnet key holding a few SOL, in the local `.env` and
-  as a CI secret for the nightly job. Faucets will not do it: the Helius devnet faucet is capped at
-  1 SOL per project per day and was already exhausted when this was written, and
-  `api.devnet.solana.com` answered `requestAirdrop` with an internal error. Fund it once from a
-  faucet that works, or from an existing devnet balance, and keep it topped up. It is devnet, so
-  the key is worth nothing and can live in CI, unlike every mainnet key.
-- Done when: `agon revoke` runs end to end against 3 devnet wallets that really hold Agon roles,
-  and the roles are really gone afterwards, which is T-D03's Evidence line.
+- Needed by: 2026-09-27, CP1, because F5 is the gate on the arming UI
+- Unblocks: T-F05a, and through it T-E06, the arming UI, and the live-arming demo beat
+- What exactly: the pinned Jupiter id `JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4` is not a
+  program on devnet. It is a plain wallet there: `executable: false`, owned by the system program,
+  0 bytes, holding 4.51 SOL. On mainnet the same id is `executable: true`, owned by the BPF
+  upgradeable loader, 36 bytes. Measured by `spikes/F5/run.mjs`, in `result.json` under
+  `devnet.jupiterProgram`. Cases (c), (d) and (f) do not care, because Swig rejects those before
+  any inner instruction runs. Cases (b) and (e) do: Swig applies a `tokenRecurringLimit` by
+  comparing the Swig account's token balances after the inner instructions run, so with no program
+  at that id the transaction fails before the limit is consulted. The run would record a rejection
+  and it would be the wrong rejection, with the cap reading as holding when it was never asked.
+  Pick 1 of 4: (1) run the whole thing on a **Surfpool mainnet fork**, which carries the real
+  Jupiter program and the real Swig program, costs 0 and needs 0 mainnet funds, and whose tooling is
+  already in the repo because F9 proved a committed Surfpool snapshot replays offline with no key;
+  (2) run (b) and (e) on devnet against a program that is deployed there and moves the capped mint,
+  and say in the result that the Jupiter leg was substituted; (3) move the cap cases to mainnet
+  simulation, which is already T-F05c, and let T-F05a cover (c), (d), (f) and (a) as authorisation
+  only; (4) deploy a Jupiter build to devnet, which nobody on this team controls.
+- Done when: the decision is in the PRD Decisions log and T-F05a's `Acceptance:` line says which
+  of the 7 cases run on devnet and which moved to T-F05c.
+- Why it cannot wait: the World's Fair demo beat is live arming on devnet, decided on 2026-09-24.
+  (c), (d) and (f) can be filmed on devnet once OP-19 lands. "The cap stopped an over-cap swap"
+  cannot be filmed on devnet at all, whatever the funding, because there is no swap to stop there.
+  So the most distinctive beat of the demo depends on this decision, and option 1 is the one that
+  keeps it.
 
+
+### OP-21, Decide the shape of the World's Fair demo: read-only or live arming
+- Status: open
+- Owner: <unassigned>
+- Needed by: 2026-09-27, CP1, because it changes what Track E builds next
+- Unblocks: T-E06, T-E07, T-J01, and the shape of `docs/demo-script.md`
+- What exactly: the demo script currently assumes beat 4 arms a rule for real and beat 6 revokes it
+  from the wallet. Both need on-chain signing, which is gated behind F5, F6 and the T-D04
+  pre-mainnet checklist, and the PRD separately bars any arming UI until F5 and F6 pass. F5 has not
+  run, F6 has no spike directory, and the read-only beta is defined as signing nothing. So the
+  World's Fair cut is one of: (a) read-only, beats 1, 2, 3 and 7, with arming shown in simulation
+  and labelled as simulation; (b) live arming on a Surfpool mainnet fork, NOT devnet,
+  for the reason measured in OP-20: the pinned Jupiter id is not a program on devnet, so the cap
+  cases cannot run there at any funding level; (c) live arming on mainnet, which needs F5, F6, all 8
+  T-D04 boxes and 2 sign-offs, and OP-5 funds. Decide which, because Track E builds a different
+  screen for each and the demo script has to say the true thing on camera.
+- Done when: one option is written in the PRD Decisions log, `docs/demo-script.md` beat 4 and beat 6
+  match it, and T-E06 and T-E07 either have a target or are cut with a date and a reason.
+
+### OP-22, Film a thin working slice on devnet before building more
+- Status: open
+- Owner: <unassigned>
+- Needed by: 2026-09-27, CP1
+- Unblocks: nothing on paper, and the confidence of everyone reading the board
+- What exactly: about 9,000 lines have merged and no single path runs end to end yet. Every piece is
+  tested in isolation and nothing has been seen working together, which is how a repo arrives at a
+  demo week with 11 green components and no demo. Pick the shortest path that touches every layer
+  once, on devnet, with no UI: read a real wallet, decode its swaps, mine one rule, ask check_trade
+  about one trade, and have it refuse with a reason. Whatever it takes to make that run is the
+  priority, and whatever it does not touch is not.
+- Done when: 1 command produces 1 refusal with a reason, against a real mainnet-fork wallet, and
+  the output is pasted in this row. Read OP-20 before reaching for devnet.

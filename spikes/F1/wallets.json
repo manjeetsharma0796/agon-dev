@@ -1,0 +1,15 @@
+{
+  "note": "Two public wallets, each verified to be the OWNER of the token balances that move, not merely an address the transaction touches. That check is the point: Helius's /addresses/{x}/transactions returns everything involving x, so a pool or routing account looks like a busy trader and decodes to 0 swaps. The wallets are measured for decoding only. No balance, position or profit is reported for either, here or downstream.",
+  "chosenAt": "2026-09-24",
+  "selectionTest": "owner of the token balances in 6 of 6 sampled swaps, and 50 of 50 for the second",
+  "wallets": [
+    "5CKAa7WmJwK2UjgVZXiZHwDD6rJ1nuHMm7Ki2PsrKYPQ",
+    "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1"
+  ],
+  "rejected": [
+    {
+      "wallet": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+      "why": "Never appears as the owner of any token balance in its own transactions. The enhanced API lists 21 swaps per 100 transactions for it, and the decoder correctly returns not-a-swap on all 42 sampled, because no balance of that wallet changed. It is a participant address, not a trader."
+    }
+  ]
+}

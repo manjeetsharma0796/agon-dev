@@ -7,6 +7,8 @@
 
 import { armRule, checkTrade, report } from '@agon/web'
 import { TOOLS, type ToolName, toolContracts } from '@agon/core'
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 
 export { TOOLS, type ToolName }
 
@@ -39,3 +41,69 @@ export const callTool = (name: ToolName, input: unknown): unknown => {
 
 export const isTool = (name: string): name is ToolName =>
   (TOOLS as readonly string[]).includes(name)
+
+/**
+ * What each tool does, shown to any agent that lists our tools before it decides whether to call
+ * one. Says plainly what is real today, so arm_rule's refusal is not a surprise discovered by
+ * calling it: arming turns on only once F5 and F6 pass.
+ */
+const DESCRIPTIONS: Record<ToolName, string> = {
+  get_report:
+    "Read a wallet's mined trading habits: stop discipline, sizing, hold time, coverage and the " +
+    'cost of breaking its own rules. Read only, 0 chain writes.',
+  check_trade:
+    "Check a proposed trade against the wallet's own mined rules before it goes out. Returns " +
+    'pass, block or unsure; a non-pass verdict always names the rule and the number. Anything ' +
+    'that can move funds fails closed: unsure is not a soft pass.',
+  arm_rule:
+    'Arm a capped, revocable spending rule as a Swig role plus a Jupiter trigger order. Every ' +
+    'call refuses today: arming turns on only once F5 and F6 pass and the pre-mainnet checklist ' +
+    'is ticked.',
+  list_rules: 'List the rules armed for a wallet. Empty until arm_rule turns on.',
+}
+
+/**
+ * Runs one tool call and shapes it as an MCP result. Exactly one call to `callTool`, no retry: a
+ * refusal or an unsure verdict comes back through `isError` with the same reason and numbers a
+ * caller gets over HTTP, never a silent second attempt at a different answer.
+ *
+ * Exported so the token-budget test measures the actual wire payload, `content[0].text`, and not
+ * a smaller stand-in for it.
+ */
+export const callAsTool = (name: ToolName, input: unknown): CallToolResult => {
+  try {
+    const result = callTool(name, input ?? {})
+    return { content: [{ type: 'text', text: JSON.stringify(result) }] }
+  } catch (error) {
+    return {
+      isError: true,
+      content: [{ type: 'text', text: error instanceof Error ? error.message : String(error) }],
+    }
+  }
+}
+
+/**
+ * Builds the real MCP server: the transport half of T-C07. Every tool's input schema is
+ * `toolContracts[name].input` straight from the frozen contract in `packages/core`, the same
+ * zod object `callTool` validates against, so a third-party agent (Solana Agent Kit, GMGN, or
+ * anything else that speaks MCP) is shown the exact shape it will be held to and never a
+ * hand-written copy that can drift from it.
+ *
+ * Registers by iterating `TOOLS` itself, in its own order, rather than 4 separate calls: a hand
+ * written list is a second copy of the stable order the whole feature exists to preserve, and a
+ * second copy is exactly what drifts silently when a tool is added or reordered in
+ * `packages/core`.
+ */
+export const createServer = (): McpServer => {
+  const server = new McpServer({ name: 'agon', version: '0.0.0' }, { capabilities: { tools: {} } })
+
+  for (const name of TOOLS) {
+    server.registerTool(
+      name,
+      { title: name, description: DESCRIPTIONS[name], inputSchema: toolContracts[name].input },
+      (args: unknown) => callAsTool(name, args),
+    )
+  }
+
+  return server
+}
