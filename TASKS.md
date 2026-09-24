@@ -629,7 +629,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none. monad rebuilt full history on every request (T3.6) and switching later was a rewrite
 
 ### T-C06, check_trade guard, arithmetic first
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-c06-check-trade
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/77 | Owner: Jishnu | Branch: feature/t-c06-check-trade
 - Depends-on: T-C04, T-C05, T-A03
 - Touches: packages/guard/src/check-trade.ts
 - Serves: Functionality (judged) ; F4
@@ -639,7 +639,16 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   call (1 account batch, 1 quote, 1 Jev call), asserted by a counting wrapper in tests; every
   verdict names the rule and the number ("4.1x your median size of 0.8 SOL") and is stamped with
   its data slot and rule version; response stays inside the 400-token budget on the golden wallets
-- Evidence: <PR link, plus the network-count and token-budget tests>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/77, with the counting wrapper in
+  packages/guard/src/check-trade.budget.test.ts (3 calls, 0 of them the guard's) and the budget in
+  packages/guard/src/check-trade.token.test.ts. Measured: 5 of 5 numeric checks arithmetic, 2 of 4
+  of F4's scripted trade kinds resolved with 0 model answers, 3 network calls, 395 tokens worst
+  case against 400. Golden wallets do not exist yet, so the budget is measured on worst cases
+- Finding: the worst case verdict was 417 tokens against the 400 budget, 4.3% over, and fits at 395
+  only after this file's own 4 messages lost 88 characters. 621 of those 1,578 characters, 39%, are
+  3 mint-check messages T-C06 does not own, so the guard controls about 61% of its own budget.
+  Separately, the 6 token categories the PRD freezes and the 6 T-C05 shipped share 0 names, and
+  style fit is arithmetic keyed on exactly those names
 - Kill criterion: none, a failure here is a bug and not a feasibility problem
 
 ### T-F04, F4 spike, 20 scripted verdicts

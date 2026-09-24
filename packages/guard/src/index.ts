@@ -1,5 +1,15 @@
 // check_trade: arithmetic first, a model only for the 3 non-numeric questions. Owned by T-C06.
 
+// The verdict itself. Pure: it composes the 3 reads below and makes none of its own.
+export {
+  LIMITS,
+  STOP_TOLERANCE_POINTS,
+  checkTrade,
+  type Quote,
+  type SpendAsset,
+  type TradeFacts,
+} from './check-trade.js'
+
 // The mint check is the primary token-safety path and reads the chain itself. T-C04.
 export {
   checkMints,
