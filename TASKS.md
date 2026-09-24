@@ -685,7 +685,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: fallback is a short recurring window and no end date in the UI
 
 ### T-D03, Kill switch
-- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-d03-kill-switch
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/66 | Owner: Prithwish | Branch: feature/t-d03-kill-switch
 - Depends-on: T-D01
 - Touches: packages/chain/src/kill-switch.ts, packages/cli/src/commands/revoke.ts
 - Serves: UX (judged) ; Novelty (judged)
