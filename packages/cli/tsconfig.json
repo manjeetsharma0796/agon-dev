@@ -8,6 +8,15 @@
   "references": [
     {
       "path": "../chain"
+    },
+    {
+      "path": "../core"
+    },
+    {
+      "path": "../decoder"
+    },
+    {
+      "path": "../miner"
     }
   ]
 }

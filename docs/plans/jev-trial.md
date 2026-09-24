@@ -59,7 +59,7 @@ unqualified. This script asks Jev 4 different questions, none of the 3. Both the
 and this session's task brief describe exactly this design, so it is deliberate and not an
 oversight in this PR, but the written rule in CLAUDE.md does not carve out an exception for it, and
 an agent should not quietly decide on its own whether the 3-question line means "the trading guard"
-or "everywhere". Written up as OP-20 in `OPERATOR_TODO.md` for a person to resolve either by
+or "everywhere". Written up as OP-24 in `OPERATOR_TODO.md` for a person to resolve either by
 scoping CLAUDE.md's wording to the trading guard, or by saying T-B08 does not get an exception. The
 one thing this script does keep, regardless of that decision: it never reads a number back from
 Jev, only a `choice` and a `confidence` used as a threshold gate, the same non-negotiable that

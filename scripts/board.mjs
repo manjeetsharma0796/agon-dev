@@ -4,7 +4,6 @@
 //   node scripts/board.mjs lint          always: the board is well formed
 //   node scripts/board.mjs claim-push    on a direct push to dev: Status lines only
 //   node scripts/board.mjs pr            on a PR: branch, body and diff hygiene
-//   node scripts/board.mjs summary       rewrite the status table in README.md
 //
 // Every check here exists because the PRD names the failure it prevents. Do not soften one
 // without changing the PRD first.
@@ -17,7 +16,11 @@ const warnings = []
 const fail = (m) => errors.push(m)
 const warn = (m) => warnings.push(m)
 
-const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim()
+// maxBuffer well above the 1 MB default: a PR carrying recorded fixtures produces a diff larger
+// than that, and execFileSync does not truncate, it throws. The board lint then crashed rather than
+// reporting anything, on exactly the PRs that record real chain data.
+const git = (...args) =>
+  execFileSync('git', args, { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 }).trim()
 
 const FIELDS = ['Status', 'Depends-on', 'Touches', 'Serves', 'Acceptance', 'Evidence']
 const JUDGED = [
@@ -181,26 +184,31 @@ function lint() {
 }
 
 function changedFiles(base, head) {
-  return git('diff', '--name-only', `${base}..${head}`).split('\n').filter(Boolean)
+  // Three dots, not two. `git diff a..b` compares the two endpoints, so the moment a branch merges
+  // dev in, every file merged to dev since this PR opened counts as changed by this PR. dev
+  // requires branches to be up to date before merging, so every PR must merge dev in, so this
+  // fired on all of them. Found on a board PR that changed 1 file and was told it had changed 15,
+  // including .github/workflows/board.yml, which a board PR may not touch and which that branch
+  // had never opened. Three dots asks what the gate means: what did this branch change since it
+  // forked.
+  return git('diff', '--name-only', `${base}...${head}`).split('\n').filter(Boolean)
 }
 
 // A claim moves a "- Status:" line and nothing else. Shared by the claim-PR path and by any direct
 // push, so the rule lives in exactly one place.
 function assertStatusOnly(base, head, what) {
-  // README.md is here because the board summary inside it is a pure function of the Status lines
-  // this very change moves. Without it a claim can never merge: moving a Status line changes the
-  // summary counts, the "Generated files are current" job then fails on a stale README, and fixing
-  // that README is forbidden by this check. That deadlocked every claim, which is the first step of
-  // every task. Its content is deliberately not inspected below: the generated-files job already
-  // requires it to equal `board.mjs summary` output exactly, so it cannot smuggle anything in.
+  // README.md used to be allowed here, because it carried a board summary derived from the very
+  // Status lines a claim moves, so a claim that could not touch it could never merge. That summary
+  // is gone: the check ran against the MERGE commit, so the counts were computed from merged task
+  // statuses while the file was committed from the branch, and every PR went stale the moment
+  // anyone else's claim landed. A claim touches the board files and nothing else again.
   const edited = ['TASKS.md', 'OPERATOR_TODO.md']
-  const allowed = [...edited, 'README.md']
+  const allowed = edited
   for (const f of changedFiles(base, head)) {
     if (!allowed.includes(f)) {
       fail(
         `"${f}" changed in ${what}. A claim may only change "- Status:" lines in TASKS.md or ` +
-          `OPERATOR_TODO.md, plus the regenerated README.md summary. Code and prose go in a ` +
-          `feature PR of their own.`,
+          `OPERATOR_TODO.md. Code and prose go in a feature PR of their own.`,
       )
     }
   }
@@ -242,9 +250,7 @@ function pr() {
       )
     }
     if (!base || /^0+$/.test(base)) return warn('No PR_BASE_SHA, skipping the board diff check.')
-    // Same reason as assertStatusOnly: adding or cutting a task moves the counts in the generated
-    // README summary, so a board PR has to be able to carry the regenerated file with it.
-    const allowed = ['TASKS.md', 'OPERATOR_TODO.md', 'README.md']
+    const allowed = ['TASKS.md', 'OPERATOR_TODO.md']
     for (const f of changedFiles(base, head)) {
       if (!allowed.includes(f)) {
         fail(`"${f}" changed in a board/ PR, which may only edit ${allowed.join(', ')}.`)
@@ -319,7 +325,7 @@ function pr() {
   for (const line of stat.split('\n').filter(Boolean)) {
     const [add, del, file] = line.split('\t')
     if (
-      /^(pnpm-lock\.yaml|package-lock\.json|fixtures\/|benchmark\/results\/|spikes\/\S+\/result\.json)/.test(
+      /^(pnpm-lock\.yaml|package-lock\.json|fixtures\/|benchmark\/results\/|spikes\/\S+\/(result\.json|recorded\/))/.test(
         file ?? '',
       )
     )
@@ -333,7 +339,19 @@ function pr() {
   }
 
   // No em dashes or en dashes. Cheap to check, annoying to fix later.
-  const full = git('diff', `${base}..${head}`)
+  //
+  // Authored files only. Recorded fixtures are somebody else's bytes: a token name on chain may
+  // contain any character, and rewriting a recording to satisfy our prose rule would falsify the
+  // data. Scanning them also meant reading megabytes per PR to match nothing.
+  const full = git(
+    'diff',
+    `${base}..${head}`,
+    '--',
+    '.',
+    ':(exclude)fixtures/**',
+    ':(exclude)spikes/*/recorded/**',
+    ':(exclude)pnpm-lock.yaml',
+  )
   const dashes = full.split('\n').filter((l) => /^\+/.test(l) && /[–—]/.test(l))
   if (dashes.length > 0) {
     fail(
@@ -342,40 +360,10 @@ function pr() {
   }
 }
 
-// The README carries the board summary so the repo answers "where are we?" without opening TASKS.md.
-function summary(tasks) {
-  if (!existsSync('README.md')) return warn('No README.md yet, skipping the summary.')
-  const count = (re) => tasks.filter((t) => re.test(t.fields.Status ?? '')).length
-  const rows = [
-    ['open', count(/^open/)],
-    ['claimed', count(/^claimed/)],
-    ['blocked', count(/^blocked/)],
-    ['in-review', count(/^in-review/)],
-    ['done', count(/^done/)],
-    ['cut', count(/^cut/)],
-  ]
-  const table = [
-    '<!-- board:start -->',
-    // No date: it would change daily and CI could not tell a stale summary from a fresh one.
-    'Board, generated by `scripts/board.mjs summary`. Do not hand-edit.',
-    '',
-    `| ${rows.map(([k]) => k).join(' | ')} |`,
-    `|${rows.map(() => '---').join('|')}|`,
-    `| ${rows.map(([, v]) => v).join(' | ')} |`,
-    '<!-- board:end -->',
-  ].join('\n')
-  const readme = readFileSync('README.md', 'utf8')
-  const next = /<!-- board:start -->[\s\S]*?<!-- board:end -->/.test(readme)
-    ? readme.replace(/<!-- board:start -->[\s\S]*?<!-- board:end -->/, table)
-    : `${readme.trimEnd()}\n\n${table}\n`
-  if (next !== readme) writeFileSync('README.md', next)
-}
-
 const mode = process.argv[2] ?? 'lint'
 const tasks = lint() ?? []
 if (mode === 'claim-push') claimPush()
 if (mode === 'pr') pr()
-if (mode === 'summary') summary(tasks)
 
 for (const w of warnings) console.log(`note: ${w}`)
 if (errors.length > 0) {

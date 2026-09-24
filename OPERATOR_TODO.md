@@ -29,12 +29,20 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Owner: <unassigned>
 - Needed by: 2026-09-26, so F5 has a result before CP1 on 2026-09-27
 - Unblocks: T-F05a, T-F05b, T-F06a, and through them T-E06, the arming UI
-- What exactly: 1 throwaway devnet keypair with about 2 devnet SOL. The public faucet is dry, so it
-  needs either the web faucet at faucet.solana.com, which wants a browser, or a devnet key you
-  already have. Devnet SOL has no value, so this is not the mainnet funding step in OP-5 and needs
-  none of its checklist. Put the key in the repo-ignored `.devnet/agon-f5.json` and set
-  `DEVNET_KEYPAIR` in the CI secrets from the same file. It is a throwaway: it must never hold
-  anything and must never be reused on mainnet.
+- What exactly: 1 throwaway devnet keypair with **0.01 devnet SOL**. Not 2 SOL: the F5 run measured
+  what the 7 cases actually cost and it is 1,543,680 lamports, 0.0015 SOL, which is 1,503,680 of
+  rent for the 168-byte two-role Swig account plus 5,000 a transaction for 8 transactions. 0.01
+  covers several reruns. That changes who can unblock this: it does not need a faucet with a big
+  allowance, only somebody holding a dusting of devnet SOL. All 7 faucets reachable without a
+  browser refuse, listed in `spikes/F5/result.json` under `funding.faucetAttempts`, and 0.1 SOL was
+  refused as flatly as 1 SOL, so the limit is per day and not per amount. The web faucet at
+  faucet.solana.com wants a browser and a captcha. Devnet SOL has no value, so this is not the
+  mainnet funding step in OP-5 and needs none of its checklist. Put the key in the repo-ignored
+  `.devnet/agon-f5.json` and set `DEVNET_KEYPAIR` in the CI secrets from the same file. It is a
+  throwaway: it must never hold anything and must never be reused on mainnet.
+- Note: this entry and the second `OP-19` further down are the same item filed twice, by two
+  sessions that both hit the same wall. Whoever picks it up should merge them in a `board/` PR.
+- Funding alone does not make F5 runnable. OP-20 is the other half.
 - Also, by hand, once F5 has run: case (g) of F5 is "removal done from Phantom, not only our CLI".
   Connect the devnet Swig wallet in Phantom, remove the Agon role from there, and confirm the next
   agent transaction fails. A script cannot assert that a person used a wallet, so this stays here.
@@ -42,6 +50,26 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   Phantom removal in (g) is recorded with the signature that failed after it.
 - Why it cannot wait: F5 is existential. If the cap does not hold on-chain, CP1 decides whether
   Agon ships read-only, and that decision needs the measurement rather than an opinion.
+
+### OP-20, Pick 2 real trader wallets, and verify 50 rows by hand
+- Status: open
+- Owner: <unassigned>
+- Needed by: 2026-09-26, so F1 has a result before CP1 on 2026-09-27
+- Unblocks: T-F01a, and through it T-F01b and the whole report
+- What exactly: two things, both needing a person.
+  1. **Pick 2 wallets with a real position history.** An automated heuristic keeps finding bots,
+     routers and payout addresses: see `spikes/F1/README.md` for 3 that looked ideal and were not.
+     The test is that the address owns the token balances that move AND opens and closes positions
+     in non-quote assets. The team's own wallets qualify once OP-1 has produced history.
+  2. **Hand-build the 50-row ledger per wallet.** Side, mint, and amount in base units, from the
+     explorer, compared field by field against what the decoder said. The harness prints exactly
+     those 50 rows, so this is verification and not construction: roughly an hour per wallet.
+- Why a script cannot do it: Helius `SWAP` and our `swap` answer different questions. 22 of 50 on
+  one wallet were SOL to USDC rotations, which Helius calls swaps and the decoder correctly does not,
+  because no position opened or closed. Measured, in `spikes/F1/README.md`. A cross-check against
+  the enhanced API would report a disagreement that is a definition, not an error.
+- Done when: `spikes/F1/result.json` shows 50 of 50 classified correctly on each of 2 wallets,
+  amounts exact to base units, with the coverage share recorded per wallet.
 
 ### OP-1, Everyone trades from their test wallet, daily
 - Status: open
@@ -296,7 +324,36 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: `agon revoke` runs end to end against 3 devnet wallets that really hold Agon roles,
   and the roles are really gone afterwards, which is T-D03's Evidence line.
 
-### OP-20, Reconcile CLAUDE.md's "3 questions" rule with T-B08's review-escalation questions
+### OP-20, CP1 decision: Jupiter is not on devnet, so F5 cases (a), (b) and (e) cannot run there
+- Status: open
+- Owner: <unassigned>
+- Needed by: 2026-09-27, CP1, because F5 is the gate on the arming UI
+- Unblocks: T-F05a, and through it T-E06, the arming UI, and the live-arming demo beat
+- What exactly: the pinned Jupiter id `JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4` is not a
+  program on devnet. It is a plain wallet there: `executable: false`, owned by the system program,
+  0 bytes, holding 4.51 SOL. On mainnet the same id is `executable: true`, owned by the BPF
+  upgradeable loader, 36 bytes. Measured by `spikes/F5/run.mjs`, in `result.json` under
+  `devnet.jupiterProgram`. Cases (c), (d) and (f) do not care, because Swig rejects those before
+  any inner instruction runs. Cases (b) and (e) do: Swig applies a `tokenRecurringLimit` by
+  comparing the Swig account's token balances after the inner instructions run, so with no program
+  at that id the transaction fails before the limit is consulted. The run would record a rejection
+  and it would be the wrong rejection, with the cap reading as holding when it was never asked.
+  Pick 1 of 4: (1) run the whole thing on a **Surfpool mainnet fork**, which carries the real
+  Jupiter program and the real Swig program, costs 0 and needs 0 mainnet funds, and whose tooling is
+  already in the repo because F9 proved a committed Surfpool snapshot replays offline with no key;
+  (2) run (b) and (e) on devnet against a program that is deployed there and moves the capped mint,
+  and say in the result that the Jupiter leg was substituted; (3) move the cap cases to mainnet
+  simulation, which is already T-F05c, and let T-F05a cover (c), (d), (f) and (a) as authorisation
+  only; (4) deploy a Jupiter build to devnet, which nobody on this team controls.
+- Done when: the decision is in the PRD Decisions log and T-F05a's `Acceptance:` line says which
+  of the 7 cases run on devnet and which moved to T-F05c.
+- Why it cannot wait: the World's Fair demo beat is live arming on devnet, decided on 2026-09-24.
+  (c), (d) and (f) can be filmed on devnet once OP-19 lands. "The cap stopped an over-cap swap"
+  cannot be filmed on devnet at all, whatever the funding, because there is no swap to stop there.
+  So the most distinctive beat of the demo depends on this decision, and option 1 is the one that
+  keeps it.
+
+### OP-24, Reconcile CLAUDE.md's "3 questions" rule with T-B08's review-escalation questions
 - Status: open
 - Owner: <unassigned>
 - Needed by: CP2, 2026-10-02, alongside the T-B08 keep or cut decision

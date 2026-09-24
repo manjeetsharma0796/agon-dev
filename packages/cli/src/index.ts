@@ -17,6 +17,12 @@ if (process.argv.includes('--version') || process.argv.includes('-v')) {
   // invocation, including `--version`.
   const { runRevoke } = await import('./commands/revoke.js')
   process.exitCode = await runRevoke(process.argv.slice(3))
+} else if (command === 'report') {
+  // Dynamic for the same reason as revoke: the decoder and the miner must not sit inside the
+  // 300 ms cold start gate that every invocation pays, including `--version`.
+  const { runReport } = await import('./commands/report.js')
+  const { liveIo } = await import('./commands/report-io.js')
+  process.exitCode = await runReport(process.argv.slice(3), liveIo())
 } else {
-  console.log(`agon ${version}. Commands: revoke. The rest arrive with T-C09.`)
+  console.log(`agon ${version}. Commands: report, revoke.`)
 }

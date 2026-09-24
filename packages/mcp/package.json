@@ -7,6 +7,7 @@
   "types": "./dist/index.d.ts",
   "dependencies": {
     "@agon/core": "workspace:*",
-    "@agon/web": "workspace:*"
+    "@agon/web": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.30.1"
   }
 }

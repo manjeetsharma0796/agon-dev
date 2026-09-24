@@ -14,6 +14,14 @@ useDefault = true
 #   accountKey  an account in an RPC transaction response. 24 of these blocked T-A01, the decoder,
 #               which is the existential F1 path.
 #
+# Three more from the Helius enhanced transactions response, which names token accounts rather than
+# owners. 885 of these blocked T-C09, the first path that runs end to end:
+#
+#   tokenAccount, fromTokenAccount, toTokenAccount
+#
+# An associated token account address is derived from the owner and the mint and is public. It is
+# not a credential and there is nothing to rotate.
+#
 # Both are public on-chain data. Stripping either would gut the recording the benchmark replays.
 #
 # This forgives the matched text and nothing else. It deliberately does NOT use `paths`: a path
@@ -22,4 +30,6 @@ useDefault = true
 # any other name still fails, including in the same file.
 [allowlist]
 regexTarget = "match"
-regexes = ['''(ammKey|accountKey)"\s*:\s*"[1-9A-HJ-NP-Za-km-z]{32,44}"''']
+regexes = [
+  '''(ammKey|accountKey|tokenAccount|fromTokenAccount|toTokenAccount)"\s*:\s*"[1-9A-HJ-NP-Za-km-z]{32,44}"''',
+]
