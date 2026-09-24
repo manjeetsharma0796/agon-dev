@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest'
 import { callAsTool } from './index.js'
+import { textOf } from './test-support.js'
 
 // CI budgets, enforced by the `token-budget` vitest project: get_report 2,000 tokens, check_trade
 // 400. monad shipped a 2.1M-token tool result that broke every question the agent could ask
@@ -10,14 +11,6 @@ import { callAsTool } from './index.js'
 // MCP wire payload, `content[0].text` from `callAsTool`, not a smaller stand-in for it, because
 // that text is what actually lands in the agent's context.
 const approxTokens = (text: string): number => text.length / 4
-
-const textOf = (result: ReturnType<typeof callAsTool>): string => {
-  const block = result.content[0]
-  if (block === undefined || block.type !== 'text') {
-    throw new Error('expected a text content block, got: ' + JSON.stringify(block))
-  }
-  return block.text
-}
 
 // Same wallet and trade the rest of the mcp and web test suites use (mcp.test.ts, routes.test.ts,
 // legs.test.ts). Real per-wallet golden fixtures are an operator-blocked item tracked elsewhere;

@@ -88,46 +88,22 @@ export const callAsTool = (name: ToolName, input: unknown): CallToolResult => {
  * zod object `callTool` validates against, so a third-party agent (Solana Agent Kit, GMGN, or
  * anything else that speaks MCP) is shown the exact shape it will be held to and never a
  * hand-written copy that can drift from it.
+ *
+ * Registers by iterating `TOOLS` itself, in its own order, rather than 4 separate calls: a hand
+ * written list is a second copy of the stable order the whole feature exists to preserve, and a
+ * second copy is exactly what drifts silently when a tool is added or reordered in
+ * `packages/core`.
  */
 export const createServer = (): McpServer => {
   const server = new McpServer({ name: 'agon', version: '0.0.0' }, { capabilities: { tools: {} } })
 
-  server.registerTool(
-    'get_report',
-    {
-      title: 'get_report',
-      description: DESCRIPTIONS.get_report,
-      inputSchema: toolContracts.get_report.input,
-    },
-    (args) => callAsTool('get_report', args),
-  )
-  server.registerTool(
-    'check_trade',
-    {
-      title: 'check_trade',
-      description: DESCRIPTIONS.check_trade,
-      inputSchema: toolContracts.check_trade.input,
-    },
-    (args) => callAsTool('check_trade', args),
-  )
-  server.registerTool(
-    'arm_rule',
-    {
-      title: 'arm_rule',
-      description: DESCRIPTIONS.arm_rule,
-      inputSchema: toolContracts.arm_rule.input,
-    },
-    (args) => callAsTool('arm_rule', args),
-  )
-  server.registerTool(
-    'list_rules',
-    {
-      title: 'list_rules',
-      description: DESCRIPTIONS.list_rules,
-      inputSchema: toolContracts.list_rules.input,
-    },
-    (args) => callAsTool('list_rules', args),
-  )
+  for (const name of TOOLS) {
+    server.registerTool(
+      name,
+      { title: name, description: DESCRIPTIONS[name], inputSchema: toolContracts[name].input },
+      (args: unknown) => callAsTool(name, args),
+    )
+  }
 
   return server
 }
