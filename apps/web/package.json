@@ -4,5 +4,15 @@
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
-  "types": "./dist/index.d.ts"
+  "types": "./dist/index.d.ts",
+  "dependencies": {
+    "next": "15",
+    "react": "19",
+    "react-dom": "19",
+    "@agon/core": "workspace:*"
+  },
+  "scripts": {
+    "dev": "next dev -p 3111",
+    "start": "next start -p 3111"
+  }
 }
