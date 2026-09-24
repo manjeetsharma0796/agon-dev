@@ -531,7 +531,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: fallback is Jupiter-routed swaps only with the covered share printed on the report
 
 ### T-A03, Rule miner
-- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-a03-rule-miner
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/50 | Owner: Prithwish | Branch: feature/t-a03-rule-miner
 - Depends-on: T-A02
 - Touches: packages/miner/src/
 - Serves: Novelty (judged) ; F2
