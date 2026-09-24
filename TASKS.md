@@ -209,7 +209,7 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: none, a frozen contract is why the tracks do not block each other
 
 ### T-B02, Release job, dev to the public main by allowlist
-- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-b02-release
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/17 | Owner: Prithwish | Branch: feature/t-b02-release
 - Depends-on: T-B01, OP-7
 - Touches: .github/workflows/release.yml, .publicinclude, scripts/release.mjs
 - Serves: Open source (judged)
@@ -224,7 +224,12 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
   proven to bite: neutering findInternalMarkers now fails 6 of the 9 cases in
   scripts/release.test.mjs, so the 6 planted markers are measured and not assumed. Also
   .publicinclude promised .github/workflows/public-ci.yml, which did not exist, so the public repo
-  would have shipped with 0 CI next to a README that calls tests the evidence.
+  would have shipped with 0 CI next to a README that calls tests the evidence. The sharpest one
+  came from reviewing the fix: CHANGELOG-latest.md is built from dev's commit subjects during
+  --push, after --check has already passed, and PR #9 is open titled "Write the measured provider
+  limits into OP-2, OP-3 and OP-4", so the next release would have published an OP- marker through
+  the 1 file the gate never saw. A gate that runs at the wrong moment is worth the same as a gate
+  that does not run.
 - Kill criterion: none, judges only see the public repo
 
 ### T-C02, Record and replay wrapper with per-call timings
