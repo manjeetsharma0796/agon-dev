@@ -668,7 +668,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: if (e) passes unexpectedly, numbers still stay on arithmetic. 1 lucky run is not evidence
 
 ### T-C07, MCP server, 4 tools and a stable list
-- Status: in-review <PR link to be filled after opening> | Owner: Jishnu | Branch: feature/t-c07-mcp
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/80 | Owner: Jishnu | Branch: feature/t-c07-mcp
 - Depends-on: T-C06
 - Touches: packages/mcp/src/
 - Serves: Functionality (judged) ; Open source (judged)
@@ -677,7 +677,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   `get_report` 2,000 and `check_trade` 400; every unsure or failed verdict hands back to the user
   with the reason and the numbers and 0 silent retries; `check_trade` is callable by any agent
   (Solana Agent Kit, GMGN agents) and that is proven with 1 third-party client
-- Evidence: PR link to be filled after opening, plus the third-party client transcript in the PR
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/80, plus the third-party client transcript in the PR
   body. Measured on the fixture wallet the mcp and web suites already share: get_report 815 chars,
   about 204 tokens, 9.8x headroom under the 2,000 budget; check_trade 315 chars, about 79 tokens,
   5.1x headroom under the 400 budget. `check_trade`'s answer is still T-E03's fixture verdict, not
