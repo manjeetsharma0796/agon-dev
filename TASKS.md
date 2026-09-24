@@ -1109,14 +1109,15 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 - Kill criterion: none, the MCP server is how any agent reaches the guard
 
 ### T-E08, Onboarding
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/88 | Owner: Prithwish | Branch: feature/t-e08-onboarding
+- Status: blocked, see OP-8
 - Depends-on: T-C09, T-E04
 - Touches: apps/web/app/(onboarding)/, docs/public/quickstart.md
 - Serves: UX (judged)
 - Acceptance: a new user goes from the landing page to a report in 3 steps or fewer, measured
   on 5 beta users with 0 help from us; the quickstart and the MCP tool reference are in
   `docs/public/` so they reach the public repo
-- Evidence: <PR link; the 5 timed walkthroughs need beta users, see OP-8>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/88, 2 actions from landing to report.
+  The 5 timed walkthroughs need beta users, see OP-8.
 - Finding: there was no front door. `/` was a 404, because apps/web/app held api, report and
   waitlist and no root page at all, so the landing page the acceptance measures from did not exist.
   Worse, the public README already told a judge to "start with docs/public/quickstart.md", and
