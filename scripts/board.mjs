@@ -172,29 +172,37 @@ function changedFiles(base, head) {
   return git('diff', '--name-only', `${base}..${head}`).split('\n').filter(Boolean)
 }
 
-// A direct push to dev is the claim lock. It may move Status lines and nothing else.
+// A claim moves a "- Status:" line and nothing else. Shared by the claim-PR path and by any direct
+// push, so the rule lives in exactly one place.
+function assertStatusOnly(base, head, what) {
+  const allowed = ['TASKS.md', 'OPERATOR_TODO.md']
+  for (const f of changedFiles(base, head)) {
+    if (!allowed.includes(f)) {
+      fail(
+        `"${f}" changed in ${what}. A claim may only change "- Status:" lines in TASKS.md or ` +
+          `OPERATOR_TODO.md. Code and prose go in a feature PR of their own.`,
+      )
+    }
+  }
+  const diff = git('diff', '-U0', `${base}..${head}`, '--', ...allowed)
+  for (const line of diff.split('\n')) {
+    // Skip the diff own headers only. Do not skip every line whose second character is a dash:
+    // markdown list items all start "+-" or "--", which is exactly what this check has to read.
+    if (/^(\+\+\+|---|@@|diff |index |new file|deleted file|similarity|rename )/.test(line)) continue
+    if (!/^[+-]/.test(line)) continue
+    if (!/^[+-]-\s*(Status|Owner):/.test(line)) {
+      fail(`A claim changes only "- Status:" lines. This one changed: ${line.trim().slice(0, 140)}`)
+    }
+  }
+}
+
+// Any push that reached dev without a pull request. The ruleset should already have blocked it, so
+// this is the second line: if protection is ever relaxed, the rule still holds.
 function claimPush() {
   const base = process.env.BEFORE_SHA
   const head = process.env.AFTER_SHA ?? 'HEAD'
   if (!base || /^0+$/.test(base)) return warn('No BEFORE_SHA, skipping the claim-push check.')
-
-  const allowed = new Set(['TASKS.md', 'OPERATOR_TODO.md'])
-  const files = changedFiles(base, head)
-  for (const f of files) {
-    if (!allowed.has(f)) {
-      fail(
-        `"${f}" was pushed straight to dev. A direct push may only change "- Status:" lines in ` +
-          `TASKS.md or OPERATOR_TODO.md. Everything else goes through a pull request.`,
-      )
-    }
-  }
-  const diff = git('diff', '-U0', `${base}..${head}`, '--', ...[...allowed])
-  for (const line of diff.split('\n')) {
-    if (!/^[+-][^+-]/.test(line)) continue
-    if (!/^[+-]-\s*(Status|Owner):/.test(line)) {
-      fail(`Claim pushes change only "- Status:" lines. This one changed: ${line.trim()}`)
-    }
-  }
+  assertStatusOnly(base, head, 'a direct push to dev')
 }
 
 // A PR is where the hygiene rules bite: real claim, right branch, justified dependency, small diff.
@@ -203,6 +211,16 @@ function pr() {
   const body = process.env.PR_BODY ?? ''
   const base = process.env.PR_BASE_SHA
   const head = process.env.PR_HEAD_SHA ?? 'HEAD'
+
+  // dev requires a pull request, so a claim is a PR too. It carries only the Status line, which is
+  // what keeps the race resolvable: the second claim PR conflicts on that exact line.
+  if (branch.startsWith('claim/')) {
+    if (!/^claim\/(t-[a-z]?\d+[a-z]?|op-\d+)$/.test(branch)) {
+      fail(`Claim branch "${branch}" must be "claim/t-<id>" or "claim/op-<n>", e.g. claim/t-a03.`)
+    }
+    if (!base || /^0+$/.test(base)) return warn('No PR_BASE_SHA, skipping the claim diff check.')
+    return assertStatusOnly(base, head, 'this claim PR')
+  }
 
   const idMatch = /^feature\/(t-[a-z]?\d+[a-z]?)-[a-z0-9-]+$/.exec(branch)
   if (!idMatch) {
@@ -215,8 +233,8 @@ function pr() {
       fail(`Branch names task ${id}, which has no row in TASKS.md. Claim it first.`)
     } else if (!/^(claimed|in-review)/.test(task.fields.Status ?? '')) {
       fail(
-        `${id} is "${task.fields.Status}". Claim it on dev before opening a PR: edit its Status ` +
-          `line, commit, push to dev. A rejected push means someone beat you to it.`,
+        `${id} is "${task.fields.Status}". Claim it first, with a claim/${idMatch[1]} PR that moves ` +
+          `only its Status line. If that PR conflicts, someone beat you to it: pick another task.`,
       )
     } else if (!(task.fields.Status ?? '').includes(branch)) {
       fail(`${id} is claimed with a different branch than "${branch}".`)

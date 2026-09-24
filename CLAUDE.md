@@ -6,8 +6,9 @@ capped revocable Swig role, 24/7 rules run as Jupiter Trigger orders and not on 
 
 ## Before you write any code
 
-1. **Read `TASKS.md` sections 1 to 3.** They are the protocol: claim by pushing a `- Status:` line
-   to `dev`, one task, one branch, one PR. Not optional, and CI enforces it.
+1. **Read `TASKS.md` sections 1 to 3.** They are the protocol: claim a task with a one-line
+   `claim/t-<id>` PR, then do the work in a `feature/t-<id>-<slug>` PR. `dev` is protected and
+   refuses every direct push, including yours.
 2. **Claim one task.** Work only on that task and only on the files in its `Touches:` line.
 3. Blocked on a human (key, funds, outreach, a decision)? Add an `OP-N` to `OPERATOR_TODO.md`,
    set your task to `blocked, see OP-N`, move on. **Never fake a credential, a verification or a

@@ -19,29 +19,39 @@ submission 2026-10-11, CP4 2026-10-16, CP5 2026-10-23, CP6 2026-10-30, fall subm
 
 One task, one owner, one branch, one PR. The race is settled by git, not by asking.
 
+`dev` is protected: **nobody can push to it, including whoever owns the repo.** Every change
+arrives as a pull request with its checks green. So a claim is a tiny PR carrying one line, and that
+is what keeps the race resolvable: the second claim PR on the same task conflicts on that exact
+line and cannot merge.
+
 ```bash
 git checkout dev && git pull --ff-only origin dev
+git checkout -b claim/t-a03
 # edit ONLY the `- Status:` line of the task you want, nothing else in the file
-git commit -am "claim T-A03" && git push origin dev
+git commit -am "claim T-A03" && git push -u origin claim/t-a03
+gh pr create --fill --base dev && gh pr merge --auto --squash --delete-branch
 ```
 
-A rejected push means someone claimed in the same second. `git pull --rebase`, check whether
-your task is still free, push again. **If it was taken, pick another. Never work on a task
-claimed by someone else.**
+If the merge is refused for a conflict, or the board lint says the task is already claimed,
+**someone beat you to it. Pick another task. Never work on a task claimed by someone else.**
 
-Then branch and work:
+Then branch off the updated `dev` and do the work:
 
 ```bash
+git checkout dev && git pull --ff-only origin dev
 git checkout -b feature/t-a03-meteora
 ```
 
-Rules the `board` CI job enforces, so do not argue with them:
+Rules the ruleset and the `board` CI job enforce, so do not argue with them:
 
-- A push straight to `dev` may change **only** `- Status:` lines in `TASKS.md` and
-  `OPERATOR_TODO.md`. Any other direct push to `dev` fails. Code reaches `dev` by PR.
-- Your branch must be `feature/t-<id>-<slug>` and match the `Branch:` in the row you claimed.
+- **No pushes to `dev`, ever.** No force pushes, no deletion, no bypass for admins.
+- A claim PR is branch `claim/t-<id>` and may change **only** `- Status:` lines in `TASKS.md` and
+  `OPERATOR_TODO.md`. Anything else in that diff fails.
+- A work PR is branch `feature/t-<id>-<slug>` and must match the `Branch:` in the row you claimed.
 - Two owners on one task fails the lint.
 - `Status: done` without a real `Evidence:` link fails the lint.
+- `secrets`, `checks`, `hygiene` and `spikes` must all be green, on a branch up to date with `dev`.
+  Being up to date is what makes the double-claim check bite before the merge rather than after.
 
 Status values: `open` | `claimed <date> | Owner: <name> | Branch: <branch>` |
 `blocked, see OP-N` | `in-review <PR link>` | `done` | `cut <date>: <reason>`.
