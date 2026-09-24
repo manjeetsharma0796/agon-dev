@@ -17,7 +17,11 @@ const warnings = []
 const fail = (m) => errors.push(m)
 const warn = (m) => warnings.push(m)
 
-const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim()
+// maxBuffer well above the 1 MB default: a PR carrying recorded fixtures produces a diff larger
+// than that, and execFileSync does not truncate, it throws. The board lint then crashed rather than
+// reporting anything, on exactly the PRs that record real chain data.
+const git = (...args) =>
+  execFileSync('git', args, { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 }).trim()
 
 const FIELDS = ['Status', 'Depends-on', 'Touches', 'Serves', 'Acceptance', 'Evidence']
 const JUDGED = [
@@ -319,7 +323,7 @@ function pr() {
   for (const line of stat.split('\n').filter(Boolean)) {
     const [add, del, file] = line.split('\t')
     if (
-      /^(pnpm-lock\.yaml|package-lock\.json|fixtures\/|benchmark\/results\/|spikes\/\S+\/result\.json)/.test(
+      /^(pnpm-lock\.yaml|package-lock\.json|fixtures\/|benchmark\/results\/|spikes\/\S+\/(result\.json|recorded\/))/.test(
         file ?? '',
       )
     )
@@ -333,7 +337,19 @@ function pr() {
   }
 
   // No em dashes or en dashes. Cheap to check, annoying to fix later.
-  const full = git('diff', `${base}..${head}`)
+  //
+  // Authored files only. Recorded fixtures are somebody else's bytes: a token name on chain may
+  // contain any character, and rewriting a recording to satisfy our prose rule would falsify the
+  // data. Scanning them also meant reading megabytes per PR to match nothing.
+  const full = git(
+    'diff',
+    `${base}..${head}`,
+    '--',
+    '.',
+    ':(exclude)fixtures/**',
+    ':(exclude)spikes/*/recorded/**',
+    ':(exclude)pnpm-lock.yaml',
+  )
   const dashes = full.split('\n').filter((l) => /^\+/.test(l) && /[–—]/.test(l))
   if (dashes.length > 0) {
     fail(

@@ -233,4 +233,7 @@ for (const r of results) {
   for (const u of r.unsupported)
     console.log(`    unsupported ${u.programId.slice(0, 8)} x${u.count}: ${u.reason}`)
 }
-process.exit(pass ? 0 : 1)
+// No process.exit on a failing measurement, matching F3 and F9. A spike's job is to run and record
+// honestly; FEASIBILITY.md carries pass or fail and the checkpoint decides. Exiting 1 here would
+// make a legitimately failing existential spike a required-check failure on every PR in the repo,
+// freezing merges at exactly the moment the fixes need to land.

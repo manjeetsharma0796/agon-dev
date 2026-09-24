@@ -345,7 +345,7 @@ and latency (a, b).
 ### T-F01a, F1 spike on 2 wallets, for CP1
 - Status: blocked, see OP-20
 - Depends-on: T-A01
-- Touches: spikes/F1/
+- Touches: spikes/F1/, scripts/board.mjs
 - Serves: Functionality (judged) ; CP1 gate
 - Acceptance: on 2 wallets, 50 of 50 randomly sampled transactions classified correctly, amounts
   exact to base units, realised P&L within 1% of a hand-computed FIFO ledger; share of swaps
