@@ -1,0 +1,103 @@
+name: feasibility-live
+
+# Nightly and on demand only, never on every push, so a busy day does not burn the API quota.
+# Uses CI-only keys. No mainnet signing key ever reaches this job: F5 runs on devnet here, and
+# the mainnet cases in F5 and F6 are run by hand from team wallets after the pre-mainnet checklist.
+
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+    inputs:
+      only:
+        description: 'Spike to run, e.g. F11. Empty runs all of them.'
+        required: false
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  spikes:
+    runs-on: ubuntu-latest
+    environment: ci-live
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Every threshold was written before the run
+        # The feasibility bar: a number decided after the fact is not a threshold, it is a excuse.
+        run: |
+          set -euo pipefail
+          for d in spikes/F*/; do
+            [ -f "$d/thresholds.json" ] || { echo "::error::$d has no thresholds.json. Write it before the spike runs."; exit 1; }
+          done
+
+      # continue-on-error so one failing spike still lets the others record their numbers.
+      # The checkpoint decides what to do about a failure; CI only has to report it honestly.
+      - name: F3, token risk on 30 labelled mints
+        if: inputs.only == '' || inputs.only == 'F3'
+        continue-on-error: true
+        run: pnpm spike:f3
+        env:
+          HELIUS_API_KEY: ${{ secrets.HELIUS_API_KEY_CI }}
+
+      - name: F5, Swig role on devnet, 7 cases
+        if: inputs.only == '' || inputs.only == 'F5'
+        continue-on-error: true
+        run: pnpm spike:f5 --devnet
+        env:
+          HELIUS_API_KEY: ${{ secrets.HELIUS_API_KEY_CI }}
+          DEVNET_KEYPAIR: ${{ secrets.DEVNET_KEYPAIR }}
+
+      - name: F10, Helius webhook delivery
+        if: inputs.only == '' || inputs.only == 'F10'
+        continue-on-error: true
+        run: pnpm spike:f10
+        env:
+          HELIUS_API_KEY: ${{ secrets.HELIUS_API_KEY_CI }}
+          HELIUS_WEBHOOK_SECRET: ${{ secrets.HELIUS_WEBHOOK_SECRET }}
+
+      - name: F11, Jev schema, latency, accuracy, adversarial, numeric routing
+        if: inputs.only == '' || inputs.only == 'F11'
+        continue-on-error: true
+        run: pnpm spike:f11
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          LLM_BASELINE_API_KEY: ${{ secrets.LLM_BASELINE_API_KEY }}
+
+      - name: Benchmark B, three arms on the 100 labelled cases
+        if: inputs.only == ''
+        continue-on-error: true
+        run: pnpm benchmark:b
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          LLM_BASELINE_API_KEY: ${{ secrets.LLM_BASELINE_API_KEY }}
+          JUPITER_API_KEY: ${{ secrets.JUPITER_API_KEY }}
+
+      - name: Regenerate FEASIBILITY.md
+        run: node scripts/feasibility.mjs
+
+      - name: Commit the measured numbers
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add FEASIBILITY.md 'spikes/F*/result.json'
+          git diff --cached --quiet || git commit -m "chore: nightly feasibility run [skip ci]"
+          git push
+
+      - name: Open an issue if a test that passed now fails
+        # A regression nobody is told about is the same as no test at all.
+        run: node scripts/feasibility.mjs --report-regressions
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}

@@ -1,0 +1,76 @@
+name: release
+
+# dev -> the public main, by allowlist. Runs on a release-* tag on dev.
+# main is never merged into, never committed to by hand, and never merged back into dev.
+# Code moves left to right only.
+
+on:
+  push:
+    tags: ['release-*']
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Tag must be on dev
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/dev \
+            || { echo "::error::This tag is not on dev. Releases come from dev only."; exit 1; }
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Copy only the allowlisted paths into a clean tree
+        run: node scripts/release.mjs --out /tmp/public
+
+      - name: No internal file survived
+        # An allowlist, not a denylist, so a new internal file stays private by default. This step
+        # is the belt to that braces: it fails on the marker, wherever it came from.
+        run: |
+          set -euo pipefail
+          cd /tmp/public
+          for p in TASKS.md OPERATOR_TODO.md FEASIBILITY.md CLAUDE.md .claude spikes docs/plans; do
+            [ ! -e "$p" ] || { echo "::error::$p reached the public tree."; exit 1; }
+          done
+          if grep -rIlE '\bOP-[0-9]+\b|TASKS\.md|docs/plans/' --exclude-dir=node_modules . ; then
+            echo "::error::An internal marker survived in the files above."
+            exit 1
+          fi
+
+      - name: The stripped tree must work on its own
+        # main has to work, not just look tidy. Judges clone it and run it.
+        working-directory: /tmp/public
+        run: |
+          pnpm install --no-frozen-lockfile
+          pnpm build
+          pnpm test --reporter=dot
+
+      - name: Secret scan the public tree
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          path: /tmp/public
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push one release commit to the public repo
+        env:
+          PUBLIC_REPO_TOKEN: ${{ secrets.PUBLIC_REPO_TOKEN }}
+          TAGGER: ${{ github.actor }}
+        run: node scripts/release.mjs --push /tmp/public
+
+      - name: Publish the CLI and MCP server with provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: pnpm --filter './packages/{cli,mcp}' publish --access public --provenance --no-git-checks

@@ -1,0 +1,96 @@
+name: gates
+
+# Every push. No keys, no paid API, so a busy day never burns the quota.
+# Fails fast and short: a 500-line stack trace dumped here ends up in an agent's context later.
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: gates-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  secrets:
+    # First, because a leaked key is the one failure you cannot undo by pushing a fix.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: No .env or keypair file is committed
+        run: |
+          set -euo pipefail
+          if git ls-files | grep -Ei '(^|/)\.env$|\.env\.(local|production)$|keypair.*\.json$|id_[0-9a-z]{8,}\.json$'; then
+            echo "::error::A .env or keypair file is committed. Keys live in the OS keychain or in CI secrets, never in the repo."
+            exit 1
+          fi
+
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Is the workspace scaffolded yet?
+        id: ws
+        run: |
+          if [ -f package.json ]; then echo "ready=true" >> "$GITHUB_OUTPUT"; else echo "ready=false" >> "$GITHUB_OUTPUT"; fi
+
+      - uses: pnpm/action-setup@v4
+        if: steps.ws.outputs.ready == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.ws.outputs.ready == 'true'
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        if: steps.ws.outputs.ready == 'true'
+        run: pnpm install --frozen-lockfile
+
+      # Separate steps, so a red run names the one thing that broke instead of a wall of output.
+      - name: Format
+        if: steps.ws.outputs.ready == 'true'
+        run: pnpm format:check
+
+      - name: Lint
+        if: steps.ws.outputs.ready == 'true'
+        run: pnpm lint
+
+      - name: Typecheck
+        if: steps.ws.outputs.ready == 'true'
+        run: pnpm typecheck
+
+      - name: Test
+        if: steps.ws.outputs.ready == 'true'
+        # Offline: packages/core wraps every external call, so the suite needs no key and no network.
+        run: pnpm test --reporter=dot
+
+      - name: Build
+        if: steps.ws.outputs.ready == 'true'
+        run: pnpm build
+
+      - name: Unused exports
+        if: steps.ws.outputs.ready == 'true'
+        # An unused export is either dead code or an abstraction nobody asked for.
+        run: pnpm knip
+
+      - name: CLI cold start under 300 ms
+        if: steps.ws.outputs.ready == 'true' && hashFiles('packages/cli/package.json') != ''
+        run: |
+          set -euo pipefail
+          ms=$( { /usr/bin/time -f %e node packages/cli/dist/index.js --version; } 2>&1 >/dev/null )
+          ms=$(awk -v s="$ms" 'BEGIN{printf "%d", s*1000}')
+          echo "cold start ${ms} ms"
+          [ "$ms" -le 300 ] || { echo "::error::CLI cold start ${ms} ms, over the 300 ms budget."; exit 1; }

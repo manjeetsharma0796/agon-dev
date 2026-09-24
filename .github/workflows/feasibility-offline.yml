@@ -1,0 +1,68 @@
+name: feasibility-offline
+
+# Every PR, no keys. The deterministic spikes run against recorded mainnet data, plus the budget
+# checks that stop us shipping something that works but floods the agent or the network.
+#
+# This is the token-cheap half of feasibility: it proves the same numbers as the live job for the
+# tests that do not need a live endpoint, and it costs nothing to rerun.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  spikes:
+    runs-on: ubuntu-latest
+    if: hashFiles('package.json') != ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Every fixture declares where it came from
+        # monad T6.9: benchmark baselines ran on invented data. A fixture with no source slot is
+        # invented data until proven otherwise.
+        run: |
+          set -euo pipefail
+          bad=0
+          while IFS= read -r f; do
+            grep -Eq '"(slot|sourceSlot)"\s*:\s*[0-9]+|"synthetic"\s*:\s*true' "$f" || { echo "  $f"; bad=1; }
+          done < <(find fixtures -name '*.json' 2>/dev/null)
+          [ "$bad" -eq 0 ] || { echo "::error::The fixtures above declare no source slot and no synthetic:true."; exit 1; }
+
+      - name: Nothing on the benchmark or demo path reads a synthetic fixture
+        run: |
+          set -euo pipefail
+          for f in $(grep -rlE '"synthetic"\s*:\s*true' fixtures 2>/dev/null || true); do
+            name=$(basename "$f")
+            if grep -rq "$name" benchmark/ docs/demo-script.md 2>/dev/null; then
+              echo "::error::$name is synthetic and is read on the benchmark or demo path. Published numbers must come from recorded mainnet data."
+              exit 1
+            fi
+          done
+
+      - name: F1, golden wallet ledgers match exactly
+        run: pnpm spike:f1 --offline
+
+      - name: F2, planted rules found, no rule invented
+        run: pnpm spike:f2 --offline
+
+      - name: F4, 20 scripted verdicts
+        run: pnpm spike:f4 --offline
+
+      - name: Network call budget
+        # check_trade: 1 account batch, 1 quote, 1 Jev call. History: at most 1 page per 100 txs.
+        # The counting wrapper lives in packages/core/src/net, so this is a test, not a new tool.
+        run: pnpm test --project=budget --reporter=dot
+
+      - name: MCP token budget
+        # get_report 2,000, check_trade 400, on the golden wallets.
+        # monad T6.8: a 2.1M-token tool result broke every question the agent could ask.
+        run: pnpm test --project=token-budget --reporter=dot

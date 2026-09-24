@@ -1,0 +1,208 @@
+# OPERATOR_TODO.md, the human-only queue
+
+Things no agent can do: get a key, move money, talk to a person, record a video, decide a
+licence. An agent that hits one of these writes the `OP-N` entry here, sets its task to
+`blocked, see OP-N` in `TASKS.md`, and moves to another task.
+
+**Never fake a credential, a verification or a measurement to look done.** A blocked task with
+an honest `OP-N` is worth more than a green row with nothing behind it.
+
+Entry format, and every entry says which task it unblocks:
+
+```
+### OP-0, One-line title (this block is the format, not a real item)
+- Status: open
+- Owner: <name>
+- Needed by: <date>
+- Unblocks: T-B02, T-J02
+- What exactly: ...
+- Done when: ...
+```
+
+Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result>` |
+`dropped <date>: <reason>`.
+
+---
+
+### OP-1, Everyone trades from their test wallet, daily
+- Status: open
+- Owner: all, D coordinates
+- Needed by: starts 2026-09-24, 20+ closed trades per wallet by CP2 (2026-10-02)
+- Unblocks: T-F01b, T-F02, T-J01
+- What exactly: each team member trades from their own test wallet every day until the wallet
+  holds 20 or more closed trades, including a few deliberate exceptions to a stop rule so the
+  miner has exceptions to find. Spread the trades across days, not one session.
+- Done when: 5 wallets each show 20+ closed trades spanning 5 or more distinct days.
+- Why it cannot wait: only time produces history. Monad's demo wallet had its whole history in
+  one 3-hour window, which broke its period filters (T8.8, T8.9).
+
+### OP-2, Helius plan and credit budget
+- Status: open
+- Owner: <unassigned>
+- Needed by: 2026-09-25 for F1 and F2; before CP4 for the F8 index
+- Unblocks: T-F01a, T-F01b, T-F02, T-A04, T-F08, T-F10
+- What exactly: pick the Helius plan, get `HELIUS_API_KEY` for local dev (free tier is enough), a
+  separate CI key used by nightly spikes only, and a paid plan for the hosted app. Write down the
+  credit budget for a 2,000-transaction report, for the 5,000-wallet F8 ingest, and for F10
+  webhooks. Also `HELIUS_WEBHOOK_SECRET` for F10.
+- Done when: 3 separate keys exist, and the 3 credit budgets are written in `docs/plans/budget.md`
+  with the cost per report calculated.
+
+### OP-3, Jupiter Portal API key
+- Status: open
+- Owner: <unassigned>
+- Needed by: 2026-09-26
+- Unblocks: T-F05b, T-F06a, T-C06
+- What exactly: `JUPITER_API_KEY` from Jupiter Portal for higher rate limits on quotes and
+  Trigger orders. The public quote and price API needs no key at low volume, so this is only for
+  the 20-route spike and the benchmark runs.
+- Done when: the key is in the hosted env and a nightly-only CI secret, and a 20-quote burst does
+  not rate-limit.
+
+### OP-4, Decide where Jev comes from, and confirm rate limits
+- Status: open
+- Owner: <unassigned>
+- Needed by: CP1, 2026-09-27
+- Unblocks: T-C05, T-F11a, T-F11b
+- What exactly: pick exactly one of Cloudflare Workers AI (`typesafe/jev`), TypeSafe directly, or
+  Venice, and confirm the rate limit supports 200-call latency runs at 1, 5 and 20 questions.
+  Cloudflare needs `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` scoped to Workers AI
+  only. The hosted app proxies `/jev` so users need no key of their own.
+- Done when: one provider is named in `docs/plans/decisions.md`, the rate limit is written down,
+  and a 200-call run completes without a 429.
+
+### OP-5, Fund the mainnet team test wallets
+- Status: open
+- Owner: <unassigned>
+- Needed by: after T-D04 passes, before F6 on mainnet
+- Unblocks: T-F06b, T-D04, T-J01
+- What exactly: fund each mainnet team test wallet with $50 or less. The funding wallet must not
+  be a team member's personal wallet. Keys live on team members' hardware or in password
+  managers, never in CI, `.env`, chat or anything we host.
+- Done when: 5 wallets funded with $50 or less each, the funding wallet address is recorded, and
+  the pre-mainnet checklist box is ticked with a link.
+- Hard rule: do not fund anything until T-D04 has all 8 boxes ticked and 2 sign-offs.
+
+### OP-6, Neon Postgres
+- Status: open
+- Owner: <unassigned>
+- Needed by: 2026-09-29
+- Unblocks: T-A04, T-E04, T-E09
+- What exactly: `DATABASE_URL` for the report cache, beta metrics and the "is this rule right"
+  answers. A Neon branch per PR, or none in CI. Local dev uses a local Postgres.
+- Done when: the hosted app reads and writes one row, and a PR gets its own branch or CI skips
+  the database tests cleanly.
+
+### OP-7, Create both GitHub repos and their tokens
+- Status: open
+- Owner: B
+- Needed by: 2026-09-24
+- Unblocks: T-B01, T-B02, T-J02
+- What exactly: a private repo holding `dev` and all feature branches, and a separate public repo
+  holding only `main`. Then `PUBLIC_REPO_TOKEN`, fine-grained with contents write on the public
+  repo only, stored in the private repo's CI; and `NPM_TOKEN`, publish-only automation token,
+  stored in the public repo's release job. Set branch protection on `dev` to allow direct pushes
+  (the claim lock needs them) while requiring PR plus CI for anything that is not a `- Status:`
+  line, which the `board` job enforces.
+- Done when: a claim push to `dev` succeeds, a code push straight to `dev` is rejected by the
+  `board` job, and a `release-*` tag reaches the public repo.
+
+### OP-8, Recruit the beta cohort
+- Status: open
+- Owner: E
+- Needed by: 10 to 20 users by CP3 (2026-10-08); 50+ by CP6
+- Unblocks: T-E09, T-J03
+- What exactly: recruit active Solana traders from team networks, trader Discords, Telegram
+  groups and X replies. World's Fair users get first refusal on the fall cohort. Read-only, so they
+  sign nothing and we store no address beyond the session unless they opt in.
+- Done when: 10+ reports have been run by people outside the team and each was asked "Is this
+  rule right about you?".
+- Why it cannot wait: recruiting is the slowest part of CP3, and CP3 has a 70% gate on it.
+
+### OP-9, Pin the LLM-guard baseline model
+- Status: open
+- Owner: B
+- Needed by: CP2, 2026-10-02
+- Unblocks: T-B04, T-B05, T-B07
+- What exactly: name one chat model and version as the LLM-guard arm in benchmark B. It must
+  be one agents actually use, or the comparison looks rigged. Get `LLM_BASELINE_API_KEY` for
+  local dev and nightly CI only, never hosted. Separately, pin which agent runs benchmark A: an
+  LLM through Solana Agent Kit, or Jupiter's Trading MCP. One, not both.
+- Done when: the model id, its version and the benchmark agent are written in
+  `benchmark/arms/README.md` and referenced by the published headline.
+
+### OP-10, Name the team leader
+- Status: open
+- Owner: <unassigned>
+- Needed by: 2026-10-08
+- Unblocks: T-J03, T-J04
+- What exactly: prizes are paid only to the team leader (rules s.15). Pick one person and record
+  it before submission.
+- Done when: the name is in `docs/plans/submission-wf.md`.
+
+### OP-11, Get the beta terms reviewed
+- Status: open
+- Owner: <unassigned>
+- Needed by: before any mainnet user, so after 2026-10-12
+- Unblocks: T-D05
+- What exactly: decide who reviews the beta terms before a user arms anything on mainnet. The
+  terms must say plainly: experimental software, you can lose the capped amount, revoke from
+  your wallet at any time. Beta users trading real funds through our code is a prize
+  due-diligence question (rules s.13).
+- Done when: a named reviewer has signed off and `docs/public/beta-terms.md` is published.
+
+### OP-12, Confirm the two-hackathon extension and the fall criteria
+- Status: open
+- Owner: <unassigned>
+- Needed by: 2026-10-12
+- Unblocks: T-J04
+- What exactly: confirm with Colosseum that the same project may go to the World's Fair and
+  then be extended for the fall hackathon (one team, one submission at a time, s.7; past winners
+  Unruggable and Lomen carried one project across several Colosseum hackathons). In the same
+  thread, ask whether the fall judging criteria match the World's Fair six. If traction or novelty is
+  weighted differently, the fall priorities in `TASKS.md` change.
+- Done when: a written answer exists, with the person and the channel recorded. The current
+  Decisions-log entry is marked unverified until then.
+
+### OP-13, Decide the licence
+- Status: open
+- Owner: <unassigned>
+- Needed by: 2026-09-26
+- Unblocks: T-J02
+- What exactly: MIT, or something else. Open source is a judged criterion and the PRD assumes
+  an MIT repo with `check_trade` callable by any agent.
+- Done when: `LICENSE` is committed and the README states it.
+
+### OP-14, Search for a project that already does this
+- Status: open
+- Owner: <unassigned>
+- Needed by: 2026-09-27
+- Unblocks: the Novelty claim in the pitch, T-J01, T-J03
+- What exactly: search the World's Fair project directory (public, 4,000+ builders) and the
+  Frontier and Agent Hackathon winners for a wallet-analysis or agent-guardrail project. So far
+  2,992 Breakout and Cypherpunk entries were searched via Colosseum Copilot, which is
+  unverified and excludes Frontier, the February Agent Hackathon, the x402 hackathon and the
+  current World's Fair.
+- Done when: the count of directories searched and the nearest project found are written in
+  `docs/plans/novelty.md`. If something matches, the novelty claim changes shape before it is
+  pitched.
+
+### OP-15, RugCheck token, optional
+- Status: open
+- Owner: <unassigned>
+- Needed by: only if the public report endpoints rate-limit us
+- Unblocks: nothing. RugCheck is enrichment and is never on the deciding path
+- What exactly: `RUGCHECK_TOKEN`, only if the free endpoints start returning 429.
+- Done when: either the key is in place, or this entry is dropped with "not needed, no rate limits
+  hit" and a date.
+
+### OP-16, Second person on Track E from CP2
+- Status: open
+- Owner: <unassigned>
+- Needed by: CP2, 2026-10-02
+- Unblocks: T-E04 through T-E09, T-J01
+- What exactly: Track E is 6 jobs for 1 person (report page, share card, onboarding, beta
+  recruiting, X, demo video). UX is a judged criterion and the demo video is how judges see
+  everything else. The most plausible second person is whoever finishes Track D first.
+- Done when: a second name is on Track E and at least 2 of the 6 jobs have moved to them in
+  `TASKS.md`.

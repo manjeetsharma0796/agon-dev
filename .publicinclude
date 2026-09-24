@@ -1,0 +1,29 @@
+# What reaches the public main. An allowlist, not a denylist, so a new internal file stays
+# private by default. One path or glob per line. Read by scripts/release.mjs.
+#
+# Never add: TASKS.md, OPERATOR_TODO.md, FEASIBILITY.md, CLAUDE.md, .claude/, spikes/,
+# docs/plans/, scratch files. The release job fails on those markers anyway.
+
+# Code and its unit tests. Tests stay public: "quality of the code" is judged, and tests are
+# the evidence.
+apps/**
+packages/**
+
+# The benchmark. The claims are only credible if a sceptic can rerun them from the public repo.
+benchmark/**
+
+# Public docs and the quickstart.
+README.md
+LICENSE
+.env.example
+docs/public/**
+
+# Workspace files the stripped tree needs to install and build on its own.
+package.json
+pnpm-workspace.yaml
+pnpm-lock.yaml
+tsconfig.base.json
+knip.json
+
+# One public CI workflow, so judges see the tests run on the repo they cloned.
+.github/workflows/public-ci.yml

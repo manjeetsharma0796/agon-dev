@@ -1,0 +1,19 @@
+node_modules/
+dist/
+.next/
+.turbo/
+*.tsbuildinfo
+
+# Secrets. .env.example is the only one that is committed.
+.env
+.env.*
+!.env.example
+
+# Keypairs never live in the repo. Devnet keys are repo-ignored files or CI secrets; mainnet keys
+# live on team hardware or in a password manager; user agent keys live in the OS keychain.
+*keypair*.json
+id_*.json
+
+# Spike output is committed on purpose (result.json), but raw dumps are not.
+spikes/**/raw/
+coverage/

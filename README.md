@@ -1,0 +1,64 @@
+# Agon
+
+Agon turns a trader's own on-chain history into a spending limit their AI agent must trade inside,
+enforced on Solana. It answers one question: "You set a stop. Why don't you keep it?"
+
+Non-custodial. The user's key never leaves their wallet. The agent holds a capped, revocable Swig
+role, and 24/7 rules run as Jupiter Trigger orders rather than on our servers. Revoking needs no
+help from us: one wallet signature removes every Agon role.
+
+## How it works
+
+1. **Mine.** Decode your swap history from on-chain balance changes, build a FIFO ledger, and
+   measure what you actually do: stop discipline, sizing, hold time, and what your exceptions cost.
+2. **Check.** `check_trade` is an MCP tool any agent can call. It answers "is this token
+   dangerous?" and "does this break your own rule?" Every numeric check is arithmetic. A decision
+   model answers only the three questions that are not numeric: token category, impersonation, and
+   whether incoming text is trying to instruct the agent.
+3. **Arm.** Your wallet signs a Swig role limited to Jupiter's program and a recurring token
+   limit, plus a Jupiter Trigger order for the 24/7 rules.
+4. **Revoke.** From your own wallet, whenever you want, without us.
+
+The layers assume each other failed: the guard verdict, the check bound to one exact transaction
+for 30 seconds, the injection screen, the on-chain cap, hand-back on anything unsure, and the kill
+switch. The cap holds even if everything above it and the whole machine are compromised.
+
+## Repo
+
+`apps/web` Next.js app and API routes. `apps/worker` long backfills. `packages/core` shared types
+and the frozen contracts, then `decoder`, `miner`, `guard`, `chain`, `mcp`, `cli`. `benchmark/`
+scenarios, arms and results. No Solana program of our own.
+
+Anything that can sign runs on the user's machine. Anything hosted only reads.
+
+## Benchmarks
+
+Two, both reproducible with one command from this repo, both pre-registered before the first run:
+
+- **A**: what guardrails prevent. Agents trading through Jupiter on a mainnet fork pinned to one
+  slot, with and without the guard and the on-chain cap.
+- **B**: how fast and how accurate the safety layer is, against an LLM-based guard, which is what
+  most agent frameworks use today.
+
+The claim is **decision speed**, not execution speed. We route through Jupiter and add checks, so a
+guarded trade is at best at parity with an unguarded one, and we publish the measured overhead and
+call it parity. Every latency number is published with its accuracy number in the same sentence.
+All runs are published, including the ones where Agon does badly, because a wrongly blocked trade
+is a real cost.
+
+## Contributing
+
+This repo receives releases from a private development repo, at least one a day during a
+hackathon, so open a pull request against it and we will carry the change back. Every branch of a
+public repo is public, which is why the board and the in-progress branches live elsewhere.
+
+Start with `docs/public/quickstart.md`, the MCP tool reference beside it, and `benchmark/` if you
+want to rerun the numbers yourself.
+
+<!-- board:start -->
+Board, generated 2026-09-24 by `scripts/board.mjs`. Do not hand-edit.
+
+| open | claimed | blocked | in-review | done | cut |
+|---|---|---|---|---|---|
+| 60 | 0 | 0 | 0 | 0 | 0 |
+<!-- board:end -->
