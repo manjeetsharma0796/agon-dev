@@ -191,9 +191,10 @@
     <script type="module">
       import { checkSignup } from './validate.mjs'
 
-      // Set by whoever deploys this. See README.md and OP-18. Left empty on purpose: a waitlist
-      // that looks like it accepted you and quietly dropped you is worse than one that is plainly
-      // not open yet, and this is the slowest part of CP3 to recover from.
+      // Set by whoever deploys this, to a URL that takes a POST and sends the confirmation. Left
+      // empty on purpose: a waitlist that looks like it accepted you and quietly dropped you is
+      // worse than one that is plainly not open yet, and it is the harder of the two to recover
+      // from, because that person does not come back.
       const ENDPOINT = ''
 
       const form = document.getElementById('waitlist')
