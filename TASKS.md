@@ -272,7 +272,7 @@ and latency (a, b).
 - Kill criterion: none. Monad's worst bugs only appeared end to end (T1.7, T6.8)
 
 ### T-A01, Balance-change decoder
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-a01-decoder
 - Depends-on: T-C01, T-C02
 - Touches: packages/decoder/src/
 - Serves: Functionality (judged) ; F1
