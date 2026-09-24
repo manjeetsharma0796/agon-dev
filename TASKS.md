@@ -743,7 +743,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: fallback is no automatic expiry, a short recurring window instead, and the UI says "no end date: revoke from your wallet". Never fall back to giving the agent admin rights
 
 ### T-F07, F7 spike, pre-signed expiry
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/83 | Owner: Prithwish | Branch: feature/t-f07-presigned-expiry
+- Status: blocked, see OP-19
 - Depends-on: T-D02
 - Touches: spikes/F07/
 - Serves: UX (judged) ; CP2 gate
@@ -751,7 +751,8 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   answer; then the pre-signed removal lands after expiry and the next agent transaction fails; an
   earlier manual revoke still works and leaves the pre-signed transaction harmless; the agent key
   held `manageAuthority` in 0 of the runs
-- Evidence: spikes/F7/result.json at a commit; clauses 2 to 4 need a funded devnet key, see OP-19
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/83, spikes/F7/result.json, 7 of 7 SDK
+  checks. Clauses 2 to 4 need a funded devnet key, see OP-19.
 - Finding: Swig already has a native expiry, and T-D02 may not be needed. `@swig-wallet/lib`
   defines a session based authority carrying `expirySlot` and `maxDuration`, created for a separate
   key with `createSession({ roleId, newSessionKey, sessionDuration })`. So the shape Agon wants
