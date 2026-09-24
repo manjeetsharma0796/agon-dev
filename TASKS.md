@@ -1047,6 +1047,20 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 - Evidence: <spikes/F10/result.json at a commit>
 - Kill criterion: fallback is poll-only triggers at 60 seconds, stated in the UI
 
+### T-C11, Apply the CP1 decision: freezing is reported, seizure blocks
+- Status: claimed 2026-09-24 | Owner: manjeetsharma0796 | Branch: feature/t-c11-freeze-reports
+- Depends-on: T-C04, T-F03
+- Touches: packages/guard/src/mint-check.ts, spikes/F3/
+- Serves: Functionality (judged) ; CP1 decision on F3
+- Acceptance: with `mint-freeze-authority` out of the blocking set, the F3 spike measures 9 of 9
+  seizure mints blocked, 0 of 11 blue chips blocked with cbBTC relabelled as the regulated issuer it
+  is, and 0 of 10 fee-only mints blocked; USDC and USDT return verdict `pass` carrying a reported
+  freeze-authority reason rather than no reason at all; the threshold in `spikes/F3/thresholds.json`
+  is rewritten with a note naming who changed it and why, per the feasibility bar
+- Evidence: <the re-run spikes/F3/result.json at a commit>
+- Kill criterion: none. The alternative was blocking USDC, the most traded token on Solana, and a
+  guard that blocks USDC gets switched off by its user on day 1
+
 ### T-C10, Event-triggered rules in the daemon
 - Status: open
 - Depends-on: T-F10
