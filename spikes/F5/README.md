@@ -15,7 +15,7 @@ CP1 decides whether Agon ships read-only, so nothing here is worth softening. No
 
 ## What the run does prove
 
-Read from devnet in the same process that wrote `result.json`, at slot 503552683:
+Read from devnet in the same process that wrote `result.json`, at slot 503552939:
 
 | checked | answer |
 |---|---|

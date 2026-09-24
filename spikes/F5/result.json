@@ -1,0 +1,115 @@
+{
+  "id": "F5",
+  "pass": false,
+  "measured": "0 of 7 cases exercised on devnet at slot 503552939. The Swig program is live there (executable true, owner BPFLoaderUpgradeab1e11111111111111111111111), the agent role builds and passes assertAgentRoleShape, and the first of the seven transactions reaches devnet and is answered \"Simulation failed. Message: Transaction simulation failed: Attempt to debit an account but found no record of a prior credit.. Logs: []. Catch the `SendTransactionError` and call `getLogs()` on it for full details.\". The payer holds 0 lamports against the 1543680 the seven cases need. The pinned Jupiter id is not a program on devnet, it is a 0-byte account owned by 11111111111111111111111111111111.",
+  "date": "2026-09-24",
+  "commit": "f4e0095888b8f93d08259c5293de82ea44bf5746",
+  "slot": 503552939,
+  "rpc": "https://api.devnet.solana.com",
+  "keySource": "generated in memory",
+  "devnet": {
+    "swigProgram": {
+      "id": "swigypWHEksbC64pWKwah1WTeh9JXwx8H1rJHLdbQMB",
+      "exists": true,
+      "executable": true,
+      "owner": "BPFLoaderUpgradeab1e11111111111111111111111",
+      "bytes": 36,
+      "lamports": 1141440
+    },
+    "jupiterProgram": {
+      "id": "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4",
+      "exists": true,
+      "executable": false,
+      "owner": "11111111111111111111111111111111",
+      "bytes": 0,
+      "lamports": 4517166285
+    }
+  },
+  "funding": {
+    "requiredLamports": 1543680,
+    "rentForTwoRoleSwig": 1503680,
+    "lamportsPerSignature": 5000,
+    "transactionsInTheSevenCases": 8,
+    "balanceLamports": 0,
+    "faucetAttempts": [
+      {
+        "faucet": "api.devnet.solana.com",
+        "http": 429,
+        "answer": "{\"jsonrpc\":\"2.0\",\"error\":{\"code\": 429,\"message\":\"You've either reached your airdrop limit today or the airdrop faucet has run dry. Please visit https://faucet.solana.com for alternate sources of test SOL\"}, \"id\": 1 }"
+      },
+      {
+        "faucet": "solana-devnet.g.alchemy.com",
+        "http": 429,
+        "answer": ""
+      },
+      {
+        "faucet": "solana-devnet-rpc.publicnode.com",
+        "http": 404,
+        "answer": ""
+      },
+      {
+        "faucet": "solana-devnet.drpc.org",
+        "http": 400,
+        "answer": "{\"id\":1,\"jsonrpc\":\"2.0\",\"error\":{\"message\":\"chain is not available on free plan, please upgrade to paid plan\",\"code\":35}}"
+      },
+      {
+        "faucet": "api.blockeden.xyz",
+        "http": 401,
+        "answer": "{\"success\":false,\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Request not authorized\",\"details\":\"missing access key: put it in the URL path (/{route}/{accessKey}/...) or send 'Authorization: Bearer \\u003caccessKey\\u003e'\",\"help\":\"Send 'Authorization: Bearer \\u003caccessKey\\u003e' or include the key in "
+      },
+      {
+        "faucet": "solana-devnet.gateway.tatum.io",
+        "http": 200,
+        "answer": "{\"id\":1,\"jsonrpc\":\"2.0\",\"error\":{\"code\":-32600,\"message\":\"Invalid request\"}}"
+      }
+    ]
+  },
+  "firstTransaction": {
+    "instruction": "createSwig, the first of the seven cases",
+    "bytes": 351,
+    "swigAddress": "6NgS3H2gsvP8mUtcyuxuSERHm5Cex4C4nU1fFywNhcB7",
+    "answer": "Simulation failed. Message: Transaction simulation failed: Attempt to debit an account but found no record of a prior credit.. Logs: []. Catch the `SendTransactionError` and call `getLogs()` on it for full details."
+  },
+  "cases": {
+    "a": {
+      "states": "swap within cap succeeds",
+      "status": "not run",
+      "why": "the payer holds 0 lamports and the seven cases need 1543680 (1503680 rent for a two-role Swig plus 5000 per transaction, 8 of them). Fund a devnet key, see OP-19"
+    },
+    "b": {
+      "states": "swap over cap rejected",
+      "status": "not run",
+      "why": "the payer holds 0 lamports and the seven cases need 1543680 (1503680 rent for a two-role Swig plus 5000 per transaction, 8 of them). Fund a devnet key, see OP-19"
+    },
+    "c": {
+      "states": "transfer to an arbitrary address rejected",
+      "status": "not run",
+      "why": "the payer holds 0 lamports and the seven cases need 1543680 (1503680 rent for a two-role Swig plus 5000 per transaction, 8 of them). Fund a devnet key, see OP-19"
+    },
+    "d": {
+      "states": "call to a non-Jupiter program rejected",
+      "status": "not run",
+      "why": "the payer holds 0 lamports and the seven cases need 1543680 (1503680 rent for a two-role Swig plus 5000 per transaction, 8 of them). Fund a devnet key, see OP-19"
+    },
+    "e": {
+      "states": "allowance restored at the expected slot after the window",
+      "status": "not run",
+      "why": "the payer holds 0 lamports and the seven cases need 1543680 (1503680 rent for a two-role Swig plus 5000 per transaction, 8 of them). Fund a devnet key, see OP-19"
+    },
+    "f": {
+      "states": "root removes the role and the next agent transaction fails",
+      "status": "not run",
+      "why": "the payer holds 0 lamports and the seven cases need 1543680 (1503680 rent for a two-role Swig plus 5000 per transaction, 8 of them). Fund a devnet key, see OP-19"
+    },
+    "g": {
+      "states": "removal done from Phantom and not only our CLI",
+      "status": "not run",
+      "why": "needs a human with Phantom, recorded in OP-19, and no script can assert it"
+    }
+  },
+  "blockedBy": [
+    "OP-19",
+    "OP-20"
+  ],
+  "notes": "No case was exercised, so nothing here says the cap holds or that it does not. Two blockers, one for a person each: OP-19 funds a devnet key, OP-20 is the CP1 decision about cases (a), (b) and (e), which cannot run on devnet while the pinned Jupiter id is not a program there."
+}
