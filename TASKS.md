@@ -232,7 +232,18 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Touches: docs/plans/region.md, apps/web/vercel.json
 - Serves: Functionality (judged) ; decision speed
 - Acceptance: p50 and p95 round trip measured from at least 2 candidate regions to the Helius RPC node and the Jev endpoint, 100 calls each; the chosen region is set in config and both numbers are written down
-- Evidence: <docs/plans/region.md at a commit>
+- Evidence: docs/plans/region.md, plus the region 2 run
+  https://github.com/manjeetsharma0796/agon-dev/actions/runs/35996972613
+- Finding: deploying near our users is the wrong instinct by 5.8x. Helius p50 is 136.3 ms from
+  India against 23.5 ms from the US, p95 267.5 against 39.6, and the Cloudflare edge that Workers
+  AI runs on is 210.8 ms against 12.9 ms, a 16.3x gap. A 2,000 transaction report is 20 sequential
+  history calls, so that is 2.7 s of pure network from India against 0.5 s from the US, paid before
+  anything is decoded, while the distance to the user is paid once. Second finding, about method:
+  the CI probe cannot carry a key (OP-2), so the unkeyed 401 was checked against the keyed call on
+  the same machine before it was trusted, 140.4 against 136.3 p50, inside 3 percent. Third: the
+  first Cloudflare probe read 442.2 ms and was wrong, because api.cloudflare.com is the control
+  plane and is not served from the nearest colo, 2.1x the real edge number. A probe that looks
+  reasonable and measures the wrong machine is worth less than no probe.
 - Kill criterion: none, it is a setting and not code, so it is measured once and cheap
 
 ### T-E01, Demo script and the committed benchmark scenario list
