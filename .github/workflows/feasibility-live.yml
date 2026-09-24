@@ -13,8 +13,9 @@ on:
         description: 'Spike to run, e.g. F11. Empty runs all of them.'
         required: false
 
+# No contents:write. Nothing pushes to dev; results go out as an artifact and an issue.
 permissions:
-  contents: write
+  contents: read
   issues: write
 
 jobs:
@@ -86,14 +87,18 @@ jobs:
       - name: Regenerate FEASIBILITY.md
         run: node scripts/feasibility.mjs
 
-      - name: Commit the measured numbers
-        run: |
-          set -euo pipefail
-          git config user.name  "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add FEASIBILITY.md 'spikes/F*/result.json'
-          git diff --cached --quiet || git commit -m "chore: nightly feasibility run [skip ci]"
-          git push
+      - name: Publish the measured numbers as an artifact
+        # dev takes no pushes, not even from a bot, so nothing here commits. The numbers land on dev
+        # in the spike's own PR, next to its evidence link, which is where they belong. A regression
+        # in a test that already passed is reported as an issue by the next step.
+        uses: actions/upload-artifact@v4
+        with:
+          name: feasibility-${{ github.run_id }}
+          path: |
+            FEASIBILITY.md
+            spikes/F*/result.json
+          if-no-files-found: warn
+          retention-days: 30
 
       - name: Open an issue if a test that passed now fails
         # A regression nobody is told about is the same as no test at all.

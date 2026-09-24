@@ -9,8 +9,9 @@ on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
 
+# Read-only. Nothing writes to dev except a merged pull request, so no job here needs write access.
 permissions:
-  contents: write
+  contents: read
   pull-requests: read
 
 jobs:
@@ -46,16 +47,8 @@ jobs:
         if: steps.origin.outputs.from_pr == 'true'
         run: node scripts/board.mjs lint
 
-      - name: Regenerate the board summary in the README
-        run: |
-          set -euo pipefail
-          node scripts/board.mjs summary
-          if ! git diff --quiet README.md; then
-            git config user.name  "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -am "chore: regenerate board summary [skip ci]"
-            git push
-          fi
+      - name: The board still lints after a claim
+        run: node scripts/board.mjs lint
 
   hygiene:
     if: github.event_name == 'pull_request'
@@ -72,6 +65,19 @@ jobs:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: node scripts/board.mjs pr
+
+      - name: Generated files are current
+        # No bot commits to dev, so the author regenerates these in their own PR. Otherwise the
+        # README summary and FEASIBILITY.md drift away from the board and stop being worth reading.
+        run: |
+          set -euo pipefail
+          node scripts/board.mjs summary
+          node scripts/feasibility.mjs
+          git diff --quiet README.md FEASIBILITY.md || {
+            echo "::error::README.md or FEASIBILITY.md is stale. Run 'node scripts/board.mjs summary && node scripts/feasibility.mjs' and commit the result."
+            git --no-pager diff --stat README.md FEASIBILITY.md
+            exit 1
+          }
 
       - name: A frozen contract changed, so both sides must agree
         env:
