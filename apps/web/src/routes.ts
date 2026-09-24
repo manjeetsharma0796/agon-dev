@@ -6,6 +6,7 @@ import { appendFileSync } from 'node:fs'
 import { Address } from '@agon/core'
 import { NotArmable, armRule, checkTrade, report } from './legs.js'
 import { RULE_ANSWERS, type RuleAnswer } from './present.js'
+import { shareCard } from './card.js'
 
 const json = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body, null, 2), {
@@ -134,4 +135,31 @@ export const ruleFeedbackRoute = async (request: Request): Promise<Response> => 
     )
   }
   return json({ recorded: true, answer })
+}
+
+/**
+ * The share card, as an image.
+ *
+ * Served with `default-src 'none'` and nosniff. An SVG on the same origin is a script execution
+ * context, so an unescaped character in it is an XSS on our own domain rather than a broken
+ * picture. Everything interpolated is escaped in card.ts and the header is the second lock.
+ */
+export const cardRoute = async (request: Request): Promise<Response> => {
+  const wallet = new URL(request.url).searchParams.get('wallet')
+  let svg: string
+  try {
+    svg = shareCard(report({ wallet }))
+  } catch (error) {
+    return badRequest(error, 'Solana address')
+  }
+  return new Response(svg, {
+    status: 200,
+    headers: {
+      'content-type': 'image/svg+xml; charset=utf-8',
+      'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+      'x-content-type-options': 'nosniff',
+      // A card is about a wallet, so it is cached by URL and not shared between wallets.
+      'cache-control': 'public, max-age=300',
+    },
+  })
 }

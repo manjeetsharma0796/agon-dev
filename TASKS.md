@@ -791,14 +791,26 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: below a 70% "rule is right" rate at CP3, the page ships as descriptive statistics and the rule-mining claim comes out of the pitch
 
 ### T-E05, Shareable "what your exceptions cost" card
-- Status: claimed 2026-09-24 | Owner: Prithwish | Branch: feature/t-e05-share-card
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/61 | Owner: Prithwish | Branch: feature/t-e05-share-card
 - Depends-on: T-E04
 - Touches: apps/web/app/api/card/
 - Serves: Potential impact (judged) ; share rate
 - Acceptance: 1 image endpoint rendering the exception cost, generated in 2 seconds or less; the
   card carries 0 third-party wallet addresses and 0 named-person P&L; share rate tracked from
   day 1 of the beta
-- Evidence: <5 generated cards, plus the share-rate number>
+- Evidence: <PR link; the share-rate number needs OP-8 and a live beta>
+- Finding: the 2 second budget is not the constraint anyone should watch. An SVG built by string
+  concatenation renders in 0.0012 ms over 10,000 renders, 1.6 million times inside the budget, and
+  is 924 bytes with 0 dependencies and no font to load. The real constraint is that X, and most
+  social previews, only accept raster formats, so an SVG card is shareable everywhere except the
+  place it exists for. That is a dependency decision (a rasteriser is tens of megabytes against
+  T-B01's 300 ms cold start budget) and it is left to the board rather than taken here. Second, the
+  mutation check earned its place again: the first version of the escaping test planted a script
+  tag in ruleVersion, which the card never renders, so removing the escaping entirely left all 10
+  tests green. The escape is now exported and tested directly and removing it fails. Third, caught
+  by looking at the rendered card and not by any test: the first tagline was 58 characters and ran
+  off the right edge, and the endpoint still returned 200 with a perfectly valid SVG, because SVG
+  clips rather than wrapping. There is now a character budget on it.
 - Kill criterion: share rate under 10% across 10+ reports at CP3, so it stops being a pitch line
 
 ### T-B08, Jev in our own dev workflow, a one-week trial
