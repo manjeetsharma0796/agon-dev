@@ -183,6 +183,14 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Serves: Functionality (judged) ; unblocks all 5 tracks
 - Acceptance: `pnpm install && pnpm gates` green on a clean clone with 1 command and 0 keys; the 10 PRD repo paths exist (apps/web, apps/worker, packages/core, decoder, miner, guard, chain, mcp, cli, spikes, fixtures/golden, benchmark); `knip` fails the build on 1 planted unused export; the secret scan fails on 1 planted fake key; CLI cold start measured and under 300 ms; 3 environments wired with their own keys, preview on every PR push against devnet, staging on every merge to dev against devnet plus mainnet read-only, production on a release tag against mainnet
 - Evidence: <PR link, plus the green run and the 2 planted-failure runs>
+- Finding: the planted-key run found 0 leaks until the key was randomly generated. gitleaks
+  allowlists the AWS documentation example key, so testing the gate with a well known example
+  makes a working scan look dead. Regenerated at random it caught 5 of 5 shapes, including a
+  Solana base58 secret and a 64-byte keypair array. knip caught 5 scripts the nightly live job
+  calls that package.json did not define (spike:f3, f5, f10, f11, benchmark:b), so
+  feasibility-live would have failed on a missing binary the first night it ran with keys. CLI
+  cold start is 165 ms median on Windows against the 300 ms budget. The environments clause is
+  carried by OP-17.
 - Kill criterion: none, this blocks everything
 
 ### T-C01, Freeze the three contracts in packages/core
