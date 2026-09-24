@@ -236,7 +236,7 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: none, it is a setting and not code, so it is measured once and cheap
 
 ### T-E01, Demo script and the committed benchmark scenario list
-- Status: open
+- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-e01-demo-scenarios
 - Depends-on: none
 - Touches: docs/demo-script.md, benchmark/scenarios/
 - Serves: UX (judged) ; Functionality (judged)
