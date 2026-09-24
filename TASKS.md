@@ -994,7 +994,7 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 - Acceptance: installs, registers the MCP server with the user's assistants and starts the
   daemon in 1 command; cold start under 300 ms, asserted in CI; published to npm with
   provenance
-- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/75. `agon report` runs the whole
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/76. `agon report` runs the whole
   path on a real wallet: 100 transactions read, 77 of 80 swaps decoded at 96%, 28 closed trades,
   3 rules mined, and it replays offline from a recorded fixture with 0 keys. The acceptance
   itself is NOT met: npm publish and MCP registration need T-C07 and T-C08
