@@ -21,3 +21,6 @@ coverage/
 # Next build output.
 .next/
 next-env.d.ts
+
+# Surfpool writes a run log per simnet start, next to wherever it was invoked.
+.surfpool/

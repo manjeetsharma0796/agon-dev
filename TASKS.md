@@ -680,14 +680,33 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: fallback is the local daemon polling price, and the UI says "runs while your computer is on"
 
 ### T-F09, F9 spike, benchmark reproducibility
+<<<<<<< HEAD
 - Status: open
+=======
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/43 | Owner: Prithwish | Branch: feature/t-f09-benchmark-repro
+>>>>>>> 98793aa (T-F09: move the row to in-review)
 - Depends-on: T-B03
 - Touches: spikes/F09/
 - Serves: Functionality (judged) ; CP2 gate
 - Acceptance: run the benchmark twice from a clean checkout on a mainnet fork pinned to 1 slot;
   guardrail verdicts identical across runs; agent-side variance reported across at least 5 runs per
   scenario; 1 command reproduces everything
-- Evidence: <spikes/F09/result.json at a commit>
+- Evidence: spikes/F9/result.json at a commit, snapshot pinned at slot 450049160
+- Finding: the pinned state cannot be round-tripped through JavaScript, and the corruption looks
+  fine. `surfnet_exportSnapshot` returns rentEpoch as u64::MAX, 18446744073709551615, which is
+  above Number.MAX_SAFE_INTEGER, so JSON.parse holds it as a float and JSON.stringify writes back
+  18446744073709552000, a different integer wrong by 385 that still reads as an ordinary u64. It
+  occurs 31 times in a 295 account snapshot. The first version of this spike did exactly that and
+  the file looked correct; surfpool refused it only because a second attempt serialised in
+  scientific notation, so a more forgiving importer would have pinned state that quietly disagreed
+  with the chain it came from and every later run would have been reproducibly wrong. The recorder
+  now moves the bytes as text and never parses them. Second: the CLI help says --snapshot takes the
+  surfnet_exportSnapshot output, and it does not; the RPC returns {context, value} and the importer
+  wants the bare map, so the export verbatim fails on `missing field lamports`. Third, measured:
+  30/30 verdicts identical across 2 clean runs with no Helius key, which is what makes the number
+  rerunnable by a sceptic. Reported FAIL, not pass: agent-side variance is 0 of the required 5 runs
+  per scenario because OP-9 has not pinned a model, and taking the documented fallback is a CP2
+  decision rather than one the spike awards itself.
 - Kill criterion: fallback is publishing only the deterministic half and dropping the live-agent comparison
 
 ### T-B04, Benchmark A v1, agents with and without guardrails
