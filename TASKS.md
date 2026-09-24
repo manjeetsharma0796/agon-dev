@@ -183,12 +183,12 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 # P0, day 1. Nothing branches until T-B01 lands.
 
 ### T-B01, Scaffold the workspace, CI and the board
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/3 | Owner: Jishnu | Branch: feature/t-b01-scaffold
+- Status: blocked, see OP-17
 - Depends-on: OP-7
 - Touches: package.json, pnpm-workspace.yaml, tsconfig.base.json, apps/, packages/, knip.json, .gitignore, .env.example, vercel.json
 - Serves: Functionality (judged) ; unblocks all 5 tracks
 - Acceptance: `pnpm install && pnpm gates` green on a clean clone with 1 command and 0 keys; the 10 PRD repo paths exist (apps/web, apps/worker, packages/core, decoder, miner, guard, chain, mcp, cli, spikes, fixtures/golden, benchmark); `knip` fails the build on 1 planted unused export; the secret scan fails on 1 planted fake key; CLI cold start measured and under 300 ms; 3 environments wired with their own keys, preview on every PR push against devnet, staging on every merge to dev against devnet plus mainnet read-only, production on a release tag against mainnet
-- Evidence: <PR link, plus the green run and the 2 planted-failure runs>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/3 merged, gates green from a clean clone in 14 s with 0 keys. The last acceptance clause, 3 wired environments, is OP-17
 - Finding: the planted-key run found 0 leaks until the key was randomly generated. gitleaks
   allowlists the AWS documentation example key, so testing the gate with a well known example
   makes a working scan look dead. Regenerated at random it caught 5 of 5 shapes, including a
@@ -218,12 +218,12 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: none, judges only see the public repo
 
 ### T-C02, Record and replay wrapper with per-call timings
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-c02-record-replay
+- Status: blocked, see OP-1
 - Depends-on: T-B01
 - Touches: packages/core/src/net/, fixtures/recorded/
 - Serves: Functionality (judged) ; Benchmark B latency breakdown
 - Acceptance: 1 wrapper around all 5 external calls (Helius, Jupiter, RPC, RugCheck, Jev); recorded responses for the golden wallets and about 30 tokens, every file stamped with its source slot or `synthetic: true`; the whole offline suite runs with 0 keys and 0 network access, verified with the network blocked; every call logs its duration from the first request
-- Evidence: <PR link, plus a suite run with the network blocked>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/11 merged, 43 fixtures across 4 providers, suite green with fetch stubbed to throw and 0 keys set. Golden-wallet recordings need OP-1
 - Kill criterion: if C slips past day 2 this moves to B, per the PRD load check
 
 ### T-C03, Measure the region for API, RPC and Jev
@@ -236,12 +236,12 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: none, it is a setting and not code, so it is measured once and cheap
 
 ### T-E01, Demo script and the committed benchmark scenario list
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-e01-demo-scenarios
+- Status: done
 - Depends-on: none
 - Touches: docs/demo-script.md, benchmark/scenarios/
 - Serves: UX (judged) ; Functionality (judged)
 - Acceptance: a 3-minute script with every beat timed; 100 scenarios written and committed before the first benchmark run, split 40 normal trades inside the profile, 30 dangerous tokens (live freeze authority, permanent delegate, no sell route), 30 rule breaks (4x usual size, past usual stop, prompt injection); the commit hash recorded for the published posts
-- Evidence: <commit hash of benchmark/scenarios/>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/8, benchmark/scenarios/scenarios.json, 100 scenarios split 40/30/30
 - Kill criterion: none. Anything not in the script is a candidate to cut at each checkpoint
 
 ### T-E02, Beta waitlist live
@@ -279,7 +279,15 @@ and latency (a, b).
 - Acceptance: every transaction is classified buy, sell or not-a-swap from pre/post token
   balances with amounts exact to base units; 0 silent drops, every undecoded transaction listed
   with a named reason and a program id; runs as pure functions with 0 network calls inside
-- Evidence: <PR link, plus the golden-wallet regression run>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/23, 5 real mainnet transactions replayed offline. The golden-wallet regression run needs OP-1
+- Finding: transactions taken from AMM pool activity are router and MEV flow, not retail swaps. The
+  fee payer was the trader in 0 of 5, and each transaction had 2 to 4 separate owners with
+  two-sided balance movement, so the wallet has to be named rather than derived: decoding the
+  wrong owner returns a confident wrong answer instead of an error. Separately, 3 of the first 4
+  transactions pinned were SOL to USDC, both sides quote assets. Classifying those as undecoded
+  would have put the most common shape on the chain into the unsupported list and deflated
+  coverage on transactions we read perfectly well, so they are not-a-swap with a stated reason and
+  do not count against coverage.
 - Kill criterion: none, F1 is existential
 
 ### T-F01a, F1 spike on 2 wallets, for CP1

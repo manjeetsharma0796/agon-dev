@@ -1,7 +1,7 @@
 {
-  "slot": 450012228,
+  "slot": 450031236,
   "provider": "jupiter",
-  "recordedAt": "2026-09-24T11:14:53.982Z",
+  "recordedAt": "2026-09-24T12:38:41.767Z",
   "request": {
     "method": "GET",
     "url": "https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=72yxYmhLgDGwdyi2b9GjDynBB6VuG3kDxNKqDbzXh5bi&amount=100000000&slippageBps=100",
@@ -16,34 +16,62 @@
       "inputMint": "So11111111111111111111111111111111111111112",
       "inAmount": "100000000",
       "outputMint": "72yxYmhLgDGwdyi2b9GjDynBB6VuG3kDxNKqDbzXh5bi",
-      "outAmount": "4511710024",
-      "otherAmountThreshold": "4466592924",
+      "outAmount": "4441235054",
+      "otherAmountThreshold": "4396822704",
       "swapMode": "ExactIn",
       "slippageBps": 100,
       "platformFee": null,
-      "priceImpactPct": "0.0008649496658371953777654251",
+      "priceImpactPct": "0.0008160872711506033719294152",
       "routePlan": [
         {
           "swapInfo": {
-            "ammKey": "BUexvyoKTywTTDCuuKgMQDB5XNK43Wa8E7C477iCCKXj",
-            "label": "Manifest",
+            "ammKey": "GMCJvYGf5Ex2ARiMquaBDqU6iKM8uiEQkB8jCnoNfHpC",
+            "label": "GoonFi V2",
             "inputMint": "So11111111111111111111111111111111111111112",
-            "outputMint": "72yxYmhLgDGwdyi2b9GjDynBB6VuG3kDxNKqDbzXh5bi",
+            "outputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
             "inAmount": "100000000",
-            "outAmount": "4511710024",
-            "updateContextSlot": "450012213"
+            "outAmount": "11327509",
+            "updateContextSlot": "450031236"
+          },
+          "percent": 100,
+          "bps": null
+        },
+        {
+          "swapInfo": {
+            "ammKey": "4Vt3hyHgP3v9jQZWebLetWYXD7deumUQVxGC8bbr6UDS",
+            "label": "Whirlpool",
+            "inputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "outputMint": "Xsv9hRk1z5ystj9MhnA7Lq4vjSsLwzL2nxrwmwtD3re",
+            "inAmount": "11327509",
+            "outAmount": "2892516",
+            "updateContextSlot": "450031230"
+          },
+          "percent": 100,
+          "bps": null
+        },
+        {
+          "swapInfo": {
+            "ammKey": "LeZ2DH1y7bqzAghYbXqKB6fNxoBKqPSPihv3EmkLBRv",
+            "label": "Raydium CP",
+            "inputMint": "Xsv9hRk1z5ystj9MhnA7Lq4vjSsLwzL2nxrwmwtD3re",
+            "outputMint": "72yxYmhLgDGwdyi2b9GjDynBB6VuG3kDxNKqDbzXh5bi",
+            "inAmount": "2892516",
+            "outAmount": "4441235054",
+            "updateContextSlot": "450031231"
           },
           "percent": 100,
           "bps": null
         }
       ],
-      "contextSlot": 450012228,
-      "timeTaken": 0.002920086,
-      "swapUsdValue": "11.335397932633670",
+      "contextSlot": 450031236,
+      "timeTaken": 0.002812744,
+      "swapUsdValue": "11.324633793487110",
       "mostReliableAmmsQuoteReport": {
         "info": {
-          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11333159",
-          "72yxYmhLgDGwdyi2b9GjDynBB6VuG3kDxNKqDbzXh5bi": "Not found"
+          "78ReVNMLGRWmjtf2HmBoHUe2pRcsctXTTbxJnbhchyze": "11291419",
+          "72yxYmhLgDGwdyi2b9GjDynBB6VuG3kDxNKqDbzXh5bi": "Not found",
+          "BZtgQEyS6eXUXicYPHecYQ7PybqodXQMvkjUbP4R8mUU": "11326265",
+          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11321108"
         }
       },
       "longtailMarketQuoteReport": null,
@@ -54,7 +82,7 @@
       "instructionVersion": null,
       "transactionVersion": 0,
       "additionalIntermediateTokens": [
-        "DfcCdx79bbMnSuBp72kMKaEhmbFvGtx88tnP36pra2Rz",
+        "Xsv9hRk1z5ystj9MhnA7Lq4vjSsLwzL2nxrwmwtD3re",
         "9jmNj7xE8vkf5EAvyeA3cPupw84PeZHfhTpG6JvT3pYK"
       ]
     }

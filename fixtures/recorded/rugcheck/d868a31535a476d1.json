@@ -1,7 +1,7 @@
 {
-  "slot": 450012071,
+  "slot": 450031073,
   "provider": "rugcheck",
-  "recordedAt": "2026-09-24T11:14:57.571Z",
+  "recordedAt": "2026-09-24T12:38:46.775Z",
   "request": {
     "method": "GET",
     "url": "https://api.rugcheck.xyz/v1/tokens/CASHx9KJUStyftLFWGvEVf59SGeG9sh5FfcnZMVPCASH/report/summary",
@@ -39,7 +39,7 @@
           "name": "Top 10 holders high ownership",
           "value": "",
           "description": "The top 10 users hold more than 70% token supply",
-          "score": 8001,
+          "score": 7985,
           "level": "danger"
         },
         {
@@ -57,9 +57,9 @@
           "level": "warn"
         }
       ],
-      "score": 136740,
+      "score": 136724,
       "score_normalised": 81,
-      "lpLockedPct": 0.00008495992217988036
+      "lpLockedPct": 0.00008409983464998551
     }
   }
 }

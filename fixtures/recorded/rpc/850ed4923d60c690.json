@@ -1,7 +1,7 @@
 {
-  "slot": 450012073,
+  "slot": 450031075,
   "provider": "rpc",
-  "recordedAt": "2026-09-24T11:14:20.951Z",
+  "recordedAt": "2026-09-24T12:38:08.346Z",
   "request": {
     "method": "POST",
     "url": "https://mainnet.helius-rpc.com/?api-key=REDACTED",
@@ -20,28 +20,28 @@
           "pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn",
           "6GmAFSYs4gk3FDao5FzzySQpPZaWsa4rUJHacpMpUNgx",
           "HiMSSzzwkZkrXJ4PGVJRdtfLaANeAztjjcgk5Dxe7Lwx",
-          "HcRLc9VDgjLeK154xDawfb1dmVJ98DoSqcwTHGqiDeJR",
           "A7bdiYdS5GjqGFtxf17ppRHtDKPkkRqbKtR27dxvQXaS",
-          "4rkGWJNSUPBcMicXMRAzohEyeJLFG8gUjwiWaz7Pddr3",
+          "HcRLc9VDgjLeK154xDawfb1dmVJ98DoSqcwTHGqiDeJR",
           "UpBBfyC75u3kxDGWmmmW2yauk9YY3CqZhdt1KUDkids",
-          "METvsvVRapdj9cFLzq4Tr43xK4tAjQfwX76z3n6mWQL",
+          "4rkGWJNSUPBcMicXMRAzohEyeJLFG8gUjwiWaz7Pddr3",
           "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
           "4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R",
           "Pren1FvFX6J3E4kXhJuCiAD5aDmGEb7qJRncwA8Lkhw",
           "HSUMi4rMgjrx7zRUabw3ogGu1pa5hmF2eVcXj9Apump",
-          "GTBxUiw6wJdmmkCGZgRHLyYxqu1vG4KtRpeox6yDpump",
+          "METvsvVRapdj9cFLzq4Tr43xK4tAjQfwX76z3n6mWQL",
           "2PENPmfgJfq6CG3k4byj4oWwHf8SerqakmYHMkUupump",
-          "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
-          "Dz9mQ9NzkBcCsuGPFJ3r1bS4wgqKMHBPiVuniW8Mbonk",
+          "GTBxUiw6wJdmmkCGZgRHLyYxqu1vG4KtRpeox6yDpump",
           "DEW9dSN6QpWyNthphCpMmAbZP1Q4cEKR9xQXAri98WDP",
-          "6HU4CmRb15C2nQDx8Ld2f2W2wTdmog6aZiiXdrT5Pzi8",
+          "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
           "2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH",
+          "6HU4CmRb15C2nQDx8Ld2f2W2wTdmog6aZiiXdrT5Pzi8",
+          "Dz9mQ9NzkBcCsuGPFJ3r1bS4wgqKMHBPiVuniW8Mbonk",
           "7ga6rtE9qSb3wdEiDCpTu2kHqoGVfT52jD8ign1rYTvx",
           "7Qy2cXpdj4Fu2DUPVWdN3oogM3JSwLUV2LZaKVgVcPZh",
           "2Ghxme9RXa2vatoRPGnQgNKCXNZy2N3X7PbH4kzxHYPE",
           "HhXe2PbtXQHzZ5Ch46MBXf7rEbMgnYsCGaEhktyKGZNT",
           "72yxYmhLgDGwdyi2b9GjDynBB6VuG3kDxNKqDbzXh5bi",
-          "5dvXTZ5qwgafnHtwu3Ls3QrWx1U4LQsFeCuJgkk4QEC6"
+          "CARDSccUMFKoPRZxt5vt3ksUbxEFEcnZ3H2pd3dKxYjp"
         ],
         {
           "encoding": "jsonParsed"
@@ -55,7 +55,7 @@
       "jsonrpc": "2.0",
       "result": {
         "context": {
-          "slot": 450012073,
+          "slot": 450031075,
           "apiVersion": "4.3.0-alpha.2"
         },
         "value": [
@@ -90,7 +90,7 @@
                   "freezeAuthority": "7dGbd2QZcCKcTndnHcTL8q7SMVXAkp688NTQYwrRCrar",
                   "isInitialized": true,
                   "mintAuthority": "BJE5MMbqXjVwjAF7oxwPYXnTXDyspzZyt4vwenNw5ruG",
-                  "supply": "8402949631472042"
+                  "supply": "8252142182562388"
                 },
                 "type": "mint"
               },
@@ -164,7 +164,7 @@
                   "freezeAuthority": "AyCP3oW19DHZKvx8oU6mvseW2qn7XfmQ5STrXPa6prY5",
                   "isInitialized": true,
                   "mintAuthority": "HJT2TXrhbWta2ax7V86vcnmX7ZmAVzua4v2yrGwchXB7",
-                  "supply": "128832456351352"
+                  "supply": "128832456264477"
                 },
                 "type": "mint"
               },
@@ -176,7 +176,7 @@
             "space": 590
           },
           {
-            "lamports": 212997226126,
+            "lamports": 212997226156,
             "data": {
               "program": "spl-token",
               "parsed": {
@@ -185,7 +185,7 @@
                   "freezeAuthority": "Q6XprfkF8RQQKoQVG33xT88H7wi8Uk1B1CC7YAs69Gi",
                   "isInitialized": true,
                   "mintAuthority": "Q6XprfkF8RQQKoQVG33xT88H7wi8Uk1B1CC7YAs69Gi",
-                  "supply": "3839903682849567"
+                  "supply": "3839903682304175"
                 },
                 "type": "mint"
               },
@@ -226,7 +226,7 @@
                         },
                         "transferFeeConfigAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
                         "withdrawWithheldAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
-                        "withheldAmount": 4295309548
+                        "withheldAmount": 989967790
                       }
                     },
                     {
@@ -244,7 +244,7 @@
                   "freezeAuthority": null,
                   "isInitialized": true,
                   "mintAuthority": null,
-                  "supply": "993557106049085"
+                  "supply": "993537238817732"
                 },
                 "type": "mint"
               },
@@ -292,7 +292,7 @@
                   "freezeAuthority": null,
                   "isInitialized": true,
                   "mintAuthority": null,
-                  "supply": "832216615206689509"
+                  "supply": "832207402708595136"
                 },
                 "type": "mint"
               },
@@ -313,7 +313,7 @@
                   "freezeAuthority": null,
                   "isInitialized": true,
                   "mintAuthority": null,
-                  "supply": "820955104939310804"
+                  "supply": "820861586663201480"
                 },
                 "type": "mint"
               },
@@ -397,7 +397,7 @@
                   "freezeAuthority": "2cVYpagTt7ZGc3mmTXBa7fAznUtx5DUu6aCq8uVDaf4a",
                   "isInitialized": true,
                   "mintAuthority": "AQGfwosRHg8uZGf7cCPe1yax8fVoWKnW6r3odYVJuC31",
-                  "supply": "10350489432"
+                  "supply": "10346463936"
                 },
                 "type": "mint"
               },
@@ -407,6 +407,27 @@
             "executable": false,
             "rentEpoch": 18446744073709552000,
             "space": 699
+          },
+          {
+            "lamports": 1475318946,
+            "data": {
+              "program": "spl-token",
+              "parsed": {
+                "info": {
+                  "decimals": 8,
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": "FvULawNPGBbuwYus74ECaQoV1oH9Tk6XPN7VPN51NYds",
+                  "supply": "10081187818756"
+                },
+                "type": "mint"
+              },
+              "space": 82
+            },
+            "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 82
           },
           {
             "lamports": 20154493914,
@@ -431,7 +452,7 @@
                         },
                         "transferFeeConfigAuthority": null,
                         "withdrawWithheldAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
-                        "withheldAmount": 486906769273546
+                        "withheldAmount": 525189894860559
                       }
                     },
                     {
@@ -456,7 +477,7 @@
                   "freezeAuthority": null,
                   "isInitialized": true,
                   "mintAuthority": null,
-                  "supply": "968069832409620019"
+                  "supply": "968066034196532565"
                 },
                 "type": "mint"
               },
@@ -468,16 +489,16 @@
             "space": 516
           },
           {
-            "lamports": 1475318946,
+            "lamports": 9432754,
             "data": {
               "program": "spl-token",
               "parsed": {
                 "info": {
-                  "decimals": 8,
+                  "decimals": 6,
                   "freezeAuthority": null,
                   "isInitialized": true,
-                  "mintAuthority": "FvULawNPGBbuwYus74ECaQoV1oH9Tk6XPN7VPN51NYds",
-                  "supply": "10032315997296"
+                  "mintAuthority": null,
+                  "supply": "962999417909348"
                 },
                 "type": "mint"
               },
@@ -518,7 +539,7 @@
                         },
                         "transferFeeConfigAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
                         "withdrawWithheldAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
-                        "withheldAmount": 9911616054
+                        "withheldAmount": 152508901834
                       }
                     },
                     {
@@ -536,7 +557,7 @@
                   "freezeAuthority": null,
                   "isInitialized": true,
                   "mintAuthority": null,
-                  "supply": "496510309965826"
+                  "supply": "496501630501806"
                 },
                 "type": "mint"
               },
@@ -546,48 +567,6 @@
             "executable": false,
             "rentEpoch": 18446744073709552000,
             "space": 523
-          },
-          {
-            "lamports": 1066800,
-            "data": {
-              "program": "spl-token",
-              "parsed": {
-                "info": {
-                  "decimals": 6,
-                  "freezeAuthority": null,
-                  "isInitialized": true,
-                  "mintAuthority": null,
-                  "supply": "962999417909348"
-                },
-                "type": "mint"
-              },
-              "space": 82
-            },
-            "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
-            "executable": false,
-            "rentEpoch": 18446744073709552000,
-            "space": 82
-          },
-          {
-            "lamports": 2951789571,
-            "data": {
-              "program": "spl-token",
-              "parsed": {
-                "info": {
-                  "decimals": 6,
-                  "freezeAuthority": null,
-                  "isInitialized": true,
-                  "mintAuthority": null,
-                  "supply": "997732560473995"
-                },
-                "type": "mint"
-              },
-              "space": 82
-            },
-            "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
-            "executable": false,
-            "rentEpoch": 18446744073709552000,
-            "space": 82
           },
           {
             "lamports": 74276338103,
@@ -620,7 +599,7 @@
                   "freezeAuthority": null,
                   "isInitialized": true,
                   "mintAuthority": null,
-                  "supply": "554997453248544"
+                  "supply": "554997453248346"
                 },
                 "type": "mint"
               },
@@ -666,7 +645,7 @@
                         },
                         "transferFeeConfigAuthority": "WV9PJN7XTmTLVwbutCLFxp8TyePee6Xq5mRq6Fti5Wc",
                         "withdrawWithheldAuthority": "WV9PJN7XTmTLVwbutCLFxp8TyePee6Xq5mRq6Fti5Wc",
-                        "withheldAmount": 9909918993
+                        "withheldAmount": 10026239585
                       }
                     },
                     {
@@ -731,7 +710,7 @@
                   "freezeAuthority": "WV9PJN7XTmTLVwbutCLFxp8TyePee6Xq5mRq6Fti5Wc",
                   "isInitialized": true,
                   "mintAuthority": "WV9PJN7XTmTLVwbutCLFxp8TyePee6Xq5mRq6Fti5Wc",
-                  "supply": "7381812011365"
+                  "supply": "7381811518969"
                 },
                 "type": "mint"
               },
@@ -772,7 +751,7 @@
                   "freezeAuthority": null,
                   "isInitialized": true,
                   "mintAuthority": null,
-                  "supply": "977177507979676"
+                  "supply": "977177507979634"
                 },
                 "type": "mint"
               },
@@ -784,45 +763,25 @@
             "space": 406
           },
           {
-            "lamports": 1413187734,
+            "lamports": 2951789571,
             "data": {
-              "program": "spl-token-2022",
+              "program": "spl-token",
               "parsed": {
                 "info": {
                   "decimals": 6,
-                  "extensions": [
-                    {
-                      "extension": "metadataPointer",
-                      "state": {
-                        "authority": null,
-                        "metadataAddress": "GTBxUiw6wJdmmkCGZgRHLyYxqu1vG4KtRpeox6yDpump"
-                      }
-                    },
-                    {
-                      "extension": "tokenMetadata",
-                      "state": {
-                        "additionalMetadata": [],
-                        "mint": "GTBxUiw6wJdmmkCGZgRHLyYxqu1vG4KtRpeox6yDpump",
-                        "name": "Jean Phil",
-                        "symbol": "JEANPHIL",
-                        "updateAuthority": null,
-                        "uri": "https://ipfs.io/ipfs/QmZ5DoDK7cuNdH2WtoLzNqZD1daDjsnyEqTZzzYgR9hA3S"
-                      }
-                    }
-                  ],
                   "freezeAuthority": null,
                   "isInitialized": true,
                   "mintAuthority": null,
-                  "supply": "969492848152130"
+                  "supply": "997732560444336"
                 },
                 "type": "mint"
               },
-              "space": 402
+              "space": 82
             },
-            "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+            "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
             "executable": false,
             "rentEpoch": 18446744073709552000,
-            "space": 402
+            "space": 82
           },
           {
             "lamports": 132799080,
@@ -854,7 +813,7 @@
                   "freezeAuthority": null,
                   "isInitialized": true,
                   "mintAuthority": null,
-                  "supply": "950693801235900"
+                  "supply": "950693801234492"
                 },
                 "type": "mint"
               },
@@ -866,46 +825,45 @@
             "space": 423
           },
           {
-            "lamports": 1092249446731,
+            "lamports": 1413187734,
             "data": {
-              "program": "spl-token",
-              "parsed": {
-                "info": {
-                  "decimals": 5,
-                  "freezeAuthority": null,
-                  "isInitialized": true,
-                  "mintAuthority": null,
-                  "supply": "8799438624271363686"
-                },
-                "type": "mint"
-              },
-              "space": 82
-            },
-            "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
-            "executable": false,
-            "rentEpoch": 18446744073709552000,
-            "space": 82
-          },
-          {
-            "lamports": 87495180208,
-            "data": {
-              "program": "spl-token",
+              "program": "spl-token-2022",
               "parsed": {
                 "info": {
                   "decimals": 6,
+                  "extensions": [
+                    {
+                      "extension": "metadataPointer",
+                      "state": {
+                        "authority": null,
+                        "metadataAddress": "GTBxUiw6wJdmmkCGZgRHLyYxqu1vG4KtRpeox6yDpump"
+                      }
+                    },
+                    {
+                      "extension": "tokenMetadata",
+                      "state": {
+                        "additionalMetadata": [],
+                        "mint": "GTBxUiw6wJdmmkCGZgRHLyYxqu1vG4KtRpeox6yDpump",
+                        "name": "Jean Phil",
+                        "symbol": "JEANPHIL",
+                        "updateAuthority": null,
+                        "uri": "https://ipfs.io/ipfs/QmZ5DoDK7cuNdH2WtoLzNqZD1daDjsnyEqTZzzYgR9hA3S"
+                      }
+                    }
+                  ],
                   "freezeAuthority": null,
                   "isInitialized": true,
                   "mintAuthority": null,
-                  "supply": "999079292912917"
+                  "supply": "969492683111086"
                 },
                 "type": "mint"
               },
-              "space": 82
+              "space": 402
             },
-            "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+            "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
             "executable": false,
             "rentEpoch": 18446744073709552000,
-            "space": 82
+            "space": 402
           },
           {
             "lamports": 20109499610,
@@ -937,7 +895,7 @@
                         },
                         "transferFeeConfigAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
                         "withdrawWithheldAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
-                        "withheldAmount": 4955906146
+                        "withheldAmount": 78124412
                       }
                     },
                     {
@@ -955,7 +913,7 @@
                   "freezeAuthority": null,
                   "isInitialized": true,
                   "mintAuthority": null,
-                  "supply": "999221116154728"
+                  "supply": "999209347546730"
                 },
                 "type": "mint"
               },
@@ -967,63 +925,25 @@
             "space": 477
           },
           {
-            "lamports": 63126550,
+            "lamports": 1092249446731,
             "data": {
-              "program": "spl-token-2022",
+              "program": "spl-token",
               "parsed": {
                 "info": {
-                  "decimals": 6,
-                  "extensions": [
-                    {
-                      "extension": "metadataPointer",
-                      "state": {
-                        "authority": null,
-                        "metadataAddress": "6HU4CmRb15C2nQDx8Ld2f2W2wTdmog6aZiiXdrT5Pzi8"
-                      }
-                    },
-                    {
-                      "extension": "transferFeeConfig",
-                      "state": {
-                        "newerTransferFee": {
-                          "epoch": 1039,
-                          "maximumFee": 1000000000000000,
-                          "transferFeeBasisPoints": 300
-                        },
-                        "olderTransferFee": {
-                          "epoch": 1039,
-                          "maximumFee": 1000000000000000,
-                          "transferFeeBasisPoints": 300
-                        },
-                        "transferFeeConfigAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
-                        "withdrawWithheldAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
-                        "withheldAmount": 7446416281
-                      }
-                    },
-                    {
-                      "extension": "tokenMetadata",
-                      "state": {
-                        "additionalMetadata": [],
-                        "mint": "6HU4CmRb15C2nQDx8Ld2f2W2wTdmog6aZiiXdrT5Pzi8",
-                        "name": "Grokification",
-                        "symbol": "GROK",
-                        "updateAuthority": "WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh",
-                        "uri": "https://metadata.j7tracker.io/metadata/24e7fa07cf714896.json"
-                      }
-                    }
-                  ],
+                  "decimals": 5,
                   "freezeAuthority": null,
                   "isInitialized": true,
                   "mintAuthority": null,
-                  "supply": "999711174199441"
+                  "supply": "8799438616724348473"
                 },
                 "type": "mint"
               },
-              "space": 507
+              "space": 82
             },
-            "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+            "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
             "executable": false,
             "rentEpoch": 18446744073709552000,
-            "space": 507
+            "space": 82
           },
           {
             "lamports": 562701269,
@@ -1109,7 +1029,7 @@
                   "freezeAuthority": "2apBGMsS6ti9RyF5TwQTDswXBWskiJP2LD4cUEDqYJjk",
                   "isInitialized": true,
                   "mintAuthority": "3YJL8sesK3ooPpJddypvFUhCvnvaQ1oF8This4J3bhxR",
-                  "supply": "632782042298715"
+                  "supply": "633340923008050"
                 },
                 "type": "mint"
               },
@@ -1121,6 +1041,86 @@
             "space": 866
           },
           {
+            "lamports": 63126550,
+            "data": {
+              "program": "spl-token-2022",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "extensions": [
+                    {
+                      "extension": "metadataPointer",
+                      "state": {
+                        "authority": null,
+                        "metadataAddress": "6HU4CmRb15C2nQDx8Ld2f2W2wTdmog6aZiiXdrT5Pzi8"
+                      }
+                    },
+                    {
+                      "extension": "transferFeeConfig",
+                      "state": {
+                        "newerTransferFee": {
+                          "epoch": 1039,
+                          "maximumFee": 1000000000000000,
+                          "transferFeeBasisPoints": 300
+                        },
+                        "olderTransferFee": {
+                          "epoch": 1039,
+                          "maximumFee": 1000000000000000,
+                          "transferFeeBasisPoints": 300
+                        },
+                        "transferFeeConfigAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
+                        "withdrawWithheldAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
+                        "withheldAmount": 8005223746
+                      }
+                    },
+                    {
+                      "extension": "tokenMetadata",
+                      "state": {
+                        "additionalMetadata": [],
+                        "mint": "6HU4CmRb15C2nQDx8Ld2f2W2wTdmog6aZiiXdrT5Pzi8",
+                        "name": "Grokification",
+                        "symbol": "GROK",
+                        "updateAuthority": "WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh",
+                        "uri": "https://metadata.j7tracker.io/metadata/24e7fa07cf714896.json"
+                      }
+                    }
+                  ],
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": null,
+                  "supply": "999706870082815"
+                },
+                "type": "mint"
+              },
+              "space": 507
+            },
+            "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 507
+          },
+          {
+            "lamports": 87495180208,
+            "data": {
+              "program": "spl-token",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "freezeAuthority": null,
+                  "isInitialized": true,
+                  "mintAuthority": null,
+                  "supply": "999079292912917"
+                },
+                "type": "mint"
+              },
+              "space": 82
+            },
+            "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 82
+          },
+          {
             "lamports": 1461600,
             "data": {
               "program": "spl-token",
@@ -1130,7 +1130,7 @@
                   "freezeAuthority": null,
                   "isInitialized": true,
                   "mintAuthority": "BKdLWcUDE1Kmga2BfSNaMR2wbXSL4YouTbNQ8mTdcqTp",
-                  "supply": "490991300907"
+                  "supply": "468493861562"
                 },
                 "type": "mint"
               },
@@ -1171,7 +1171,7 @@
                         },
                         "transferFeeConfigAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
                         "withdrawWithheldAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
-                        "withheldAmount": 1333545526
+                        "withheldAmount": 1681673464
                       }
                     },
                     {
@@ -1230,7 +1230,7 @@
                         },
                         "transferFeeConfigAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
                         "withdrawWithheldAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
-                        "withheldAmount": 230833474869
+                        "withheldAmount": 162455722826
                       }
                     },
                     {
@@ -1289,7 +1289,7 @@
                         },
                         "transferFeeConfigAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
                         "withdrawWithheldAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
-                        "withheldAmount": 608338221619
+                        "withheldAmount": 774000753923
                       }
                     },
                     {
@@ -1348,7 +1348,7 @@
                         },
                         "transferFeeConfigAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
                         "withdrawWithheldAuthority": "5KXDF6QnqhBj72hDtJNkkpFaQVUfbFXNybMsp3DiK6tD",
-                        "withheldAmount": 13665674900
+                        "withheldAmount": 12327772840
                       }
                     },
                     {
@@ -1378,7 +1378,7 @@
             "space": 510
           },
           {
-            "lamports": 2674907806,
+            "lamports": 70074258061,
             "data": {
               "program": "spl-token",
               "parsed": {
@@ -1387,7 +1387,7 @@
                   "freezeAuthority": null,
                   "isInitialized": true,
                   "mintAuthority": null,
-                  "supply": "990276306751331"
+                  "supply": "1977216792084969"
                 },
                 "type": "mint"
               },
