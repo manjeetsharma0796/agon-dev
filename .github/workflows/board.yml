@@ -66,16 +66,18 @@ jobs:
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: node scripts/board.mjs pr
 
-      - name: Generated files are current
-        # No bot commits to dev, so the author regenerates these in their own PR. Otherwise the
-        # README summary and FEASIBILITY.md drift away from the board and stop being worth reading.
+      - name: FEASIBILITY.md is current
+        # FEASIBILITY.md only. This job runs against the MERGE commit, so anything derived from
+        # TASKS.md is computed from merged task statuses while the file was committed from the
+        # branch: every PR went stale the moment anyone else's claim landed, which is constantly.
+        # FEASIBILITY.md is derived from spikes/*/result.json, and those change only in the PR that
+        # owns the spike.
         run: |
           set -euo pipefail
-          node scripts/board.mjs summary
           node scripts/feasibility.mjs
-          git diff --quiet README.md FEASIBILITY.md || {
-            echo "::error::README.md or FEASIBILITY.md is stale. Run 'node scripts/board.mjs summary && node scripts/feasibility.mjs' and commit the result."
-            git --no-pager diff --stat README.md FEASIBILITY.md
+          git diff --quiet FEASIBILITY.md || {
+            echo "::error::FEASIBILITY.md is stale. Run 'node scripts/feasibility.mjs' and commit the result."
+            git --no-pager diff --stat FEASIBILITY.md
             exit 1
           }
 

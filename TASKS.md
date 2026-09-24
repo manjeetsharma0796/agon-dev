@@ -343,9 +343,9 @@ and latency (a, b).
 - Kill criterion: none, F1 is existential
 
 ### T-F01a, F1 spike on 2 wallets, for CP1
-- Status: claimed 2026-09-24 | Owner: manjeetsharma0796 | Branch: feature/t-f01a-decode-2-wallets
+- Status: blocked, see OP-20
 - Depends-on: T-A01
-- Touches: spikes/F01/, fixtures/golden/
+- Touches: spikes/F1/, scripts/board.mjs
 - Serves: Functionality (judged) ; CP1 gate
 - Acceptance: on 2 wallets, 50 of 50 randomly sampled transactions classified correctly, amounts
   exact to base units, realised P&L within 1% of a hand-computed FIFO ledger; share of swaps
@@ -453,7 +453,7 @@ and latency (a, b).
 - Kill criterion: none. If the cap does not hold on-chain the custody story is gone, see T-F05a
 
 ### T-F05a, F5 spike, 7 cases on devnet
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-f05a-devnet
+- Status: blocked, see OP-20
 - Depends-on: T-D01
 - Touches: spikes/F5/, scripts/board.mjs
 - Serves: Novelty (judged) ; CP1 gate
@@ -462,7 +462,28 @@ and latency (a, b).
   to a non-Jupiter program rejected, (e) allowance restored at the expected slot after the window,
   (f) root removes the role and the next agent transaction fails, (g) removal done from Phantom
   and not only our CLI
-- Evidence: <spikes/F05/result.json at a commit>
+- Evidence: `spikes/F5/result.json`, the run at slot 503552939. 0 of 7 cases exercised, so nothing
+  in it says the cap holds and nothing says it does not. Blocked on OP-19 for lamports and OP-20
+  for a CP1 decision
+- Finding: **the pinned Jupiter id is not a program on devnet.** It is a 0-byte system-owned wallet
+  holding 4.51 SOL, `executable: false`, against `executable: true` and 36 bytes under the BPF
+  upgradeable loader on mainnet. An agent role scoped to `programLimit({ programId: JUPITER })`
+  therefore scopes to something that cannot execute there, so the 7 cases are not reachable on
+  devnet at any funding level, and **live arming on devnet cannot show the cap stopping a swap,
+  because on devnet there is no swap to stop.** (c), (d) and (f) do not care, Swig rejects those
+  before any inner instruction runs. (b) and (e) do: a `tokenRecurringLimit` is applied by comparing
+  token balances after the inner instructions run, so with no program at that id the transaction
+  fails before the limit is consulted, and a pass would mean the cap read as holding when it was
+  never asked. The alternative, named not taken: a Surfpool mainnet fork has the real Jupiter
+  program and the real Swig program, costs 0 and needs 0 mainnet funds, and F9 already proved a
+  committed Surfpool snapshot replays offline with no key. CP1 decides, see OP-20. The second
+  blocker is only money, and 1,295 times smaller than the ask: the spike needs **1,543,680 lamports,
+  0.0015 SOL**, not the 2 SOL OP-19 asks for, being 1,503,680 of rent for the 168-byte two-role Swig
+  account plus 5,000 a transaction for 8 transactions. That size is read off devnet, not off the
+  struct: of 59,948 Swig accounts there, 49,693 sit at 104 bytes and 8,661 at 168, confirmed by
+  fetching 1 from each tier. 7 faucets refuse, and 0.1 SOL is refused as flatly as 1 SOL. What the
+  run does prove: the 351-byte `createSwig` transaction for the real agent role reaches devnet and
+  is refused for exactly 1 reason, 0 lamports, so nothing in our code is the blocker
 - Kill criterion: no fallback for (b), (c), (d). If the cap does not hold on-chain, CP1 decides whether Agon ships read-only
 
 ### T-F05b, F5 route size, 20 Jupiter routes against the v1 limit
@@ -714,7 +735,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: fallback is a short recurring window and no end date in the UI
 
 ### T-D03, Kill switch
-- Status: blocked, see OP-19
+- Status: blocked, see OP-20
 - Depends-on: T-D01
 - Touches: packages/chain/src/kill-switch.ts, packages/cli/src/commands/revoke.ts
 - Serves: UX (judged) ; Novelty (judged)
