@@ -72,6 +72,8 @@ test('the role being removed has to be the agent role and nothing else', () => {
     canUseProgram: () => true,
     canSpendTokenMax: () => true,
     tokenSpendLimit: () => null,
+    canSpendToken: () => true,
+    tokenSpend: () => ({ spendLimit: null, window: null, recurringLimit: undefined }),
   } satisfies RoleActions
   expect(faultsInRole(rootish, USDC).join(' ')).toContain('not an Agon agent role')
 })
