@@ -341,6 +341,70 @@ and latency (a, b).
   coverage on transactions we read perfectly well, so they are not-a-swap with a stated reason and
   do not count against coverage.
 - Kill criterion: none, F1 is existential
+- Finding: the coverage number can lie. deltas() reads only meta.pre/postTokenBalances, and nothing in packages/ reads meta.pre/postBalances, so a swap paid in native SOL is invisible: the wSOL account is opened and closed inside the same transaction and appears in neither array. It returns not-a-swap "value only arrived the wallet", which carries no program id, is absent from unsupported, and is excluded from totalSwaps, so a wallet trading from native SOL reports 100% coverage while decoding none of its swaps. Two smaller ones: topProgram returns the first instruction with a programId, which on every real mainnet transaction is ComputeBudget, so all undecoded transactions collapse into one unsupported row named ComputeBudget; and decodeAll keeps only the first reason per program id. Fix is T-A07.
+### T-A07, Decode swaps paid in native SOL
+- Status: open
+- Depends-on: T-A01
+- Touches: packages/decoder/src/index.ts, packages/decoder/src/decoder.test.ts
+- Serves: Functionality (judged) ; F1 coverage share
+- Acceptance: a swap whose quote leg is native SOL decodes as buy or sell rather than not-a-swap,
+  read from meta.pre/postBalances net of meta.fee and of rent for an account opened or closed in the
+  same transaction; 1 hand-built native-SOL buy and 1 sell asserted in decoder.test.ts; an undecoded
+  transaction names the venue program rather than ComputeBudget on all 5 recorded fixtures; decodeAll
+  keeps every distinct reason per program id, not just the first; the 50 sampled transactions of
+  wallet 5CKAa7Wm in spikes/F1 stop reporting 0 swaps at 100% coverage
+- Evidence: <PR link, plus the F1 re-run showing the changed coverage number>
+- Kill criterion: none. A coverage number computed over silently dropped swaps is the failure the
+  third bucket exists to prevent, and F1 is existential
+
+### T-A06, Fix the two coverage numbers that can lie
+- Status: open
+- Depends-on: T-A01
+- Touches: packages/decoder/src/index.ts, packages/core/src/report.ts, packages/decoder/src/pnl.ts
+- Serves: Functionality (judged) ; F1 coverage share
+- Acceptance: a wallet with 0 decoded swaps reports coverage share 0 rather than 1, and the frozen
+  Coverage contract stops exempting totalSwaps === 0 from its own consistency check; totalSwaps
+  counts every transaction the wallet was a party to rather than excluding not-a-swap, so the share
+  can actually fall below the 95% the PRD treats as a finding; re-running spikes/F1 changes
+  5CKAa7Wm from 100% to 0% and 5Q544fKr from 96.7% to the share over all 50 sampled; and fifoLedger
+  stops tie-breaking same-slot swaps on the base58 signature, with 1 test asserting a same-slot buy
+  and sell produce 1 closed trade whichever order they are passed in
+- Evidence: <PR link, plus the F1 coverage numbers before and after>
+- Kill criterion: none. A coverage number that reads 100% when nothing decoded is the single defect
+  positioned to turn a real run green, and it is live today in spikes/F1/result.json
+
+### T-D06, Verify the cap that is on chain, not the one we meant to send
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/103 | Owner: manjeetsharma0796 | Branch: feature/t-d06-verify-real-cap
+- Depends-on: T-D01
+- Touches: packages/chain/src/swig/index.ts, packages/chain/src/kill-switch.ts
+- Serves: Novelty (judged) ; the custody claim
+- Acceptance: assertAgentRoleShape reads the configured recurring amount rather than the remaining
+  allowance, so a role with a spent window still verifies and the kill switch removes it, asserted
+  by a test that zeroes currentAmount and still expects revocation; the program permission is
+  checked as Permission.Program with the pinned Jupiter id rather than through canUseProgram, so a
+  role carrying programAll is REJECTED, asserted by a test building exactly that role; the approved
+  cap amount and window are passed in and compared, so a role armed at 25,000 when the user signed
+  25 is rejected; 0 of these tests pass against the current code before the fix
+- Evidence: PR link below, 6 tests in packages/chain/src/swig/real-cap.test.ts, 253 passing across
+  36 files. The 3 required controls failed against the old code before the fix, plus 3 more the
+  reviews demanded. The spent-window case forges a real role by zeroing currentAmount in the encoded
+  bytes rather than stubbing one, with both candidate offsets probed to confirm which field is which
+- Kill criterion: none. This is the layer that assumes every layer above it failed
+- Finding: the fix almost shipped the same fail-open through a different door, which is the finding
+  worth keeping. Reading the CONFIGURED cap needs the token action before the program action in the
+  buffer, because `Actions.tokenSpend` does `find(a => a.tokenControl(mint).spendLimit != null)` and
+  `spendLimit` returns `0n` rather than `null` for an action with no token control, so the program
+  action always matched first and its empty controller came back. Requiring a readable cap in the
+  shape check therefore rejected every role armed program-first, which is every role the previous
+  code produced, and the kill switch would have reported "No Agon roles were found" for all of them
+  from the moment it shipped. The rule now written into the file: **the revoke path is never
+  stricter than the arm path**, or it cannot clean up what arming produced. Identity is checked
+  order-independently; the cap is compared only where an approved number exists to compare it to.
+  Also: `canUseProgram` cannot prove scoping, only a negative probe can, and the bypasses ruled out
+  are ProgramCurated and All (answer yes to the probe), ProgramScope and SubAccount (answer no to
+  Jupiter), and non-recurring TokenLimit (no recurringAmount). Left open for T-E06: `approved` is
+  optional because the kill switch cannot supply it, so an arming call that omits it silently skips
+  the cap comparison. T-E06 must pass it, and a test should assert the 1000x role is refused
 
 ### T-F01a, F1 spike on 2 wallets, for CP1
 - Status: blocked, see OP-23
@@ -420,7 +484,7 @@ and latency (a, b).
   0.0046 to 0.0222 across 5 unrelated questions about the same text. A question wired to noul would
   have returned a near-zero every time and read as a confident no
 - Kill criterion: fallback is an LLM guard in structured-output mode with a stricter threshold, or Kev-0.5B locally. Arithmetic checks are unaffected either way
-
+- Finding: the metadata cache in the acceptance does not exist. Token category is cached forever and globally as specified, and mint and freeze authority are correctly never cached, but no minutes-scoped metadata cache exists anywhere in the repo: categoryCache is the only cache in the tree. Separately JevTransport takes body: unknown, so the "no numeric question can reach Jev" guarantee holds for the ask() path only; anything holding a transport can call it with a hand-built score payload.
 ### T-F11a, F11 (a) and (b), Jev schema validity and latency
 - Status: open
 - Depends-on: T-C05, OP-4
@@ -451,7 +515,7 @@ and latency (a, b).
   ^2.1.0, which is what the only available SDK supports, or the Swig instructions get built by hand
   against the coder to decouple from its kit version
 - Kill criterion: none. If the cap does not hold on-chain the custody story is gone, see T-F05a
-
+- Finding: two ways the cap reads as holding when it does not. (1) tokenSpendLimit returns the REMAINING allowance, not the configured cap, so a role whose window is spent reads 0 and assertAgentRoleShape throws "carries no spending limit"; kill-switch isAgentRole swallows that, planRevokeAll files the role under kept as "not ours to remove", and revokedMessage reports "No Agon roles were found". The emergency stop fails open on exactly the role that has been trading hardest, and Swig resets the window afterwards. (2) canUseProgram returns true unconditionally under ProgramAll, and the SDK silently appends programAll to any action set with no program action, so a stored role of programAll plus tokenRecurringLimit has count 2 and is ACCEPTED as "program = Jupiter". Also the approved cap AMOUNT is never compared to what the user signed, only that a limit exists, and the window is never checked beyond being positive. Fix is T-D06.
 ### T-F05a, F5 spike, 7 cases on devnet
 - Status: blocked, see OP-20
 - Depends-on: T-D01
@@ -510,7 +574,7 @@ and latency (a, b).
 - Kill criterion: fallback is our local daemon polling price and executing through Swig, and the UI must then say "runs while your computer is on". The pitch loses 24/7 execution
 
 ### T-B03, Benchmark harness on a pinned mainnet fork
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/15
+- Status: open
 - Depends-on: T-B01, T-E01
 - Touches: benchmark/runner/, benchmark/arms/
 - Serves: Functionality (judged) ; F9
@@ -544,7 +608,7 @@ and latency (a, b).
 
 CP2 evidence required: F1 and F2 complete; F4; F5 in simulation; F6 on mainnet ($20 orders);
 F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, d, e).
-
+- Finding: re-opened. benchmark/ holds only README.md and scenarios/scenarios.json: no runner, no arms, forkSlot null and all 100 scenario mints null. PR #15 landed the plan and says so in its own body, deferring the harness to a second PR that was never opened. The one clause that is met, CI refusing a synthetic fixture on the benchmark path, came from T-B01.
 ### T-A02, FIFO P&L ledger
 - Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/64
 - Depends-on: T-A01
@@ -577,7 +641,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   2^53 loses its low digits in a float and the 2 that separate 9007199254740993 from
   9007199254740995 are the whole answer.
 - Kill criterion: none. monad T3.7 shipped "positions" that were trade flow, off by 67x
-
+- Finding: same-slot ordering is a coin flip. fifoLedger sorts by slot then by base58 signature, which has no relation to intra-block order, and RawTransaction carries no transaction index so the real order is discarded at the decode boundary. A buy and a sell of the same mint in one slot produce 1 trade and the right P&L or 0 trades, a stranded lot and a false sold-more-than-held, purely on which signature sorts first. 18 of 50 sampled transactions on 5Q544fKr sit in a multi-transaction slot, and both F1 wallets trade pump.fun venues where buying and dumping inside one block is the normal pattern. No test catches it because the test helpers name signatures buy-* and sell-*, and buy- always sorts first. Fix is T-A06.
 ### T-F01b, F1 spike complete, 5 wallets
 - Status: open
 - Depends-on: T-A02, T-F01a, OP-1
@@ -1420,3 +1484,61 @@ Move a row here when its `Status:` reaches `done`, keeping its `Evidence:` link 
 it measured. This section is the honest history of the build, so nothing leaves it.
 
 _(empty)_
+
+### T-B11, Key material gitleaks cannot see
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/99 | Owner: manjeetsharma0796 | Branch: feature/t-b11-secret-shapes
+- Depends-on: T-B01
+- Touches: .github/workflows/gates.yml, scripts/secret-shapes.mjs
+- Serves: Functionality (judged) ; protects every PR that carries a fixture or a key
+- Acceptance: a second scan, independent of `.gitleaks.toml`, reports 0 findings on the recorded
+  fixtures now on dev and 1 finding for each of 3 planted shapes: a 64-number JSON byte array, a PEM
+  private key block, and a keypair committed under a name the gitleaks default config exempts by
+  path. The scan must NOT fire on a 32 to 44 character base58 value, which is what the fixtures are
+  made of, and must NOT fire on an 87 to 88 character base58 value, measured at 1,040 hits on this
+  tree of which 1,035 are signatures in recorded fixtures and 5 are the documented PINNED_SWAPS
+  list in packages/core/src/net/record.ts, all 5 read by hand and all public swap signatures
+- Evidence: <the 2 clean scans and the 3 planted shapes, in the PR>
+- Kill criterion: none, but it is cut rather than loosened. If it needs a path exemption to pass, it
+  has become the hole it exists to close, because a path exemption is how this one got in
+- Finding: the gitleaks allowlist cannot be tightened to close this. The rule that lets recorded RPC
+  fixtures through forgives a 32 to 44 character base58 value under a field whose name ends in Key,
+  and a Solana PUBLIC address and a 32-byte ed25519 SECRET seed are byte-for-byte the same shape, so
+  no regex over the value separates them. Separately, `useDefault = true` inherits 24 path
+  exemptions including *.png, *.zip, *.pdf and lockfiles, so a keypair committed as assets/logo.png
+  is never opened. The gate is not weakly configured, it is asked for something regex cannot do
+
+### T-B12, Star the operator queue by sweep count, and let the parser read it
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/100 | Owner: manjeetsharma0796 | Branch: feature/t-b12-queue-stars
+- Depends-on: T-B01
+- Touches: OPERATOR_TODO.md, scripts/board.mjs
+- Serves: Functionality (judged) ; stops the queue being read in file order when order is not priority
+- Acceptance: every OP item still blocking work at a sweep carries 1 star per sweep it survived,
+  with a legend stating what the count means, and `node scripts/board.mjs` reports lint ok with 0
+  items reported as a missing OP, down from the 33 such reports a starred queue produces against
+  the current parser
+- Evidence: <the lint run before and after, in the PR>
+- Kill criterion: none. If the stars ever disagree with the waiting-task count on the item, the
+  count wins and the stars go
+- Finding: the heading regex anchors the id to the start of the line, so a star makes the whole item
+  invisible to the parser, not merely unsorted. Measured: 12 tasks reported as depending on an OP
+  that "is not in OPERATOR_TODO.md" when the items were present and only starred. A presentation
+  change to the board silently broke the board's own dependency check
+
+### T-J05, Tighten the novelty claim against the nearest miss
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/101 | Owner: manjeetsharma0796 | Branch: feature/t-j05-novelty
+- Depends-on: OP-14
+- Touches: docs/plans/novelty.md
+- Serves: Novelty (judged) ; unblocks T-J01 and T-J03, which both depend on OP-14
+- Acceptance: one wording of the claim that names, for each of the 3 axes a real competitor gets
+  right, which axis it misses: whose history, what domain, what the output is. Every clause traceable
+  to a specific named project rather than added for emphasis
+- Evidence: <docs/plans/novelty.md, with the search date and the projects checked>
+- Kill criterion: if a project is found that derives a cap from a trader's own swaps AND enforces it
+  on-chain, the claim is dropped rather than narrowed until it is technically true
+- Finding: the claim as first written did not survive contact with the nearest miss. SENTINEL, an
+  x402-track project on Algorand, genuinely derives a threshold from history and writes the decision
+  on-chain, so "derives from history" and "enforces on-chain" are both taken. What is untaken is
+  whose history and what it gates: the agent's own runtime payments, not a trader's past swaps, and
+  an anomaly score after the fact, not a capped permission set before the agent trades. Colosseum's
+  own directory and Copilot need an account and were NOT searched, so the PRD's 2,992-entry figure
+  is still unverified by a second pair of eyes

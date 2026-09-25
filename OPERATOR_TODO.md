@@ -257,7 +257,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: `LICENSE` is committed and the README states it.
 
 ### OP-14, Search for a project that already does this
-- Status: open
+- Status: done 2026-09-25: searched, the claim holds and the wording is tightened in docs/plans/novelty.md. Nearest miss is SENTINEL, which derives from history and enforces on-chain but for an x402 agent's own runtime spending on Algorand, not a trader's swaps. Colosseum's own directory and Copilot need an account and were NOT searched, so the PRD's 2,992-entry figure is still unverified by a second pair of eyes
 - Owner: <unassigned>
 - Needed by: 2026-09-27
 - Unblocks: the Novelty claim in the pitch, T-J01, T-J03
