@@ -15,20 +15,46 @@ const json = (body: unknown, status = 200): Response =>
   })
 
 /** Every failure names the cause and what to do next. No blank fields, no "something went wrong". */
-const badRequest = (error: unknown, what: string): Response =>
-  json(
+/**
+ * Blames the caller only when the caller is at fault.
+ *
+ * This used to blame them for everything it caught. A missing fixture came back as "That is not a
+ * valid Solana address." with a 400, on a perfectly valid address, and the real cause was only in
+ * `detail` where nothing reads it. A beta user would have gone and checked their wallet. Found by
+ * deleting `fixtures/contracts/` and asking for a report.
+ *
+ * A zod failure is the caller's input and stays a 400. Anything else is ours and is a 500, because
+ * a server that cannot read its own data has not been sent a bad request.
+ */
+const badRequest = (error: unknown, what: string): Response => {
+  const message = error instanceof Error ? error.message : String(error)
+  // Two things are the caller's fault and they arrive differently. A schema failure is a ZodError,
+  // matched by name rather than instanceof because this package does not depend on zod directly
+  // and a second copy of zod across a package boundary makes instanceof false while the name stays
+  // right. A body that is not JSON never reaches a schema at all, so it is thrown as InputError.
+  // Everything else is ours. Splitting only on zod sent "the request body is not JSON" to a 500,
+  // which the existing test caught.
+  const fromInput =
+    error instanceof InputError || (error instanceof Error && error.name === 'ZodError')
+  return json(
     {
-      error: `That is not a valid ${what}.`,
-      detail: error instanceof Error ? error.message : String(error),
+      error: fromInput
+        ? `That is not a valid ${what}.`
+        : `This request could not be served, and it is not because of what you sent.`,
+      detail: message,
     },
-    400,
+    fromInput ? 400 : 500,
   )
+}
+
+/** Thrown when the caller sent something unparseable, which is a 400 and not a server fault. */
+class InputError extends Error {}
 
 const body = async (request: Request): Promise<unknown> => {
   try {
     return await request.json()
   } catch {
-    throw new Error('The request body is not JSON.')
+    throw new InputError('The request body is not JSON.')
   }
 }
 
