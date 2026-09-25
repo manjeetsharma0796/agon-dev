@@ -389,6 +389,11 @@ and latency (a, b).
   their numbers: a rotation and a transfer both count in the denominator now, for different
   reasons, because the share answers "how much of what we saw did we explain" rather than "how much
   of what we already agreed was a swap"
+- Finding 3: writing the empty-wallet fixture the frozen-contract gate asks for found a third
+  number of the same family, left alone because it is a different contract: Metrics makes
+  medianSize and medianHoldSeconds required and not nullable, so a wallet with 0 closed trades has
+  to report a median of 0, which reads as a measured fact rather than as nothing to measure. Needs
+  its own task, because widening 2 fields to nullable moves every consumer of Metrics
 - Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-a06-coverage
 - Depends-on: T-A01
 - Touches: packages/decoder/src/index.ts, packages/core/src/report.ts, packages/decoder/src/pnl.ts
