@@ -394,7 +394,7 @@ and latency (a, b).
   medianSize and medianHoldSeconds required and not nullable, so a wallet with 0 closed trades has
   to report a median of 0, which reads as a measured fact rather than as nothing to measure. Needs
   its own task, because widening 2 fields to nullable moves every consumer of Metrics
-- Status: done
+- Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-a06-coverage
 - Depends-on: T-A01
 - Touches: packages/decoder/src/index.ts, packages/core/src/report.ts, packages/decoder/src/pnl.ts
 - Serves: Functionality (judged) ; F1 coverage share
