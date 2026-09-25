@@ -1,7 +1,8 @@
 import { expect, test } from 'vitest'
 import { TOOLS } from '@agon/core'
 import { reportRoute } from '@agon/web'
-import { callTool, isTool } from './index.js'
+import { callAsTool, callTool, isTool } from './index.js'
+import { textOf } from './test-support.js'
 
 const WALLET = '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM'
 
@@ -71,4 +72,33 @@ test('all 4 tools are reachable, and arm_rule refuses rather than answering', as
   expect(isTool('drop_table')).toBe(false)
   await expect(callTool('arm_rule', SPEC)).rejects.toThrow(/F5 and F6/)
   expect(await callTool('list_rules', { wallet: WALLET })).toEqual([])
+})
+
+test('a replayed check_trade says it was replayed, which is what nobody could see before', async () => {
+  // The finding this test exists for. An outside agent called the deployed server, read USDC's
+  // real freeze and mint authorities out of a check_trade verdict, confirmed those facts against
+  // mainnet, and reported that the tool was reading chain state. It was replaying a recording.
+  // Every number was true and the conclusion was wrong, and nothing in the payload disagreed.
+  const result = await callAsTool('check_trade', {
+    wallet: RECORDED,
+    mint: USDC,
+    side: 'buy',
+    size: '2000000000',
+  })
+  const payload = JSON.parse(textOf(result)) as { note?: string; verdict?: string }
+
+  expect(payload.verdict).toBe('block')
+  expect(payload.note, 'a replayed verdict went out with no marker on it').toBeDefined()
+  expect(payload.note).toContain('recorded fixture')
+})
+
+test('the marker is per call, so one replayed answer does not brand the next', async () => {
+  // A single flag shared across a server's lifetime would mark every later answer once any early
+  // read hit a recording. arm_rule touches no network at all and must stay unmarked.
+  const armed = await callAsTool('arm_rule', SPEC)
+  expect(armed.isError).toBe(true)
+  expect(textOf(armed)).not.toContain('recorded fixture')
+
+  const rules = await callAsTool('list_rules', { wallet: WALLET })
+  expect(textOf(rules)).not.toContain('recorded fixture')
 })
