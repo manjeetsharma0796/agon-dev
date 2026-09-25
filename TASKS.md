@@ -376,7 +376,9 @@ and latency (a, b).
 ### T-D06, Verify the cap that is on chain, not the one we meant to send
 - Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/103 | Owner: manjeetsharma0796 | Branch: feature/t-d06-verify-real-cap
 - Depends-on: T-D01
-- Touches: packages/chain/src/swig/index.ts, packages/chain/src/kill-switch.ts
+- Touches: packages/chain/src/swig/index.ts, packages/chain/src/swig/real-cap.test.ts,
+  packages/chain/src/expiry.test.ts, packages/cli/src/commands/revoke.test.ts, and NOT
+  packages/chain/src/kill-switch.ts, which this line claimed and the work never needed
 - Serves: Novelty (judged) ; the custody claim
 - Acceptance: assertAgentRoleShape reads the configured recurring amount rather than the remaining
   allowance, so a role with a spent window still verifies and the kill switch removes it, asserted
@@ -390,6 +392,15 @@ and latency (a, b).
   reviews demanded. The spent-window case forges a real role by zeroing currentAmount in the encoded
   bytes rather than stubbing one, with both candidate offsets probed to confirm which field is which
 - Kill criterion: none. This is the layer that assumes every layer above it failed
+- Correction 2026-09-25, after the fact: this `Touches:` line was wrong while the work was done and
+  is fixed above rather than left to mislead. The row was worked on 2 files it did not claim, one of
+  them `packages/cli/src/commands/revoke.test.ts`, which belongs to Track C, and that is exactly the
+  collision `Touches:` exists to prevent. It was not noticed at the time because widening the shape
+  check's `RoleActions` interface broke every hand-rolled stub of it, and the stubs live wherever
+  their own package's tests live. Worth knowing for anyone widening a shared interface: the blast
+  radius is every fake of it, not only the file you set out to change. It also claimed
+  `kill-switch.ts`, which never needed an edit: the fail-open there was cured entirely by fixing the
+  shape check it delegates to, which is what "sharing the definition" in that file was for
 - Finding: the fix almost shipped the same fail-open through a different door, which is the finding
   worth keeping. Reading the CONFIGURED cap needs the token action before the program action in the
   buffer, because `Actions.tokenSpend` does `find(a => a.tokenControl(mint).spendLimit != null)` and
