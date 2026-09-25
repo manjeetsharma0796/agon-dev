@@ -615,7 +615,7 @@ and latency (a, b).
   owner BPFLoaderUpgradeable. 4.2 MB, committed for the same reason F9's 281 KB is
 
 ### T-F05b, F5 route size, 20 Jupiter routes against the v1 limit
-- Status: open
+- Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-f05b-route-size
 - Depends-on: T-D01, OP-3
 - Touches: spikes/F5/route-size/
 - Serves: Functionality (judged) ; CP1 gate
