@@ -85,12 +85,24 @@ importers:
       '@agon/core':
         specifier: workspace:*
         version: link:../core
+      '@agon/decoder':
+        specifier: workspace:*
+        version: link:../decoder
+      '@agon/miner':
+        specifier: workspace:*
+        version: link:../miner
 
   packages/mcp:
     dependencies:
       '@agon/core':
         specifier: workspace:*
         version: link:../core
+      '@agon/decoder':
+        specifier: workspace:*
+        version: link:../decoder
+      '@agon/guard':
+        specifier: workspace:*
+        version: link:../guard
       '@agon/web':
         specifier: workspace:*
         version: link:../../apps/web

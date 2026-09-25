@@ -7,10 +7,16 @@
   "include": ["src"],
   "references": [
     {
+      "path": "../../apps/web/tsconfig.lib.json"
+    },
+    {
       "path": "../core"
     },
     {
-      "path": "../../apps/web/tsconfig.lib.json"
+      "path": "../decoder"
+    },
+    {
+      "path": "../guard"
     }
   ]
 }
