@@ -118,3 +118,36 @@ test('reading the role back from the chain compares the cap the user approved', 
     ).resolves.toBe(onChain),
   ])
 })
+
+test('a role armed in the old action order is still ours, and is still revocable', () => {
+  // The regression this file nearly shipped. Reading the configured cap needs the token action
+  // first, so requiring it to be readable made every role the previous version armed, and every
+  // role built program-first by anything else, fail the shape check. isAgentRole would swallow that,
+  // planRevokeAll would file it as "not ours to remove", and the kill switch would report nothing
+  // found: the same fail-open this row exists to close, reached by a different door.
+  //
+  // The rule that prevents it: the revoke path must never be stricter than the arm path, or it
+  // cannot clean up what arming produced.
+  const programFirst = asRole(
+    Actions.set().programLimit({ programId: JUPITER_PROGRAM_ID }).tokenRecurringLimit(spec).get(),
+  )
+  expect(programFirst.tokenSpend(USDC).recurringLimit).toBeUndefined()
+
+  expect(() => assertAgentRoleShape(programFirst, USDC)).not.toThrow()
+  expect(isAgentRole(programFirst, USDC)).toBe(true)
+  expect(planRevokeAll([{ id: 7, actions: programFirst }], () => USDC).revoke).toEqual([7])
+
+  // Arming is the one place it must still fail, because there the cap has to be verified and a
+  // cap that cannot be read cannot be verified. Fails closed, and says which way it failed.
+  expect(() =>
+    assertAgentRoleShape(programFirst, USDC, {
+      amount: spec.recurringAmount,
+      window: spec.window,
+    }),
+  ).toThrow(/could not be read/)
+})
+
+test('an all-zero approved cap cannot stand in for a real one', () => {
+  const role = agentRoleActions(spec)
+  expect(() => assertAgentRoleShape(role, USDC, { amount: 0n, window: 0n })).toThrow(/positive/)
+})

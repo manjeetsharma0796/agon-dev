@@ -157,6 +157,10 @@ export function agentRoleActions(spec: AgentRoleSpec): RoleActions {
  * we built it from. Those are the same thing right up until they are not, and the whole point of
  * the cap is that it is checked against the chain.
  *
+ * `approved` must be the numbers the USER confirmed, never the `AgentRoleSpec` this role was built
+ * from. Comparing a spec against a role built from that same spec is a tautology that always passes
+ * and looks like verification.
+ *
  * `approved` is optional on purpose, and the reason is the kill switch. Revocation has to identify
  * our roles long after the arming session is over, when nobody remembers the numbers the user
  * signed for, so it calls this to ask "is this shape ours" with no cap to compare. Arming does know
@@ -212,17 +216,35 @@ export function assertAgentRoleShape(
       `This role carries no spending limit for ${mint}, so nothing would stop it. Arm a recurring limit first.`,
     )
   }
-  const spend = role.tokenSpend(mint)
-  const configured = spend.recurringLimit
-  if (configured === undefined || configured <= 0n) {
-    throw new Error(
-      `This role's configured cap for ${mint} could not be read, so there is no number to verify. ` +
-        'A cap that cannot be read is not a cap that can be trusted.',
-    )
-  }
+  // Everything above is the identity check, and it stops here on purpose.
+  //
+  // Reading the CONFIGURED cap needs the token action to sit before the program action in the
+  // buffer, for the SDK reason described in `agentRoleActions`. Requiring it here would make this
+  // check stricter than the one that armed the role, and every role armed program-first, which is
+  // every role the previous version of this file produced, would stop being recognised as ours:
+  // `isAgentRole` swallows the throw, `planRevokeAll` files the role as "not ours to remove", and
+  // the kill switch reports nothing found. That is the same fail-open this function was changed to
+  // close, reached through a different door.
+  //
+  // So the rule is: the revoke path is never stricter than the arm path, or it cannot clean up what
+  // arming produced. The cap is verified where there is something to verify it against.
   if (approved !== undefined) {
-    // The number that reached the chain against the number the user signed for. Never checked
-    // before, so a role armed at 25,000,000 when the user approved 25 passed.
+    if (approved.amount <= 0n || approved.window <= 0n) {
+      throw new Error(
+        `An approved cap of ${approved.amount} base units over ${approved.window} slots is not a ` +
+          'cap. Both have to be positive, or the comparison below would pass on an unset object.',
+      )
+    }
+    const spend = role.tokenSpend(mint)
+    const configured = spend.recurringLimit
+    if (configured === undefined || configured <= 0n) {
+      throw new Error(
+        `This role's configured cap for ${mint} could not be read, so there is no number to check ` +
+          `against the ${approved.amount} the user approved. Nothing is armed on a cap we cannot read.`,
+      )
+    }
+    // The number that reached the chain against the number the user signed for. Never compared
+    // before, so a role armed at 25,000,000 when the user approved 25 passed every check.
     if (configured !== approved.amount) {
       throw new Error(
         `This role is armed at ${configured} base units of ${mint} per window, but the user ` +
