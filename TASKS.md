@@ -374,7 +374,7 @@ and latency (a, b).
   positioned to turn a real run green, and it is live today in spikes/F1/result.json
 
 ### T-D06, Verify the cap that is on chain, not the one we meant to send
-- Status: open
+- Status: claimed 2026-09-25 | Owner: manjeetsharma0796 | Branch: feature/t-d06-verify-real-cap
 - Depends-on: T-D01
 - Touches: packages/chain/src/swig/index.ts, packages/chain/src/kill-switch.ts
 - Serves: Novelty (judged) ; the custody claim
