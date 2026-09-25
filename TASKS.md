@@ -515,7 +515,8 @@ and latency (a, b).
 - Acceptance: creates a role with `program = Jupiter` and `tokenRecurringLimit` and nothing
   else; the agent key holds 0 `manageAuthority`, verified by reading the role on-chain and not
   from our config; Swig and Jupiter program ids pinned in config, 0 read from user input;
-  transactions built as v1 with `@solana/kit` 8.0.0 or later
+  transactions built as v1 with `@solana/kit` ^2.1.0, which is what every published Swig package
+  pins (amended 2026-09-24 by Jishnu, see the T-D01 finding: 8.0.0 was unreachable)
 - Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/39, role shape and the no-manageAuthority
   check with 4 negative controls. The on-chain round trip belongs to T-F05a
 - Finding: the last acceptance clause cannot be met. It asks for transactions built with
