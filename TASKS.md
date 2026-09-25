@@ -656,7 +656,7 @@ and latency (a, b).
 - Kill criterion: fallback is lowering Jupiter `maxAccounts` until the route fits 64 inline accounts and measuring the price cost; a route still needing more than 64 accounts goes out as v0 with lookup tables inside 1,232 bytes
 
 ### T-F06a, F6 spike, Trigger order owned by a Swig wallet, in simulation
-- Status: open
+- Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-f06a-trigger
 - Depends-on: T-D01, OP-3
 - Touches: spikes/F6/
 - Serves: Novelty (judged) ; CP1 gate
