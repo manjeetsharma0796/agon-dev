@@ -393,7 +393,7 @@ and latency (a, b).
   third bucket exists to prevent, and F1 is existential
 
 ### T-A08, Carry the native SOL leg across the enhanced endpoint
-- Status: open
+- Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-a08-enhanced-native
 - Depends-on: T-A07
 - Touches: packages/decoder/src/enhanced.ts, packages/decoder/src/decoder.test.ts
 - Serves: Functionality (judged) ; F1 coverage share
