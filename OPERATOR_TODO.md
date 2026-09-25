@@ -348,6 +348,21 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   laptop and a file in git, not a machine anyone provisions. Unmeasured and worth checking before
   anyone plans around it: F5 executes a swap, so its snapshot also pulls Jupiter's program account,
   its lookup tables and pool accounts, and will be larger than 281 KB. How much larger is not known
+- Measured 2026-09-25, and the answer was not a size, it was a defect: `surfnet_exportSnapshot`
+  **does not export programs at all**. Touching Jupiter and Swig on a live fork leaves the export
+  at 294 accounts and 278 KB, unchanged, and neither program id appears in it. The only 2 scopes
+  the method accepts are `network` and `preTransaction`; `network` is what F9 uses and it emits
+  data accounts only. So the F9 pattern, commit a snapshot and replay it `--offline` with no key,
+  does not extend to F5 by itself, because the programs F5 has to execute would be missing.
+  It does extend with one step. The snapshot *format* carries `executable`, and `--snapshot` can be
+  given more than once, so the 4 program accounts can be written into a second file by hand from a
+  live fork read. Verified end to end: `surfpool start --offline --snapshot spikes/F9/snapshot.json
+  --snapshot programs.json`, with HELIUS_API_KEY unset, serves Jupiter and Swig at their real
+  mainnet ids with `executable: true` and owner BPFLoaderUpgradeable. **So F5 can be offline and
+  reproducible on a fork, and it keeps F9's no-key property.**
+  The size, finally: 4,114 KB for the 4 accounts, which is Jupiter's program data at 3,766 KB and
+  Swig's at 347 KB, on top of F9's 278 KB. Whether that 4 MB is committed the way F9's 281 KB was,
+  which is what buys the no-key replay, is a call for whoever picks up T-F05a
 - Scope of the decision: the fork is for the demo and for proving F5 and F6. It is NOT the path new
   users are put on, because a fork needs each user pointed at a custom RPC, which is the same
   instruction every wallet drainer gives, and because one shared fork means one user's swap moves

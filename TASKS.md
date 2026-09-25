@@ -529,7 +529,7 @@ and latency (a, b).
 - Kill criterion: none. If the cap does not hold on-chain the custody story is gone, see T-F05a
 - Finding: two ways the cap reads as holding when it does not. (1) tokenSpendLimit returns the REMAINING allowance, not the configured cap, so a role whose window is spent reads 0 and assertAgentRoleShape throws "carries no spending limit"; kill-switch isAgentRole swallows that, planRevokeAll files the role under kept as "not ours to remove", and revokedMessage reports "No Agon roles were found". The emergency stop fails open on exactly the role that has been trading hardest, and Swig resets the window afterwards. (2) canUseProgram returns true unconditionally under ProgramAll, and the SDK silently appends programAll to any action set with no program action, so a stored role of programAll plus tokenRecurringLimit has count 2 and is ACCEPTED as "program = Jupiter". Also the approved cap AMOUNT is never compared to what the user signed, only that a limit exists, and the window is never checked beyond being positive. Fix is T-D06.
 ### T-F05a, F5 spike, 7 cases on devnet
-- Status: blocked, see OP-20
+- Status: open, unblocked 2026-09-25: OP-20 decided on a mainnet fork, and the fork was measured
 - Depends-on: T-D01
 - Touches: spikes/F5/, scripts/board.mjs
 - Serves: Novelty (judged) ; CP1 gate
