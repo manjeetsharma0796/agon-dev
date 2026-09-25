@@ -22,3 +22,6 @@ export {
 // The Jev client and the injection screen, T-C05. The only part of the guard that asks a model
 // anything, and the only 3 questions it is allowed to ask.
 export * from './jev/index.js'
+
+// The whole read path composed once: history and a proposed trade in, a verdict out. T-C09.
+export { assessTrade, DEFAULT_QUOTE, type Assessment, type ProposedTrade } from './assess.js'

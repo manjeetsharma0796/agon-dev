@@ -254,3 +254,6 @@ export function decodeAll(
 
 // Realised P&L over decoded swaps, FIFO. T-A02.
 export * from './pnl.js'
+
+// Helius's enhanced shape, translated at the edge into the one shape above.
+export { fromEnhanced, type EnhancedTransaction } from './enhanced.js'

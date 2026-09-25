@@ -14,28 +14,14 @@
 // print `pass`. Unscreened text is `unsure`, and `unsure` is not a soft pass. A trade that clears
 // the arithmetic still says so as `unsure`, and names what was not read.
 
-import { decodeAll, fifoLedger, type RawTransaction } from '@agon/decoder'
-import { mine } from '@agon/miner'
-import { checkMints, checkTrade, type MintCheck } from '@agon/guard'
+import type { RawTransaction } from '@agon/decoder'
+import { assessTrade, DEFAULT_QUOTE, type MintCheck, type ProposedTrade } from '@agon/guard'
 
 import type { ReportIo } from './report.js'
-
-/** SOL, the quote a report is denominated in. Same default as `agon report`, for the same reason. */
-const DEFAULT_QUOTE = 'So11111111111111111111111111111111111111112'
-
-/** What the spend is counted in on a buy. 9 decimals, so 800000000 base units reads as 0.8 SOL. */
-const SOL = { symbol: 'SOL', decimals: 9 }
 
 export interface CheckIo extends ReportIo {
   /** Reads the mint's authorities off the chain. Fails closed, and the guard treats it that way. */
   loadMintCheck(mint: string): Promise<MintCheck>
-}
-
-interface ProposedTrade {
-  wallet: string
-  mint: string
-  side: 'buy' | 'sell'
-  size: string
 }
 
 /**
@@ -51,27 +37,12 @@ export function checkLines(
   mintCheck: MintCheck,
   quoteMint: string = DEFAULT_QUOTE,
 ): { verdict: 'pass' | 'block' | 'unsure'; lines: string[] } {
-  const decoded = decodeAll([...txs], trade.wallet)
-  const mined = mine(fifoLedger(decoded.swaps).closedTrades, quoteMint)
-
-  const out = checkTrade(
-    { wallet: trade.wallet, mint: trade.mint, side: trade.side, size: trade.size },
-    {
-      mint: mintCheck,
-      rules: mined.rules,
-      // Both null on purpose. See the header: this is the arithmetic-only fast path.
-      quote: null,
-      jev: null,
-      spendAsset: SOL,
-      categoryMix: null,
-      ruleVersion: mintCheck.ruleVersion,
-    },
-  )
+  const { verdict: out, closedTrades, rules } = assessTrade(txs, trade, mintCheck, quoteMint)
 
   const lines = [
     `Wallet ${trade.wallet}`,
-    `Mined from ${mined.metrics.closedTrades} closed trades: ` +
-      mined.rules.map((r) => `${r.kind} ${r.found ? String(r.value) : 'none'}`).join(', '),
+    `Mined from ${closedTrades} closed trades: ` +
+      rules.map((r) => `${r.kind} ${r.found ? String(r.value) : 'none'}`).join(', '),
     `Proposed: ${trade.side} ${trade.size} base units of ${trade.mint}`,
     '',
     `Verdict: ${out.verdict}`,

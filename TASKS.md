@@ -696,7 +696,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 ### T-C07, MCP server, 4 tools and a stable list
 - Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/80 | Owner: Jishnu | Branch: feature/t-c07-mcp
 - Depends-on: T-C06
-- Touches: packages/mcp/src/
+- Touches: packages/mcp/src/, packages/guard/src/assess.ts, packages/decoder/src/enhanced.ts
 - Serves: Functionality (judged) ; Open source (judged)
 - Acceptance: exactly 4 tools (`get_report`, `check_trade`, `arm_rule`, `list_rules`) in 1 stable
   list so prompt caches survive; token budgets enforced in tests on the golden wallets,
@@ -706,7 +706,10 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/80, plus the third-party client transcript in the PR
   body. Measured on the fixture wallet the mcp and web suites already share: get_report 815 chars,
   about 204 tokens, 9.8x headroom under the 2,000 budget; check_trade 315 chars, about 79 tokens,
-  5.1x headroom under the 400 budget. `check_trade`'s answer is still T-E03's fixture verdict, not
+  5.1x headroom under the 400 budget. Follow-up PR: `check_trade` is now T-C06's real guard over a
+  real wallet read, reachable over Streamable HTTP so it can be port forwarded, and `get_report`
+  carries FIXTURE_NOTE in its payload. Earlier state, kept because it is what the numbers above
+  were measured on: `check_trade`'s answer was still T-E03's fixture verdict, not
   T-C06's arithmetic guard, which lands separately: this PR proves the shape and the transport are
   correct and stay in budget, not that the verdict is right yet
 - Finding: T-E03's dispatch had no transport, so nothing actually spoke MCP; the 4-tool contract
@@ -1123,6 +1126,15 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
   answers are "not read", and unscreened text is `unsure`, which is not a soft pass. That is the
   contract behaving correctly and it means `agon check` is a refusal machine until the quote and
   the screen are wired, which is worth knowing before a demo is built around a green verdict
+- Finding: wiring the real guard behind MCP showed the server had no way to be reached at all.
+  `createServer()` existed and every test passed, because each one wired an in-memory transport
+  inside its own process, so "callable by any agent" was proven against a client that shared the
+  server's heap. There was no stdio entry, no HTTP entry and no bin, so a fresh assistant on
+  another machine had nothing to connect to. Added a Streamable HTTP entry on `node:http`, no
+  express, since the SDK transport takes a plain req and res. Second finding from the same pass:
+  `FIXTURE_NOTE` existed and was never surfaced over MCP, so an agent calling `get_report` got
+  example numbers with nothing saying they were examples, which is worse than not having the tool.
+  It now rides in the payload, 77 characters against a budget measured at 227 of 2,000
 - Kill criterion: none, the MCP server is how any agent reaches the guard
 
 ### T-E08, Onboarding

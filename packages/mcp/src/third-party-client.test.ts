@@ -13,11 +13,15 @@ import { textOf } from './test-support.js'
 // function. The in-memory transport is the SDK's own test seam, not a transport we built.
 
 const WALLET = '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM'
+// check_trade really reads a wallet now, so the trade has to name one we have a recording for, or
+// the tool correctly refuses because it could not read the history. That refusal is the right
+// answer and the wrong test: this one is about whether a third-party client can reach the tool.
+const RECORDED = 'HLnpSz9h2S4hiLQ43rnSD9XkcUThA7B8hQMKmDaiTLcC'
 const TRADE = {
   mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
   side: 'buy',
-  size: '3200000000',
-  wallet: WALLET,
+  size: '2000000000',
+  wallet: RECORDED,
 }
 
 const connectThirdPartyClient = async (): Promise<Client> => {
@@ -82,4 +86,17 @@ test('an unknown tool name is refused, not silently ignored', async () => {
   const result = await client.callTool({ name: 'drop_table', arguments: {} })
   expect(result.isError).toBe(true)
   expect(textOf(result)).toContain('drop_table')
+})
+
+test('a wallet with no history is refused over MCP, not answered from nothing', async () => {
+  const client = await connectThirdPartyClient()
+  const result = await client.callTool({
+    name: 'check_trade',
+    arguments: { ...TRADE, wallet: WALLET },
+  })
+  // Anything that can move funds fails closed. There is no recording for this wallet, so the read
+  // fails, and the tool says so through isError rather than returning a verdict behind which there
+  // is no history at all.
+  expect(result.isError).toBe(true)
+  expect(textOf(result).length).toBeGreaterThan(0)
 })
