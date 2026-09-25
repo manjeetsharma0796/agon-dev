@@ -974,7 +974,17 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: fallback is no automatic expiry, a short recurring window instead, and the UI says "no end date: revoke from your wallet". Never fall back to giving the agent admin rights
 
 ### T-F07, F7 spike, pre-signed expiry
-- Status: blocked, see OP-19
+- Finding 2: **the native expiry holds on chain.** Measured on a fork, which funds itself so this
+  no longer waits on OP-19. A session was started with a 20 slot duration, the role read back
+  `expirySlot 486`, the session key was tried again at slot 489, and the Swig program refused it
+  with `custom program error: 0xbc6`. Clause 4 passes in the same run and is read off the role
+  rather than inferred from nothing going wrong: the agent held `manageAuthority` false.
+  So clauses 2 and 3, which describe a pre-signed removal, describe a second way to do something
+  the protocol already does. Whether that is still wanted is OP-30, and it decides whether T-D02
+  needs building at all. Not run, with that as the stated reason rather than a blocker
+- Finding 3, cheap: `createSession` is signed by the role's own authority, not by the payer. Signing
+  with the payer alone fails signature verification, which cost a run
+- Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-f07-fork
 - Depends-on: T-D02
 - Touches: spikes/F7/
 - Serves: UX (judged) ; CP2 gate
@@ -1002,7 +1012,6 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   checks as expected against 2.1.0, versions recorded so a future release cannot quietly change the
   answer.
 - Kill criterion: fallback is a short recurring window and no end date in the UI
-
 ### T-D03, Kill switch
 - Status: blocked, see OP-19
 - Depends-on: T-D01

@@ -681,3 +681,27 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   against whichever answer wins.
 - Why it cannot wait: F6 is existential and 1 of its 4 clauses cannot pass as written, so the row
   cannot go green on any platform until the sentence is fixed. This is the same shape as OP-28.
+
+### OP-30, Is the pre-signed expiry still wanted, now that the native one is measured working
+- Status: open
+- Owner: <unassigned>
+- Needed by: CP2, and sooner if T-D02 is about to be built
+- Unblocks: T-F07 clauses 2 and 3, and the whole of T-D02
+- What exactly: F7 clause 1 found that Swig has a native expiry. The on-chain half now measures
+  that it holds. On a fork: a session was started with a 20 slot duration, the role read back
+  `expirySlot 486`, the session key was tried again at slot 489, and the Swig program refused it
+  with `custom program error: 0xbc6`. Clause 4 passes in the same run, read off the role rather
+  than inferred: the agent held `manageAuthority` false.
+  Clauses 2 and 3 describe a pre-signed removal landing after expiry, which is T-D02's mechanism.
+  If the protocol already expires a session by itself, that mechanism is a second way to do
+  something that already works, and a pre-signed transaction sitting around waiting to be
+  submitted is a thing that can be lost, leaked or replayed. So the question is whether T-D02 is
+  still wanted at all.
+  Not a decision a spike should make for itself, which is why this is a row. If the answer is that
+  the native expiry is enough, T-D02 is cut and F7's clauses 2 and 3 are rewritten against the
+  session mechanism. If the pre-signed path is still wanted, say why, because the reason will be
+  the thing that justifies the extra surface.
+- Done when: the answer is in the PRD Decisions log, T-D02 is cut or kept with a reason, and
+  T-F07's clauses 2 and 3 say which mechanism they are about.
+- Why it cannot wait: T-D02 is unclaimed work that may not need doing, and it is the kind that
+  looks small until someone starts on durable nonces.
