@@ -1466,3 +1466,59 @@ Move a row here when its `Status:` reaches `done`, keeping its `Evidence:` link 
 it measured. This section is the honest history of the build, so nothing leaves it.
 
 _(empty)_
+
+### T-B11, Key material gitleaks cannot see
+- Status: claimed 2026-09-25 | Owner: manjeetsharma0796 | Branch: feature/t-b11-secret-shapes
+- Depends-on: T-B01
+- Touches: .github/workflows/gates.yml, scripts/secret-shapes.mjs
+- Serves: Functionality (judged) ; protects every PR that carries a fixture or a key
+- Acceptance: a second scan, independent of `.gitleaks.toml`, reports 0 findings on the recorded
+  fixtures now on dev and 1 finding for each of 3 planted shapes: a 64-number JSON byte array, a PEM
+  private key block, and a keypair committed under a name the gitleaks default config exempts by
+  path. The scan must NOT fire on a 32 to 44 character base58 value, which is what the fixtures are
+  made of, and must NOT fire on an 87 to 88 character base58 value, measured at 12 findings on this
+  repo and every one a transaction signature in a recorded fixture
+- Evidence: <the 2 clean scans and the 3 planted shapes, in the PR>
+- Kill criterion: none, but it is cut rather than loosened. If it needs a path exemption to pass, it
+  has become the hole it exists to close, because a path exemption is how this one got in
+- Finding: the gitleaks allowlist cannot be tightened to close this. The rule that lets recorded RPC
+  fixtures through forgives a 32 to 44 character base58 value under a field whose name ends in Key,
+  and a Solana PUBLIC address and a 32-byte ed25519 SECRET seed are byte-for-byte the same shape, so
+  no regex over the value separates them. Separately, `useDefault = true` inherits 24 path
+  exemptions including *.png, *.zip, *.pdf and lockfiles, so a keypair committed as assets/logo.png
+  is never opened. The gate is not weakly configured, it is asked for something regex cannot do
+
+### T-B12, Star the operator queue by sweep count, and let the parser read it
+- Status: claimed 2026-09-25 | Owner: manjeetsharma0796 | Branch: feature/t-b12-queue-stars
+- Depends-on: T-B01
+- Touches: OPERATOR_TODO.md, scripts/board.mjs
+- Serves: Functionality (judged) ; stops the queue being read in file order when order is not priority
+- Acceptance: every OP item still blocking work at a sweep carries 1 star per sweep it survived,
+  with a legend stating what the count means, and `node scripts/board.mjs` reports lint ok with 0
+  items reported as a missing OP, down from the 12 such reports a starred queue produces today
+- Evidence: <the lint run before and after, in the PR>
+- Kill criterion: none. If the stars ever disagree with the waiting-task count on the item, the
+  count wins and the stars go
+- Finding: the heading regex anchors the id to the start of the line, so a star makes the whole item
+  invisible to the parser, not merely unsorted. Measured: 12 tasks reported as depending on an OP
+  that "is not in OPERATOR_TODO.md" when the items were present and only starred. A presentation
+  change to the board silently broke the board's own dependency check
+
+### T-J05, Tighten the novelty claim against the nearest miss
+- Status: claimed 2026-09-25 | Owner: manjeetsharma0796 | Branch: feature/t-j05-novelty
+- Depends-on: OP-14
+- Touches: docs/plans/novelty.md
+- Serves: Novelty (judged) ; unblocks T-J01 and T-J03, which both depend on OP-14
+- Acceptance: one wording of the claim that names, for each of the 3 axes a real competitor gets
+  right, which axis it misses: whose history, what domain, what the output is. Every clause traceable
+  to a specific named project rather than added for emphasis
+- Evidence: <docs/plans/novelty.md, with the search date and the projects checked>
+- Kill criterion: if a project is found that derives a cap from a trader's own swaps AND enforces it
+  on-chain, the claim is dropped rather than narrowed until it is technically true
+- Finding: the claim as first written did not survive contact with the nearest miss. SENTINEL, an
+  x402-track project on Algorand, genuinely derives a threshold from history and writes the decision
+  on-chain, so "derives from history" and "enforces on-chain" are both taken. What is untaken is
+  whose history and what it gates: the agent's own runtime payments, not a trader's past swaps, and
+  an anomaly score after the fact, not a capped permission set before the agent trades. Colosseum's
+  own directory and Copilot need an account and were NOT searched, so the PRD's 2,992-entry figure
+  is still unverified by a second pair of eyes
