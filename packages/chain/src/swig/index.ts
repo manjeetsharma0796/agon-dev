@@ -66,8 +66,15 @@ export interface RoleActions {
   canUseProgram(programId: string): boolean
   canSpendTokenMax(mint: string): boolean
   tokenSpendLimit(mint: string): bigint | null
-  /** Is there a token control for this mint at all, whatever is left in the window. */
-  canSpendToken(mint: string, amount?: bigint): boolean
+  /**
+   * Is there a token control for this mint at all, whatever is left in the window.
+   *
+   * The SDK's version takes an optional amount, and this one deliberately does not. Passing an
+   * amount makes the answer depend on the REMAINING allowance, which is the exact confusion that
+   * made the kill switch refuse to revoke a role that had spent its window. Narrowing it here means
+   * a caller cannot reintroduce that by adding an argument.
+   */
+  canSpendToken(mint: string): boolean
   tokenSpend(mint: string): TokenSpend
 }
 
