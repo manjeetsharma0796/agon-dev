@@ -6,17 +6,14 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "dependencies": {
-    "@agon/core": "workspace:*",
     "next": "15",
     "react": "19",
-    "react-dom": "19"
+    "react-dom": "19",
+    "@agon/core": "workspace:*"
   },
   "scripts": {
     "build": "next build",
     "dev": "next dev -p 3111",
     "start": "next start -p 3111"
-  },
-  "devDependencies": {
-    "@types/react": "19.3.0"
   }
 }
