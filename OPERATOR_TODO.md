@@ -181,6 +181,13 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   the database tests cleanly.
 
 ### * OP-7, Create both GitHub repos and their tokens
+- Updated 2026-09-25, later the same day: the public repo now exists. `manjeetsharma0796/agon`,
+  public, default branch `main`, empty, and the invite is accepted. What is still wrong is that
+  nothing points at it. `scripts/release.mjs` defaults `PUBLIC_REPO` to `agon-dev/agon`, which is a
+  404, and `release.yml` passes `PUBLIC_REPO_TOKEN` but never sets `PUBLIC_REPO`. The repo also has
+  0 Actions secrets configured, so `PUBLIC_REPO_TOKEN` is absent too. The release still fails on
+  the first tag, at the push rather than at a check, for a different reason than before. 2 one-line
+  changes close it, both needing workflow scope or repo settings, which is why they stay here
 - Audited 2026-09-25, 2 of the 3 clauses verified and the third is a landmine. A claim push to
   `dev` succeeds: 17 claim PRs have merged. A code push straight to `dev` is rejected, tested just
   now with an empty commit, `GH013: Repository rule violations found for refs/heads/dev`. But the
@@ -577,3 +584,30 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   built in is a Track E call.
 - Done when: this is copied into the PRD Decisions log and Track E's screens name which mode they
   are for.
+
+### OP-27, arm_rule lets the agent choose its own spending limit
+- Status: open
+- Owner: <unassigned>
+- Needed by: before any arming UI is designed, so before T-E06
+- Unblocks: T-E06, T-C08, and the honesty of the core claim
+- What exactly: the product's claim is a spending limit the agent has to trade inside. The contract
+  that grants that limit currently lets the agent set it. `arm_rule` is an MCP tool an agent calls,
+  and its input is `RuleSpec`, whose 4 fields are `mints`, `cap`, `triggerType` and `expiresAt`.
+  So the agent names its own cap. Worse, and easier to check: **`RuleSpec` has no wallet field at
+  all**, so `arm_rule` cannot say whose account it is arming, while `list_rules` and `get_report`
+  both take a `WalletQuery`. And there is no signature, approval or user field anywhere on the
+  path, so nothing ties a cap to the person whose money it caps. `ArmedRule`'s own comment says
+  "what exists on-chain once the user's wallet has signed", and no part of the contract requires
+  that signature or records it.
+  None of this can bite today, because `armRule` refuses every call, which is why it has gone
+  unnoticed through 4 reviews. It bites the moment arming is built, and it is a frozen contract, so
+  it is cheaper to settle now than after 2 surfaces read it.
+  What the shape probably needs: the wallet the rule is for, and evidence that its owner approved
+  this cap rather than the caller proposing it. Whether that evidence is a signature over the spec,
+  a one-time approval reference, or arming simply not being an agent-callable tool at all, is the
+  decision. The 3rd option is worth taking seriously: a cap the agent cannot request is a stronger
+  claim than a cap it requests and is refused.
+- Done when: the owners of both sides agree the shape, `fixtures/contracts/` changes in the same
+  commit, and T-E06's screen is designed against whichever answer wins.
+- Why it cannot wait: it is the difference between the pitch and the opposite of the pitch, and
+  every client written against today's shape has to change when it does.
