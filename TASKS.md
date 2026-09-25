@@ -313,6 +313,14 @@ CP1 evidence required: F1 on 2 wallets; F3; F5 on devnet; F6 in simulation; F11 
 and latency (a, b).
 
 ### T-E03, Thin end-to-end version on staging
+- Finding 2: a server fault was reported as the caller's. Deleting `fixtures/contracts/` and
+  asking for a report on a valid address answered "That is not a valid Solana address." with a
+  400, and the real cause sat in `detail` where nothing reads it. A beta user would have gone and
+  checked their wallet while the server was the thing that was broken. `badRequest` caught
+  everything and blamed the caller for all of it. It now splits: a zod failure or an unparseable
+  body is a 400, anything else is a 500 that says the problem is not what you sent. Splitting on
+  zod alone sent "the request body is not JSON" to a 500, which the existing test caught, so
+  unparseable bodies throw a marked error rather than a plain one
 - Finding: the web app could not be started by a host. `apps/web` had `dev` and `start` and no
   `build`, and `next start` without a prior `next build` exits on "Could not find a production
   build in the '.next' directory". Nothing caught it because the root `build` is `tsc -b`, which

@@ -113,3 +113,31 @@ describe('the rule question', () => {
     expect(body.error).toContain('not recorded')
   })
 })
+
+test('a server-side failure is not blamed on the caller', async () => {
+  // Found by deleting fixtures/contracts and asking for a report: a valid address came back as
+  // "That is not a valid Solana address." with a 400, and the real cause sat in detail where
+  // nothing reads it. A beta user would have gone and checked their wallet.
+  const { default: fs } = await import('node:fs')
+  const dir = new URL('../../../fixtures/contracts/', import.meta.url)
+  const file = new URL('report.json', dir)
+  const saved = fs.readFileSync(file, 'utf8')
+  fs.rmSync(file)
+  try {
+    const res = await reportRoute(
+      new Request('https://x/api/report?wallet=HLnpSz9h2S4hiLQ43rnSD9XkcUThA7B8hQMKmDaiTLcC'),
+    )
+    const body = (await res.json()) as { error: string; detail: string }
+    expect(res.status, 'a missing fixture is our fault, not a bad request').toBe(500)
+    expect(body.error).not.toContain('not a valid')
+    expect(body.detail).toContain('fixture is missing')
+  } finally {
+    fs.writeFileSync(file, saved)
+  }
+})
+
+test('a genuinely bad address is still the caller fault', async () => {
+  const res = await reportRoute(new Request('https://x/api/report?wallet=nope'))
+  expect(res.status).toBe(400)
+  expect(((await res.json()) as { error: string }).error).toContain('not a valid Solana address')
+})
