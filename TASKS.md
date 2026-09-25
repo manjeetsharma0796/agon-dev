@@ -543,6 +543,19 @@ and latency (a, b).
 - Kill criterion: none. If the cap does not hold on-chain the custody story is gone, see T-F05a
 - Finding: two ways the cap reads as holding when it does not. (1) tokenSpendLimit returns the REMAINING allowance, not the configured cap, so a role whose window is spent reads 0 and assertAgentRoleShape throws "carries no spending limit"; kill-switch isAgentRole swallows that, planRevokeAll files the role under kept as "not ours to remove", and revokedMessage reports "No Agon roles were found". The emergency stop fails open on exactly the role that has been trading hardest, and Swig resets the window afterwards. (2) canUseProgram returns true unconditionally under ProgramAll, and the SDK silently appends programAll to any action set with no program action, so a stored role of programAll plus tokenRecurringLimit has count 2 and is ACCEPTED as "program = Jupiter". Also the approved cap AMOUNT is never compared to what the user signed, only that a limit exists, and the window is never checked beyond being positive. Fix is T-D06.
 ### T-F05a, F5 spike, 7 cases on a mainnet fork
+- Finding 5: 3 cases now run and 2 pass, the first real F5 measurements. (c) a system transfer out
+  of the Swig wallet to an arbitrary address is refused by the Swig program itself, `custom program
+  error: 0xbbe`. (f) root removes the role, it stops reading back on the account, and the next
+  agent transaction is refused. (d) fails: a memo instruction, 0 accounts and no value moved, is
+  authorised under the same role. Read with (c) that says the program limit gates value movement
+  rather than every CPI, which is coherent but is not what the acceptance says, so it is OP-28
+  rather than a quiet rewording.
+  The first version of (c) was a false pass and is worth recording as its own lesson: it built the
+  transfer from `swigAccount.address`, which holds the roles, rather than the wallet PDA, which
+  holds the funds. The system program refused it for a missing signature, the case counted that as
+  the program limit holding, and it proved nothing. A refusal is only evidence when it is the
+  refusal the case is about, so (c) now funds the right address and reports "not run" rather than
+  "pass" if the answer comes back on a signature or a balance
 - Finding 4: on the fork the 6 scriptable cases fell through both of the runner's not-run tests
   and were reported with an empty reason, which is the blank field the catalogue forbids. It read
   as though each had been checked and produced no answer, when nothing had been checked at all.
@@ -559,7 +572,7 @@ and latency (a, b).
   reason, because the case bodies were deliberately left unwritten while the platform was
   undecided. F5 is no longer blocked on a chain, a program or a faucet. It is blocked on code
   nobody has written, which is the first time that has been true
-- Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-f05a-case-reasons
+- Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-f05a-cases-cdf
 - Depends-on: T-D01
 - Touches: spikes/F5/, scripts/board.mjs
 - Serves: Novelty (judged) ; CP1 gate

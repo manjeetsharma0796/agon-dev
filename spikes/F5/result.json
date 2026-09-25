@@ -1,10 +1,10 @@
 {
   "id": "F5",
   "pass": false,
-  "measured": "0 of 7 cases exercised on a local mainnet fork at slot 38. The pinned Jupiter id is a program on a local mainnet fork. The Swig program is live (executable true, owner BPFLoaderUpgradeab1e11111111111111111111111), the agent role builds and passes assertAgentRoleShape, and the first of the 7 transactions reaches a local mainnet fork and is answered \"landed, signature 2rcktsQJK4pz4xZp9KNHbPR9hPHSb3XriTW4NeVbyo7BW3mxbMYzQo18P6eY8jA5KtP29kQRoAbC97ugtgcRtedD\", so nothing in our code is the blocker. Separately the payer holds 1000000000 lamports against the 2100160 the 7 cases need.",
+  "measured": "2 of 7 cases exercised on a local mainnet fork at slot 132. The pinned Jupiter id is a program on a local mainnet fork. The Swig program is live (executable true, owner BPFLoaderUpgradeab1e11111111111111111111111), the agent role builds and passes assertAgentRoleShape, and the first of the 7 transactions reaches a local mainnet fork and is answered \"landed, signature 2kkesWgtG5oR2Qa5tRG1rbG6nHRix5sJ1yyjaXp6ZuLiojiw4FHuSfQrx3AB7JVHs83drh9NdUgmdNrPpWavhy25\", so nothing in our code is the blocker. Separately the payer holds 1000000000 lamports against the 2100160 the 7 cases need.",
   "date": "2026-09-25",
-  "commit": "769b4894266d16c7c05d73d4be07deba3d91d46e",
-  "slot": 38,
+  "commit": "03784dd759956aa385f4dbe9690eaa11cef229c1",
+  "slot": 132,
   "rpc": "http://127.0.0.1:8899",
   "keySource": "generated in memory",
   "devnet": {
@@ -35,7 +35,7 @@
       {
         "faucet": "the configured RPC",
         "http": 200,
-        "answer": "{\"jsonrpc\":\"2.0\",\"result\":\"45BEDxchJ7Tbvua1ofZmz13TL8AygCWqwySobFpzWoBQct2nu2DkxjQ24CLp2AhrwN4Hkdporw1xNCZ6UqhwSDRc\",\"id\":1}"
+        "answer": "{\"jsonrpc\":\"2.0\",\"result\":\"5Rx7QQemDRDRaHQ8mfR8LLe4rfRdHEmwWFEYQp42F7jpqP6n2CDEwHMFc6vQXak4oJXYh9v9g4vZZ4rFns55PCL3\",\"id\":1}"
       },
       {
         "faucet": "api.devnet.solana.com",
@@ -72,8 +72,8 @@
   "firstTransaction": {
     "instruction": "createSwig, the first of the seven cases",
     "bytes": 351,
-    "swigAddress": "3PekqC3mSxUjussYgmmqQzZ69yzwsLiqtWviZoA28G1d",
-    "answer": "landed, signature 2rcktsQJK4pz4xZp9KNHbPR9hPHSb3XriTW4NeVbyo7BW3mxbMYzQo18P6eY8jA5KtP29kQRoAbC97ugtgcRtedD"
+    "swigAddress": "3N4btKAQeZ4QnhUd3avqR136W51Hw3XPRpHinfDTTj3s",
+    "answer": "landed, signature 2kkesWgtG5oR2Qa5tRG1rbG6nHRix5sJ1yyjaXp6ZuLiojiw4FHuSfQrx3AB7JVHs83drh9NdUgmdNrPpWavhy25"
   },
   "cases": {
     "a": {
@@ -88,13 +88,13 @@
     },
     "c": {
       "states": "transfer to an arbitrary address rejected",
-      "status": "not run",
-      "why": "the case body is not written yet, and the platform is no longer the blocker"
+      "status": "pass",
+      "why": "refused: Simulation failed. Message: Transaction simulation failed: Error processing Instruction 0: custom program error: 0xbbe: 3 log messages: Program swigypWHEksbC64pWKwah1WTeh9JXwx8H1rJHLdbQMB invoke [1] Program swigypWHEksbC64pWKwah1WTeh9JXwx8H1rJHLdbQMB consumed 2551 of 200000 compute units Program swi"
     },
     "d": {
       "states": "call to a non-Jupiter program rejected",
-      "status": "not run",
-      "why": "the case body is not written yet, and the platform is no longer the blocker"
+      "status": "fail",
+      "why": "a memo instruction, which carries 0 accounts and moves nothing, was authorised under a role whose only program permission is Jupiter: signature 5YNu1ESYPtNNXn5iMj8vA1ACeNsKURvRKZtR5EUfa4w11tmYS8mbbPTeAkTaUcxjCiw8AtEsY1DX9cowmKP2jaa5. Read with (c), where a system transfer through the same role was refused by Swig itself with custom program error 0xbbe, this says the program limit gates value movement and not every CPI. The acceptance clause says \"a call to a non-Jupiter program is rejected\" without qualification, so either the clause wants narrowing to calls that move value, or the role wants an action that refuses all of them. That is a CP1 decision and not a spike's to make"
     },
     "e": {
       "states": "allowance restored at the expected slot after the window",
@@ -103,8 +103,8 @@
     },
     "f": {
       "states": "root removes the role and the next agent transaction fails",
-      "status": "not run",
-      "why": "the case body is not written yet, and the platform is no longer the blocker"
+      "status": "pass",
+      "why": "the role is gone from the account and the next agent transaction was refused: Simulation failed. Message: Transaction simulation failed: Error processing Instruction 0: custom program error: 0xc: 3 log messages: Program swigypWHEksbC64pWKwah1WTeh9JXwx8H1rJHLdbQMB invoke [1] Program swigypWHEksbC64pWKwah1WTeh9JXwx8H1rJHLdbQMB consumed 1149 of 200000 compute units Program swigy"
     },
     "g": {
       "states": "removal done from Phantom and not only our CLI",

@@ -633,3 +633,26 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   commit, and T-E06's screen is designed against whichever answer wins.
 - Why it cannot wait: it is the difference between the pitch and the opposite of the pitch, and
   every client written against today's shape has to change when it does.
+
+### OP-28, CP1 wording: does the program limit gate every call, or only calls that move value
+- Status: open
+- Owner: <unassigned>
+- Needed by: 2026-09-27, CP1, because F5 case (d) fails on the wording rather than on the role
+- Unblocks: T-F05a's case (d), and the same clause in T-F05c and T-D04
+- What exactly: F5 ran 3 of its cases on the fork and 2 pass. Case (d) fails, and it fails on a
+  sentence rather than on the cap. Measured, both through the same agent role whose only program
+  permission is Jupiter:
+  (c) a system transfer out of the Swig wallet to an arbitrary address is **refused by the Swig
+  program itself**, `custom program error: 0xbbe`.
+  (d) a memo instruction, which carries 0 accounts and moves nothing, is **authorised** and lands.
+  Read together those say the program limit gates value movement and not every CPI. That is a
+  coherent design. It is not what the acceptance says, which is "a call to a non-Jupiter program is
+  rejected", unqualified. So either the clause narrows to calls that move value, and (d) is
+  rewritten to send value through a non-Jupiter program, or the role needs an action that refuses
+  all of them and someone has to find out whether Swig offers one.
+  The spike records the observation and fails rather than rewording its own acceptance into a pass,
+  which is why this is a row and not a commit.
+- Done when: the clause is settled in the PRD Decisions log and T-F05a's case (d) is rewritten
+  against whichever answer wins.
+- Why it cannot wait: F5 is existential and 1 of its 7 cases currently cannot pass as written, so
+  the row cannot go green on any platform until the sentence is fixed.

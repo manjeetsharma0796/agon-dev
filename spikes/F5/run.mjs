@@ -308,16 +308,167 @@ if (!funded) {
   // inside Jupiter before the limit was ever consulted, and recording that as a cap holding would
   // be a measurement of the wrong thing.
   const notWritten = 'the case body is not written yet, and the platform is no longer the blocker'
-  for (const k of ['c', 'd', 'f']) {
-    cases[k].status = 'not run'
-    cases[k].why = notWritten
-  }
+  await runAuthorisationCases()
   for (const k of ['a', 'b', 'e']) {
     cases[k].status = 'not run'
     cases[k].why =
       `${notWritten}. This one also needs a real Jupiter swap that moves the capped mint, because ` +
       `the recurring limit is applied by comparing balances after the inner instructions run`
   }
+}
+
+/**
+ * Cases (c), (d) and (f): the 3 that ask only whether Swig authorises an instruction.
+ *
+ * None of them needs a swap. The agent role is `programLimit(Jupiter)` plus a
+ * `tokenRecurringLimit`, and the program limit is checked before anything executes, so an
+ * instruction aimed anywhere other than Jupiter is refused on authorisation alone. That is a
+ * different question from whether the cap holds, which is (a), (b) and (e), and it is the half
+ * that can be answered without a route.
+ *
+ * Each case asserts a refusal, and a refusal is only evidence if the thing could otherwise have
+ * succeeded. So (f) removes the role and repeats (c): if (c) already failed for some unrelated
+ * reason, (f) proves nothing and says so rather than counting itself a pass.
+ */
+async function runAuthorisationCases() {
+  const send = async (instructions, signers) => {
+    try {
+      const { blockhash: recent } = await connection.getLatestBlockhash()
+      const msg = new web3.TransactionMessage({
+        payerKey: payer.publicKey,
+        recentBlockhash: recent,
+        instructions,
+      }).compileToV0Message()
+      const tx = new web3.VersionedTransaction(msg)
+      tx.sign(signers)
+      return { landed: true, answer: await connection.sendTransaction(tx) }
+    } catch (e) {
+      return { landed: false, answer: redact(e.message).replace(/\s+/g, ' ').trim().slice(0, 300) }
+    }
+  }
+
+  // The agent gets its own key, because the whole claim is that this key can do less than the
+  // root one. Giving it the payer's key would prove nothing about either.
+  const agent = web3.Keypair.generate()
+  let swigAccount
+  try {
+    swigAccount = await swig.fetchSwig(connection, swigAddress)
+  } catch (e) {
+    const why = `the Swig account could not be read back after creation: ${redact(e.message).slice(0, 160)}`
+    for (const k of ['c', 'd', 'f']) cases[k].why = why
+    return
+  }
+
+  const rootRole = swigAccount.roles[0]
+  const addIxs = await swig.getAddAuthorityInstructions(
+    swigAccount,
+    rootRole.id,
+    swig.createEd25519AuthorityInfo(agent.publicKey),
+    agentActions,
+  )
+  const added = await send(addIxs, [payer])
+  if (!added.landed) {
+    const why = `the agent role could not be added, so nothing below was testable: ${added.answer}`
+    for (const k of ['c', 'd', 'f']) cases[k].why = why
+    return
+  }
+
+  swigAccount = await swig.fetchSwig(connection, swigAddress)
+  const agentRole = swigAccount.roles.find((r) => r.id !== rootRole.id)
+  if (!agentRole) {
+    const why = 'the agent role was added but does not read back on the account'
+    for (const k of ['c', 'd', 'f']) cases[k].why = why
+    return
+  }
+
+  // (c) A transfer to an arbitrary address. Not Jupiter, so the program limit alone should refuse
+  // it, whatever the cap says.
+  //
+  // The source is the Swig wallet address and not `swigAccount.address`, which was the first
+  // version of this and was wrong in a way that looked right. The account address holds the roles;
+  // the funds sit at a separate PDA. Transferring from the wrong one is refused by the system
+  // program for a missing signature, and that refusal has nothing to do with the program limit
+  // this case exists to test. It counted as a pass and proved nothing, which is exactly the
+  // failure the F5 notes warn about: a rejection for the wrong reason read as the cap holding.
+  const stranger = web3.Keypair.generate().publicKey
+  const swigWallet = await swig.getSwigWalletAddress(swigAccount)
+  await send(
+    [
+      web3.SystemProgram.transfer({
+        fromPubkey: payer.publicKey,
+        toPubkey: swigWallet,
+        lamports: 20_000_000,
+      }),
+    ],
+    [payer],
+  )
+  const transferIx = web3.SystemProgram.transfer({
+    fromPubkey: swigWallet,
+    toPubkey: stranger,
+    lamports: 1,
+  })
+  const cSigned = await swig.getSignInstructions(swigAccount, agentRole.id, [transferIx])
+  const c = await send(cSigned, [payer, agent])
+  // A refusal only counts when it is the refusal this case is about. "missing required signature"
+  // is the system program objecting to the transfer itself, and reading that as the program limit
+  // holding is how a spike reports a pass it did not earn.
+  const wrongReason = /missing required signature|insufficient (lamports|funds)/i.test(c.answer)
+  cases.c.status = c.landed ? 'fail' : wrongReason ? 'not run' : 'pass'
+  cases.c.why = c.landed
+    ? `the transfer to ${stranger.toBase58()} was authorised, signature ${c.answer}. The role is not holding`
+    : wrongReason
+      ? `refused, but for the wrong reason, so this is not evidence either way: ${c.answer}`
+      : `refused: ${c.answer}`
+
+  // (d) A call to a program that is not Jupiter. The memo program is used because it is harmless
+  // and always present, so a refusal here is the program limit and not a missing account.
+  const memoIx = new web3.TransactionInstruction({
+    keys: [],
+    programId: new web3.PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr'),
+    data: Buffer.from('agon f5 case d'),
+  })
+  const dSigned = await swig.getSignInstructions(swigAccount, agentRole.id, [memoIx])
+  const d = await send(dSigned, [payer, agent])
+  // What this measured, rather than what it first looked like. (c) sends value through a non
+  // Jupiter program and Swig refuses it with its own error. (d) sends a memo, which carries no
+  // accounts and moves nothing, and Swig allows it. Together those say the program limit gates
+  // value movement rather than every CPI, which is a coherent design and not a hole. It is also
+  // not what this row's acceptance says, and that wording is a CP1 question rather than something
+  // a spike settles for itself, so the case records the observation and fails rather than being
+  // quietly reworded into a pass.
+  cases.d.status = d.landed ? 'fail' : 'pass'
+  cases.d.why = d.landed
+    ? `a memo instruction, which carries 0 accounts and moves nothing, was authorised under a role ` +
+      `whose only program permission is Jupiter: signature ${d.answer}. Read with (c), where a ` +
+      `system transfer through the same role was refused by Swig itself with custom program error ` +
+      `0xbbe, this says the program limit gates value movement and not every CPI. The acceptance ` +
+      `clause says "a call to a non-Jupiter program is rejected" without qualification, so either ` +
+      `the clause wants narrowing to calls that move value, or the role wants an action that ` +
+      `refuses all of them. That is a CP1 decision and not a spike's to make`
+    : `refused: ${d.answer}`
+
+  // (f) Root removes the role, and the same instruction as (c) is tried again. A refusal only
+  // means something here if (c) could have succeeded, so this states the dependency rather than
+  // quietly counting a second refusal as proof.
+  const removeIxs = await swig.getRemoveAuthorityInstructions(
+    swigAccount,
+    rootRole.id,
+    agentRole.id,
+  )
+  const removed = await send(removeIxs, [payer])
+  if (!removed.landed) {
+    cases.f.why = `root could not remove the role, so the after state was never reached: ${removed.answer}`
+    return
+  }
+  const after = await swig.fetchSwig(connection, swigAddress)
+  const stillThere = after.roles.some((r) => r.id === agentRole.id)
+  const fAgain = await send(cSigned, [payer, agent])
+  cases.f.status = !stillThere && !fAgain.landed ? 'pass' : 'fail'
+  cases.f.why = stillThere
+    ? 'root removed the role and it still reads back on the account'
+    : fAgain.landed
+      ? `the agent transacted after its role was removed, signature ${fAgain.answer}`
+      : `the role is gone from the account and the next agent transaction was refused: ${fAgain.answer}`
 }
 
 const ran = Object.values(cases).filter((c) => c.status === 'pass').length
