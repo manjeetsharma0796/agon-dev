@@ -656,9 +656,29 @@ and latency (a, b).
 - Kill criterion: fallback is lowering Jupiter `maxAccounts` until the route fits 64 inline accounts and measuring the price cost; a route still needing more than 64 accounts goes out as v0 with lookup tables inside 1,232 bytes
 
 ### T-F06a, F6 spike, Trigger order owned by a Swig wallet, in simulation
-- Status: open
+- Finding: **a Trigger order runs on a different program from the one the agent role permits.** The
+  Trigger API does build an order with a Swig wallet, a program-derived address, as maker and
+  payer, answered 200 with an order address. Decoding that transaction, the order is created by
+  `j1o2qRpjcyUwEvwtcfhEQefh773ZgjxcVRry7LDqg5X`, and `agentRoleActions` permits
+  `JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4` and nothing else. Both are live and executable on
+  mainnet, checked. So an agent holding the role cannot create, cancel or amend a Trigger order.
+  This is not a failure of the design as T-E06 describes it, where the user's own wallet signs the
+  role and the order together at arm time and root can do both. It is a constraint on anything that
+  expects the agent to manage its own orders later, which is T-C08's daemon, and on the word
+  revocable if revoking an order is ever meant to be something the agent does
+- Finding 2, from the same run and not about F6: `scripts/feasibility.mjs` scanned `spikes/F*` only,
+  so a sub-spike 1 level down was invisible. T-F05b owns `spikes/F5/route-size/`, which is where the
+  board's own Touches line puts it. That spike ran, passed 20 of 20, wrote its result, and did not
+  appear in FEASIBILITY.md at all. A spike nobody can see in the table is a spike that did not
+  happen as far as a checkpoint is concerned, so the generator reads 1 level down now and takes the
+  row id from `thresholds.json` rather than the directory name. 5 spikes became 7
+- Finding 3: both of this session's thresholds files were written in a shape the generator does not
+  read. It wants `test`, `name`, `threshold`, `checkpoint` and `existential`, and ignores anything
+  else, so the table printed NOT WRITTEN DOWN beside a threshold that had in fact been written
+  before the run. Reused the existing shape rather than inventing a second one
+- Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-f06a-trigger
 - Depends-on: T-D01, OP-3
-- Touches: spikes/F6/
+- Touches: spikes/F6/, scripts/feasibility.mjs
 - Serves: Novelty (judged) ; CP1 gate
 - Acceptance: in mainnet simulation, a Trigger V2 order is created with the Swig wallet (a
   program-derived address) as owner, a cancel returns funds, and the vault deposit reduces the

@@ -17,17 +17,30 @@ import { execFileSync } from 'node:child_process'
 
 const read = (p) => (existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : null)
 
+// Sub-spikes sit one level down, because the board puts them where the task's Touches line says.
+// T-F05b owns `spikes/F5/route-size/`, and a scan of `spikes/F*` alone never saw it: the spike ran,
+// passed, wrote its result, and was invisible in the table this file generates. A spike nobody can
+// see in FEASIBILITY.md is a spike that did not happen, as far as a checkpoint is concerned.
+const spikeDirs = (parent) =>
+  readdirSync(parent, { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .map((e) => `${parent}/${e.name}`)
+    .filter((d) => existsSync(`${d}/thresholds.json`))
+
 const spikes = existsSync('spikes')
   ? readdirSync('spikes')
       .filter((d) => /^F\d+$/.test(d))
       .sort((a, b) => Number(a.slice(1)) - Number(b.slice(1)))
+      .flatMap((d) => [`spikes/${d}`, ...spikeDirs(`spikes/${d}`)])
+      .filter((d) => existsSync(`${d}/thresholds.json`))
   : []
 
 const rows = spikes.map((dir) => {
-  const t = read(`spikes/${dir}/thresholds.json`) ?? {}
-  const r = read(`spikes/${dir}/result.json`)
+  const t = read(`${dir}/thresholds.json`) ?? {}
+  const r = read(`${dir}/result.json`)
   return {
-    id: dir,
+    // The id comes off thresholds.json, so a sub-spike reads as F5b rather than as its directory.
+    id: t.test ?? dir.split('/').pop(),
     name: t.name ?? '',
     threshold: t.threshold ?? 'NOT WRITTEN DOWN',
     checkpoint: t.checkpoint ?? '',

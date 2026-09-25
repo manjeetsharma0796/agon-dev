@@ -1,0 +1,33 @@
+{
+  "id": "F6",
+  "pass": false,
+  "date": "2026-09-25",
+  "measured": "1 of 4 clauses pass. A Trigger order can be built with a Swig wallet, a program-derived address, as maker and payer. The order invokes j1o2qRpjcyUwEvwtcfhEQefh773ZgjxcVRry7LDqg5X, and the agent role permits JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4, so they are NOT the same program.",
+  "triggerProgram": "j1o2qRpjcyUwEvwtcfhEQefh773ZgjxcVRry7LDqg5X",
+  "agentRolePermits": "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4",
+  "agentRoleCouldManageOrders": false,
+  "orderAddress": "6WnbMznYCruCU7sySAX6CXRpWKAz2d7tCGDWcY7S7jtB",
+  "swigWallet": "HWMevBx8vCPRveFgM7UMXtJXapvUDxDxxoCRirHhWyMi",
+  "clauses": {
+    "pdaAccepted": {
+      "states": "the Trigger API builds an order with a Swig wallet as maker",
+      "status": "pass",
+      "why": "the API built an order with the Swig wallet as maker and payer, order 6WnbMznYCruCU7sySAX6CXRpWKAz2d7tCGDWcY7S7jtB, invoking j1o2qRpjcyUwEvwtcfhEQefh773ZgjxcVRry7LDqg5X"
+    },
+    "orderCreated": {
+      "states": "the order is created on a simulated chain",
+      "status": "not run",
+      "why": "no simulated chain was given. Set SURFPOOL_RPC_URL to a Surfpool mainnet fork, which carries the real Trigger and Swig programs and costs nothing"
+    },
+    "cancelReturnsFunds": {
+      "states": "a cancel returns the funds",
+      "status": "not run",
+      "why": "no simulated chain was given. Set SURFPOOL_RPC_URL to a Surfpool mainnet fork, which carries the real Trigger and Swig programs and costs nothing"
+    },
+    "depositMatchesAllowance": {
+      "states": "the vault deposit reduces the Swig allowance by exactly the deposit",
+      "status": "not run",
+      "why": "no simulated chain was given. Set SURFPOOL_RPC_URL to a Surfpool mainnet fork, which carries the real Trigger and Swig programs and costs nothing"
+    }
+  }
+}
