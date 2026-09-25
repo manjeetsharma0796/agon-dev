@@ -49,7 +49,22 @@ const RPC = process.env.DEVNET_RPC_URL ?? 'https://api.devnet.solana.com'
 // Every faucet we know of, so a refusal is a measurement of the faucets and not of one of them.
 // The api key, when there is one, stays out of the recorded answer.
 const heliusKey = process.env.HELIUS_API_KEY ?? ''
+/**
+ * What to call the chain in the result. It used to be the literal word "devnet" in 3 places, which
+ * was true while devnet was the only target and became a lie the moment OP-20 moved this to a
+ * mainnet fork: the run would have reported measurements "on devnet" that were taken somewhere
+ * else. A result that misnames the chain it ran against is worse than no result.
+ */
+const CHAIN =
+  /127\.0\.0\.1|localhost/.test(RPC) ? 'a local mainnet fork' : RPC.includes('devnet') ? 'devnet' : RPC
+
 const FAUCETS = [
+  // The chain under test comes first, because on a Surfpool fork it is also the faucet and it
+  // always says yes. That is the whole reason OP-20 moved this spike off devnet: 7 devnet faucets
+  // refused, and a fork airdrops its own SOL with no key, no allowance and nobody to ask. On
+  // devnet this entry is api.devnet.solana.com, which is the next line anyway, so it costs a
+  // duplicate attempt there and unblocks the run everywhere else.
+  ['the configured RPC', RPC],
   ['api.devnet.solana.com', 'https://api.devnet.solana.com'],
   ...(heliusKey
     ? [['devnet.helius-rpc.com', `https://devnet.helius-rpc.com/?api-key=${heliusKey}`]]
@@ -282,17 +297,17 @@ const ran = Object.values(cases).filter((c) => c.status === 'pass').length
 const pass = ran === 7
 
 const measured =
-  `${ran} of 7 cases exercised on devnet at slot ${slot}. ` +
+  `${ran} of 7 cases exercised on ${CHAIN} at slot ${slot}. ` +
   (jupiterMissing
     ? `The pinned Jupiter id is not a program on devnet: executable ${jupiterProgram.executable}, ` +
       `owned by ${jupiterProgram.owner}, ${jupiterProgram.bytes} bytes, against executable true and ` +
       '36 bytes under the BPF upgradeable loader on mainnet. An agent role scoped to ' +
       'programLimit(Jupiter) therefore scopes to something that cannot execute on devnet, so the 7 ' +
       'cases cannot be exercised there however well funded the payer is. '
-    : 'The pinned Jupiter id is a program on devnet. ') +
+    : `The pinned Jupiter id is a program on ${CHAIN}. `) +
   `The Swig program is live (executable ${swigProgram.executable}, owner ${swigProgram.owner}), ` +
   'the agent role builds and passes assertAgentRoleShape, and the first of the 7 transactions ' +
-  `reaches devnet and is answered "${firstTransactionAnswer}", so nothing in our code is the ` +
+  `reaches ${CHAIN} and is answered "${firstTransactionAnswer}", so nothing in our code is the ` +
   `blocker. Separately the payer holds ${balance} lamports against the ${requiredLamports} the 7 ` +
   'cases need.'
 
