@@ -779,7 +779,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: if (e) passes unexpectedly, numbers still stay on arithmetic. 1 lucky run is not evidence
 
 ### T-C07, MCP server, 4 tools and a stable list
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/97 | Owner: Jishnu | Branch: feature/t-c07-fixture-marker
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/97 | Owner: Jishnu | Branch: feature/t-c07-honest-instructions
 - Depends-on: T-C06
 - Touches: packages/mcp/src/, packages/guard/src/assess.ts, packages/decoder/src/enhanced.ts
 - Serves: Functionality (judged) ; Open source (judged)
@@ -1297,6 +1297,16 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
   without one, and a hardcoded list cannot express that. `NetResult.fromFixture` had existed since
   the record wrapper was written with 0 consumers outside tests; it has one now. Measured at 319
   tokens of the 400 budget with the note attached
+- Finding 4, from a second outside agent, 23 probes: the server's own `instructions` were the
+  least reliable thing in it. They claimed check_trade "reads that wallet's last 100 transactions"
+  and "reads the mint's authorities off the chain", which is true with a key and false in the
+  replay deployment, while the payload note said the opposite. An agent read them, believed them,
+  and reported recorded data as live; the first agent made the same mistake for the same reason.
+  Prose about runtime behaviour goes stale the moment the runtime differs, so the paragraph is
+  derived from `mode()` now and cannot. Same pass: the replay miss reached callers verbatim, with
+  the fixture path it wanted and the env var that records it, which is a developer message on a
+  public endpoint; and a size of 0 was accepted, sailing under every median so the size rule never
+  fired and a non-trade came back shaped like a trade that had been examined
 - Kill criterion: none, the MCP server is how any agent reaches the guard
 
 ### T-E08, Onboarding

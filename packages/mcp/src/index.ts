@@ -6,7 +6,7 @@
 // differently, because there is only one answer to give.
 
 import { FIXTURE_NOTE, armRule, report } from '@agon/web'
-import { TOOLS, type ToolName, toolContracts } from '@agon/core'
+import { TOOLS, mode, type ToolName, toolContracts } from '@agon/core'
 import { assessTrade } from '@agon/guard'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
@@ -33,6 +33,16 @@ const handlers = {
   // `assessTrade` the CLI runs, so the agent and the terminal cannot answer differently.
   check_trade: async (input: unknown, io: ToolIo) => {
     const { wallet, mint, side, size } = toolContracts.check_trade.input.parse(input)
+    // A size of 0 parses, because the contract's BaseUnits is a non-negative integer, and then
+    // sails through every check: 0 is under any median, so the size rule does not fire and the
+    // answer reads like a trade that was examined. Nothing is being traded, so there is nothing to
+    // approve, and an approval-shaped answer about a non-trade is the wrong thing to hand an agent.
+    if (/^0+$/.test(size)) {
+      throw new Error(
+        `A size of 0 is not a trade, so there is nothing to check. Send the amount in base ` +
+          `units of the asset being spent: the quote asset on a buy, the mint on a sell.`,
+      )
+    }
     const [txs, mintCheck] = await Promise.all([
       io.loadTransactions(wallet),
       io.loadMintCheck(mint),
@@ -89,23 +99,40 @@ export const isTool = (name: string): name is ToolName =>
  * It states what is not real as plainly as what is. An agent that is told arming refuses will say
  * so up front instead of discovering it by trying to spend someone's money.
  */
+const dataSource = (): string =>
+  mode() === 'replay'
+    ? `This deployment is running in REPLAY MODE. It reads committed recordings and cannot reach the
+network at all, so every wallet figure it gives you was recorded earlier, not read just now. Each
+such result carries a "note" field saying so, and you should repeat that note alongside any number
+you quote. Only 1 wallet and a small set of mints have recordings; anything else is refused rather
+than guessed at. The arithmetic over those recorded inputs is real and recomputes per request.`
+    : `This deployment reads live mainnet, so wallet figures are read at request time and carry the
+slot they were read at in "dataSlot".`
+
 const INSTRUCTIONS = `Agon turns a trader's own on-chain history into a spending limit their agent has to trade inside.
+
+${dataSource()}
 
 What works right now, with nothing to set up:
 
-- check_trade is real. Give it a wallet, a mint, a side and a size in base units, and it reads that
-  wallet's last 100 transactions, decodes its swaps from balance changes, builds a FIFO ledger,
-  mines what that trader normally does, reads the mint's authorities off the chain, and answers
-  pass, block or unsure. A non-pass always names the rule and the number, for example "12.4x your
-  median size of 0.162 SOL, past your 2x limit". Those numbers are arithmetic over that wallet's
-  own history, never a model's opinion.
+- check_trade is real, meaning the rule engine is real. Give it a wallet, a mint, a side and a size
+  in base units, and it decodes that wallet's swaps from balance changes, builds a FIFO ledger,
+  mines what that trader normally does, checks the mint's authorities, and answers pass, block or
+  unsure. A non-pass always names the rule and the number, for example "12.4x your median size of
+  0.162 SOL, past your 2x limit". Those numbers are arithmetic over that wallet's history, never a
+  model's opinion. Where that history came from is the paragraph above.
+- The size rule is checked on a BUY only. A sell is not sized against the median, because the
+  median is a cost basis counted in the quote asset and a sell's size is counted in the mint. So a
+  large sell returns no size reason. That is a gap, not a pass.
 - list_rules is real and currently returns an empty list for every wallet, because arming is off.
   Empty means nothing is armed, not that the wallet has no history.
 
 What is not real yet, so do not present it as a measurement:
 
-- get_report answers from a recorded example, not from the wallet you asked about. Its result
-  carries a "note" field saying so. Repeat that note if you quote any of its numbers.
+- get_report answers from a recorded example, not from the wallet you asked about, and returns the
+  same figures whatever wallet you pass. Its result carries a "note" field saying so. Repeat that
+  note if you quote any of its numbers. It does not agree with check_trade about the same wallet,
+  because the two read different recordings.
 - arm_rule refuses every call. It validates the rule and then declines, because no Swig role and no
   Jupiter order are ever created: arming turns on only once the on-chain feasibility tests pass and
   the pre-mainnet checklist is signed off. The refusal is the correct answer, not an error to retry.
