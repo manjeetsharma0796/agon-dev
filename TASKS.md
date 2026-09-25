@@ -313,7 +313,21 @@ CP1 evidence required: F1 on 2 wallets; F3; F5 on devnet; F6 in simulation; F11 
 and latency (a, b).
 
 ### T-E03, Thin end-to-end version on staging
-- Status: blocked, see OP-17 | Branch: feature/t-e03-deployable-mcp
+- Finding 2: a server fault was reported as the caller's. Deleting `fixtures/contracts/` and
+  asking for a report on a valid address answered "That is not a valid Solana address." with a
+  400, and the real cause sat in `detail` where nothing reads it. A beta user would have gone and
+  checked their wallet while the server was the thing that was broken. `badRequest` caught
+  everything and blamed the caller for all of it. It now splits: a zod failure or an unparseable
+  body is a 400, anything else is a 500 that says the problem is not what you sent. Splitting on
+  zod alone sent "the request body is not JSON" to a 500, which the existing test caught, so
+  unparseable bodies throw a marked error rather than a plain one
+- Finding: the web app could not be started by a host. `apps/web` had `dev` and `start` and no
+  `build`, and `next start` without a prior `next build` exits on "Could not find a production
+  build in the '.next' directory". Nothing caught it because the root `build` is `tsc -b`, which
+  type checks the app and never builds it, so `pnpm gates` passes on a tree that cannot be
+  deployed. Measured by deleting `.next` and starting: the process comes up, logs that error and
+  serves nothing, so a host's health check is what would have found it, in staging
+- Status: blocked, see OP-17 | Branch: feature/t-e03-web-build
 - Depends-on: T-C01, T-C02
 - Touches: apps/web/app/report/, apps/web/app/api/, packages/mcp/src/index.ts, Dockerfile
 - Serves: Functionality (judged) ; UX (judged)
