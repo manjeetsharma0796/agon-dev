@@ -25,10 +25,17 @@ const HOST = process.env['HOST'] ?? '127.0.0.1'
 
 const handle = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
   // One health path, so somebody checking a tunnel gets an answer instead of a protocol error.
-  if (req.method === 'GET' && req.url === '/health') {
+  //
+  // HEAD as well as GET, because that is what uptime monitors and several load balancer probes
+  // send, and answering them 404 makes the one URL anybody watches report the service as down while
+  // it is serving. A HEAD response carries the headers and no body, which is why `end` is called
+  // with nothing rather than with the same JSON.
+  if ((req.method === 'GET' || req.method === 'HEAD') && req.url === '/health') {
     res.writeHead(200, { 'content-type': 'application/json' })
     res.end(
-      JSON.stringify({ ok: true, server: 'agon', transport: 'streamable-http', path: '/mcp' }),
+      req.method === 'HEAD'
+        ? undefined
+        : JSON.stringify({ ok: true, server: 'agon', transport: 'streamable-http', path: '/mcp' }),
     )
     return
   }
