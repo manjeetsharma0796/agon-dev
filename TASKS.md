@@ -171,7 +171,7 @@ agents can hold one each with no coordination beyond this file.
 |---|---|---|
 | P0 | Day 1, 09-24 | T-B01 **first, alone**; then T-C01, T-B02, T-C02, T-C03, T-E01, T-E02 |
 | P1 | 09-25 to CP1 | A: T-A01, T-F01a. B: T-B03, T-B10. C: T-C04, T-F03, T-C05, T-F11a. D: T-D01, T-F05a, T-F05b, T-F06a. E: T-E03 |
-| P2 | CP1 to CP2 | A: T-A02, T-A03, T-A04, T-F01b, T-F02. B: T-F09, T-B04, T-B08. C: T-C06, T-C07, T-C08, T-F04, T-F11b. D: T-D02, T-D03, T-F05c, T-F06b, T-F07. E: T-E04, T-E05, T-E10, T-E12 |
+| P2 | CP1 to CP2 | A: T-A02, T-A03, T-A04, T-A05, T-F01b, T-F02. B: T-F09, T-B04, T-B08. C: T-C06, T-C07, T-C08, T-C12, T-C13, T-F04, T-F11b. D: T-D02, T-D03, T-F05c, T-F06b, T-F07. E: T-E04, T-E05, T-E10, T-E12 |
 | P3 | CP2 to CP3 | B: T-B05. C: T-C09. D: T-D04. E: T-E06, T-E07, T-E08, T-E09 |
 | P4 | CP3 to 10-11 | T-J01, T-J02, T-J03 |
 | P5 | Fall, CP4 to CP6 | T-F08, T-F10, T-F11c, T-B06, T-B07, T-C10, T-D05, T-E11, T-J04 |
@@ -1031,6 +1031,70 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   whether they wait and retry. The test that asserts every message names its number caught it, and
   the message now carries the timeout, because for a timeout the timeout is the number involved
 - Kill criterion: none, this is the difference between a demo and a product
+
+### T-C12, Token categories, the 6 names the PRD froze
+- Status: open
+- Depends-on: T-C05, T-C06
+- Touches: packages/guard/src/jev/index.ts, packages/guard/src/jev/jev.test.ts,
+  packages/guard/src/check-trade.ts, packages/guard/src/check-trade.test.ts,
+  packages/guard/src/check-trade.token.test.ts, packages/guard/src/check-trade.budget.test.ts
+- Note: these 6 files sit inside T-C05's and T-C06's `Touches:` and both rows are merged, so
+  neither can move again. This row is narrower than either: 1 list of 6 strings and the prose
+  that quotes it, 0 new behaviour. The PRD wins by the rule at the top of this file, so the
+  shipped names are the ones that change.
+- Serves: Functionality (judged) ; F11 (c), whose 40 labelled token-category cases are labelled
+  with the PRD names and would score 0 against the shipped ones
+- Acceptance: `TOKEN_CATEGORIES` is the 6 names the PRD freezes under F11 on p.15, character for
+  character (memecoin, stablecoin, liquid-staking token, blue chip, real-world asset, other), with
+  1 test pinning all 6 so a 7th or a reworded one fails the build; the count stays 6 so T-C05's
+  "6-way choice" still holds; an unparseable Jev answer produces 0 categories rather than a 7th
+  name, so `styleFinding` still refuses instead of scoring against a category the model never
+  chose; the rename costs 0 tokens, so T-C06's 7-reason worst case is still 395 against its
+  400-token budget and a pass is still 26
+- Evidence: <PR link, with the worst-case token count before and after>
+- Kill criterion: none. The PRD froze these names on 2026-09-23 and F11 (c) labels against them
+
+### T-A05, Category mix in the report, so style fit has something to compare against
+- Status: open
+- Depends-on: T-C12, T-A03
+- Touches: packages/core/src/report.ts, fixtures/contracts/report.json, packages/miner/src/
+- Note: changes frozen contract 2 of 3, so the PR body carries the "Changes a frozen contract in
+  `packages/core`" line, the diff carries the fixture, and a second person reviews. It exists
+  because `TradeFacts.categoryMix` has no producer anywhere: `packages/cli/src/commands/check.ts`
+  passes null, and null is the only value production has ever had.
+- Serves: Functionality (judged) ; F4, whose scripted verdicts include "new token outside the
+  usual set"
+- Acceptance: `Report` carries a mix over the 6 T-C12 names, shares summing to 1 within 0.001 or
+  the field is absent rather than partial; the miner stays pure with 0 network calls by taking a
+  mint to category map as a required argument, the way it already takes the quote, so 0 Jev calls
+  move inside it; at least 1 production path fills `TradeFacts.categoryMix`, taking the
+  `category-mix-missing` unsure from the 100% of calls it fires on today to 0 on that path
+- Evidence: <PR link, with the share of calls reaching a style-fit answer before and after>
+- Kill criterion: fallback is shipping style fit as the `category-mix-missing` unsure with the
+  reason printed, never a silent pass
+
+### T-C13, The 8-reason verdict is 452 tokens against a budget of 400
+- Status: open
+- Depends-on: T-C06, T-C12
+- Touches: packages/guard/src/check-trade.ts, packages/guard/src/check-trade.token.test.ts
+- Note: overlaps T-C06's `Touches:`, which is merged. T-C06 measured 395 on 7 reasons and wrote
+  "if this ever goes over, the messages get shorter and the count of them stays". It went over.
+  Style fit is the 8th reason and every budget fixture in that PR traded a category the wallet
+  already held, so the 8th could not fire and nobody measured it. Found by T-C12: 448 tokens under
+  the 6 names it replaced and 452 under the PRD's, so 4 of the 52 over budget are the rename and
+  48 were already there.
+- Serves: Functionality (judged) ; the check_trade 400-token budget that CLAUDE.md and T-C07 both
+  pin, and monad T6.8 is the reason for
+- Acceptance: the 8-reason verdict is at or under 400 tokens, down from 452, with all 8 reasons
+  still present and each still naming its cause, its number and what the user can do next; 0
+  reasons dropped to make the budget. The arithmetic to beat: the response is 1,806 characters, of
+  which 621, 34%, are the 3 mint-check messages this row does not own, so 208 characters have to
+  come out of the 562 the guard writes itself, a 37% cut, and T-C06 already took 88 out of them
+- Evidence: <PR link, with the 8-reason count before and after>
+- Kill criterion: if 8 full reasons cannot fit 400 without dropping a cause, a number or a next
+  step, the choice between raising the budget and capping the reason count is not the guard's to
+  take alone. Write the measurement into an OP and stop, rather than quietly shipping a truncated
+  verdict
 
 ---
 
