@@ -239,7 +239,11 @@ export function decodeAll(
     else byProgram.set(u.programId, { programId: u.programId, count: 1, reason: u.reason })
   }
 
-  const totalSwaps = swaps.length + undecoded.length
+  // Everything the wallet was a party to, not just swaps plus undecoded. Leaving not-a-swap out of
+  // the denominator meant a wallet of transfers scored 100%: the decoder dropped from the count
+  // exactly what it had chosen not to explain, so the share could never fall below the 95% the PRD
+  // treats as a finding. The name stays `totalSwaps` because it is a frozen contract field.
+  const totalSwaps = swaps.length + notSwaps.length + undecoded.length
   return {
     swaps,
     notSwaps,
@@ -247,7 +251,9 @@ export function decodeAll(
     coverage: {
       decodedSwaps: swaps.length,
       totalSwaps,
-      share: totalSwaps === 0 ? 1 : swaps.length / totalSwaps,
+      // 0 when nothing was seen. It read 1, which claimed we understood everything about a wallet
+      // we had read nothing of, and that number goes in front of a user.
+      share: totalSwaps === 0 ? 0 : swaps.length / totalSwaps,
     },
   }
 }

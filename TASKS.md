@@ -372,7 +372,24 @@ and latency (a, b).
   third bucket exists to prevent, and F1 is existential
 
 ### T-A06, Fix the two coverage numbers that can lie
-- Status: open
+- Evidence: re-running spikes/F1 moved 5CKAa7Wm from `share 1` to `share 0` and 5Q544fKr from
+  0.9666666666666667 to 0.58, which is 29 of the 50 sampled, exactly the 2 numbers the acceptance
+  predicted. 4 tests, 1 per defect, each failing before the fix
+- Finding: removing the signature tie-break was not enough on its own, and the test caught it. With
+  no tie-break the order the swaps arrive in decides the answer instead, so a same-slot sell that
+  arrived first still invented a sold-more-than-held against units the wallet demonstrably held.
+  Within 1 slot there is no ordering available to us: the block has one and a decoded balance
+  change does not carry it. So the tie is broken on the only thing knowable and economically
+  meaningful, which is that a wallet cannot sell units it acquired in the same slot unless the buy
+  is counted first. That exception is subtracted from realised P&L, so the conservative order is
+  also the accurate one
+- Finding 2: the old denominator could not fall below the 95% the PRD treats as a finding, however
+  little was understood, because it dropped from the count exactly what the decoder had chosen not
+  to explain. 2 existing tests asserted that shape and were updated with their reasons rather than
+  their numbers: a rotation and a transfer both count in the denominator now, for different
+  reasons, because the share answers "how much of what we saw did we explain" rather than "how much
+  of what we already agreed was a swap"
+- Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-a06-coverage
 - Depends-on: T-A01
 - Touches: packages/decoder/src/index.ts, packages/core/src/report.ts, packages/decoder/src/pnl.ts
 - Serves: Functionality (judged) ; F1 coverage share
@@ -386,7 +403,6 @@ and latency (a, b).
 - Evidence: <PR link, plus the F1 coverage numbers before and after>
 - Kill criterion: none. A coverage number that reads 100% when nothing decoded is the single defect
   positioned to turn a real run green, and it is live today in spikes/F1/result.json
-
 ### T-D06, Verify the cap that is on chain, not the one we meant to send
 - Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/103 | Owner: manjeetsharma0796 | Branch: feature/t-d06-verify-real-cap
 - Depends-on: T-D01

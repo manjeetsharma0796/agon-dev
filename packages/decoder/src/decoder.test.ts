@@ -89,7 +89,12 @@ test('a quote to quote rotation is understood, not counted as a miss', () => {
   expect(s.notSwaps).toHaveLength(1)
   expect(s.notSwaps[0]?.reason).toContain('both sides are quote assets')
   expect(s.unsupported).toHaveLength(0)
-  expect(s.coverage.totalSwaps).toBe(0)
+  // It counts in the denominator now, and not as a miss: `decodedSwaps` stays 0 and the rotation
+  // is named in `notSwaps` with its reason. T-A06 changed this. Leaving it out of the denominator
+  // was what let a wallet of rotations and transfers score 100%, because the decoder dropped from
+  // the count exactly what it had chosen not to explain.
+  expect(s.coverage.totalSwaps).toBe(1)
+  expect(s.coverage.decodedSwaps).toBe(0)
 })
 
 test('nothing is dropped silently: a transfer and an ambiguous swap each land in their bucket', () => {
@@ -120,9 +125,12 @@ test('nothing is dropped silently: a transfer and an ambiguous swap each land in
   expect(s.unsupported.map((u) => u.programId)).toEqual([JUPITER])
   for (const u of s.unsupported) expect(u.reason.length).toBeGreaterThan(0)
 
-  // A transfer was never a swap, so it must not count against coverage; the ambiguous one must,
-  // because it probably was a swap we failed to read.
-  expect(s.coverage.totalSwaps).toBe(1)
+  // Both count in the denominator, and they count for different reasons. The ambiguous one is a
+  // swap we failed to read. The transfer never was a swap, and it still belongs in the count,
+  // because the share this feeds is "how much of what we saw did we explain" rather than "how much
+  // of what we already agreed was a swap". T-A06 changed this: the old denominator could not fall
+  // below the 95% the PRD treats as a finding, however little was understood.
+  expect(s.coverage.totalSwaps).toBe(2)
   expect(s.coverage.decodedSwaps).toBe(0)
   expect(s.coverage.share).toBe(0)
 })
