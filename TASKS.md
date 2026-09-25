@@ -1498,6 +1498,56 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
   a marker the other attaches a layer up; it now compares what is left with the marker taken off and
   asserts the marker separately, so it cannot pass by both sides losing it
 
+### T-C14, Two surfaces that tell a reader something false, neither needing a contract change
+- Status: claimed 2026-09-25 | Owner: manjeetsharma0796 | Branch: feature/t-c14-health-head-and-f1-ref
+- Depends-on: T-C07
+- Touches: packages/mcp/src/serve.ts, packages/mcp/src/serve.test.ts, spikes/F1/result.json,
+  FEASIBILITY.md
+- Serves: Functionality (judged) ; the health probe everyone watches, and the gate doc everyone reads
+- Acceptance: `HEAD /health` answers 200 where it answers 404 today, with 0 bytes of body, and `GET`
+  keeps its exact JSON, asserted by a test that spawns the built server and probes both methods;
+  `FEASIBILITY.md`'s F1 row names OP-23 rather than OP-20, fixed in the generator's input and
+  regenerated rather than hand-edited, with 0 other rows changing
+- Evidence: PR link below. Spawned server: HEAD 200 with an empty body, GET 200 with its exact JSON
+  unchanged, from a real node process rather than a called handler. FEASIBILITY.md: 1 line changed,
+  so 0 other spike rows moved. 259 tests pass across 38 files
+- Kill criterion: none, but if making HEAD answer means moving where the server starts listening,
+  the fix is dropped rather than risking the one process the deploy runs
+- Finding: the stale operator reference was in the file **twice**, and the code review caught the
+  second one after the first was fixed. `measured` said "what OP-20 is" and `notes` said "Picking the
+  2 wallets needs a person, which is OP-20". Only `measured` reaches `FEASIBILITY.md`, so fixing that
+  alone would have left the generated gate doc correct while its own source misdirected anyone who
+  opened it, which is worse than either being wrong: one of two identical errors fixed reads as
+  deliberate. Generalises to every generated file in this repo: grep the INPUT, not the output, or
+  you fix what is displayed and leave what is true. Second, smaller: `handle` in `serve.ts` is not
+  exported and the file starts listening on import, so the health path had no test at all and could
+  not get one without moving where the deployed process begins listening. Spawning a real node
+  process, the way `packages/chain`'s import test does, buys the coverage without touching startup
+
+### T-C15, Three things the payload cannot say without opening a frozen contract
+- Status: open
+- Depends-on: T-C01
+- Touches: packages/core/src/check-trade.ts, packages/core/src/report.ts,
+  packages/guard/src/check-trade.ts, fixtures/contracts/
+- Serves: Functionality (judged) ; an agent acting on a verdict it can read correctly
+- Acceptance: each reason carries the `severity` the guard already computed, so a client reads it
+  from a field instead of inferring it from sort position; `Report` carries the fixture's own wallet
+  beside the echoed one, so 1 field rather than a trailing note distinguishes the 2; a size of 0 is
+  refused by the contract rather than answered `unsure`; the fixtures change in the same commit, and
+  the frozen-contract box is ticked with a reviewer who did not write it
+- Evidence: <PR link, plus the fixture diff that proves the shape change fails loudly>
+- Kill criterion: none, but this is deliberately not urgent. All 3 are imprecision and none is a
+  fail-open: `verdict` already carries the actionable answer, and a size of 0 answers `unsure`, which
+  is documented as not a soft pass, so nothing executes on it
+- Finding: all 3 were found by an outside probe of the deployed endpoint and all 3 stop at the same
+  wall, which is why they are 1 row and not 3. `severity` is computed in
+  `packages/guard/src/check-trade.ts` from line 105 and dropped when a `Finding` is mapped to a
+  `reason`, so the information exists and is thrown away at the boundary. The wallet echo cannot be
+  labelled by a field because `Report` is a plain `z.object` and zod strips any key the contract does
+  not declare, which is the same wall T-E13 hit and worked around with a note attached after parsing.
+  A size of 0 is admitted on purpose by the pattern `^(0|[1-9][0-9]*)$`. Each fix is small; the gate
+  in front of all 3 is a named human reviewer, which is the scarce thing here and not the code
+
 ### T-E11, Pricing slide and paid-tier waitlist
 - Status: open
 - Depends-on: T-E09
