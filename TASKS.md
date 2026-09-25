@@ -694,7 +694,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: if (e) passes unexpectedly, numbers still stay on arithmetic. 1 lucky run is not evidence
 
 ### T-C07, MCP server, 4 tools and a stable list
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/80 | Owner: Jishnu | Branch: feature/t-c07-mcp
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/97 | Owner: Jishnu | Branch: feature/t-c07-fixture-marker
 - Depends-on: T-C06
 - Touches: packages/mcp/src/, packages/guard/src/assess.ts, packages/decoder/src/enhanced.ts
 - Serves: Functionality (judged) ; Open source (judged)
