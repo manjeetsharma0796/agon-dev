@@ -1454,6 +1454,29 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 - Evidence: <both result directories at a commit, plus the published posts>
 - Kill criterion: publish every arm, including the ones where Agon does badly
 
+### T-E13, Every surface that serves a fixture says so, not just the two that already do
+- Status: claimed 2026-09-25 | Owner: manjeetsharma0796 | Branch: feature/t-e13-fixture-note-surfaces
+- Depends-on: T-C07
+- Touches: apps/web/src/routes.ts, apps/web/src/card.ts
+- Serves: Functionality (judged) ; the honesty rule that a fixture is never served unlabelled
+- Acceptance: `FIXTURE_NOTE` appears in 0 places in `apps/web/src/routes.ts` today and in 2 after
+  this, being the report and check_trade JSON responses; the share card's footer names itself an
+  example while fixtures back it; 3 tests, 1 per surface, each failing before the change; the MCP
+  layer keeps its single copy of the marker rather than a second one appearing beside it
+- Evidence: <PR link, plus the 3 failing-first tests>
+- Kill criterion: none. A number served without saying where it came from is the one output this
+  project cannot ship, and the report page already got this right
+- Finding: T-C07 fixed exactly this and the fix did not reach far enough, which is the same shape of
+  miss as its own finding that "a marker on one tool protected only that tool". The marker reached
+  the 4 MCP tools and the report page, which renders it in a `role="note"` panel. It did not reach
+  `apps/web/src/routes.ts`, where `reportRoute` returns the synthetic report with the CALLER'S wallet
+  written into the `wallet` field and no note anywhere in the payload, and `checkTradeRoute` returns
+  a fixture verdict the same way. Measured: `grep -c FIXTURE_NOTE apps/web/src/routes.ts` is 0. The
+  echo itself is deliberate and tested at `apps/web/src/legs.test.ts:17`, so this row does not remove
+  it: pasting your address and seeing your address is the intended UX, and the label is what makes it
+  honest. Ruled out on inspection: the share card is already correct about identity, carrying no
+  address at all and saying so on its face, so only its "this is an example" half is missing
+
 ### T-E11, Pricing slide and paid-tier waitlist
 - Status: open
 - Depends-on: T-E09
