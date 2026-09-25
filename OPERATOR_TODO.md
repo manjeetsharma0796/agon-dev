@@ -181,6 +181,14 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   the database tests cleanly.
 
 ### * OP-7, Create both GitHub repos and their tokens
+- Audited 2026-09-25, 2 of the 3 clauses verified and the third is a landmine. A claim push to
+  `dev` succeeds: 17 claim PRs have merged. A code push straight to `dev` is rejected, tested just
+  now with an empty commit, `GH013: Repository rule violations found for refs/heads/dev`. But the
+  public repo does not exist: `scripts/release.mjs` defaults `PUBLIC_REPO` to `agon-dev/agon` and
+  that is a 404, as is `manjeetsharma0796/agon`. The release job would fail on the first tag, and
+  it would fail at the push rather than at a check, so the first anyone hears of it is a red
+  release. Creating it, or setting `PUBLIC_REPO` to whatever it is really called, is the whole
+  remainder of this row
 - Status: open
 - Owner: B
 - Needed by: 2026-09-24
@@ -432,7 +440,9 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: one option is written in the PRD Decisions log, `docs/demo-script.md` beat 4 and beat 6
   match it, and T-E06 and T-E07 either have a target or are cut with a date and a reason.
 
-### OP-22, Film a thin working slice on devnet before building more
+### OP-22, Film a thin working slice before building more
+- Retitled 2026-09-25: it said "on devnet", which OP-20 overruled. Devnet cannot run the arming
+  half at all, because the pinned Jupiter id is not a program there
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-27, CP1
