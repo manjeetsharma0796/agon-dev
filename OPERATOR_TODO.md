@@ -681,3 +681,26 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   against whichever answer wins.
 - Why it cannot wait: F6 is existential and 1 of its 4 clauses cannot pass as written, so the row
   cannot go green on any platform until the sentence is fixed. This is the same shape as OP-28.
+
+---
+
+### OP-31, F1's first wallet is an arbitrage bot, so it can never report a swap
+- Status: open
+- Owner: Jishnu
+- Needed by: 2026-10-02
+- Unblocks: T-A07's last clause, T-F01b
+- What exactly: T-A07's acceptance says the 50 sampled transactions of `5CKAa7Wm` stop reporting 0
+  swaps. T-A06 already stopped them reporting 100% coverage, and T-A07 fixed the decoder, but the
+  count is still 0 and reading the data says it always will be. All 50 sampled transactions move
+  SOL only or rotate SOL to USDC: the token gains are 3840 lamports and 0.007 USDC against a fee of
+  the same order, which is arbitrage flow and not a position. After T-A07 the decoder names them
+  correctly, 9 as rotations and 41 as one-sided, with 0 silent drops, so the decoder is right and
+  the wallet is wrong. The second wallet, `5Q544fKr`, decodes 29 swaps of 50 and is a real trader.
+  Replacing it needs a `HELIUS_API_KEY` to re-record the fixture, which is why this is here: an
+  agent must not invent the data it measures.
+- Done when: `spikes/F1/wallets.json` names a replacement that owns the token balances in a
+  majority of its own swaps, the fixture is re-recorded with `AGON_NET_MODE=record`, and T-A07's
+  last clause is rewritten against the new wallet or struck with its reason.
+- Why it cannot wait: F1 is existential and its headline number is "swaps decoded of 50 sampled per
+  wallet". Half that number is currently measuring a wallet that has no swaps to decode, which
+  makes the spike read as a decoder failure when the decoder is correct.
