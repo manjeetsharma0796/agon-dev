@@ -352,6 +352,20 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   users are put on, because a fork needs each user pointed at a custom RPC, which is the same
   instruction every wallet drainer gives, and because one shared fork means one user's swap moves
   the pool state another user is quoted against
+- The sharp reason, which is not the obvious one: a fork cannot move real funds, because its
+  transactions execute on its own ledger and nothing is broadcast. But the signature is real. A
+  Solana transaction is valid for about 150 slots, roughly a minute, after the blockhash it was
+  signed with, and which blockhash the fork hands out decides everything. A fork that is not
+  `--offline` proxies `getLatestBlockhash` to real mainnet and hands out a fresh genuine one, so a
+  transaction signed against it is a valid mainnet transaction for the next minute and the fork
+  operator is holding it. A shared live fork plus real user wallets means collecting signed
+  submittable mainnet transactions from people who trusted you, which is structurally a drainer
+  whether or not anyone intends it.
+  F9 is safe by construction and this is why `--offline` is not a convenience: it runs from a
+  snapshot pinned at slot 450049160, from 2026-09-24, and that snapshot carries the real
+  `SysvarRecentB1ockHashes` account, checked. Those blockhashes expired months of slots ago, so
+  nothing signed against it executes anywhere. **If a user-facing sandbox is ever wanted, the rule
+  is that the fork is offline from a pinned snapshot and never live-proxied.**
 - Owner: <unassigned>
 - Needed by: 2026-09-27, CP1, because F5 is the gate on the arming UI
 - Unblocks: T-F05a, and through it T-E06, the arming UI, and the live-arming demo beat
