@@ -406,9 +406,10 @@ and latency (a, b).
   until this lands the coverage number a user sees is the old one
 
 ### T-A06, Fix the two coverage numbers that can lie
-- Evidence: re-running spikes/F1 moved 5CKAa7Wm from `share 1` to `share 0` and 5Q544fKr from
-  0.9666666666666667 to 0.58, which is 29 of the 50 sampled, exactly the 2 numbers the acceptance
-  predicted. 4 tests, 1 per defect, each failing before the fix
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/134. Re-running spikes/F1 moved
+  5CKAa7Wm from `share 1` to `share 0` and 5Q544fKr from 0.9666666666666667 to 0.58, which is
+  29 of the 50 sampled, exactly the 2 numbers the acceptance predicted. 4 tests, 1 per defect,
+  each failing before the fix
 - Finding: removing the signature tie-break was not enough on its own, and the test caught it. With
   no tie-break the order the swaps arrive in decides the answer instead, so a same-slot sell that
   arrived first still invented a sold-more-than-held against units the wallet demonstrably held.
@@ -439,7 +440,6 @@ and latency (a, b).
   5CKAa7Wm from 100% to 0% and 5Q544fKr from 96.7% to the share over all 50 sampled; and fifoLedger
   stops tie-breaking same-slot swaps on the base58 signature, with 1 test asserting a same-slot buy
   and sell produce 1 closed trade whichever order they are passed in
-- Evidence: <PR link, plus the F1 coverage numbers before and after>
 - Kill criterion: none. A coverage number that reads 100% when nothing decoded is the single defect
   positioned to turn a real run green, and it is live today in spikes/F1/result.json
 ### T-D06, Verify the cap that is on chain, not the one we meant to send
