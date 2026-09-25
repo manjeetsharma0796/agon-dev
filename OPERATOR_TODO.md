@@ -341,7 +341,17 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   line.
 
 ### * OP-20, CP1 decision: Jupiter is not on devnet, so F5 cases (a), (b) and (e) cannot run there
-- Status: open
+- Status: decided 2026-09-25 by Jishnu, option 1: run it on a Surfpool mainnet fork
+- Decision: the fork carries the real Jupiter program and the real Swig program, costs 0, needs 0
+  mainnet funds, and F9 already proved a committed snapshot replays offline with no key. Measured:
+  the F9 snapshot is 281 KB for 295 accounts and the whole spike folder is 309 KB, so this is a
+  laptop and a file in git, not a machine anyone provisions. Unmeasured and worth checking before
+  anyone plans around it: F5 executes a swap, so its snapshot also pulls Jupiter's program account,
+  its lookup tables and pool accounts, and will be larger than 281 KB. How much larger is not known
+- Scope of the decision: the fork is for the demo and for proving F5 and F6. It is NOT the path new
+  users are put on, because a fork needs each user pointed at a custom RPC, which is the same
+  instruction every wallet drainer gives, and because one shared fork means one user's swap moves
+  the pool state another user is quoted against
 - Owner: <unassigned>
 - Needed by: 2026-09-27, CP1, because F5 is the gate on the arming UI
 - Unblocks: T-F05a, and through it T-E06, the arming UI, and the live-arming demo beat
@@ -371,6 +381,11 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 
 
 ### OP-21, Decide the shape of the World's Fair demo: read-only or live arming
+- Note 2026-09-25, from the OP-20 fork decision: a fork answers "where does the demo run", not
+  "where do new users try it". Those are different questions and the fork only answers the first.
+  For users, the read-only path needs no fork, no signing, no custom RPC and no keypair: it is what
+  `check_trade` already does on a real mainnet wallet today. That is the only path that can be
+  opened to people before F5 and F6 pass, and it is available now
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-27, CP1, because it changes what Track E builds next
