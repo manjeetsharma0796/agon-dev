@@ -1,0 +1,33 @@
+{
+  "id": "F6",
+  "pass": false,
+  "date": "2026-09-25",
+  "measured": "2 of 4 clauses pass. A Trigger order can be built with a Swig wallet, a program-derived address, as maker and payer. The order invokes j1o2qRpjcyUwEvwtcfhEQefh773ZgjxcVRry7LDqg5X, and the agent role permits JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4, so they are NOT the same program.",
+  "triggerProgram": "j1o2qRpjcyUwEvwtcfhEQefh773ZgjxcVRry7LDqg5X",
+  "agentRolePermits": "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4",
+  "agentRoleCouldManageOrders": false,
+  "orderAddress": "HRnyN3nVN9AuFzV1iVXdWSuTQNyXBNNNvwjXw7mR6PJU",
+  "swigWallet": "6aZFY7hPhfKfHsGHr2qHRC2K3XRuECScHE4m5dtWnZux",
+  "clauses": {
+    "pdaAccepted": {
+      "states": "the Trigger API builds an order with a Swig wallet as maker",
+      "status": "pass",
+      "why": "the API built an order with the Swig wallet as maker and payer, order HRnyN3nVN9AuFzV1iVXdWSuTQNyXBNNNvwjXw7mR6PJU, invoking j1o2qRpjcyUwEvwtcfhEQefh773ZgjxcVRry7LDqg5X"
+    },
+    "orderCreated": {
+      "states": "the order is created on a simulated chain",
+      "status": "pass",
+      "why": "the order was created under root, signature 2F6ZxUNSrBifM5xuceszY4H3oi4YPvfyFveESVMynLy1CXmkfHwYeaM9qBvx7jJrbT2Z4oDLVzXkVPXiP2nkfNEb"
+    },
+    "cancelReturnsFunds": {
+      "states": "a cancel returns the funds",
+      "status": "not run",
+      "why": "the cancel path is not written yet"
+    },
+    "depositMatchesAllowance": {
+      "states": "the vault deposit reduces the Swig allowance by exactly the deposit",
+      "status": "not run",
+      "why": "wallet balance moved 10000890880 to 9891293040, a change of -109597840 lamports against a making amount of 100000000. The allowance arithmetic is not asserted yet: a role-level allowance read is needed and this run measures the wallet balance only"
+    }
+  }
+}
