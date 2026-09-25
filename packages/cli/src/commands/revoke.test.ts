@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import type { OnChainRole, RoleActions } from '@agon/chain'
+import { JUPITER_PROGRAM_ID, type OnChainRole, type RoleActions } from '@agon/chain'
 import { renderRevoke, revoke, type RevokeIo } from './revoke.js'
 
 const USDC = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
@@ -12,9 +12,19 @@ const role = (over: Partial<RoleActions> = {}): RoleActions => ({
   isRoot: () => false,
   canManageAuthority: () => false,
   canCloseSwigAuthority: () => false,
-  canUseProgram: () => true,
+  // Scoped to Jupiter and nothing else. This used to be `() => true`, which answered yes about
+  // every program id and so modelled a role holding programAll rather than the role we arm. The
+  // shape check now asks about a program the role must not be able to use, and a stub that says yes
+  // to everything is exactly the role it is meant to reject.
+  canUseProgram: (programId: string) => programId === JUPITER_PROGRAM_ID,
   canSpendTokenMax: () => false,
   tokenSpendLimit: () => 25_000_000n,
+  canSpendToken: () => true,
+  tokenSpend: () => ({
+    spendLimit: 25_000_000n,
+    window: 216_000n,
+    recurringLimit: 25_000_000n,
+  }),
   ...over,
 })
 const agent = (): RoleActions => role()

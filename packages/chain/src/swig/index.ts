@@ -29,6 +29,19 @@ import { Actions, SWIG_PROGRAM_ADDRESS } from '@swig-wallet/classic/dist/index.j
 export const SWIG_PROGRAM_ID = 'swigypWHEksbC64pWKwah1WTeh9JXwx8H1rJHLdbQMB'
 export const JUPITER_PROGRAM_ID = 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4'
 
+/**
+ * A program the agent role must NEVER be able to use, asked about only to prove a negative.
+ *
+ * `canUseProgram` answers true for `ProgramAll`, `ProgramCurated` and `All` whatever id it is
+ * handed, so asking it about Jupiter cannot tell a Jupiter-scoped role from one that can call
+ * anything. Asking about a program the role has no business calling separates them: a role holding
+ * `Program(Jupiter)` answers false, and every wider role answers true. The system program is the
+ * right one to ask about because a bare transfer is exactly the escape this scoping exists to stop.
+ *
+ * This is a question, never a grant. Nothing here permits the system program.
+ */
+export const NON_JUPITER_PROBE_ID = '11111111111111111111111111111111'
+
 // The SDK ships its own copy of the Swig address. If an upgrade ever moves it, this throws at
 // import rather than letting us build a role against a program we did not mean to trust.
 if (String(SWIG_PROGRAM_ADDRESS) !== SWIG_PROGRAM_ID) {
@@ -53,6 +66,30 @@ export interface RoleActions {
   canUseProgram(programId: string): boolean
   canSpendTokenMax(mint: string): boolean
   tokenSpendLimit(mint: string): bigint | null
+  /** Is there a token control for this mint at all, whatever is left in the window. */
+  canSpendToken(mint: string, amount?: bigint): boolean
+  tokenSpend(mint: string): TokenSpend
+}
+
+/**
+ * One mint's spend control, as the SDK reads it. The two amounts are not interchangeable and
+ * confusing them is what this row exists to fix.
+ */
+export interface TokenSpend {
+  /** What is LEFT in the current window. Decays as the agent trades, so it is never the cap. */
+  readonly spendLimit: bigint | null
+  /** Window length in slots. */
+  readonly window: bigint | null
+  /** The CONFIGURED amount per window. This is the cap, and it does not move as funds are spent. */
+  readonly recurringLimit: bigint | undefined
+}
+
+/** Exactly what the user signed for, to compare against what reached the chain. */
+export interface ApprovedCap {
+  /** The amount per window, in base units. */
+  amount: bigint
+  /** The window length, in slots. */
+  window: bigint
 }
 
 /** What the agent is allowed to do. Deliberately the smallest thing that can trade. */
@@ -93,13 +130,23 @@ export function agentRoleActions(spec: AgentRoleSpec): RoleActions {
       `A window of ${spec.window} slots is not a window. Set the number of slots the limit resets over.`,
     )
   }
+  // The token limit is added BEFORE the program limit, and the order is load-bearing.
+  //
+  // `Actions.tokenSpend(mint)` picks an action with `find(a => a.tokenControl(mint).spendLimit !=
+  // null)`, but `spendLimit` returns `0n` rather than `null` for an action that has no token
+  // control at all. So the program action always matches first and its empty controller is
+  // returned, which reports `recurringLimit: undefined` and `window: null` for a perfectly good
+  // role. Measured both ways on 2.1.0: with the program action first `recurringLimit` is
+  // `undefined`, with the token action first it is the configured amount. Putting the token action
+  // first is what makes the configured cap readable at all, and it is also correct if the SDK ever
+  // fixes that `find`. The permissions are identical either way: only the buffer order changes.
   return Actions.set()
-    .programLimit({ programId: JUPITER_PROGRAM_ID })
     .tokenRecurringLimit({
       mint: spec.mint,
       recurringAmount: spec.recurringAmount,
       window: spec.window,
     })
+    .programLimit({ programId: JUPITER_PROGRAM_ID })
     .get()
 }
 
@@ -109,8 +156,19 @@ export function agentRoleActions(spec: AgentRoleSpec): RoleActions {
  * Reads the role's own action list, which is what the on-chain account holds, rather than the spec
  * we built it from. Those are the same thing right up until they are not, and the whole point of
  * the cap is that it is checked against the chain.
+ *
+ * `approved` is optional on purpose, and the reason is the kill switch. Revocation has to identify
+ * our roles long after the arming session is over, when nobody remembers the numbers the user
+ * signed for, so it calls this to ask "is this shape ours" with no cap to compare. Arming does know
+ * the numbers and must pass them, because a role of the right SHAPE at the wrong AMOUNT is the
+ * failure this row was opened for. Requiring it would have made the kill switch unable to run;
+ * omitting it at arm time is the caller's bug, which is why `verifyRoleOnChain` takes it too.
  */
-export function assertAgentRoleShape(role: RoleActions, mint: string): void {
+export function assertAgentRoleShape(
+  role: RoleActions,
+  mint: string,
+  approved?: ApprovedCap,
+): void {
   if (role.isRoot()) {
     throw new Error('This role is root. The agent key must never hold the root authority.')
   }
@@ -129,16 +187,54 @@ export function assertAgentRoleShape(role: RoleActions, mint: string): void {
       `This role cannot use Jupiter (${JUPITER_PROGRAM_ID}), so it could not trade even if it were armed.`,
     )
   }
+  // Answering yes about Jupiter is not the same as being scoped to Jupiter. A role holding
+  // programAll answers yes about every id, and the SDK appends programAll to any action set with no
+  // program action of its own, so such a role has 2 actions and used to pass every check here while
+  // being able to call anything on the chain.
+  if (role.canUseProgram(NON_JUPITER_PROBE_ID)) {
+    throw new Error(
+      `This role can also use ${NON_JUPITER_PROBE_ID}, so it is not scoped to Jupiter: it carries ` +
+        'programAll or wider. A role that can call any program can move funds without swapping.',
+    )
+  }
   if (role.canSpendTokenMax(mint)) {
     throw new Error(
       `This role can spend an unlimited amount of ${mint}. A cap that is not a number is not a cap.`,
     )
   }
-  const limit = role.tokenSpendLimit(mint)
-  if (limit === null || limit <= 0n) {
+  // Whether a limit EXISTS, asked in a way that does not depend on how much of it is left.
+  // `tokenSpendLimit` returns the remaining allowance, so a role that has traded its whole window
+  // reads 0 and used to be reported here as carrying no limit. The kill switch swallowed that and
+  // told the user "No Agon roles were found" about the role trading hardest, then Swig reset the
+  // window and the agent carried on.
+  if (!role.canSpendToken(mint)) {
     throw new Error(
       `This role carries no spending limit for ${mint}, so nothing would stop it. Arm a recurring limit first.`,
     )
+  }
+  const spend = role.tokenSpend(mint)
+  const configured = spend.recurringLimit
+  if (configured === undefined || configured <= 0n) {
+    throw new Error(
+      `This role's configured cap for ${mint} could not be read, so there is no number to verify. ` +
+        'A cap that cannot be read is not a cap that can be trusted.',
+    )
+  }
+  if (approved !== undefined) {
+    // The number that reached the chain against the number the user signed for. Never checked
+    // before, so a role armed at 25,000,000 when the user approved 25 passed.
+    if (configured !== approved.amount) {
+      throw new Error(
+        `This role is armed at ${configured} base units of ${mint} per window, but the user ` +
+          `approved ${approved.amount}. Nothing is armed at a cap the user did not sign for.`,
+      )
+    }
+    if (spend.window !== approved.window) {
+      throw new Error(
+        `This role resets every ${String(spend.window)} slots, but the user approved ` +
+          `${approved.window}. A window that is not the approved one is a different cap.`,
+      )
+    }
   }
   if (role.count !== AGENT_ROLE_ACTION_COUNT) {
     throw new Error(
@@ -160,6 +256,7 @@ export async function verifyRoleOnChain(
   swigAddress: string,
   roleId: number,
   mint: string,
+  approved?: ApprovedCap,
 ): Promise<RoleActions> {
   const role = await fetchRole(swigAddress, roleId)
   if (role === null) {
@@ -167,6 +264,6 @@ export async function verifyRoleOnChain(
       `No role ${roleId} exists on Swig account ${swigAddress}. Nothing was verified, so nothing is armed.`,
     )
   }
-  assertAgentRoleShape(role, mint)
+  assertAgentRoleShape(role, mint, approved)
   return role
 }
