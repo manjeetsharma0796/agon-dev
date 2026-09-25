@@ -1476,8 +1476,9 @@ _(empty)_
   fixtures now on dev and 1 finding for each of 3 planted shapes: a 64-number JSON byte array, a PEM
   private key block, and a keypair committed under a name the gitleaks default config exempts by
   path. The scan must NOT fire on a 32 to 44 character base58 value, which is what the fixtures are
-  made of, and must NOT fire on an 87 to 88 character base58 value, measured at 12 findings on this
-  repo and every one a transaction signature in a recorded fixture
+  made of, and must NOT fire on an 87 to 88 character base58 value, measured at 1,040 hits on this
+  tree of which 1,035 are signatures in recorded fixtures and 5 are the documented PINNED_SWAPS
+  list in packages/core/src/net/record.ts, all 5 read by hand and all public swap signatures
 - Evidence: <the 2 clean scans and the 3 planted shapes, in the PR>
 - Kill criterion: none, but it is cut rather than loosened. If it needs a path exemption to pass, it
   has become the hole it exists to close, because a path exemption is how this one got in
@@ -1495,7 +1496,8 @@ _(empty)_
 - Serves: Functionality (judged) ; stops the queue being read in file order when order is not priority
 - Acceptance: every OP item still blocking work at a sweep carries 1 star per sweep it survived,
   with a legend stating what the count means, and `node scripts/board.mjs` reports lint ok with 0
-  items reported as a missing OP, down from the 12 such reports a starred queue produces today
+  items reported as a missing OP, down from the 33 such reports a starred queue produces against
+  the current parser
 - Evidence: <the lint run before and after, in the PR>
 - Kill criterion: none. If the stars ever disagree with the waiting-task count on the item, the
   count wins and the stars go
