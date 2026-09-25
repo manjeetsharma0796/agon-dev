@@ -441,3 +441,41 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   person should either reword CLAUDE.md to say "the trading guard asks Jev only 3 questions" or say
   T-B08 does not get an exception.
 - Done when: CLAUDE.md's wording and TASKS.md's T-B08 row agree, in either direction.
+
+### OP-25, Two frozen contracts cannot say "refused" or "not applicable"
+- Status: open
+- Owner: <unassigned>
+- Needed by: CP2, 2026-10-02
+- Unblocks: T-C07's remaining review findings, and any client that has to act on a verdict
+- What exactly: an outside agent tested the deployed MCP server and raised 4 findings. 1 was a
+  marker gap and is fixed. The other 3 all landed on the same thing, which is more useful than any
+  of them alone: **the frozen contracts have no way to express a refusal or a check that did not
+  run.** Two changes, both needing the owners of both sides plus fixtures in the same commit.
+
+  1. **`Reason` has no tag.** `packages/core/src/check-trade.ts`, `Reason` is
+     `{rule, message, observed?, limit?, unit?}`. `quote-missing` and `text-not-screened` fire on
+     every single call regardless of the trade, so the reasons that actually depend on the trade
+     are buried among ones that never vary. Severity already exists inside the guard
+     (`packages/guard/src/check-trade.ts`, sorted block then unsure then note) and is mapped away
+     at the boundary before `CheckTradeOutput.parse`, so the information is computed and then
+     discarded. A client cannot tell which reason caused the verdict. Adding a tag or carrying
+     severity through is the smaller half of this row and the higher leverage: it makes every
+     other output legible before anything else is built on top.
+
+  2. **`ArmedRule` can only describe a rule that exists.** `packages/core/src/rule.ts`, it requires
+     a non-empty `swigRole.roleId`. So `arm_rule` cannot return a refusal in its success shape
+     without inventing an on-chain claim, which is the one thing that path refuses to do, and the
+     refusal goes out as `isError: true` instead. That is correct today and it is why naive clients
+     log a policy denial as a failure. Contrast `check_trade`, which returns `block` with
+     `isError: false` because its contract has a `Verdict` field that can say no. The fix is a
+     union, roughly `{armed: ArmedRule} | {refused: {code, spec, message}}`, so a refusal is
+     expressible without claiming anything exists.
+
+  Budget note, because this row has a gate of its own: `check_trade` is measured at 319 tokens of
+  400 with the fixture marker attached, and T-C13 is already tracking an 8-reason verdict at 452.
+  A new field on every reason needs a measured answer or it fails that gate.
+- Done when: both sides have agreed each change, the examples under `fixtures/contracts/` change in
+  the same commit, and the `check_trade` token budget is re-measured and still passes.
+- Why it cannot wait: it is cheap now and expensive later. Every client written against the
+  current shape has to change when these do, and the first outside agent to use the server hit
+  both inside an hour.
