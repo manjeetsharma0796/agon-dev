@@ -38,7 +38,27 @@ export const liveIo = (): ToolIo => {
     usedFixture: () => fromFixture,
 
     async loadTransactions(wallet: string): Promise<RawTransaction[]> {
-      const res = await call(heliusTransactions(wallet, PAGE))
+      let res
+      try {
+        res = await call(heliusTransactions(wallet, PAGE))
+      } catch (error) {
+        // The wrapper's own message is written for whoever is adding a fixture: it names the file
+        // path it wanted and the env var that records it. That is the right message in a terminal
+        // and the wrong one on a public endpoint, where it hands a stranger internal paths and
+        // configuration names and tells a caller nothing it can act on. An outside agent hit this
+        // and reported it as a path leak, correctly. The cause is stated without the internals.
+        const replay = /replay mode|No recorded response/i.test(
+          error instanceof Error ? error.message : String(error),
+        )
+        throw new Error(
+          replay
+            ? `No history is available for ${wallet} on this deployment. It answers from recorded ` +
+              `data and there is no recording for this wallet, so nothing was read and no verdict ` +
+              `is given. Ask about a wallet this deployment has, or run against live mainnet.`
+            : `Could not read the history for ${wallet}, so no verdict is given rather than one ` +
+              `based on a partial read.`,
+        )
+      }
       if (res.fromFixture) fromFixture = true
       if (res.status !== 200) {
         throw new Error(

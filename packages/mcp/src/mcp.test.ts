@@ -110,3 +110,48 @@ test('the marker is per call, so one replayed answer does not brand the next', a
   const rules = await callAsTool('list_rules', { wallet: WALLET })
   expect(textOf(rules)).not.toContain('recorded fixture')
 })
+
+test('an unknown wallet is refused without handing out internal paths', async () => {
+  // An outside agent asked about an unrecorded wallet and got back the fixture path the wrapper
+  // wanted plus the env var that records it. That message is right in a terminal and wrong on a
+  // public endpoint: it gives a stranger internals and the caller nothing it can act on.
+  const result = await callAsTool('check_trade', {
+    wallet: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM',
+    mint: USDC,
+    side: 'buy',
+    size: '1000',
+  })
+  const text = textOf(result)
+
+  expect(result.isError).toBe(true)
+  expect(text, 'the fixture path reached the caller').not.toContain('fixtures/recorded')
+  expect(text, 'an env var name reached the caller').not.toContain('AGON_NET_MODE')
+  // Still says the cause and what to do, because a refusal with no reason is the other failure.
+  expect(text).toContain('No history is available')
+})
+
+test('a size of 0 is refused, because nothing is being traded', async () => {
+  // 0 parses, and then sails through: it is under any median, so the size rule never fires and the
+  // answer comes back shaped like a trade that was examined.
+  const result = await callAsTool('check_trade', {
+    wallet: RECORDED,
+    mint: USDC,
+    side: 'buy',
+    size: '0',
+  })
+  expect(result.isError).toBe(true)
+  expect(textOf(result)).toContain('not a trade')
+})
+
+test('the instructions say which data source is actually in use', async () => {
+  // The first version claimed check_trade "reads that wallet's last 100 transactions" and "reads
+  // the mint's authorities off the chain". True with a key, false in the replay deployment, and
+  // the payload note said the opposite. An agent read the instructions, believed them, and
+  // reported recorded data as live. The text is derived from mode() now so it cannot drift.
+  const { createServer } = await import('./index.js')
+  const server = createServer()
+  const instructions = (server.server as unknown as { _instructions?: string })._instructions ?? ''
+
+  expect(instructions).toContain('REPLAY MODE')
+  expect(instructions).not.toMatch(/reads the mint's authorities off the chain/)
+})
