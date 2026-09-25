@@ -294,6 +294,30 @@ if (!funded) {
     cases[k].why =
       `waiting on the CP1 decision in OP-20 before the case sequence is written, because ${jupiterWhy}`
   }
+} else {
+  // Funded, and Jupiter is a real program. Both of the reasons this spike has ever been unable to
+  // run are gone, which is new, and it leaves the case bodies as the only thing missing. Before
+  // this branch existed the 6 cases fell through both tests above and were reported "not run" with
+  // an empty reason, which is the blank field the catalogue forbids: it read as though something
+  // had been checked and had no answer, rather than as nothing having been checked at all.
+  //
+  // (c), (d) and (f) ask only whether Swig authorises an instruction, so they need no swap and can
+  // be written now. (a), (b) and (e) each need an instruction that actually reaches Jupiter and
+  // moves the capped mint, because a tokenRecurringLimit is applied by comparing token balances
+  // after the inner instructions run. A synthetic instruction to Jupiter's id would be rejected
+  // inside Jupiter before the limit was ever consulted, and recording that as a cap holding would
+  // be a measurement of the wrong thing.
+  const notWritten = 'the case body is not written yet, and the platform is no longer the blocker'
+  for (const k of ['c', 'd', 'f']) {
+    cases[k].status = 'not run'
+    cases[k].why = notWritten
+  }
+  for (const k of ['a', 'b', 'e']) {
+    cases[k].status = 'not run'
+    cases[k].why =
+      `${notWritten}. This one also needs a real Jupiter swap that moves the capped mint, because ` +
+      `the recurring limit is applied by comparing balances after the inner instructions run`
+  }
 }
 
 const ran = Object.values(cases).filter((c) => c.status === 'pass').length

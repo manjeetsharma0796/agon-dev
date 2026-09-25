@@ -29,6 +29,10 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 ---
 
 ### ** OP-19, Fund a throwaway devnet keypair
+- Wider than F5, checked 2026-09-25: T-D02 and T-F07 are both `blocked, see OP-19` and both say
+  "needs a funded devnet key". The reason in each is funding, not devnet, and a fork funds itself,
+  so both are unblockable the same way F5 was. T-D03 is not: its acceptance asks for a run across
+  3 real devnet wallets and a removal done from Phantom, and no fork answers either.
 - Scope narrowed 2026-09-25, and this row is no longer on the critical path. It has 2 stars because
   F5 and F6 were waiting on it. They are not any more: OP-20 moved both to a Surfpool mainnet fork,
   and **a fork funds itself**. Measured on an offline fork started from the committed snapshots with
