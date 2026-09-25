@@ -1,0 +1,14 @@
+# Keep the build context small and keep local state out of the image.
+node_modules
+**/node_modules
+**/dist
+.git
+.claude
+.env
+*.log
+
+# The incremental build cache, and it has to go out with dist or the build silently does nothing.
+# tsc -b trusts these over the filesystem: with dist excluded and these copied in, it decided every
+# project was already current, exited 0 in 1 second, and produced an image whose entrypoint did not
+# exist. A build that succeeds and emits nothing is worse than one that fails.
+**/*.tsbuildinfo
