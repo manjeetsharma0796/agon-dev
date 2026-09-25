@@ -29,6 +29,16 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 ---
 
 ### ** OP-19, Fund a throwaway devnet keypair
+- Scope narrowed 2026-09-25, and this row is no longer on the critical path. It has 2 stars because
+  F5 and F6 were waiting on it. They are not any more: OP-20 moved both to a Surfpool mainnet fork,
+  and **a fork funds itself**. Measured on an offline fork started from the committed snapshots with
+  HELIUS_API_KEY unset: `requestAirdrop` for 2 SOL returned a signature and `getBalance` read back
+  2000000000. So a transaction lands, and the payer that F5 could not fund on devnet costs nothing
+  here. No faucet, no key, no allowance, no waiting on a person.
+  What still needs this row: T-D03's kill switch acceptance asks for a run across 3 real devnet
+  wallets, and case (g) of F5 asks for a removal done from Phantom, which a fork cannot answer
+  because a person has to use a wallet. Those are real and they stay. The 7 cases of F5 and the F6
+  simulation are not blocked on this any more
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-26, so F5 has a result before CP1 on 2026-09-27
