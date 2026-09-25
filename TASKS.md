@@ -561,6 +561,15 @@ and latency (a, b).
   run does prove: the 351-byte `createSwig` transaction for the real agent role reaches devnet and
   is refused for exactly 1 reason, 0 lamports, so nothing in our code is the blocker
 - Kill criterion: no fallback for (b), (c), (d). If the cap does not hold on-chain, CP1 decides whether Agon ships read-only
+- Finding 2: the fork has the programs, the snapshot exporter does not. `surfnet_exportSnapshot`
+  leaves the export at 294 accounts and 278 KB after Jupiter and Swig are touched, with neither id
+  in it; its only 2 scopes are `network` and `preTransaction` and `network` emits data accounts
+  only. F9's no-key offline replay therefore does not reach F5 on its own, and every case would
+  have failed for a missing program, which is how F5 already failed once on devnet and would have
+  been hard to tell from progress. `record-programs.mjs` and `programs.json` carry the 4 accounts
+  it drops, 4 because a BPF upgradeable program is a pointer plus a separate program-data account.
+  Verified with HELIUS_API_KEY unset: both programs load at their real mainnet ids, executable,
+  owner BPFLoaderUpgradeable. 4.2 MB, committed for the same reason F9's 281 KB is
 
 ### T-F05b, F5 route size, 20 Jupiter routes against the v1 limit
 - Status: open

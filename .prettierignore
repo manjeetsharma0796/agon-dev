@@ -27,6 +27,10 @@ spikes/*/recorded/
 # again and leaves the tree dirty. The numbers are the reason it is written as raw bytes in the
 # first place, since rentEpoch is u64::MAX and does not survive a JSON round trip.
 spikes/*/snapshot.json
+# Same file, recorded separately because the exporter will not emit programs. Formatting it would
+# re-serialise rentEpoch, which is u64::MAX and does not survive a JSON round trip, so prettier
+# would quietly write a different integer into pinned chain state.
+spikes/*/programs.json
 
 # Hand written, and owned by other tasks. The comments in these carry the reasoning for each gate
 # and prettier would rewrap them.
