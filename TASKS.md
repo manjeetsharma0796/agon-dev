@@ -1508,10 +1508,21 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
   keeps its exact JSON, asserted by a test that spawns the built server and probes both methods;
   `FEASIBILITY.md`'s F1 row names OP-23 rather than OP-20, fixed in the generator's input and
   regenerated rather than hand-edited, with 0 other rows changing
-- Evidence: <PR link, the 2 status codes from the spawned server, and the regenerated F1 row>
+- Evidence: PR link below. Spawned server: HEAD 200 with an empty body, GET 200 with its exact JSON
+  unchanged, from a real node process rather than a called handler. FEASIBILITY.md: 1 line changed,
+  so 0 other spike rows moved. 259 tests pass across 38 files
 - Kill criterion: none, but if making HEAD answer means moving where the server starts listening,
   the fix is dropped rather than risking the one process the deploy runs
-- Finding: <what this discovered>
+- Finding: the stale operator reference was in the file **twice**, and the code review caught the
+  second one after the first was fixed. `measured` said "what OP-20 is" and `notes` said "Picking the
+  2 wallets needs a person, which is OP-20". Only `measured` reaches `FEASIBILITY.md`, so fixing that
+  alone would have left the generated gate doc correct while its own source misdirected anyone who
+  opened it, which is worse than either being wrong: one of two identical errors fixed reads as
+  deliberate. Generalises to every generated file in this repo: grep the INPUT, not the output, or
+  you fix what is displayed and leave what is true. Second, smaller: `handle` in `serve.ts` is not
+  exported and the file starts listening on import, so the health path had no test at all and could
+  not get one without moving where the deployed process begins listening. Spawning a real node
+  process, the way `packages/chain`'s import test does, buys the coverage without touching startup
 
 ### T-C15, Three things the payload cannot say without opening a frozen contract
 - Status: open
