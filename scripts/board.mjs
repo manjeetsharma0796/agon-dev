@@ -40,7 +40,10 @@ function parseTasks(text, lineOffset = 0) {
   // Split on \r?\n. On a Windows checkout every line would otherwise keep its \r, and JS "." does
   // not match \r, so every "$"-anchored row regex below silently matches nothing.
   for (const [i, line] of text.split(/\r?\n/).entries()) {
-    const head = /^### (T-[A-Z]?\d+[a-z]?|OP-\d+),\s*(.+)$/.exec(line)
+    // Leading stars are allowed on an OP heading: OPERATOR_TODO.md marks an item with one more
+    // star each time it is still blocking a sweep, so the count says how often it has been asked
+    // for. They are presentation, so the id must parse with or without them.
+    const head = /^### \**\s*(T-[A-Z]?\d+[a-z]?|OP-\d+),\s*(.+)$/.exec(line)
     if (head) {
       current = { id: head[1], title: head[2], line: lineOffset + i + 1, fields: {} }
       tasks.push(current)
