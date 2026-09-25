@@ -313,9 +313,9 @@ CP1 evidence required: F1 on 2 wallets; F3; F5 on devnet; F6 in simulation; F11 
 and latency (a, b).
 
 ### T-E03, Thin end-to-end version on staging
-- Status: blocked, see OP-17
+- Status: blocked, see OP-17 | Branch: feature/t-e03-deployable-mcp
 - Depends-on: T-C01, T-C02
-- Touches: apps/web/app/report/, apps/web/app/api/, packages/mcp/src/index.ts
+- Touches: apps/web/app/report/, apps/web/app/api/, packages/mcp/src/index.ts, Dockerfile
 - Serves: Functionality (judged) ; UX (judged)
 - Acceptance: on staging, pasting an address returns a report built from fixtures, `check_trade`
   returns a fixture verdict, and arming is a no-op on devnet; all 3 legs work end to end by day 2,

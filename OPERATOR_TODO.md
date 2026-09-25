@@ -294,6 +294,11 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-26, before T-E03 puts anything on staging
+- Ready for you: the MCP server is now a built and run image. `docker build -t agon-mcp .` then
+  `docker run -p 8787:8787 agon-mcp` answers a real check_trade verdict with 0 keys set, because
+  it defaults to AGON_NET_MODE=replay and ships no credential. Any host that builds a Dockerfile
+  takes it as is. That is the agent-facing third of this row and it needs none of the keys the
+  rest of the row is waiting on, so it can go up before OP-2, OP-3, OP-4 and OP-6 land
 - Unblocks: T-B01 (its last acceptance clause), T-E03
 - What exactly: create the hosting project and wire 3 environments, each with its own keys:
   preview on every PR push against devnet, staging on every merge to `dev` against devnet plus
