@@ -656,6 +656,21 @@ and latency (a, b).
 - Kill criterion: fallback is lowering Jupiter `maxAccounts` until the route fits 64 inline accounts and measuring the price cost; a route still needing more than 64 accounts goes out as v0 with lookup tables inside 1,232 bytes
 
 ### T-F06a, F6 spike, Trigger order owned by a Swig wallet, in simulation
+- Finding 4: the deposit does not touch the agent's allowance, measured rather than assumed. The
+  role's remaining allowance read 500000000 before the order and 500000000 after, against a deposit
+  of 100000000, so clause 4 fails. The cause is structural: the agent cannot create an order
+  because the Trigger program is not the one its role permits, root can, and a root-signed deposit
+  never passes the cap. The clause describes a behaviour this architecture does not produce, which
+  is OP-29 and the same shape as OP-28 on F5. **A Trigger order created by root moves funds the
+  agent cap does not see**, and that is safe today only because the agent cannot create one
+- Finding 5: clause 3 cannot be tested through the API on a fork. Jupiter builds cancel
+  transactions from its own mainnet index, so an order created on a fork is unknown to it and the
+  endpoint answers "Unable to cancel specified order", checked against the order this run created.
+  Cancelling one means building the instruction against the Trigger program directly, which needs
+  its layout and is the remaining work on that clause
+- Finding 6, cheap and worth knowing: the spend limits live on `role.actions`, not on the role.
+  `packages/chain`'s interface describes the actions object and reads as though it describes the
+  role, which cost a run with `agentRole.tokenSpendLimit is not a function`
 - Evidence: spikes/F6/result.json, 2 of 4 clauses. **A Trigger order was created on chain, owned
   by a Swig wallet**, on a mainnet fork, signature
   2F6ZxUNSrBifM5xuceszY4H3oi4YPvfyFveESVMynLy1CXmkfHwYeaM9qBvx7jJrbT2Z4oDLVzXkVPXiP2nkfNEb. Signed
@@ -687,7 +702,7 @@ and latency (a, b).
   read. It wants `test`, `name`, `threshold`, `checkpoint` and `existential`, and ignores anything
   else, so the table printed NOT WRITTEN DOWN beside a threshold that had in fact been written
   before the run. Reused the existing shape rather than inventing a second one
-- Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-f06a-trigger
+- Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-f06a-allowance
 - Depends-on: T-D01, OP-3
 - Touches: spikes/F6/, scripts/feasibility.mjs
 - Serves: Novelty (judged) ; CP1 gate

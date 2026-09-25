@@ -27,6 +27,9 @@ const swig = await import(pathToFileURL(entry).href)
 const KEY = process.env['JUPITER_API_KEY'] ?? ''
 const RPC = process.env['SURFPOOL_RPC_URL'] ?? ''
 const SOL = 'So11111111111111111111111111111111111111112'
+/** What the order deposits, and what the agent cap is set to, so the 2 numbers are comparable. */
+const MAKING_AMOUNT = 100_000_000n
+const CAP = 500_000_000n
 const USDC = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
 
 const clauses = {
@@ -212,6 +215,27 @@ async function runOnChain() {
     })
   const inner = msg.compiledInstructions.map(toIx)
 
+  // The agent role exists so clause 4 has an allowance to measure, even though root signs the
+  // order. Capped on wSOL because that is what this order deposits.
+  const agentKey = web3.Keypair.generate()
+  const agentActions = chain.agentRoleActions({
+    mint: SOL,
+    recurringAmount: CAP,
+    window: 150n,
+  })
+  chain.assertAgentRoleShape(agentActions, SOL)
+  const addIxs = await swig.getAddAuthorityInstructions(
+    account,
+    root.id,
+    swig.createEd25519AuthorityInfo(agentKey.publicKey),
+    agentActions,
+  )
+  await send(addIxs, [payer])
+  const withAgent = await swig.fetchSwig(conn, swigAddress)
+  const agentRole = withAgent.roles.find((r) => r.id !== root.id)
+  const agentRoleId = agentRole?.id ?? null
+  const allowanceBefore = agentRole ? agentRole.actions.tokenSpendLimit(SOL) : null
+
   const before = await conn.getBalance(wallet)
   const wrapped = await swig.getSignInstructions(account, root.id, inner)
   const sent = await send(wrapped, [payer])
@@ -228,11 +252,42 @@ async function runOnChain() {
   }
 
   const after = await conn.getBalance(wallet)
+
+  // Clause 4, measured on the role rather than on the wallet. `tokenSpendLimit` returns what is
+  // left of the allowance, which is the number the acceptance is about: the wallet balance moves
+  // by the deposit plus rent and fees and was never the right thing to compare.
+  //
+  // The cap is on wSOL and the order deposits wSOL, deliberately. An earlier version capped USDC
+  // while the order deposited SOL, so the allowance could not have moved whatever the answer was,
+  // and a spike that cannot fail is not a measurement.
+  const reread = await swig.fetchSwig(conn, swigAddress)
+  const agentAfter = reread.roles.find((r) => r.id === agentRoleId)
+  const allowanceAfter = agentAfter ? agentAfter.actions.tokenSpendLimit(SOL) : null
+  const moved =
+    allowanceBefore !== null && allowanceAfter !== null ? allowanceBefore - allowanceAfter : null
+
+  clauses.depositMatchesAllowance.status = moved === MAKING_AMOUNT ? 'pass' : 'fail'
   clauses.depositMatchesAllowance.why =
-    `wallet balance moved ${before} to ${after}, a change of ${after - before} lamports against a ` +
-    `making amount of 100000000. The allowance arithmetic is not asserted yet: a role-level ` +
-    `allowance read is needed and this run measures the wallet balance only`
-  clauses.cancelReturnsFunds.why = 'the cancel path is not written yet'
+    allowanceBefore === null || allowanceAfter === null
+      ? `the agent role allowance could not be read, before ${allowanceBefore}, after ${allowanceAfter}`
+      : moved === 0n
+        ? `the allowance did not move at all: ${allowanceBefore} before and after, against a deposit of ` +
+          `${MAKING_AMOUNT}. The order was signed by root, and root holds every action, so the deposit ` +
+          `never passed the agent's cap. That is the honest answer to this clause and it is worth more ` +
+          `than a pass: a Trigger order created by root moves funds the agent cap does not see. It is ` +
+          `only safe because the agent cannot create one, which is this spike's other finding. Wallet ` +
+          `balance moved ${after - before} lamports over the same period, which is the deposit plus rent`
+        : `the allowance moved by ${moved} against a deposit of ${MAKING_AMOUNT}`
+
+  // Clause 3. Jupiter's cancel endpoint builds its transaction from its own mainnet index, so an
+  // order created on a fork is unknown to it: asking to cancel one answers "Unable to cancel
+  // specified order", checked. Cancelling a fork order means building the instruction against the
+  // Trigger program directly, which needs its layout and is not something to guess at.
+  clauses.cancelReturnsFunds.why =
+    'Jupiter builds cancel transactions from its own mainnet index, so an order created on a fork ' +
+    'is unknown to it and the endpoint answers "Unable to cancel specified order", checked against ' +
+    'the order this run created. Cancelling a fork order needs the instruction built against the ' +
+    'Trigger program directly rather than through the API, which is the remaining work on this clause'
 }
 
 const passed = Object.values(clauses).filter((c) => c.status === 'pass').length
