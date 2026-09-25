@@ -170,7 +170,7 @@ agents can hold one each with no coordination beyond this file.
 | Wave | When | Parallel-safe set |
 |---|---|---|
 | P0 | Day 1, 09-24 | T-B01 **first, alone**; then T-C01, T-B02, T-C02, T-C03, T-E01, T-E02 |
-| P1 | 09-25 to CP1 | A: T-A01, T-F01a. B: T-B03. C: T-C04, T-F03, T-C05, T-F11a. D: T-D01, T-F05a, T-F05b, T-F06a. E: T-E03 |
+| P1 | 09-25 to CP1 | A: T-A01, T-F01a. B: T-B03, T-B10. C: T-C04, T-F03, T-C05, T-F11a. D: T-D01, T-F05a, T-F05b, T-F06a. E: T-E03 |
 | P2 | CP1 to CP2 | A: T-A02, T-A03, T-A04, T-F01b, T-F02. B: T-F09, T-B04, T-B08. C: T-C06, T-C07, T-C08, T-F04, T-F11b. D: T-D02, T-D03, T-F05c, T-F06b, T-F07. E: T-E04, T-E05, T-E10, T-E12 |
 | P3 | CP2 to CP3 | B: T-B05. C: T-C09. D: T-D04. E: T-E06, T-E07, T-E08, T-E09 |
 | P4 | CP3 to 10-11 | T-J01, T-J02, T-J03 |
@@ -520,6 +520,23 @@ and latency (a, b).
   demo path reads a fixture marked `synthetic: true`
 - Evidence: <PR link, plus 2 runs with identical verdicts>
 - Kill criterion: fallback is publishing only the deterministic half (guardrail verdicts on fixed trades) and dropping the live-agent comparison
+
+### T-B10, Clear the parked operator ids out of published source
+- Status: open
+- Depends-on: T-B02
+- Touches: packages/core/src/net/index.ts, packages/core/src/net/record.ts, scripts/release.test.mjs
+- Note: these 3 files sit inside T-C02's and T-B02's `Touches:`, and both rows are blocked on a
+  human, so neither can move while every release is refused. This row is deliberately narrower
+  than either: 5 prose references and 2 `KNOWN` lines, 0 behaviour. It ends when they are gone.
+- Serves: Open source (judged) ; the release gate, red on dev today
+- Acceptance: `node scripts/release.mjs --out <dir>` then `--check <dir>` reports 0 of 6 internal
+  markers, against 2 reported today which stand for 5 live references across 2 files, because the
+  checker reports the first hit per file; the 2 `KNOWN` entries in `scripts/release.test.mjs` go in
+  the same commit, leaving 0 parked markers in the ratchet; `pnpm gates` exits 0; 0 numbers, 0
+  thresholds and 0 behaviour change, so the whole diff is comments plus 1 printed line
+- Evidence: <PR link, with the --check output before and after>
+- Kill criterion: none. Every release is refused until this lands, so there is nothing to fall back
+  to
 
 ---
 
