@@ -656,3 +656,28 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   against whichever answer wins.
 - Why it cannot wait: F5 is existential and 1 of its 7 cases currently cannot pass as written, so
   the row cannot go green on any platform until the sentence is fixed.
+
+### OP-29, CP1 wording: whose allowance does a Trigger order's deposit come out of
+- Status: open
+- Owner: <unassigned>
+- Needed by: 2026-09-27, CP1, because F6 clause 4 cannot pass as written
+- Unblocks: T-F06a's last clause, and the same sentence in T-F06b and T-D04
+- What exactly: F6's acceptance asks that "the vault deposit reduces the Swig allowance by exactly
+  the deposit". Measured on a mainnet fork: it does not move at all. The agent role's remaining
+  allowance read 500000000 before the order and 500000000 after, against a deposit of 100000000.
+  The reason is structural rather than a bug. A Trigger order runs on
+  `j1o2qRpjcyUwEvwtcfhEQefh773ZgjxcVRry7LDqg5X` and the agent role permits
+  `JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4` and nothing else, so the agent cannot create an
+  order at all. Root can, root holds every action, and a root-signed deposit never passes the
+  agent's cap.
+  So the clause describes a behaviour this architecture does not produce. Either it narrows to say
+  the deposit is root's to make and the agent's cap is not involved, which is what T-E06 already
+  describes, or the role needs an action covering the Trigger program so the agent can create its
+  own orders inside its cap, and somebody has to find out whether Swig offers one.
+  Worth stating plainly either way: **a Trigger order created by root moves funds the agent cap
+  does not see.** That is safe today only because the agent cannot create one. If the second option
+  is ever taken, the cap and the vault deposit have to be reconciled deliberately.
+- Done when: the clause is settled in the PRD Decisions log and T-F06a's clause 4 is rewritten
+  against whichever answer wins.
+- Why it cannot wait: F6 is existential and 1 of its 4 clauses cannot pass as written, so the row
+  cannot go green on any platform until the sentence is fixed. This is the same shape as OP-28.
