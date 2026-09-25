@@ -21,6 +21,11 @@ export const TAGLINE = 'Agon caps your agent at your own habits'
  *  34px averages a little over half its size per character, so this is deliberately pessimistic. */
 export const MAX_TAGLINE_CHARS = 48
 
+/** The line under the tagline. Named and exported for the same reason `TAGLINE` is: it is the
+ *  longest string on the card, an over-long line clips silently, and a constant can be asserted
+ *  against `MAX_TAGLINE_CHARS` while an inline string cannot. */
+export const FOOTER = 'Example figures. No wallet address on this card'
+
 export const CARD_WIDTH = 1200
 export const CARD_HEIGHT = 630
 
@@ -74,7 +79,7 @@ export function shareCard(report: Report): string {
   <text x="80" y="230" font-family="system-ui, sans-serif" font-size="42" fill="#9a9aa4">${headline}</text>
   <text x="80" y="400" font-family="system-ui, sans-serif" font-size="150" font-weight="700" fill="#ecece8">${figure}</text>
   <text x="80" y="520" font-family="system-ui, sans-serif" font-size="34" fill="#7fd1b9">${escape(TAGLINE)}</text>
-  <text x="80" y="575" font-family="system-ui, sans-serif" font-size="28" fill="#5c5c68">No wallet address is on this card</text>
+  <text x="80" y="575" font-family="system-ui, sans-serif" font-size="28" fill="#5c5c68">${escape(FOOTER)}</text>
 </svg>
 `
 }

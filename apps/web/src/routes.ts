@@ -4,7 +4,7 @@
 
 import { appendFileSync } from 'node:fs'
 import { Address } from '@agon/core'
-import { NotArmable, armRule, checkTrade, report } from './legs.js'
+import { FIXTURE_NOTE, NotArmable, armRule, checkTrade, report } from './legs.js'
 import { RULE_ANSWERS, type RuleAnswer } from './present.js'
 import { shareCard } from './card.js'
 
@@ -35,7 +35,10 @@ const body = async (request: Request): Promise<unknown> => {
 export const reportRoute = async (request: Request): Promise<Response> => {
   const wallet = new URL(request.url).searchParams.get('wallet')
   try {
-    return json(report({ wallet }))
+    // The wallet echoed back is the one that was asked about, which is intended. The note is what
+    // stops that reading as identity: without it the payload hands a caller a wallet field and a
+    // metrics block with nothing saying the numbers belong to a different wallet entirely.
+    return json({ ...report({ wallet }), note: FIXTURE_NOTE })
   } catch (error) {
     return badRequest(error, 'Solana address')
   }
@@ -43,7 +46,7 @@ export const reportRoute = async (request: Request): Promise<Response> => {
 
 export const checkTradeRoute = async (request: Request): Promise<Response> => {
   try {
-    return json(checkTrade(await body(request)))
+    return json({ ...checkTrade(await body(request)), note: FIXTURE_NOTE })
   } catch (error) {
     return badRequest(error, 'check_trade input')
   }
