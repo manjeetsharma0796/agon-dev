@@ -543,6 +543,19 @@ and latency (a, b).
 - Kill criterion: none. If the cap does not hold on-chain the custody story is gone, see T-F05a
 - Finding: two ways the cap reads as holding when it does not. (1) tokenSpendLimit returns the REMAINING allowance, not the configured cap, so a role whose window is spent reads 0 and assertAgentRoleShape throws "carries no spending limit"; kill-switch isAgentRole swallows that, planRevokeAll files the role under kept as "not ours to remove", and revokedMessage reports "No Agon roles were found". The emergency stop fails open on exactly the role that has been trading hardest, and Swig resets the window afterwards. (2) canUseProgram returns true unconditionally under ProgramAll, and the SDK silently appends programAll to any action set with no program action, so a stored role of programAll plus tokenRecurringLimit has count 2 and is ACCEPTED as "program = Jupiter". Also the approved cap AMOUNT is never compared to what the user signed, only that a limit exists, and the window is never checked beyond being positive. Fix is T-D06.
 ### T-F05a, F5 spike, 7 cases on a mainnet fork
+- Finding 6, from probing (a) on a live fork: **Swig authorises a Jupiter swap through the capped
+  role.** The wrapped instruction reaches Jupiter, `Program swigypWHEksb... invoke [1] Program
+  JUP6LkbZ...`, and comes back with `custom program error: 0x1789`, which is a Jupiter error and
+  not a Swig one. Authorisation is not the blocker for (a), (b) and (e); token account setup is.
+  Two things were learned on the way. Wrapping the whole route is refused with 0xbbe, correctly,
+  because Jupiter's transaction carries ComputeBudget, associated-token and Token instructions and
+  the role permits only Jupiter, so only the swap instruction may go through the role and the rest
+  is the caller's job. And that rest cannot be sent by the payer as Jupiter emits it: Jupiter
+  builds its setup expecting the user to sign, a Swig wallet is a PDA that cannot, and every
+  attempt to send it payer-signed fails signature verification.
+  So the open question for (a), (b) and (e) is not the cap, it is who creates and funds the wallet's
+  token accounts and when. In production that is arm time, which makes it T-E06 and T-C08 work
+  rather than something the spike invents for itself
 - Finding 5: 3 cases now run and 2 pass, the first real F5 measurements. (c) a system transfer out
   of the Swig wallet to an arbitrary address is refused by the Swig program itself, `custom program
   error: 0xbbe`. (f) root removes the role, it stops reading back on the account, and the next
@@ -615,7 +628,23 @@ and latency (a, b).
   owner BPFLoaderUpgradeable. 4.2 MB, committed for the same reason F9's 281 KB is
 
 ### T-F05b, F5 route size, 20 Jupiter routes against the v1 limit
-- Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-f05b-route-size
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/127 | Owner: Jishnu | Branch: feature/t-f05b-route-size
+- Evidence: spikes/F5/route-size/result.json. 20 of 20 routes fit v1 inline with 0 lookup tables,
+  against a bar of 18 of 20. Accounts 18 to 34 against a ceiling of 64, bytes 811 to 1416 against
+  4096, 0 routes over either. 5 mints from USDC to WIF at 0.1, 1, 10 and 100 SOL, 1 to 5 venues
+- Finding: the first run reported 0 of 20 and it was true and useless. Asked Jupiter's default way
+  every route came back with lookup tables, so nothing fit the inline bar. But every one of those
+  routes was already under the 64-account ceiling, which meant the tables were Jupiter's choice
+  rather than route complexity, and the spike had measured a default instead of a limit. Asking
+  with `asLegacyTransaction` returns the same route with every account inline and all 20 fit. The
+  number that answers this row is the second one, and the difference between them is the finding:
+  the constraint is a request parameter, not the market. Both are recorded per route so nobody has
+  to take that on trust
+- Second finding, from the same run: unpaced, 15 of the first 20 calls came back 429. Jupiter is 10
+  requests per 10 seconds on the tier OP-3 measured and this spike makes 2 calls per route, so it
+  rate-limits after the 5th. Paced at the 1100 ms `packages/core/src/net/record.ts` already uses,
+  0 of 40 calls failed. Reused rather than re-derived so there is 1 number to change if the tier does
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/127 | Owner: Jishnu | Branch: feature/t-f05b-route-size
 - Depends-on: T-D01, OP-3
 - Touches: spikes/F5/route-size/
 - Serves: Functionality (judged) ; CP1 gate

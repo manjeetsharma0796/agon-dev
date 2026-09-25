@@ -1,0 +1,28 @@
+{
+  "id": "F5b",
+  "writtenBefore": "2026-09-25",
+  "question": "Does a real Jupiter route, wrapped in a Swig execute instruction, fit the v1 transaction limit with all of its accounts inline and no address lookup tables?",
+  "pass": {
+    "routesTested": 20,
+    "routesFittingV1": 18,
+    "v1MaxBytes": 4096,
+    "v1MaxAccounts": 64,
+    "addressLookupTablesAllowed": 0
+  },
+  "recordedForReferenceOnly": {
+    "legacyMaxBytes": 1232,
+    "note": "The 1232-byte legacy count is recorded per route and is NOT a pass criterion, because v1 is what Swig executes."
+  },
+  "whyTheseNumbers": [
+    "4096 bytes and 64 accounts are the v1 limits the acceptance names, so they are copied rather than chosen here.",
+    "18 of 20 is the acceptance's own bar. It allows 2 routes to be too complex without failing the spike, because a route that needs more than 64 inline accounts has a stated fallback: lower Jupiter maxAccounts until it fits and measure the price cost.",
+    "0 lookup tables is the strict part and the reason this spike exists. A measured route on 2026-09-25 carried 21 accounts in the Jupiter instruction alone and needed 1 lookup table, so the question is real rather than theoretical."
+  ],
+  "howMeasured": [
+    "Routes come from the live Jupiter quote and swap endpoints, not from a fixture, because the question is about real route complexity.",
+    "Complexity is increased by asking for larger amounts and more exotic output mints, which is what makes Jupiter split a route across more venues.",
+    "Each route's Jupiter instruction is extracted and wrapped with the Swig SDK's own sign instruction against a real agent role, so the measured size is the transaction that would actually be sent.",
+    "Size is measured on the serialised transaction, and the account count on the resolved account list, so neither number is an estimate."
+  ],
+  "failMeans": "If fewer than 18 of 20 fit, or any route needs a lookup table to fit, then an agent cannot execute a normal Jupiter route inside a Swig role as v1, and the kill criterion applies: lower maxAccounts and measure what that costs in price, or accept v0 with lookup tables inside 1232 bytes."
+}
