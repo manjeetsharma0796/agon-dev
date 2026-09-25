@@ -313,7 +313,13 @@ CP1 evidence required: F1 on 2 wallets; F3; F5 on devnet; F6 in simulation; F11 
 and latency (a, b).
 
 ### T-E03, Thin end-to-end version on staging
-- Status: blocked, see OP-17 | Branch: feature/t-e03-deployable-mcp
+- Finding: the web app could not be started by a host. `apps/web` had `dev` and `start` and no
+  `build`, and `next start` without a prior `next build` exits on "Could not find a production
+  build in the '.next' directory". Nothing caught it because the root `build` is `tsc -b`, which
+  type checks the app and never builds it, so `pnpm gates` passes on a tree that cannot be
+  deployed. Measured by deleting `.next` and starting: the process comes up, logs that error and
+  serves nothing, so a host's health check is what would have found it, in staging
+- Status: blocked, see OP-17 | Branch: feature/t-e03-web-build
 - Depends-on: T-C01, T-C02
 - Touches: apps/web/app/report/, apps/web/app/api/, packages/mcp/src/index.ts, Dockerfile
 - Serves: Functionality (judged) ; UX (judged)
