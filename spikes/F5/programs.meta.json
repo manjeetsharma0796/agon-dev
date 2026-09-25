@@ -1,0 +1,11 @@
+{
+  "accounts": 4,
+  "base64Bytes": {
+    "jupiter": 48,
+    "jupiterProgramData": 3856360,
+    "swig": 48,
+    "swigProgramData": 354952
+  },
+  "recorded": "2026-09-25",
+  "why": "surfnet_exportSnapshot scope=network emits data accounts only, so the programs F5 executes against have to be recorded separately and stacked with a second --snapshot."
+}

@@ -529,7 +529,7 @@ and latency (a, b).
 - Kill criterion: none. If the cap does not hold on-chain the custody story is gone, see T-F05a
 - Finding: two ways the cap reads as holding when it does not. (1) tokenSpendLimit returns the REMAINING allowance, not the configured cap, so a role whose window is spent reads 0 and assertAgentRoleShape throws "carries no spending limit"; kill-switch isAgentRole swallows that, planRevokeAll files the role under kept as "not ours to remove", and revokedMessage reports "No Agon roles were found". The emergency stop fails open on exactly the role that has been trading hardest, and Swig resets the window afterwards. (2) canUseProgram returns true unconditionally under ProgramAll, and the SDK silently appends programAll to any action set with no program action, so a stored role of programAll plus tokenRecurringLimit has count 2 and is ACCEPTED as "program = Jupiter". Also the approved cap AMOUNT is never compared to what the user signed, only that a limit exists, and the window is never checked beyond being positive. Fix is T-D06.
 ### T-F05a, F5 spike, 7 cases on devnet
-- Status: open, unblocked 2026-09-25: OP-20 decided on a mainnet fork, and the fork was measured
+- Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-f05a-fork-programs
 - Depends-on: T-D01
 - Touches: spikes/F5/, scripts/board.mjs
 - Serves: Novelty (judged) ; CP1 gate
@@ -561,6 +561,15 @@ and latency (a, b).
   run does prove: the 351-byte `createSwig` transaction for the real agent role reaches devnet and
   is refused for exactly 1 reason, 0 lamports, so nothing in our code is the blocker
 - Kill criterion: no fallback for (b), (c), (d). If the cap does not hold on-chain, CP1 decides whether Agon ships read-only
+- Finding 2: the fork has the programs, the snapshot exporter does not. `surfnet_exportSnapshot`
+  leaves the export at 294 accounts and 278 KB after Jupiter and Swig are touched, with neither id
+  in it; its only 2 scopes are `network` and `preTransaction` and `network` emits data accounts
+  only. F9's no-key offline replay therefore does not reach F5 on its own, and every case would
+  have failed for a missing program, which is how F5 already failed once on devnet and would have
+  been hard to tell from progress. `record-programs.mjs` and `programs.json` carry the 4 accounts
+  it drops, 4 because a BPF upgradeable program is a pointer plus a separate program-data account.
+  Verified with HELIUS_API_KEY unset: both programs load at their real mainnet ids, executable,
+  owner BPFLoaderUpgradeable. 4.2 MB, committed for the same reason F9's 281 KB is
 
 ### T-F05b, F5 route size, 20 Jupiter routes against the v1 limit
 - Status: open

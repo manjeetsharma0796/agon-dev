@@ -115,3 +115,30 @@ change means writing them twice, and the spike cannot report a number either way
 Case (g) is "removal done from Phantom, not only our CLI". A human has to click it. It is an operator
 step in OP-19 and this script will never assert it, because a script asserting that a person used a
 wallet is exactly the kind of green row the board refuses.
+
+## The fork carries the programs, and the exporter does not
+
+F5 failed on devnet because the pinned Jupiter id is not a program there. OP-20 decided the run
+moves to a Surfpool mainnet fork, which has the real one. Measuring that fork turned up a second
+thing worth knowing before anyone writes the 7 cases.
+
+**`surfnet_exportSnapshot` does not export programs.** Touching Jupiter and Swig on a live fork
+leaves the export at 294 accounts and 278 KB, unchanged, with neither program id in it. The method
+accepts 2 scopes, `network` and `preTransaction`, and `network`, which is what F9 uses, emits data
+accounts only. So F9's property, commit a snapshot and replay it `--offline` with 0 keys, does not
+reach F5 on its own: the programs F5 exists to execute against would be missing, and every case
+would fail for the wrong reason. That is exactly how F5 failed on devnet, so failing the same way
+again on a fork would have been hard to tell apart from progress.
+
+It reaches F5 with `record-programs.mjs` and `programs.json`, which hold the 4 accounts the
+exporter drops. 4 rather than 2, because a BPF upgradeable program is a 36-byte pointer plus a
+separate program-data account holding the code.
+
+    surfpool start --offline       --snapshot spikes/F9/snapshot.json       --snapshot spikes/F5/programs.json
+
+Verified with `HELIUS_API_KEY` unset: Jupiter and Swig come back at their real mainnet ids with
+`executable: true` and owner `BPFLoaderUpgradeab1e...`, and USDC still comes from F9's snapshot.
+
+Sizes, so the repo cost is stated rather than discovered: 3,856,360 base64 bytes for Jupiter's
+program data and 354,952 for Swig's, 4.2 MB in the file. It is committed for the same reason F9's
+281 KB is, which is that a benchmark somebody else cannot rerun without a key is a screenshot.
