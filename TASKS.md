@@ -1468,7 +1468,7 @@ it measured. This section is the honest history of the build, so nothing leaves 
 _(empty)_
 
 ### T-B11, Key material gitleaks cannot see
-- Status: claimed 2026-09-25 | Owner: manjeetsharma0796 | Branch: feature/t-b11-secret-shapes
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/99 | Owner: manjeetsharma0796 | Branch: feature/t-b11-secret-shapes
 - Depends-on: T-B01
 - Touches: .github/workflows/gates.yml, scripts/secret-shapes.mjs
 - Serves: Functionality (judged) ; protects every PR that carries a fixture or a key
@@ -1490,7 +1490,7 @@ _(empty)_
   is never opened. The gate is not weakly configured, it is asked for something regex cannot do
 
 ### T-B12, Star the operator queue by sweep count, and let the parser read it
-- Status: claimed 2026-09-25 | Owner: manjeetsharma0796 | Branch: feature/t-b12-queue-stars
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/100 | Owner: manjeetsharma0796 | Branch: feature/t-b12-queue-stars
 - Depends-on: T-B01
 - Touches: OPERATOR_TODO.md, scripts/board.mjs
 - Serves: Functionality (judged) ; stops the queue being read in file order when order is not priority
@@ -1507,7 +1507,7 @@ _(empty)_
   change to the board silently broke the board's own dependency check
 
 ### T-J05, Tighten the novelty claim against the nearest miss
-- Status: claimed 2026-09-25 | Owner: manjeetsharma0796 | Branch: feature/t-j05-novelty
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/101 | Owner: manjeetsharma0796 | Branch: feature/t-j05-novelty
 - Depends-on: OP-14
 - Touches: docs/plans/novelty.md
 - Serves: Novelty (judged) ; unblocks T-J01 and T-J03, which both depend on OP-14
