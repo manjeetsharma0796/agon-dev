@@ -64,9 +64,9 @@ const found = (
 /**
  * The stop rule, or an honest refusal.
  *
- * A loss is measured against what the position cost, in percentage points, which is what a trader
- * means by "I cut at 8%". The habit is the median of those, and it is only a habit if they sit
- * close to it.
+ * A loss is measured against what the position cost, in percentage points, positive, which is
+ * what a trader means by "I cut at 8%". The habit is the median of those, and it is only a habit
+ * if they sit close to it.
  */
 const mineStop = (losses: readonly number[], closedTrades: number): MinedRule => {
   if (closedTrades < STOP_MIN_TRADES) {
@@ -118,10 +118,12 @@ export function mine(trades: readonly ClosedTrade[], quoteMint: string): Mined {
     .sort((a, b) => a - b)
   const realisedPnl = ours.reduce((sum, t) => sum + BigInt(t.realisedPnl), 0n)
 
-  // Percent of cost, signed, so a loss is negative and reads the way a trader says it.
+  // How far the loss ran, as a positive percentage of what the position cost. Positive because a
+  // trader says "I cut at 8%", the demo script says 8% and the failure messages say 8%, and a
+  // sign that flips between the miner and the guard is a comparison that silently inverts.
   const losses = ours
     .filter((t) => BigInt(t.realisedPnl) < 0n && BigInt(t.costBasis) > 0n)
-    .map((t) => (Number(t.realisedPnl) / Number(t.costBasis)) * 100)
+    .map((t) => Math.abs((Number(t.realisedPnl) / Number(t.costBasis)) * 100))
 
   // Parsed, not cast. BaseUnits and SignedBaseUnits are branded in the frozen contract precisely
   // so a number cannot reach a report without passing the check that says it is one.

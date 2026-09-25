@@ -1,0 +1,2005 @@
+{
+  "recordedAt": "2026-09-24T16:20:38.173Z",
+  "body": [
+    {
+      "signature": "2AcPELXCBbVBXHt3qrnNsQzv6tb22zDvZ4ozKWEdt2nDLReFraE5Srm5yUo43DSMt5HpDTLdDCEBjtAs7fV8xMd1",
+      "type": "UNKNOWN",
+      "source": "METEORA"
+    },
+    {
+      "signature": "4krTGTwRwYSZwvccncxox3wsgJuhrZ6DyrK8V7AB7xFwG1FitQWz8hfZSZRFkUJHYaBgF26QoeqDLkXBrsyVJMuG",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "z62gU6AZvbB32MAYVddfgr1thzFKLM8KWQaxZNunhFqoseuWCbpD1iidTWFmr8wUQDZifnEbzQNdnvFzapGdknL",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5dGCDn7csAWvbih2F36CdznDDUT2xJWXJJ5whsc6E8nYHubSgngHH9cMq4SxLGXgQ71nufxbEAApKK4hmwV2eyFk",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "5SBmG3PUHZSRHsxVmgR81mb9SHokVBaUNDchmv41yYqGbGrNE411L9vPQqRTWxhQSzaSNjfR9UpmP2FxJ83CrrR",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5Lc7u21LGyChN5wwwo8n3wt5gV8YXqAGF937PeVHTikzJZeJqKVihLBKWLmANGNqsbCutTKPjHKLdjMpmj6g1SsR",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4kzLyuWb6JF9APDvxMGKMPF8bKwd3NnMAGJUDADT9kBFF3Yf7m8iB1nEodMreF6oX71ZXtpcYaxFTk8UDndNjdwX",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2VAGgFXJRqYBZSBsAAvjchpG5BJU3mF9rgcbPm4DTLZXaTLN3TwqfTRWDe6tGa77iW2x7xDpsygYknUySWUHPdTA",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4YRbVoA9E7E5AiybVpzoxDJUbX47y3fW9zm9tBSTPmwmUfdX69GYhRMWfsC9tdEvRWeQ8hxkssYoHiv9zmvcozgf",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3D5Fare1fUYnkGsL5SRqW2di8XDfpJvNAFY1HE21Nja5qz78zXZ9GcLhvooThVmrtrzcz1WdnSPLWP8k2CdJuuyJ",
+      "type": "SWAP",
+      "source": "BYREAL"
+    },
+    {
+      "signature": "Mxyc9Q5ouBHcMmC5u6YJ25rgm4axbAK5xQe49YTNRUio2RqEGCbjRPLHLKPxLabqge9dBpmQGTm2mZ4QxhZ8z43",
+      "type": "UNKNOWN",
+      "source": "METEORA_DAMM_V2"
+    },
+    {
+      "signature": "4XXeLFi11z1QKZScKBvmj32eMjuJnCDbNT7GyKJYKwjncba38uNokJhHR89vrcHahjct1dvm9YW8bTpKqmA4rPwu",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2HskJv7JwfN27PnAHBcXCpKYGDUMWqNdFwjurFoZHeCLDzuQvHkZf88j6hdq9p5unKdx2fRumy77TM1gSehmFcsK",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "tHPPaziF9eeRRz9NK1HYsdax9bZNJxAJo9Pkkk3GehujuUqv6Sn5sD4RzteWdKYtjoKP8ftM5bv8J3HMTnX2n9x",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "4Hd3QUKUT8mUe1Vczk6V6T1LzNzBHCGyVptAsjMSBTqrrkEQUrFQqyQ5i4aW31dX3aJjgXy2NBdzr955wXorpcLj",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "QcU2kmygdpkrmKBm8KgLQ2NkDNNLckeix6ARw5r3d5gtybnKmN6PGtRwvqzV4hN4w8JDRcSF975qunVcxzi7Dc3",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4EU8X6iQiXHQVD5ck7yZLRDY3cxMQtDWvDzaERmWvYoEpgT5iSybWuiuyBvoLbAmoKQujJZTAmXedEdVCF3iJ9GE",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "45PwgWRGKpovf3UMjMwibb95wjxJaWDUYEJX68Rh439yaqdeuMK1sNQV9SKceYivLzEJi9EvpfSdtdCtjoZduNF3",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "eQ2FTxis9Cw6Seo18tHQvMkU4C9N5Yzp4u5pFKz6oWEXQsaH4dbcga58i7QfFwSpnYxnB81rQWqXxVr84vCcp4z",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "9nGyJzcCjaMGA17kkt53Eqi82JDoF6wR5HrYZJCS4dr3KKFQPSR5Jgx4xuNgP1LeyMeoRQSCJfJHzBUXzpbqTU3",
+      "type": "UNKNOWN",
+      "source": "ORCA"
+    },
+    {
+      "signature": "5jxppTwoXY25fDVHaxvECjxA63WtAbgW9UhgcEokLQ3WPu95CY5g6bfb7zMNrMV9ZrfmYKLqFwmYBJnMts8p3reX",
+      "type": "UNKNOWN",
+      "source": "ORCA"
+    },
+    {
+      "signature": "zNoDgrbYrNXwbCUo9wkFwQgoAaqpHCZx9kSKWiQirpUVL62evnS1qtkD9apCYXpjAVX5axbDTbWAwhZ4jXmXFSw",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "361evcFJKZv9r2SvSfAfcuYSNWXjHcZgVUJM8bLe6NPjahNeAS1xmUFurcpAuzjJk9MpjcV6u22J2YwTH51aY3px",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5zLdjetHnAyh3VQLiVwhiNsJo1mVqvn3JhpaqrEbYbLcwZHeufpjCc2h7CuJfbckK95wS5EXNk5yHPNy5mJpJN9G",
+      "type": "UNKNOWN",
+      "source": "ORCA"
+    },
+    {
+      "signature": "5ycUX84kaiis2fZsPd55jMy1uuRTq8Qq32R5zxAMz8PCP3tBq458A5BrbUZh6ezGr6F61YjhsRc5ULy14h8Q8AFh",
+      "type": "UNKNOWN",
+      "source": "ORCA"
+    },
+    {
+      "signature": "3fxAzYA2vWSBAkaE7Xhz8HK55NZZ8zXg84Yrq4wdyomR3WUFeyHnYrkqp3sC1Cdr5KPyJpo5bpss7JrX1Muw6GnN",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2RuJHFoZ4obPaKfq545KGae5Syyd92DLCXEzynZgz4xtW2gbi2GYG9dJstAP4rXwfMTyC1eX5WzbdoCvnQqxEB9M",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "ugwErEAsC5DgJ7z4GDjKnVf9pRtdyovpaGxuotegJqmxskieBwA1LbwQPAUnx7X6CqDX9rrQm6Jh5TMEeSnZXaf",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5rHqh6QUeqdZjfKpPpJGihqnQertwEqYztAHQusaUCMjZ7PSduYKAgS4fWASZx599q86PEBV4McmT9aEcGUGxVeH",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3CHxeLAUWJgua4GSNbiWepUfwzxqxHCntv5XDfdEGJgMe2zj71MrVDoQEGq7FpD8sKnaach4LxLh11D5cesjDw51",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "XmfMtonVQCwTo1jLZEo4s5koQ8nN5igdWKNfdY44zd781h1SZazUAio6tU6s1wYGjM8F8QbFQmoFLuKMHYemMCo",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4JszAYqucrn1N32FX7h7AdDUBzyNwVAvMVpj9uPLnKYxgAkgBt6jtpvKY6cxxLqpsYdsxB739fSkxagvXT3CMLNF",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "XoGeCqzSc68rRjCXB8tHX7KhDehtoc23WsWZ5BJVbUYrVtge1t7D1eUUtUBgo8fY6KM8ZDs4VJBfVzoHZPZaCxb",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3yrWiChoDXaBepZhxpQmBy7xT8zYupKKjbknbFaGvuEoMxRXzadSVMJk1PZH2DRwTqKf9Z5wag7ZuWEfEpi9qByD",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5wYkH8CPczjGrqpGQnsPh5WW2tRKs2Ng97NNZp3dMCsd9VTBEYQxJmXXRZ7qX3LRpxhxtae2mW7XP3EiDqmebv7M",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "fdAPeLdAPxqaakSmhfuMJi4hurReRewM7QEFtf5VGc2LSCGeR63Py8hSocpth5rCNrLZvMwQDHX4XywjQ1XZS9T",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5XEjkuXHxWPBKTSdZRJ5Wfyr7VyYppnD17b9E2v5pXeq9bDv5dcGdWijJj1NUMhv6CwQBfvGyPdsQ2h8hkG51f6f",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5UdWDTEx8xnAAA3EHikHCDi9gRhukZYPTHMJDvqpci3MzwnZ6s88jmRnqWj8S21HPij591yTx7Ldo2QxLmLPUGgP",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "UN8NKJvY5NcLUjCAtqCn8bbC4MfvmzuJj6aPDciGvdiCKaSFsQYfzUxcgU6CPgRuEux4wmyrW9gaKPZ2g5uVhY4",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3YoBMboajsbyaSBSGd3wLTzm3AG6wvwu9ArosRc3fAcdyW8U3az8waqNhi9CNc939HFcyikidCSZ7AUCMmaALHah",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2XB9A17zqJoQ7u7TPunWdqPbxgfHBr1tGS6BjQkgjo9MDYphuH3WoEzL3geZCpeQgzo6jgP3zQ4FcW3cYoHDvRag",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5epcNVaKHpaYkoooY1CpzKVFH5qTuieDQo1ovLtRKscU1XhUba2GpGzFt9JX8K9TYSYQ3ZDvLkKnosQ2AAPSeMQk",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "k4JEx6buu9chM4ECVKjS4ar8KekswdrnqGZ836Xd1ZjWNPJdz4ze4vcYWKaQNLQG8S9smkVncYdGdjSyfrBU6Qd",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "nrm4Br8bnc2wKzxdCS7M7VnWf8aAemgQ38HxaLZgSk2oabcztg5p3ZcEJV7wm7vse4t2bJp2AWKCXfWsREKneM1",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "cYRP2UNkkwiUGpDTDd7SWTBQB82gsT8xah595v4ue2AFuF4v2BQWe6xWSXAM4ccCpSYLUTfbjszk7yE3mfnjveN",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5p1DmhjMY4Q5vTumSJqfjmMEWXYVdzfCvK84zZUAvyXqrPLiZRycjiTic6dLSMeZ8JpXDds2AbKoRybTqHEFmmzC",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "QuCLdTjgQaSfWqqeMGVD1jJKK7wBTuaBbdiVCeKuJ9cbYy7Wkmb1coXAjv59vxKwGFWFRANWCi3fvz4JPQoFqHr",
+      "type": "UNKNOWN",
+      "source": "METEORA"
+    },
+    {
+      "signature": "45wwRFK1ggDQAGuRLExDCCKzcmd3VYSN1hvwWRNw69cq5LCwgY8HuicSezx7Rcmxi8ri3RHZh6QkSZkB7hv7viGJ",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3bFsAUA3qRbhVHZCUYYDx7pbLsLUsJrU1DghRnFXfuT4ZDzHUWiwQtHzRbx9fizwDFFiobWmjXNtqrZZcGqTMxB6",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "qGHmxP5GgABaCBLWpvAoUfmwVedpwzFwSsxC8ScrgBavKjPeALXzA4DSfy17ALPSHYHDdt8Fj4UKAscRXeNV3VY",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "sFAdPGd6QFnL6UJS1QWmJfSNUdifwn8hwV1AEpkTVuJmpHDCDuJ6w4xtpmd2M8Gu4g9wqeLXrt75R5rFn7yfLqB",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "43BtzENCmCEKSc2JaW8DAVTrC9K8MeM3k4WhFu9ZXfCzvKjk5bU6moySHgGrM1KQXUVhwr6U8fxdRf2f1vguvPSX",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "Ux2fNYCbGuf2Go6XeG939U9kVE34hPdpipBNGGCCwetBRcoSiDeQrgpMDjaWokzWNYJk3wZaMiwyFK5xwTHjgyD",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5Z6qJuLBBHXYn2qEfoGTtZ1DS1WvkzkhoFRCTvegyv6rjN8dpXtA4Xm2zKN9BXPnRnsTSwAA3YgvR2WiQ89NRMuc",
+      "type": "TRANSFER",
+      "source": "SYSTEM_PROGRAM"
+    },
+    {
+      "signature": "2RMtpWu66WLmsQuwwSBmYQwxpxnkyCn8nN5NGSshs2hDWE7uQxGc3A1W8C81ibV9CSxSSoeiRdfoSBtKJB1QD14A",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3Yc7bD87msjdj36cMziNPxbQ1dmWScBqkZi6K5a7BiBU5rgf7N5N4HHaHLgJindrSKXseqinXioVpBASVMWL5NYa",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2NA5pbyz1Hhu1sGFB9y35rqtJZxr3Zq215vkQthavsSAi9A2qdJY4ZzZiuEVCp1sK5peAAqDj3QFmcomwiFKcuck",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2K5tEubar6eL1MAaWoQVtKwAjiQpLZj1tpD1qqdHHTKYz6jZxm1CPgSfc2UcocjemsMvADxNNLuLzALA3LFpq4Ru",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4B78bDqra9vcJ4FLKViv3dtxJ12HrT1b1m5hPDnznPUuyaf4AZKRGHCXQ557xUWXnwdtSBhujFWiAiqyzScQYwVw",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2Dr6QfnH34gsTyqgA9vQhzGSGmaCnmznZWxDd2qBnHRerBypefTN6EUNfZSL4hPWTypQweEd7tLfbnofb1KdHkXp",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5bTKyU8VjiceMvw1S4YTtzRScvgQiMawvZbiD63yeCppwf5gNiLBNdYQKobMvyqQq2emQxsCKutf9Bz2ZKe59EAB",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5NsquvpqVbLpCYrKzdj8Kbx9jybjStNq9Y4HxPM5y39sYYUuWR83iEJ7iUZJy8DDZK7Mb1uP9dUPZqMd4Fv8W52k",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "631rF6gjBnJGvBJx3WfypRUKTx4ZgockkZY9EMeMm9q59ZArF7syJjg56TGnRC6vANZHubbjVfgwTEymWL618AKv",
+      "type": "TRANSFER",
+      "source": "SYSTEM_PROGRAM"
+    },
+    {
+      "signature": "2pCaHNkpCZgEhwLStH2X7mHBYGu6ZLpMDwKGDr3mCkephhPPiyYqwC3MknqwMHvJiH6kcJfMjmYeTqwWWr7wDZpi",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2RJohGbchgjee3WXhAuDuQ8fviZC4wMzhRn1SBUzSjKQNVwxzDvvR2SyuB8PZQB2o5Y6d6g3nkCZFLGNWfp1gU4J",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "57kYb2Y1fYevKchZCctNUx6EnqEPtPRHhdHffS5A45Cep7u9BZUM4CPnoyzicMA7pdhmpH45RvBq7bzku2g3LRc5",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4jnrCvQ5JKPCtjNhWTocfAfJuYFPtidrnXhg622vJvsA9MPMeM5wZ1WbHgYG3FZ4DVM8G7u43zGE46dGqHYsJsbc",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4nPHNXBtKcXVMGVyeCHNDmwvERBTedGSgd2AU6ruSVL3aWXQGr6PpTFuntkhLHWdyxUtQ1fn86M4YM648bkxgi9K",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "S5WzdzAfHA58weX2ujEo9C6v8Vckc32dEoi31Mc9L6VtMX1bvqqiuTc7e5KAZ9HVogpZkJknha1sVHwwWB2U3gZ",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5Ft1aZRGKzcEihgjuh8bq9i879Xv9M6qLk7jj6ASBzefascdhjbaNbdQ5JvuHWXEAjweT8nGZgAm8uHKKb3G8QcG",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "xqeSHH7wV8PCcv9gWn6Uonfv9PhQ9aWi46qp16gdBANr5ZcWPzBAXg89hzFJBES7zrWHiL1vd1k1m2NuGoUjR4z",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "LuhZkeEZ3rYhC7H5yVrjTqqDKxdw93Nn6qcJpDHSApG3bG3hFrzwzegWFfTXXrPPP7JhBdA4YikN8Cotc2kesxp",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "RGGKBqBFuLsf1QFPaSoeRYyC8GZiP53EPR1d7aJQvHJnUMXF3ExFzUf21BqATTKw97iqCxehV3bw4NtMD8vMuJC",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2zyeD3ouijPUgnmykvf5U92d5TstjMu1DgQB8aR1qud1vHpzpehgXjkwo35BbJkDKNh8PE8odPLh2bij85vhmp2m",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2nSJaw4T6GSAoFifZ8f9THYHw79u4zrWkUyWWgC58oodybBj6tAQz1yHRYsVTscHx9AnzNQrHBrtwTLmSQuMwBmz",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "ts1ghW9iSaenj7gXx5ukqfxXtUCbwhuai2amjSqeFqaM6j9Lpxu42Q9exn9cxeQ4nvVvGG9yhgTSob2Z8MTzeY6",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "SLhMz9MwD2hrZre65pXZbfLWzsgiT4dLrv8tkQ9kndXFzRyY2Hff7f7Ce1AMRek21weGyp99VwNcsdRYTFrGvid",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5Cd7pfjEhwD7c4auAkRqXZyTsSz3JMYiXXP946P5fQga2ZAEkHnfjQ7STABidJxFSP56DQgHsfLV8YFQwBSqZrmK",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "xC83i8xgjNAgm4U6nP4GtiF8ArNAS8jjsWrpEfmeg2C1PJsdA1eLsm3NfyprshXeWgSNo2zEWNdUZkpR6pAMCAW",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5KgBXNvh4jWGcqTsQvCFuwTtTH9mgdte8wHNcKxQNDVoi87XstNUVJxXzmqBrwHJBoLSAWCV94fwumrPhUDSndEf",
+      "type": "UNKNOWN",
+      "source": "UNKNOWN"
+    },
+    {
+      "signature": "29JwQGjcfSEPraoZCRJ2hCkwYPuCZvCWzqXWVCeTds3og8rPxgrbng6yiuWXRsVPLnS8MNZsbvD9JChtNNvNfCiK",
+      "type": "UNKNOWN",
+      "source": "UNKNOWN"
+    },
+    {
+      "signature": "3qZX1HFfTU2a3iJr5LfVNhRXg6z2aD4SEjsvqynAGKKAcHpeNpZY8g6v6qwAiqZFSFpp6dJpFebDf1PWp2XcVfMP",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4fFXL68N7maMnrPTz9aGpxgV5W9jaB8Mz163wpCQYTtmnexRrVAUsRB7BjQBSYY1JNXf2NohiwczBLmSk2dNKEXD",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3e76WURyceaFNcYAzUGAxHpHy7jQhbLW3kjYXCwkrZztdUeqPaMQUYbTxMpqhAEv8XWTg5ZeAAK5zPNH5FZjHbCX",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "KQCpRv9Ywj6wyRVTEuDQgz81Ab4qBpRTdLT4dp88m8exHRJpFUJDwWWQdnjoT8d4AcRn3xafAYzCsHzVPtgAicU",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3b41ZwLuP8VLWvGrvC4AtV8T3QWbaTrec4u1bBfC7uTCeMamSDwMSxGca5UNb4QYPnUzM1ATWnCkNxt5pjUEwXxu",
+      "type": "UNKNOWN",
+      "source": "RAYDIUM"
+    },
+    {
+      "signature": "4A4NG6G44i6Jc1jNcxvUt5Qh6KxUTfvUA4yLsxFR9zyCUZxD73WDX4Vv8fjTCxK6SsfXezFH6cVCNQ4y7oQ5BGKp",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "25nKrAxgLFtsm2HtSS4WvmipyEDzDTxAK9zZSRPPhXcThaMoVC8LnjfcvFF7nmRnwMVuSTgVmumXKy3ZiE4JUcKV",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "54hboigiKxZtQbq9kUV6mkjw5h92C4ej4ET31FGYwqxuNLgqK7VFnejy1NXoQ6tqayGfrQWsqJ4UWDVVtpxKDoga",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5Uk7W9GsjuRA1XssHbbnUfZHoCQjnh2qbCPuh9xru9mF15uenDYGr8A2W72zyUFnAw7SwK5cBB3r4bpx9P5iwgek",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3JPcq3RNZNpXqZtADCDx36T6CNENy9yrgz4sTRzGMpNwpKGb1KkbGqRAdUnCm8WeYh6fweqaWZ5narxk5itn7448",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "oLyP67p7uSHCQF9qPVKEBmZnWa4R9UuqxvGxiU21L4qLXF2guFVnzFBvMHSfFApRkG2acchETewsqEjNcxEWNzq",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5aCfer52MN8WLFVDQtGa6LgkJgb3K8GohhFnG9K9UcCBjau8CgZhHLRBBfRqMfym9EJo2q64oAXZZAivDKE1VidV",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5DrgSvZK8RjM9mC7u7qpS8MwxhGYceF2cUYU4L789U5gZHdjBinxY6QSYxawZSXk1We4CezMikB7ruUFCxsk6Fch",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3w7ox8NZDssaJxZVtCuSEHZKT8vgSvgkVrn7H9F3TRQzgAtBLDiYst6cnAmpHKndE33B1YfqKH7DryKKVKu15fEU",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "59HGZxrKiph4shhjQMVSf8aW8Ro7X5aaJhYUfNKmNkQtgHg2QvGc4ciTb9c9Pvk1EXrE9okMBRQa6xT1WZrc3KJ7",
+      "type": "TRANSFER",
+      "source": "SYSTEM_PROGRAM"
+    },
+    {
+      "signature": "EfG1x3DNSWvNoHRm5yHn6cNJ6FiAnuPdw5bzBuzdYZLKhVoiMXu3kxTDZPGKfsBWWH3uYGxhcbEtQqE1Wj9bic1",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3GKwftCwieqmHSRKSRM1Uvr2YpM6CJjqQvoBdRM86AjkTMwQwheaC3wNL3oKq9XqcfoGsZwuKuCgEfQdTG25ZYgo",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2CLbmWvazX9HsPpidMJnry8vGAU3fKDYcsxCX8KKz1SR58ZHCeoMernAQgJQXVMYRfCQJGwGtmBL6J3NqCpdDSUf",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4HYPRLFrgeRnoBDwphfLHFFoUdsbd4vv2vY2VFJxsT2YUnhCRmuVnHHLLeJRpLpdQ7qWSShscJWmpDkoMU3NXaV7",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2AUiwRXDKAFjozLHkEZQg3KvbZz3RwVK9YyFoiSWQryQ6tVPXHcmExEiuk3JpHxi3VGK13fNdoBv1f6ZvLFjjtS2",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "fwYQgsKNEYDhpRcFdPktRrpdCC3Tfdqz1grwmkZkQ8txGtKMnkNvc6kXoWpRV2Ph9uXj2sS2vGp5X7nqw6A88D5",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5xzT8X4vuT9uGkpCja8wrbuVcrzZ8Z5vRL422qPki4oTbbiNShrVAobXUGtshGXbPUvGUZkr8xKzKeUQx6Si5sii",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "2GP2J4peSJjiAzbMN3pa2fodikxX6FvVVK5AhtTWv72Qbydw6Ce1xn7oP4wGZsWkb6jVK9YPzbFJrpzKdaSHZcPy",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "56Rf2MCeQaKqtnFLgnT4jocfLCNcVYDub4ckBXoTK9UScyb6qLR53g2eFSJ7PbLbLTEofYXw9Vsczje9tMsCarVz",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3N6pDQqvmdzWf8hrTa6p6rzFGPuUJ2Rq1jiNYTwHvCqisptYvLhE4tyyNw82B4xk9vCC2WuvKzPxeL4LhvvKi25F",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2W21YYTs9qSNDCbiLy4apRgo2PT81YkEUmPsJSR4QTuWx9n46Qa8bx5cykwojVWCHM6XQ28E5N9qnViUjt25VqZ4",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "ZzDM7wcdYVPPxNVXwYgXejD97gwGMXKXcNMrQkfqXtejxwvU3eFGDjtcSBqUPNfFT8L1YZP7HMbv7iQqwhnoH2A",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "57cLq6C7qvTxzNBJjrwUJGoVuif9H1oA15ULSnrAUjvcrXnmMgzAZTzGgoors2iKznJ4SrgVothGjJgagsQQQgPZ",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4EtjQh6Cy3tviheGQms4n2oCr4UY8xsqi7QJJJtHGnhAkxTZ2Eeb8acStTEkLbPNC3oWSsx7uf5nKXPhSx1X91MY",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4PvPWxio1yQ11GwAFN28hgZ6bHDo5XqfDm5u2AYGqoyJVfambvWG9Be8FjgHpxkEsUDAQqgoS3aUCuZ4jvSmj2xy",
+      "type": "INITIALIZE_ACCOUNT",
+      "source": "ASSOCIATED_TOKEN_PROGRAM"
+    },
+    {
+      "signature": "KX131FA6QQJJHhiZKM6kT52HN5Hu5BPBar6fmYAFSAox8M7scr5kDWBtibE3C19YteNe5kFSsMCHvRr2igbfuem",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "rqkBnuz2USyQDLiix1ugMRGmU63rp4boNGsekPnL2h5EfFHwE3CwoL8CbKRM4moThdaHHEPaeNvKr8t9yurR65Q",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5MGz77Rbfz6znYwxNerUFu5boFnU8zKopFj4wSyPAYHRzo9GLr6tFfuAtLH2MQpH3Wvch5wbyVhAPVp3N2H5A5h7",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "211UUTs9Xeinki5sDi56Rsx989yHvxhtqzTKBabs4TQP4yegps58dvKG32npY1wh5zw8RFZSj5xZU7paYve7erEd",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "996DR8Q6rCiC1LRMBYF1W7HcNmMHkCi1kz3qhdehFFhM1HgJgfKBj5t7NYdG1YvKkGQux79YKtscv1Xib5NdJKX",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "ipcffixijvsn2p1QC9yxqpR8i6wNhigM16bRXf4Yw71S7oxk194X396HGKLWiZnRe4cupCkRyqm3L8h6emcZwzK",
+      "type": "SWAP",
+      "source": "BYREAL"
+    },
+    {
+      "signature": "261P7eQ54VFGP1ip82VTxWcbpQ6SZUArDipZ9PjG2uPXV8y2ooq457uSFWxRPZcZ2biYRn7E1aWdTQvJjeDKHMHq",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "rjNDcJZpDdHGgWh9aNs3q6FTE5GWnqdAowRgZx1hBP9nB7M6P5Ay3aMZjUyR2vrKRfE9bZih5jYbB8aNvMGfQtW",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5EnGQ7HKPxmMPwhoE2wZ1CZtNbrfJNN3PGiUCfDtEr18gx3hEE8KUK4tn3p8BoYur6nU9n3DK1AjNsCRGeqxnonf",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4u71Xdn2TFszkWCcuTBS4fkDa9WfTamhvZ2ZVc72cMAkagg7YKAg38n2m7wLqz6rxvyXjFuZFDtNJFhCRoQfte3a",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4YYx5yrpaZsefhu9GhqRmUv5BoAmNpapLjo7xsLbZXJWeAmdRGny9G4kRjSrphnxHpKW4RH6GfV22PYrSmPjQAQP",
+      "type": "UNKNOWN",
+      "source": "RAYDIUM"
+    },
+    {
+      "signature": "3PJNeyL1K8ChUK3kVnpBnJxk8KYk5XybcnXNmhfhdHeDG1cK67i5HBG9YL5Y9i7qDttsmjbSSeutcyqnj8e2FkNT",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "wtHviBZrbvwGtTgcSUVgvRXY17YfpzK7yQJfJNvpJ1bTZqUSC4W8DwoxBobwHWjVLD6P8xnoaWCF7bkLuju7LBj",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5oGJu77EfAzmqW4LSabvCeRoXFiybwg7LMsBNowwuEYSwW51VDD1HsRiCdugUy1fbFXmG8wgGS3goq3MiZL9YAAA",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4QC7yShZqHw5Wt6SV1SoSDZorDXv8L6xvBrw61w4RiPDuZAyjRzJafJ1NPUADG5MiTs7E2ZmcBQRH2zSFcYUcGp5",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4J5TTZob67gCxiCgfq43pnKsMyqc8nTJEBg4EzF6zBeq4qr6Ff3FqoeGnQqDdXKv6TMWoLSMBJoACjuWzYNYZ4wQ",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "29MSS4yaJhRecVffF6eZihFyRkZY9M2ChZMVb2GWF2UY4bQqjqQfwq7dBK6YQzyUmwR9qtANML7VFrW9X33ndcz5",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4d8MAMWeB8aVdSXbKAnGb2rTcxRRzc2RQFxnZNW6dh93b8WKEizBn2Rd9PyH8zHjEzFXn3JYFEQRhJN7tPdDgq53",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2RqrA88be8PeXkhYkda4ZrFWZqntP9SkpRWZqFqoZzHyTXWbjYEB79zRgJ26GX657GNMiSH4nGKossYmWhsqGaBG",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2hDLJ3DH3LZ7uuEMWWtjv7NStpAjAta7birKuDtef6oxpZsa9z7NJCCAHpk6KcE78KSAH3hnDxjW19vcupNjzuKy",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4CjfoF3KKSzkNGfMHGgQ8K2fdJJEkj78mL3HKtALxcgPjuX5UPjXKSDQtoqQVG3PgBhsKjoRBDZPNEREcRVuifm9",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "433KuWePpf5jVmNVP9u8xHRcgBsydq4Y46ReJrs8YGHnnKXQSbPfpBuAUrZp7n6J2pxEdkHkZC8sYaSDmeFPPyFr",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "4tnsjR8StT7cBLicJmqhaAYu7EMxZH61pv6qTxSKUBXzH5aXkUHLueoDEZx9T7dW1TBXypqmCE9uRiC1TpJSUR7V",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "2xdRP2Rexq21buo4UbrNryqHWJGLNpLa4KjimydWaGs1R1VWAxd9W8vRcfTHbc74Fgaxyz1SJdwEvB1MHhbYyoRt",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3mN8hmaqxbNedK6wsor2rpjgCKaVHEJFpZQ9MkDvPNTAQEBxsCdpsTdKFxNNvhvUXtnhXKBJtcoE4dQHe88mkanZ",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "kYG7MGWD8RpEwFNDRZCXjyFzuqKjQ22G1deJqzf3rbd3vMLeWnJUGdqXNnZF8CcTvqFrBMRfqBNV5kBp46skEP1",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3owaCkXmVnEKaKrdwTrQF9TbaKpCfL3boUjReNUrM4gjwTPU3fyYbLp7KoSzfTLfWv7faPSCb6gqiEv4M37TjUSd",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "5CvyjmQM48ojE9P7bmb2TQTSKeZmhucFLab5oyUJFghrp4hQuGwDyitADBdJknFipk5wjwhq5DCQv1JjXxrCyPKA",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "wjJVf4iRMtkuddxGu8BCsPmunX6wGxXs7UDmZhNyaR31acihQZPWUPWib3qAzAPiZeYj5iJfS1LB1Cz3fYp63Eq",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "22C3zM3NaN8EWHFNpJBuG9bgDuXe88Yw5VzxpCqctwpUEHXZAgYxBp6cdVpmwYaqfibdssyXam24Swu35ZYRdQ6b",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "CHsHQc3EBfFo7kPa6iHzN6EbgNZNicbcq2DmBGBU1suBpnxcsgmXvDfpqEbymDQ1ZZQCTX774G8H8z1CLkxV57h",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "36bS4aCnLkcfbtURTSq1V9x3CqQPczFLJbRQ5MMEegHVAFSS4jskT7LxWYRrkjphDSESdmEoxQ1GAdxHPE21Aiut",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4MvTfdW2QcHgxm5rNAHMv2ma1ioLRQkonqzs2XBvN4SDnAYQY3cnhksVFzrwSdBibjL2RJb3cGKXf626o7Aes2os",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "5jCwW2PhST158FE6GMphgxiD4Lq8DaKNGMP1LfiDLoKzaLZMoMTSaxpKtGi8vx9N8dzr7AsGBa9gM9W3ng5r41b6",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "5FAjsPycztkkHYUjp7kXwndMt7eUUV8uTDDDW8mzS2KZ2DS2arEpvDboGHnHDg3M2dy8g7ZFZLhheoBhWU28j7wS",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "S1xGEmCvg1JUK4taZesoP4TZBpJzMK9ZTp7G7rjUVAKAz41LJe6dn2suNQaGfHHJrKU25GiuDv9d9Fq1fHJajFz",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "np6dvxDAbuPjMsRjJbRxH1rc266nr4qmeU9T5JJY85pGDVvLpSQtdqVTxnTsNdYQAYXZjisiGCDVNSVyD8UJevT",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "53o7FQqu9ZaxU62kWMg1zq1YKfb5Suq9sTQuSYxwFH4XRqc3zk4jmHgfqwcdS4gVhtzqkwsn6njuvNeNYoPXwoip",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "7egneXrg9QS6Gm2uAQSKLzDmF9ekrzy6UL3atLB1HybbJZofcoqcERGUfEnRZgKEXKfnAG7dgK84dLUepXEuof1",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "312geWYtdWV7qXc1vYfRupFQvPQ4rivrYHjzMJvYXJHRgcD7mYTqUi1YZSDEWp15LhzPXvKq34SeBDL8EkUoD7BB",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3ir4X8xNteBWMvoPVWuNr3XNfBRyMKvpmHiv1VhegfuLPsa9d8qcLnPxPraPXL8cmAPKqkt9dr5QqNabdBSFSzmX",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "628hYp8Nutgi5UDSLiuGinGMtQNeCtw77qdGVfSojzc2nvSG4ug3754UR7j7sQZFVwWXW47jAVnkeDiAcCK1BZis",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "SHV9WUFhVao6coUPwM8Q2r5Emso24L8v7o1PRFep9v8cNvDQ6Uo4Zt5mRm3rzR4vMCR78GMdvSmFbXmksBwBSZT",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "5ydfgfQCZoyVaohh5a2Yo1qd7hSkygwRNxc31zbAErz4q2vtTrVV23twQtHq2durPCjEvoBbc7YRaxfAcuf2cJg8",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "XWzkGbGuUki3tX2YWpvYVK3QcBE1E6ZbSmtSWrkApXwn2DSvDDs9164ooeDGU4oV3pEVva5CxNdYKuqk8suJE4a",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "55foXjy513pPDD5mtsWcXYmADrLhoHLZ3L3KgH5no63DgX17B8DeoTSz24w18YMfk6x4ptTaADzscp6kaQuF7MWJ",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "4tB1MHDgf2iPF5qHCqxfAm1dcqWBoDVDXxycXceFoicJGdVFFUsUSApemDdwwMMintChKbt2kaJmiViADETtLJzJ",
+      "type": "TRANSFER",
+      "source": "SYSTEM_PROGRAM"
+    },
+    {
+      "signature": "2c3jxMo17YNqLLrSs1s35VV8P4AoQskNDzP1CpHXm829urqfazgN9g4d1RqW898RKwPo31fGzP2fYxcR9veQy1sa",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "3UXy416ewWDrX9SSSqpycWJMrbdXWLeCURBmiXz8f9whoH53EvF2g4qFUPHrd1RjQRPAEqezVrdCp8Fn9dVPiEkt",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "5MwjvYP3Kws6zqNtSFLiVXm6SVTr87TPpLxM1Au5kK61ckRhgf2zFdog9JmoGf45ccWP8C8zv8veA84p45CmFGRs",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "4NGyzZL4dLsnWeZVHzu8f5dHk6ZgfSrqkS9ELoCc8xCYXUksL62whzjnWAbyN8wZBHJ7cELSbzyMmz6yRtEEfqtM",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5XeXTCuyomxFYydvRQkceDMvBsbsejRjTwjsWJH7B9hiHzb3Bd5BVrDEoJaQZ7ECH8sEHVbeX1oskwNM6QzJEyKZ",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "46aKJoZer79pRBjzGriAFgjyouawaXBf9dTWYKGRXbrPZWTJh3qAXUkgrfB7gZoehhCgSSpAyz89BJgHVJrRWSRd",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4vZJBpA3rBbXeq6RhPLdjzZmitGKFdsGNL91FJg123xem7tMm9GDRWuokZwJo5u8v3EDjyHi6PTR29BiGfmbzN7s",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2qhXKDTzG6uPu3nxzFc3DQ2nrfKatz5XwFFFumfhj3gMpwb5Kg13kYVruuX6EvzYN8Luo2GvZTqdh1YYuqUmtjGf",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "3hKBQrKxoJEmc2UShsHFTq4pMdPVmKhvenCAHRr1LWFFR29yLmFwQWPnE7zJ4S6fFwUZ7j9ARBAxFvSKdWfx6AxN",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "yXdKa4RGVcSJkuemNprAnPLLUW8yE4iwJvWqwmARqprcpdLtWdLgSTmLuV3HCgUWGHGZsfHY2jxMHddMudbWSLH",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "5wYCr6rJ1a45Dywuyk5S3phiVRcHHAwy2nUqVnP5Da74zs6VKgXHPYBZJcxnJZESt6Qjb1ZwKzYoF7Xqn1iothGA",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "dE2xpxWFpFD6L5zHjmbPLiTbT5YHzxLgwxonVuns78XvcbB8HZyN16HEgSgN8oytDcEaMXkRuDu5HYV5QP9V6T9",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3AHoWAW2RxtdHk4pf5eSW6Z3yPipqjHZbbLUmhUtvCCfcUmj23qUXQkezCtTqMs7GKdmQVMpZki8XSdAiAJcbXDu",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2KuKPbKfULj9BiBANwkDHaMFhvziG2pyptXxFtMgDDUFVtGi44vvF4iNj2yKoKYpSbeLHyfpmzpcUx6A2uvUUZ5Y",
+      "type": "TRANSFER",
+      "source": "SYSTEM_PROGRAM"
+    },
+    {
+      "signature": "kXctULHjdFLS6QDYyVWMLdyNbjVdtiJykhFvRM6GqHE8mXJjwqtFYGFUiaFVSTHUkQ1BzmzyqP1DZPwsAmfvpP1",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3x7CQctsa7VbNmUgRpfN7guN9ZyR6esayQkLsfdn1DtNjjrTqRMtPwwD3tpBex36NPxNqYjdqs55LzvCduwqyFW6",
+      "type": "UNKNOWN",
+      "source": "METEORA"
+    },
+    {
+      "signature": "NVahhtcYWbooN7w1uXRkTxj4HhYMKsMPAJ5LrU9EnQ6oDkTPgfo7DYRAxhm8bfqAbzeaYxJpY3jddYcw4SAN7ui",
+      "type": "UNKNOWN",
+      "source": "METEORA"
+    },
+    {
+      "signature": "5QtfJ4bmaXeoEypGYmPQfdZ1enxiZcL3vdAyXf7ShENd4y96qRkPYfZrnzkeFfK85BJqyfna3ynpdJEp8WZFTJ9V",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "3cRM5nAH7QaRoJ4y2rjT4yuYaXD91XJfmaWJWanvwhN3rwzFbXFN8okePMQaDEkaBeM8yVUcBa4saSmdAzYjeoP8",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "5kyomFYH8sfmP1hBeXqT8gtNjcv2AV86Erz29yfnEYGUfqTaZDKYLsjHEcetqvkdz4SsbMhQSe59qRoh8VMYgnMk",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "tu6irLVStBmC3uoDeNZ5ajQsRxZotnWrxs8jA2XdSb2Va18N7bMqaX7Fm3zFL42spXXza258tyNu97cU28tNo9m",
+      "type": "UNKNOWN",
+      "source": "RAYDIUM"
+    },
+    {
+      "signature": "gYi1C662ZwrxFPdtxf1mtXymceWLDGdJaKhGfKgpEwZqpscY1swhtugsY3Qf9HiTtid1KNzzcmw7KNjn7Nz62VR",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "2etytYPjrrkHCHjguU5wYmwKiyYLeDWoheLgveKibyDbSBSLj8b3LMBTe13hWS8fBn95mKCPBAoCPNY7Ttgco8aK",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3TYayYAZYmPDMEs7T4iZ92kB8WyPmbN8SjKWTcLwQsgNCsD9A1ZKceWJNgr2sSRjB5cBYU4fLWBELDmyH2C1exsQ",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "39nXvVdUL1ed4nokFaZeBNwqWm5QGqBRToRegMko35jsv6LGU1X2CxoqfZNhhE6mBxrbCLNPjrX3kNyXmMZWjigA",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "52nSxmji91XPQ7W6pvGDrt7QppzCERkuy3MfKiA9eJGbBJGXMWXRk1DvVeh8rpokLNYuNG6QWnPQo9DVxzsAqvGe",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "ygXHoQKh5Co8CVucRrEZUvJXaz4Eu815HuYFVJgECXsb2FJJMFimDVfnWsHkJpzRfmViPy6FeoDEDngwzunRsap",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "Gv46AZofmXTt7FFJf3SM1v97LJrKzPMwd5xEEb1sgesgS3Fi4sKTw53FcZCCtwDGajnbJG9i7YbQ2fQfvvXrhVg",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "4FBjetqM6Rxn9kj6ew6Fwrz18Qn92qhHr8eihhtUMTLkTHBm7L5YepNMXxLjqh8apkFBpa6CstiC56jcoMxe4wdf",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "595Y8tJmnRnHfopTt1RMGWdS6odnxyJ9ryJXzCLXShCJUvjRdk7ieyX2deZLi5Hf3DRMH8gJMsxLLWbgNtwUpu8L",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "59A3gUBuJ1cJFReBspK1Hf1dFFWypXi9oZoRmGXgfYKhkksg2dts6xzLhGgwhxajRDeR7sj2BijE8XABSdZHgTDE",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "4vYEDK976tDo8FXF47srV5zdGvsxRcb2jy6d1AjTmZrG6TGFX3m3Uo3V1NzoBGhgGVYfvMAJoLZoeiLM7uVCBuqS",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3M8tn9XWav6HxtasV2TJaNkXLDtGRngwjkVgnqdhncLKSW6KtHGPYweQV9BtkDwSAiPTATrBqh2Crqr7ZCTpMwnj",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "39bjy4DBV6xETBJBJGv8bXVaxXeXa3LLGtEyvxWRkx8mcfxi1tjx2qm5AswGN5bHw8NPPHTSi2gp9ej1h85vy1We",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "4asYMj5WBnLKaw5bJJRwk2c2RZyrifJPfUzZVrQVCGsa7zuyamBaEn9BtpmBKnxDaZdKYBC7uzbcP8JiA1R4pHD4",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "3MUsfeJLxXVCxjGZmCT695n2ixnZNwE7jyYQ5smapDktcvmecbkprjGybwoa6eUVBg8zrnqHjhqAPHdcGjD9bZYt",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4v7Td4Yo2mbTFBfUYGHGx3rsGWr21en1PGjf7uq5fMyf9tmTvBUjLmVz6FbsXZ9gUYnhBRe3qrFTrXBeesCZyitS",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "3nrAKuq2zmhvg6BfDSJV4LbpHdXPToMrkHSeDgJaafWzVTHywr6c9NEwt8r3GUV32bS9AeAATerLxdP5Dk31r4c4",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "4LnpgK1cj5pBDTJPgwWhtWE7Cs29KosjZe2nwTa2Vyry38d3xziVJnAoKTMrNKq537RtMmtGnztKsbSxPJUT1oHx",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "5CChV6LU3KNB8pkWeurRJP48JyUbmvjhRiDMzoLNBmw3NbCX8SypcT51qeS6Wjr4QaWn8fMZ3Fn537wZBGJbmFjs",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "3cmd7kF1yEJdGJWaCLdBfm3yDSr5VRwgQgMmvLRgjetMiB55ornPBM2UAyrKjJ5x6qMWJStMRwJmZ5SW12MJ1K3w",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "5vS5ok5wq4pxijC87rFpTaTieP7SGe5QCD58sxNoLVEWC2tkoSndvWseGVr3kT1xn4aSWq4cVrZkjSL5wzZHpNVc",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "72A5ebMtWwd7pgbT35L7Cn2x4eVCcKQdhhPxbsfMGMZRZfCnLxj6u89UJFtfptV3EdCWoYTzfHQMmvHhvxBSpdN",
+      "type": "UNKNOWN",
+      "source": "METEORA"
+    },
+    {
+      "signature": "2nBLkwxEZQZhMjmcvev4jZvguEk7bjGpec7LjRvbLB1Ui9cGCuCNKhAt6qdGsyQ5A1B22vAKkK3xqYNqVtW4JvSz",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "558RSnj9qS4WCv2apyzgBL4WgkfFXvGaVgbhTnFfK8gkZhGhiVR6XY5GtTd8j9X4Xsa23yNCgNQJQjY4mA8SCsqw",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "AmMthUfzUJQazn2piPxq2QwnMdSu7dGJYk8tgcJse2dg9keNXpHR1QakDLJ2rrDkBKHeT2JLi9qzze1S77ytpUM",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "2HbhXZa2gxHYt9qqHdFKKpPAkXC7GLT1gbceyXK7TgDXpww2fuSQfDpRUiuqZNC8nuyKLDQXeNa3hp7nBpL2rjyY",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5Rv15aBwRLQiLduLe2gQcknTVJsbfsLX6xXiim4nGWVkuTdN7uXakX977SnJEo6Zp1AvCwxP8rfSavCFNhBLXaWq",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3AXTDappE3SSknbESXDbLRFpa3a471WaM2wJE8ccGA8UsMHFdcRxr3iAQAHyUsDciYDtijVy71TSU4Ek3BykCNKS",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "5WzcjynJBXQkE7AR92tdUnuvbpvnCM2jB3t1y2DcUcwmVEEVvT4u1zMyjkvJ5XdPJj6JhxxMWTTJsX8zbYs7T83k",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "VYPucqPNHWEkUbWSfTnzgoG4TJUKmXfz9piCpte49SupFwqvK56vTYVB9UoRtE2jdh57D5t7xdGddMmBfqkwDfP",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4zqhbf2bUwnfj7B8Gs7XyAtuTXSkeuaVh9UAZAiPfivNueyTEHSD8DeBziPiJmVJZZgibshNhfNBf6QtSyq5KNGY",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "69jbCcNx9tUhNXKdKMnF2Mc23r2oDnJWsnWf7pWMg2RQzWeKEBF6eDsrKwTfzzTdnC958AzGTi9qWHRqSTV4qCN",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4zgAFfz3RLsfPwxPs3iivy8Z9pCXxnLC2bFTdB21WHjncASYKK8pVsDi4CS1EbRVdDbB51vA99AJ5DC7h5G5v1mn",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "Qtqnu9ZbySesL54d6MRD6uWLDtw7ftL82t84T52fk3Fvk93PHr4KeSjqr1tgZ7jrEMrzQvd9DS6HGazCjvmMTwi",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3KnX1JQzpi6dm3gzCfre2KPrf5hbwu9ogqUcxsm6uZVC7Ks7923fGraLr6GCje9XaQEzKCcDP3Rda8YzyqeGqBvN",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "6M6mcmtvrXUXK2TV9KpwvKtnnvErYe1QZLr5D9cCdMMBwm4CBVWeMfDrAM5KPTwnd4TH3J6BH9GF5EQVQVZD4sZ",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2jKc29wSfWkgxo1duKYvVEexa7dQfGZhbf6BaSYZi3M4dRqtGG1gk6e9tWQ9fBDHTTwnRFF5dkKrVXYrN2oh5LSK",
+      "type": "TRANSFER",
+      "source": "SYSTEM_PROGRAM"
+    },
+    {
+      "signature": "zWS1ihWqg387iQMyZsHier8qcHNCy59KHLRC3Lj3XhRFicJXYkc1oWL1iEEzM8QZMJhWuBYKkYaWnzhsxZFgKyN",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "45zQYxyExNGzamneqMxv2WPcRCkPG2C1R8BcJpgtrjhH3hmUa13rEi4p8EakLY2xGu9yXjTRYc2kyt1MpGVmgouk",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2NGRDrVYpYeaFAFez1bP63cc3ACaWwbe4U84t4diX7KV9HmB5rRXduz5r63gXdKQkeAqjowMCFKZ15AHpPPCkC2a",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "ujbnhztw5VerYERBCKoA1RNneGECHuCVw5X4QNfFyeAyicz6P4TNT5XA7aubkAZ6JbUzvC6vYKh4QohYdh5tFL8",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "3gNXFsLvRKPdRhfyGPh88tAqTpvHg1DxazftwURkVB5KXkNLahNQY4p23gNSoxYmzGuae2PJp36Ln2DRrj1dwSkL",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2UAHmsmetW29uQrz4zkAXar2LMTy8nHjtP2SdJqhJArboT86qqNTZ6VLd8EbLbC5DZDkBJ32VGL3Bw7zdMbVV1H8",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "3eMAf7nK3Tzg6zZcE2325b8CLunYwBnQcAhVgbiMxkY3MKVUwXCKBVXFSnoWZj89TnrDWqHxWoHY1TnxXk2iZRb5",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "62Hx7UhrUrVbZjBybsDyJUGzXdDTohr4j5xQoEsqH6Fe4kCHgAe77BErKKXqXcbwKft5sdJ6mUANqsPm5JThBTNC",
+      "type": "TRANSFER",
+      "source": "SYSTEM_PROGRAM"
+    },
+    {
+      "signature": "3mm4jDh9eGD8uPnBdUkzsPSstd2WDLBFFZUjBAAdZKZvChTu7mfJiBLxWbWPAtqk4ibwnmV4tSTSjYHnhAarWQBC",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "7AthnPYrVVmEgAinGFfyKASNCqR582UDvuwao53af3NKDcSYNyzxdLYTaRdS62vdaJn9K8s1pm3rUeGY617tGNM",
+      "type": "UNKNOWN",
+      "source": "ORCA"
+    },
+    {
+      "signature": "66YJxpuHFVVhfok5ncRe5vyFM1DAitc4YZccpwurRZc4KqnpHar3bn8uzMVEXtDRbKZMh3NboD2faZjihQJHfwvR",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "2oh8w1thfVcHwGewGtasJh4B43AAQyFav25Y6n47m1fXRL2aH8RsSD6t6mYJryAtjodPbatfxdDv5QreLtBxbGxo",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "5TaVZmVfXSL8rwcP5BMja98AbExov4UTCw2LnaSrNN2NSzgyxSzBM8wAS7VGkokc4yPSAfKjGkgBPosr3Q4A3nAi",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "3k2pUa7W5Zrj6XRQioTYJrPkn2TwuBYfQn4Qrwcz1Ho3ApmAabJAYqSVamcaYib2DmeDLLwGyVst3WckNytKKvAt",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3K6t9DqUu8svS3LV8vixFUxpdifYxsh9BAeM69mcKmFz4yF5gj9dc9qAQncks39buifngkaytNK7bxXpZipAzfGk",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "3ix4GvBTi7WGxW6odnP5GcjKugqtYM9NpZPEgCEH9RoCUtJzA1M1ZDtJDgLkhaozgJbF3nogQwvHqHBwWFDUqiaL",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5oXpptGBxpTW2ySAYUCM4pwPBD9Hpn9ytqCJiWA4xuQc5TsFSs6QJv7GrBdYWjyvt3vVX38ni4Fgu82xehctJqvA",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "uy9ftfmKfDZKVPuke6xa1wy5QfrVznRmj7iibDrbnHTgmLG4LbkAXmtXwgnwd2US7yhdniMZ9L5eVcjfEMWkx9y",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4zRMbVTUVLucM69B5DUmXeifiY1SPq6UfDkdRoj4fcfH6nxmZ5KpFRaZzSQaHXjW8VJKwsQAwrtKPDmTKMKZ5pGi",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "5UNKxYe6bTXPuREqr2Wd8LFMpNyjUs7aHpokWdxdKVDWT5KybyTyv2gsSB46rsF3jFUQwm5zg7ZU93sNvMct91hp",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2Muud2npqhFczbDGtHeE72SAPT5BHnH9vHzXtLztGLransgpXXCdN6PSQ7TR4eGoaZJhft4XmYuoDDpe4weB8DVb",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "8BG7uDzUH8yi66Ww2Mnf8nYDW9HspsfdEYcz9MkdwxRaNnxJuLMapgGF4GUqTmyVZr4pkfHSKsQ6phZj5Ds3S82",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "224mDXceNRpwiJo4kTJCzTRKp8fcJVVJKUjLMh4Ydwd9zuEbjT7ubUiB9kXLaod6XdWmuevVmmmL8LcPqxxHG4zy",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "5Ej7D6nCHgLgbrgTgpRAoQ3qaFmKNhVu24CeTX6CvbsVGG2BumpMUisuzH6XrBGLxmWAy1FsyQSfnJtyonoh5owt",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "mU9apdHRpLJGJczVSaNqHpsrWNnkSD2teQ6cteQfqE2UXdk2gvyURf7A7uSifA26tTvWdncjPYUfsYdXF5a2imF",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "37r1CnVufibinLBCcPFgEqBE1o9aHkJaZUzfKKiNghSBWcviPHx8LgbWi5E8u2GLn8d4yzKaFaLyCQCNruYeSz9T",
+      "type": "TRANSFER",
+      "source": "SYSTEM_PROGRAM"
+    },
+    {
+      "signature": "22XPbmxPPxhHXofrV2TLXUkY732GNceq221sfEmfjMUvqVXLt9RhNANRo5sJRpG8Y3MsMpuX7BerRgkZRqJxtWbt",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2yjp3FooiwuXoqtW1shphiyxNbg4DbHaraZAAEDQCza9dtskreVQGoFTVjK5sYX2WBrVKPz3rTJZY18JeDjbcQ7N",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "61yoxNWBeLSZGktMAvU6osGPgS9LKDGD5KpUenfs36bpsqCjhLBPZtiNoTZ9WKtauDb1Z6aSt6kFuGnovtKAfDFd",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4QBFhb1igDRbhByRxRBfsiQn8eSPWgtEK3orRUPt6qUet3ppM3RucE7MuVnbtfEUzpywBtdbsiCMfqGD4srfMiEu",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "44CS9VNA4zaEYE2JYBg1s9bZy3JcrfmpwkxV9TTYKCVxuvBWnJNU4DhyWiyosUW7qf5wS9bcWFPpDsbrpq2TosmT",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3jRFEmtM6Cc4watNqTSzN5X53Y8ngq6zm4UzpRjqQXinDYUCnHpnqwFzfNqnoRVozWUpNAxPH4beqZWLZAL1XdrD",
+      "type": "UNKNOWN",
+      "source": "METEORA"
+    },
+    {
+      "signature": "5ty8t8yNwM127rqWhjb4uyUvedWoHyMVDjs4jyzFwAcnUEnM792VTWq2h34k4a53QWKhGCZBPiLvTJ36mMvuSq9m",
+      "type": "UNKNOWN",
+      "source": "METEORA"
+    },
+    {
+      "signature": "ZLpWPs9v8v528qtfuTgQyX3pTAs3DU3ZNyDbNXGXd9o1vxQ7ChFcFsimmn7YqEKjxpaopRu5tNQddvC8TPr5vmg",
+      "type": "UNKNOWN",
+      "source": "METEORA"
+    },
+    {
+      "signature": "2wHi4y2U4zQ5ttdc3h6B2BTMcEp9kizNY7tTR1y5U4mUSKutFHbM5uVhETVs5imrcxet9wcNrZFxMABgvKyqGBB1",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "4S6Rni4VFi34q2w666FYbHBBgREiWamTG7tvGRcHHukeHzX1uNwGnKnYkoTAEkgmEckcjmfs5bggcSWZtiTd43mE",
+      "type": "UNKNOWN",
+      "source": "METEORA"
+    },
+    {
+      "signature": "4T6E7N23gjtctpJyPRfZGUjdwikwW5bD8RioqUhNgwe7hbyCiiY4VorEcKVctrDpWJmx1pV297yrMo6dU62pJRy2",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "57e8aGUN84yoeUrrD5SfTs72i9sXUr5PAoj22RfN1YzBPK9GHM3ZA4kyKFDoPe1Z2igDcBnk9S4SyYoeLPfmzPa7",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3pBmy2cjZaEbYsjnzYbPsazn4rkCkZmw1azs15SEMFY4VXn2LH6nntjLjeeQrUvRT6Jf19DEWqHbY6tQtDrKCszT",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4rGwfbrfmdjS9dX82aDvLknSpyL7s1FUXLeLT9N2zp97hGKF7C7hTwusEWecYvKu1Esa7LDabb2dG5ZJCJYxKLcC",
+      "type": "UNKNOWN",
+      "source": "ORCA"
+    },
+    {
+      "signature": "4mBwQwQ1zpLnU1VHVrSPFfsBKVYZJTvFdBqUheBtCP3UfhgMKbqiVHfVFba2BsENUujtt8jfZyrK8tQ3q3dfe4VS",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5KqdKT5vDVTPTiaw8oZ729TmZkfh5vPeN8CgtBM1E7iqy5TDGSibj7uF5pi7sK6XUssg7rfaeDG7qqDyX3ie48Ej",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "44ynF86NfQdLrXvvoc9V5HzVJVA8acGma9rvteWhPhbsNBk3qMmyZuNcKSQCSnLJXtekRSRRgYe7iT2FvDFSf9rN",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "aAZFzNbMPod124qXveP11hbpgyG87t9HfRpQzxMwCfhdMhGBGzuGRBPdB9RXmW4BumHS42mnBUd82VMk64Zgfkz",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3JwP9nCRzT5nd4ffJ5CUMtL5pcwse2pWjAGJoqokir9P1FVNsCJca2oC68xtfsx1QwouNgYnNkerFaujjynibCse",
+      "type": "TRANSFER",
+      "source": "SYSTEM_PROGRAM"
+    },
+    {
+      "signature": "4rZsJT5984X4nkWHQT8SfokLu43vvrVDpTSyrF87rZoSp9yC2MeVfxoUjzPkL7QnEAESMf96DSN82BjLXWbZpdK9",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5jETnzCoS4A73TCr7Pgmn4K85W6M9GzWevRCNuK5SVS44goPS7W5zBPcknBuXN76ZU9z2ZftA8iMxZuWunwWbXWS",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5h28Xi5m5RvwMf6CLAMhCYygL11ER5qh2rbAQVongBfu4cj4VENhBK8Uz3pz1tyBeaZcTTEps5DJKaQc6a1PrQEL",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "26brWVbpaCUGVT8y5zETszpvLwT3S4a8rSzigifsKTcajpdDmgDrkdW2L1cycjdJmZ3rfHVY33wW6ofG6JDLSsWS",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "3Pv8UTPSuMipjeu8afcWnpVPEnR8yExjVwXu7T9FPrCrsErFCEvQP9eJTAdeeBGVsyAfK8KFHhZt8HRqm1nNvCtt",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2VxsWyULpfNe42dcsizjAkxq1Cq8MMoAfJGynK7RJvZZZnHv3UMHDTQP6nL7ad53r38HydxKMB2fExRtPBp11f8w",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "22VLtXuYoVubJuuaaZjXwCCr5NCfXQk49uuN3Hyc4EY1kjpty9N4mbMbeyoMurp5fBW1JkyZ4QADXsQbtKU6ETUG",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4adchvijZbv3ue7vZAMREjTpx1y66oigRVR5vxw88dY7ZqE1bkXNMzWwmQDyLPjsDMdabA6fNe1Zm2XqfQqBTESK",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "41Kr9Q1SScXn2RouSByP5tHVmZztmENgDHGQvrtMv2ryeyn3dWNe97r7fX9D4PEbyZtJZFEnnps8jLgTtP5EJ6ZW",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3o2m5iWWftW9rV1DzSbRkD8jPYg63emcvyzz6oHSnDEXwHmaZmnhy8We2VFrZfbSX6kZ2WAyT3mRaSc4EZsLGvrn",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "41cSP6Z7FVjMAtp6UTCih8tLW61tZnXUQs9YR5CSPm6Ny1nY9mqUfSUsLDpGxVfRUj8uh5gn77FwgFR679xibN93",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "6m1XSYqi8nkChkP52AbcZqYx66F6br1dZSVcirPdLh6gLnEtJ7K7mHJ2nsfkeu6PDVR3pHhvU5ckeGBPw9UHtPj",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5vhH9S4Ct6cePjALXbJeDbLFPooApUh7bMmNrWaZ2yihB8Pk7798B2utPpRVRg2jsQCFZtfpATrUsW5rHwpHbiAA",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3kZ8PTMy8RcEK8BRcnzWnLaM3XmNgBeENBtBu4UjpV82xHV7wDSA4Kg4Emj7dF62UVqwDSrskqNTysx2bkHwG2VP",
+      "type": "UNKNOWN",
+      "source": "METEORA"
+    },
+    {
+      "signature": "4erUH32yxQjanHsoqPcFVf1PyHZ5Bu5WHHr2Ay3byXZVwPSTuJnXRFmVootuMUQDJewYnkj8ExtpjMpzKn12kgoR",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "aEpBYvkiFF3Dn6CJrrquSPUiQVzbhCF23Ftr4tqbPzNRW3wQAZ4qmmW1XrvpHAVLFkEGtjJ8akDtBCYQx6GERKu",
+      "type": "UNKNOWN",
+      "source": "METEORA"
+    },
+    {
+      "signature": "ruPVKbTcsRCbCngouzAfni5njszkihKcF41jwLA5RkvU8TNk76ao8UpYsDNGZ542e4JV2W9c6Fo86drs37vrnsZ",
+      "type": "UNKNOWN",
+      "source": "METEORA"
+    },
+    {
+      "signature": "3GgRzeMK2pQCghMXX4McBDKNgiDLXqfwixmytM6KtfhGj5yjVGoSQpbDF5TVZYpCPBpuhq2iFq728KMwpuFMJFz3",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "5sC3owa724HQNAtJC2RY92NqAfkJovebxjoq1g5XoRuy8An5YT3mg2CwYojQg67B313jGGWuTCs5AzdgeDZ3wA44",
+      "type": "TRANSFER",
+      "source": "SYSTEM_PROGRAM"
+    },
+    {
+      "signature": "3tDts8mR8ioXUFxMRab8541mpB8GT5bR1tjzDD9Q1DkRhqvfLJyxmvsASNMMkxLFxpFMdWVtLqEyuy3eWYjgs5fb",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "2MMgJnjZtdDLXDwPtquq5CsGb9QsWKzKvXGcaZqapWGEyZhtdXGgD9sy98iE62qXBWFShAeZs2wyP253Zf4U611h",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "3RHiGu6XnU3LG1PE2GNxqURLY2FUNvf3nZDqZdxCjScQNjQ142teaVi8AVEGCLDbymPPPYZpouC5PxM9gwD8snNr",
+      "type": "TRANSFER",
+      "source": "SYSTEM_PROGRAM"
+    },
+    {
+      "signature": "4j5udYsN3xiJYhNZtAEzPC98VyAkZ9Y8L6pNFnd1ncpKQSshhnXPFouXvfqGDyZSbs95ZgjQwRPuo1ppvhqtwjPA",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "uyvnmimZY2LNbNVyRGwW43zmScahhoNLG3EnF6nte4ekHY8wXLxqNyR6QZEW54Fm8ABnyyf5PFYxQKENsvmmk27",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3W5mYZGVZdx8kPrdMv1cq7ysSoaxC5CqzCRcZRWsZ7CaFW5Z6X9YWKV1mbbUd6qFAKquEbgLwim7zJ3tiWU69M9q",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "48vKdMe1xVhLBw1AzbfCTnjCnfjZiuAaZpJdfWDd75gBVNHmxNvNQFA37J7ThBJZAGNz6AVJuzuRsoXhYePBes1R",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "4XMg1G7DLHPe7TyxwutL4t57DZGSnY3sEADvi7LtnMY4WVvRvexrFjvexeG2J8LXsf348rh6jvJbeoQihZJHSJ1X",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "7iedqLBpmCR6Xg86UztUYmokKzfgr9UipfTpWCuTRd6w8CxGhQVQbdHPhGqR83ZLAgTX4PByebQhpaFCcprzafi",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "4YhCKZdXKdRFFHhggsH2JHf2eyMdbxyyBTRWXAqPpAGstZRQXGRpkbdJqf1b1PdVpxGcdQxUMjc88Dg7bfc37kj4",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "56urct2GgkrSik4UX2RcPqQ11HNdkDoo6GezCYvvsUKWPomCryA6Eo9ud95dE2wBHKdd8ZwCarzUh8kSLSvfwuEN",
+      "type": "UNKNOWN",
+      "source": "ORCA"
+    },
+    {
+      "signature": "35UMtpBZ11L7gdiuD9ntvMLry44GnTh5gNzaQxnvW6Ne4jmswaBGi4d8wp7vXBmnqQuh88om7D7GksEXo7oWarXZ",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "35bhJ6u6fexfeNwCzTPeSwVPUyq1DqWNAVBSzKtw3mLjKikTzfz4toPGUuuLkitbDN5GfYoCo4F1rna7cW5ebqFu",
+      "type": "UNKNOWN",
+      "source": "METEORA"
+    },
+    {
+      "signature": "26Y5FzqL4vUffrSuZLLSZHq5xeen1dFcgUDLpUcjNhkXKxBJ86wwWrfzaPqnnSzrAC2342qE6CnN9FyAVJGN1RWf",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "2TDVHB6dX4FFHepKnsoWRCcRpap56xt8hu4ytMoLVHsTJk8Gc9iQ8CaTmAh2KKG3eeZfscYa4tWJZMVnxnwfvYj1",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2ykhcbmDzes4DxfdWEaT6kaDp1rkoAQsEXsKuJ2qhQLgC2PotvRJjK7RR8JHmbRNiowuFhjrnPVF4cHEYTZgibwo",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "4RNDhHFwqvjao61Ki4K781Lwop3WuqTSWsoUpxoFq3txT9vvwqirhfnR6dpRxPbQbW9qpBSmNdubdZoGmQHzeFE4",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "39wvVSmziajQPpBB4LPz5uGZbr2NPWAbyK67joJm5cLDEHzach1CkF7CAxZ8iPZKbVMWNvYiP9Hy1C5FfhUU1PiN",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2CH8wXcDf919Qzp9rApaxW47PeRxZi3NMuAZfAAL8VybZD85n5fS4kuNSuY15mdNrsgodjWQesVTDXR9d391aW2C",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3eY46Z2saTceUqiCfgCZgM1Dc4uVDQpsygz78EbyzgoZcTA2PxWdhCLhG3RLpkuJr2ZNsfmZZ68wXoBcR2XWADrC",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4o5tkb9HcdWRcrP2SaQAmKw8gW6JTS88XHPfHA1McefgGc7ParDkhJdDHt54nKHqP9X9yZ6S1ss9duQo9UhrqChV",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "332bMK7UUJepi9Xt3ZbBxXR2n42FP2pUAZicC53Q8rpnwjZcH7LN9juF3s5kct7PS1ANGBq83hiXYKtzaaxDMK7i",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "66c7nKD1sajZZ9nyKJC67GzCPux2Wb7gQSyJ2SR9D2jfzfYeF6EPLKK88QrSXqCV7Z1EqjWy4jXL5Wv1izuQu4kN",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "21C3SC6BwjfmFwpaD4hbg2o8J78xbXEtKKewv9ocTy3vpyMsee1fzMuW7rg6WFTNrMFF3gqVxaU5C46eQphoNCA3",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5X2ZcfEfDyGfVyuYefiVK9LedgvYzNt1gMwpq9TxVxo4M5b4839HGYHX3RyKZxzZtz6pid9WNUdGBoXjH7VckLeF",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3nUwvd7cS6ujvkqytRtzRrFLvVq3NDKXmuM4CyjQNsw1F6STVK6pwYd22q4qpWeJ5t1dvjdX5aWyCYpsNE1mrc57",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "35WJqjwKtk9aWzsLzVTLwUpjAFyHD1W6z58uMiif5tcsM9E6e5FmxhpZ5Z8sPFBSSeqU4EasbGJDZk6cCpCn2uaa",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "28yGGd4wriXRTWfZqZHYjkQMoCKj2CL97dkAtHrvpCXVwNLEEcePGamrn296i7WZUSPU4rNmSd5bBjZT99XjMQnU",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "TAqDxFPtaJtKtKYFS5zWmpxvzJcySeSvXMJrGDMoH1FJUBEvy2E86Dab8Rnh9qfURMm7akjDQhkffaa5h8ZwqLr",
+      "type": "TRANSFER",
+      "source": "SYSTEM_PROGRAM"
+    },
+    {
+      "signature": "62LssULnVVEzgg8cYAWFfnKuW5iMH3UntxfWnYUhzRs3nmLnvwvYKBv7aAUP4W2oMewKCcBCZUfNph8HyaHehGPS",
+      "type": "TRANSFER",
+      "source": "SYSTEM_PROGRAM"
+    },
+    {
+      "signature": "UZjMqhXEzaLDkY8e5MhMho3kRzdbnnS3cjnooQuakSaQDA7JEGVSz7oLjxiUqLZs3DDa2ZP4dcDJz6Ac8cuUVRE",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "JgNNXh1kKdygyHRVuqbi3Aidg2VLbDvaSJ2mNWXZsmmbgAEz4daj96Ke2goAvKJp9Gsyayn4fqtYxQYdA97qadU",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3d9Q2kbjVe7LNdwYJAmESkGyjYmXD1eRJFwcz6Tx6Nq6eXxBQhaiVZk3XoFRWrCosm1DCWaX3MfbQ3TvWtLZHtnF",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2UeuPLL5KJZnkEo65MCEP4nMCH7aJGQNLL7Gwnvr38Qa319w984rAHtKjCJTpbjn5ApRQqZa2MEUozZypiGwXeCh",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "35DKap6MKimaTfJVXAzrmGrvt2NQfo4S3dM23ExkLaF7NykuwddsgUR1rpDmnWZSWs6Lr2CbJVw9DV9qkYvGsjgb",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "31u56S12XNSAe5864KTMwSPmw3FKZJAnuSAF5jQLduumUkQwj1n4qozUDHVQ9Eqvv7csFhs3KraVuJZ7qGauAuWY",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4DCRW7aRP3v7VZDq1VdcNapb924UAZtNpfjg58YCm1Zdig71t8FtVRphNjFSTALymnUrJ7LMYwaWDqH8yY4MVDPR",
+      "type": "TRANSFER",
+      "source": "SYSTEM_PROGRAM"
+    },
+    {
+      "signature": "4W5rwZcMwd8pYq8djnDkgvyAnpyJSv8nTUF97Q7daSzXZ4AUZieoJWNaP46Zz8At3JgTJQUftkM3c31bpixReHiL",
+      "type": "TRANSFER",
+      "source": "SYSTEM_PROGRAM"
+    },
+    {
+      "signature": "32xTDbxXJM6JZV29imjAv79hUh6f1TWHWwBf7HffjPMwtnjZc2kAU8ArsWMhLzdMpcgQQQQNZZHJHU4NsLtFGqLa",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "SEug8V7VquUBMth4W51r8yEvM1AkdnhQQZ4FeTjmux5NrwVo1qMM85m3V6zMbBwkbKTEE6Yv7CR6Ck7Wi2cvbsT",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "SCL6iYQPjnFjEsCtSqj7MyJfLZUZu6m32a6ayNSbaFJSmrnE3txnFap6L7MPtm421TeFy2ZbRFDv7HffSfYMEvW",
+      "type": "UNKNOWN",
+      "source": "METEORA"
+    },
+    {
+      "signature": "5NAHNRdnKFF5qc6edpXExeqWqAkVVvDyjV1YbycnP752nNSx2hYxEcJxFR47sA48dQFc2jdyZKMyx91U782oNECg",
+      "type": "TRANSFER",
+      "source": "SYSTEM_PROGRAM"
+    },
+    {
+      "signature": "5AifVEDArq6LF7g4nJgd7pV1Bh6LvPAvAkXfQUhDHsB38jR9DxAHRVB4qNPjgiPakekgjLm5Km4rSKhzGimWiDuS",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4QHuXFPQW6nZ8mocGnnKG2AQK7n9uf9aZJfA64XNuqYAxekqDD3YhjoknNvG37g8xuBavNdsERATdjdQrGvJ5va5",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "aApYAxmuzo1MLHwQjgw95vjs4nKvp1cvKCY7cNQKzBM8KrYi74MPpq8df3ZyRo25VsvUy83yHG9UWEMN6DU2hdh",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "K4eobZYEHde9eAtgDK6X2s2qB5fTJjWMzzxb29ESkEewkm4JUa7x7ubdiSnADKVcKcuhoVVb1vckAvegsihbZPV",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "chgvve7611D32PgooxeNkfL1XARGoyB1Bt37FeCnCTyaMbSRo6bSoFA4XKNKptHmLP7Tb9PTh7i5GTpL6gsuzWK",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4mjsXu7xPL2aBA6SP7i4Gf7xbf7cDuL154mzvebqzEQKRrPqeX1mteXLJkZsK4rWJsBX9ULBVRkHNr323Xn1XuLL",
+      "type": "TRANSFER",
+      "source": "SYSTEM_PROGRAM"
+    },
+    {
+      "signature": "4KDrUcqtJNwBHGdwoyrMXAnTTg8e9MGqa5SctQ5PFZ4MvvVWavKYDjaBrjxyzMdHFyXQ4htMNCSdBsaSTzUdD4QX",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "44tWvu9FDN4WjL8v1Lc8DkhD5pRH7zsZo2GASmrnZS8Viq4LuBFG6bbwjqZ2t4maYetXTvGnGy3M6UYHpwx573rJ",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5QF36i1CHEwwD1qb45xw2QweUVmuP7ZDJMfvbWiYSypbWxTQYz2nz3GiJ7d86NxVRTpmfGnfAwW5putPKb34h6Em",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4V6RsqitGfnjYys133bWvcAofVUxUPPM2kzuUw79JTaCHXodQhJq5qApqpKRyWMbtJLpYwZvdRWsiapXeRJmCGi8",
+      "type": "UNKNOWN",
+      "source": "RAYDIUM"
+    },
+    {
+      "signature": "5xMoEx7ZbmppCXG9o4CqWLe4fyzATNQLn6gg1jghdLvZDZbocnf2DJPUrXWe77YevAYNtDHQmwSJNdjfp86ncguY",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "27FLGppz7bLZguPQyv6bLvaweWx5y8fj9DzGU62AK9CcPbe8KRhzSwKSXTp8jVM3GKJfD3viDzyEzukzbRk7he6w",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "5fgctWknJkirdNyybBVHa66vMhEB9MVs9wiyvLAAd3e8G9frKYK9KpxtEERfEAkvUxTyU3M5P8FnN7JpFcMRrrMy",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "AYGq7WAAQ1xJmPkoAzVL6a4ewXYfWfXYiXxHAmu4iPheDJVv4Q6MPARmdDq5ZT6CyuJZzfX7teiSchE7V1ovUh1",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5XjuHfxWEkTCf9PdynHmjAJZ5SgBStca5gWxJ1XPi4TqjrZjaZrPcYNfbVbp5g4jrzRyFLz1GzLTS68mKLp8nHrR",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3wLKnNsZjNfyVDxz7h452qvd2i9uR6gkhuRocTgBzUSMkd28hTQW5rgCxXEobAr6RsRiEFFoBmP3nhDeT6YNbzbF",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2oWYE1XnwGe5XgP7cpCiGCPy64tfcB3Syrte8HpqW1q53unEKQDFwWWjoKXrq29YztyU77UKJiMMciaymD9M19tU",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3H99g8MtsFV2qV1TcgcfGkS7cAjSjq92SMMVdJd7AQ3EsPex9gKiF5f2s4Mcc7AhpzV2Cn4NnUarvvpFfgKAXuLj",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "48r8Msq8pwrUqNjf5jEPg4zc5sbU1pSriWVUmmQ4arbxnzSHjkCFHCEeZ3atma2nd1WjK4YtetxgUyn69PErFLVi",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2LoDtn2NRXSiLUbCfzgHV8hAgTWVPeVnSCmAEzEnsQcRHfZ9LLv3jiJ2EsqtSb4o7akSosCbvnW62agD97Mo8inT",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3WBeoK4H6eeERZXFy1wwDMq7yYUGxHE1NAahbUrxdmt8eJkPPmuRy7eg7b5ND3BcYLeu9n7zcLuUj7p9BwhWjaC3",
+      "type": "UNKNOWN",
+      "source": "METEORA_DAMM_V2"
+    },
+    {
+      "signature": "56pMtzpJuN2DEtaYooFcA1MYTjG1g2scwMg8oxvuJeq2tbYiKVUKXstYsVE8n4C275dRYU1NTVMohBxvDSPRgc3A",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2csCWVHiRBYTqojQWfUYZen5FKEJQAtgQmYuxjQm1QC8ogV1cMAK2CHL3XXhiwmiW2WTKsPex3PzKLRezrEUAQX7",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "426DWBay5gRHNdxtkgAQhQjHDb7A6EhW9oRkP1nyH46eLUk6RLhs6WbRU3GYqvNGhiSn2MHrwvZXRaJ6c34mbUFW",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2HnEtpa1aUgeNiSNK4BFVLpAx9grNrooKg6NesEQdQBkjGEUgSCM9hvRUSEMvMds5ryAhi93i3SNa9TDKhZTxFg7",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3yviaDen9pKg978RTFhQnx6yBttFBeNTNZyetsMUiAiD6LMtTorKCQSY4tEzjWPdWn5PdfZoseP5knpbgn3wkqPw",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3HXujzqNSh43B8HCZgvjwchum456bKW8ZPUvCimeLoGW3XKTK4ZZ2c2N8pNtr3ectQ8o4U33fUfu8ZNFfmy4QW1m",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "28nP39ntRsks1MHzrBpu9Sfg8eFyPJ5e77aJTg6SecJ8EpVVkt68zgNCVVtoDNHX2vmMaw7EiqV9hVHjKxjZzQuV",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "gP4ygrRyDEmgUCNRtgT1ad7XudkfhjAAVwm33vk492Qp9YcDV373auxGgE6vSJ9r9T7cjoUS7Q3hmsu3cGAzWiG",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4HmaGC2ae21NeuBRH33D7ZDosqe2cQbhJz9ggneZcqgy8b7XT9h2QKwCuvYEQ4tCBxro9wLZdMEXrZaHT2vavgHv",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4SNYccd3SkttoBAGu7qjBH7JvoL6wgRa6jyH3SrTXsS683iqPG9LhTwNtgaFQQwN35CP9vvddFtdmEScDyN12ck",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5AQvxG4tzce4A58U5967EBsKbLr6cTP4e5kGHDevWGMuVd84XmdBX4QRJxE7BUN3YEcrjJNj8FZke9vFJ1ydzuK3",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "9GzQ8yg7dn5cZaAKhyEsnPrTg8SibHoixJCWaEB7EDMT3MPzoq4CXqxgxA2SLGiQK8eJxzVZw5d8RQisbHVfKi2",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5A6hBdSULW138yN7jKWmcjNpZCtgNpazASJJgjxyXJxh41nBh6VSdAocPKQTVcB6xbJ5o7E3dJoTmHc8iFCCVCj3",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "HsDDYhyzT9dXMe9vUDtNwT7dU2pkuHncw5BJ6SnXs3gG6dryTkvopkv1cqW5hzG4APQwSkcs9P7DWuW1AytdkT8",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3uFKhmLAoJZNFKrmnF6Wa49uqP4xUEAHir9nWeccRJPPRVhx1Y9FgCG4cr3pYcCqvnNri3DcFToZmehrKAB9B1Bw",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "tEJ2nGZLLKDWXQydLCZBAxWkpLFGrge1vhCCtp6aEi5iawa4pXqzzaDN7Z7tpLMmiSpZX9P3gWSbCf5w28LNBt1",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "FKJnuHMTqmwNWzTJDDiJJYtUZV6hY86f5dJzbdztodgGeBapJ3d5bSouo35Y4jLBxmmJXmc5fWoXnLdsMjFaKFD",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2t8uphPmxyXbm5yCDdXtvBaBqSz8pKkXAhED56NX2v5YhbUUT5ZAMRdjbW9ALizUUox7FqngBEp6WmqPAscQkYH1",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3sxdmvfTmSd1K6YKL8A1PQNHPyAuRLqz96WVYK4DpNjWd6yx7e6rgtQVwBpsTXYkdx3UiLteNUj4acyKnvMf8khr",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2KZvwTrC966hX61cBp7cgM7X1veyR7RvEWHAvChDnSujkKsNqv2yVwqwr5G5oe3JN7urGvwZsHbPquJuCTnkFMAm",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "24DChhTj4zMbm5f524Fy3vwwVUwi5eTNkF6p7rgWquQ89Z2rKase74kRrdQpW67a3ppew7SkoKfVMS6PgQ284pH7",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4t3cqjgKCYRLACYdfC9in1fat3dzkEUksKpo95DRoNQwuo1uTFNYBHEFjVfkTegSDQ7fbzoXc5T4zH4MZgqAQ2zD",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "zdZ8VarfCXsetmr74pwyT6LtvWGGtezakcAWqVKMa8ir2QaC75qwAB5ye7DiG7qRZ26BMe9M7R9qy4CoSS89x8c",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "2rPSTeRLwGUZ3hJBtupAfqSEXnvWVqutCCVhbMUqhLkZ7GKAHvZxz2ySTtfWkhY53Couy7pCaFdX4Hs1GeAjrSDY",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5fHMiKb7ybGSgYrstCuoT93xSSRGgkyUy7sYzY9z6kM69afG7pTBxbqC4mt6CfviifVoDoR4kf3unHXyMN3Xj8zk",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "5CrWB7yJRVYnsjDdCjVQh77em4XPp49tViTDs6hU6U9LVzmQCu1dzdVyP3a7TsisiFyS3AtzWgG4FabuxRYuBHk",
+      "type": "TRANSFER",
+      "source": "SYSTEM_PROGRAM"
+    },
+    {
+      "signature": "3JMouJk2sJzobjjKJJg3VBTLbRMGhtJbhYDQBWWcWMp3E93aLfS5odmmS2frprN1XV2tMgUMcnq7kvo9cTtpTcKb",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2xdjiwS3PLBti4sMg1BinXhe9XzmyDv1rnQvLT12nPg4f6dTqsS5W79SEsHc9bJeEQ58FtkLNPhgHrLmXnwJLSo9",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4Momj52hmhMfETS4YMi3GLG2RnpQH8GaA7wgTuwrAVdtmEcxYLfAaMY8YNEnJ6zWU9owN6cYZYrtUXmVVq3oZsJD",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "49Y6XqRoYDMQHG1bq3TPEMtNbLGJw2M5bdmhZQ3wstbjxUXygwCfvmHBWGQi3zhCMxeck5mWWWwGu8sVCgRvYbDU",
+      "type": "TRANSFER",
+      "source": "SYSTEM_PROGRAM"
+    },
+    {
+      "signature": "4R9m7sRwaMXSriXaaeLKifdNDLa9ry9YxkGrBN6T5XZvQAvNe1cfzFUngzZctz8DQA7BZ3aGrC6tALoxKxaX7JeC",
+      "type": "UNKNOWN",
+      "source": "METEORA_DAMM_V2"
+    },
+    {
+      "signature": "2yEhBjD5ixRGVHAPRBfhefHF1FhTz37BB76MRDgzWrRRXJEpr8NVCaMQ4xXRcoHRkwmvo93QzWRJPitfmW3H17fG",
+      "type": "UNKNOWN",
+      "source": "PANCAKESWAP"
+    },
+    {
+      "signature": "2WYcgfuS8TF2d9JxG7W1EjoGAjtMGUdnwSokLmnQZV899VeTGe7YFnYzPeJfvvzgYR8mats2U27SZAVBPDhZnRp2",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "V2GUnGPGe3CCMt7AkTef9FcRtHXxfPMYTbUdLKfgfwNhYFDXgw9qxeanYCqF6s7Dx4w1aJbfhCKE3DMXSZj71FJ",
+      "type": "TRANSFER",
+      "source": "SYSTEM_PROGRAM"
+    },
+    {
+      "signature": "UohiLeB2GUFqbtKqcoTeCsFuhankMVYRxSB9umS9md3K9S2G8gfwmBohHYz6K4Yr1AasSJUoREfc6iCivJQLGms",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "DfsQuSGYUUwQZmPmNb5ATqfjBvD76VZ5ws8QFx9v1QXVrYGCXXjaeMLdqW4HJAACvmS53WfPSVHUvKBbWvXErkZ",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "5e5ZWoTatdgU3cgfH1tbfV9hH6pLgyyHf7uY4LKkeyrzwNtVz42oFNVNdPsuCUKJFv4rwdhFH3qS7x1AyujMBqKW",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "GP2T8P19KBqTvtuh7Rcy85gqUzBk3paH8xZAnq2qpdnk4qW5uA6z2RLsBRUuHHzzqsWmVLHKDmfTRtTv4HJvLu1",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "331otZFT3WTS5wRvnEVXN2wy3UfoCFnNpVTLDy1excUCKFHTQdxYSx2tpxMc8jisDbjKWDxxSo47QCh2arw3qvLf",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4Bt2N3oETipcNNgUz1YPNCynUdxTwvafpAHbJLnmnJBKazx9yKuApmGzp5V5QkZiPab7AneX5jXfkJs2EJiRStvH",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "67koNogrG9xx1WFFtYbkD8QEfN1aTiVta46YeRXAFk7GYTCgQujpmRBzBEt1AM8Y5vqiLh8HuUEpFTt4ZeXUKwz8",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3QkWZCVPjANpdtyyu6THNfz6ST3111mCE4vNdDMN1vdm5V3Xuog1hQVC5mfV48syFhUz45ABkckoByBssfvZQ8yc",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3K6hXaYtUUATPL9tRfyWT7wsXvY9TtLh8uoJLFF7ozWi95cczeu2E1B1CSyqTw4KWt6qWaBYxE4YNTKQyV1RSxDs",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "5zsXuLm63jew2sYzA1xAFoGhp2fS2Gre8wQEhjWA1S8Vj4vTkjJgg24STuWm4BwgwTetUopTBdWVP7E7tU9cbMa2",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "g7w1fBp6yNQyHa2965NGF7LUd5XqsL4DC14YAU4BttjQoQWncBzPTAe5UkVWNX2ixnTLumZefjY43VMFLe8Tta9",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3CET9XWm6RyWigwr9fjWX5QDiP12nLdBfLbTxm9BExPGTij2FvrrGMjkZKgEUtZuY4kwJ5psLifzx2jvpMUDUZd2",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4MLxVKRZ5AxWRdj9Xdj9Fdtf39SYKQsqgjSVi79BnLepiFcA2dFb4wcu8riTjUxy5t43C1NSpxZtQakCfD53qbAU",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2U67AFmaiKU2cWuBPGm94LDXskNySckcDQN2RAoYjkW53vcSpwadqnKPP43fTEbLvGNejKrwSocVd8RvmP53sGqc",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4uuFNWnw1ecCSXERaBgLFzefAHzEfM1WcsYd8Dt776LhwMxwSYpdni4gdL4ZbUz9g88pfrXVUfzFuomkuqvwgDbB",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2kRG5TVAvTsSptQuRbY9NnVbYnYYxqJDC3ebDHFJ8NJNzXrdMCQPyVE4QLTsm4iUu8P9V6VZWpDgSBqx7q61zVJs",
+      "type": "TRANSFER",
+      "source": "SYSTEM_PROGRAM"
+    },
+    {
+      "signature": "3aizTPvtAXj3SjGUa7z862Sn32wKeuxsYnfyimdno1x54sgpPVGDxBBskbdH2vtyzsvY35MjgntjrgnxSzYkVMcT",
+      "type": "SWAP",
+      "source": "PUMP_AMM"
+    },
+    {
+      "signature": "23RzTBVTvsXDLQdoz3RTrYGDKS3vkirXuvoquwvtXR2T6nGcGZBisU8WSxydWs2jJg9uEuJ8RhRZWmtNiLrupqfy",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3uJYb5pRAXNzD72edaUEdGbfNVemnU6sevCkKCnCp4hdA9HooZuRX8jzcNC9zTsfZhouhgFZZ7VP42UpUq5z2ZWz",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "2ktS6Yt3gswmxCTmmjwa4XeUPLG9dfxtswtAA1RG7681Guyz8x9FEstWoDtcn8KgKwAhMyJXvJQui9yepGfQ7B6U",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "3tFubrtKXJiSBB9ySpDN83qv8DMh9JnRSP3jUsQnEPYojiRbGQz6vr3Z6wEDiodqLcjGdXTEjKBpod2a6MjK9Ppp",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "4y4ovjZTGEbqgyJTJgsw7nbE1AwyCPiFwTy4tqbDzAZ6LN8itQNpik1umpoakBhXrTs7pAzePhDExmfo9tQMmf2z",
+      "type": "SWAP",
+      "source": "JUPITER"
+    },
+    {
+      "signature": "yDS45mQUKSM2WzEKv94FNv8anz6KDXVSc9v2GapBcmhXBfzPE5ExdWbwgcyyT31qEJzWyTw27rcXjckBNbHa8BX",
+      "type": "SWAP",
+      "source": "JUPITER"
+    }
+  ]
+}

@@ -4,5 +4,22 @@
     "rootDir": "src",
     "outDir": "dist"
   },
-  "include": ["src"]
+  "include": ["src"],
+  "references": [
+    {
+      "path": "../chain"
+    },
+    {
+      "path": "../core"
+    },
+    {
+      "path": "../decoder"
+    },
+    {
+      "path": "../guard"
+    },
+    {
+      "path": "../miner"
+    }
+  ]
 }

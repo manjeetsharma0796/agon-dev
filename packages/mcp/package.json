@@ -7,6 +7,12 @@
   "types": "./dist/index.d.ts",
   "dependencies": {
     "@agon/core": "workspace:*",
-    "@agon/web": "workspace:*"
+    "@agon/decoder": "workspace:*",
+    "@agon/guard": "workspace:*",
+    "@agon/web": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.30.1"
+  },
+  "bin": {
+    "agon-mcp": "./dist/serve.js"
   }
 }

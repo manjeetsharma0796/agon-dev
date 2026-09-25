@@ -35,6 +35,14 @@ jobs:
             | tar -xz -C /tmp gitleaks
           /tmp/gitleaks dir . --redact --no-banner --exit-code 1
 
+      - name: Key material gitleaks cannot see
+        # A second net, independent of .gitleaks.toml. The allowlist that lets recorded fixtures
+        # through necessarily forgives 32 to 44 base58 characters, which is a public address AND a
+        # 32-byte secret seed: the same bytes, so no regex separates them. gitleaks also inherits 24
+        # path exemptions from its default config, so a keypair committed as assets/logo.png is never
+        # opened. This looks only for shapes a public key cannot take.
+        run: node scripts/secret-shapes.mjs
+
       - name: No .env or keypair file is committed
         run: |
           set -euo pipefail
