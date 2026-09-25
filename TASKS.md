@@ -1033,7 +1033,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none, this is the difference between a demo and a product
 
 ### T-C12, Token categories, the 6 names the PRD froze
-- Status: open
+- Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-c12-prd-category-names
 - Depends-on: T-C05, T-C06
 - Touches: packages/guard/src/jev/index.ts, packages/guard/src/jev/jev.test.ts,
   packages/guard/src/check-trade.ts, packages/guard/src/check-trade.test.ts,
