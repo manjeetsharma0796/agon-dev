@@ -89,13 +89,32 @@ test('an explicit "no" is the only thing that lets text through', async () => {
   expect(v.answers.injection).toEqual({ looksInjected: false, confidence: 0.9 })
 })
 
-test('an unrecognised category falls back to unknown rather than passing it through', async () => {
+// The 6 names, character for character, from the PRD under F11 on p.15: "which category a token
+// belongs to (memecoin, stablecoin, liquid-staking token, blue chip, real-world asset, other),
+// cached per mint for all users". They are pinned here because `styleFinding` looks a category up
+// in the wallet's mix by string, so a name that drifts from the PRD by one character matches
+// nothing and reads as a token the user has never traded.
+test('the 6 categories are the 6 the PRD froze', () => {
+  expect([...TOKEN_CATEGORIES]).toEqual([
+    'memecoin',
+    'stablecoin',
+    'liquid-staking token',
+    'blue chip',
+    'real-world asset',
+    'other',
+  ])
+})
+
+test('an unrecognised category yields no category at all, not a 7th name', async () => {
   const v = await ask(
     reply({ tokenCategory: { choice: 'something-new', confidence: 0.4 } }),
     [allThree[0] as JevQuestion],
     AT,
   )
-  expect(v.answers.tokenCategory?.category).toBe('unknown')
+  // Not 'other'. 'other' is one of the 6 answers Jev is allowed to choose, so recording it here
+  // would tell the guard the model placed this token when it did not. No answer routes into the
+  // 'could not be placed' refusal in check-trade instead.
+  expect(v.answers.tokenCategory).toBeUndefined()
 })
 
 test('every verdict carries its data slot and rule version', async () => {
@@ -104,13 +123,15 @@ test('every verdict carries its data slot and rule version', async () => {
   expect(v.ruleVersion).toBe(AT.ruleVersion)
 })
 
-test('token category is cached per mint, and "unknown" is never cached', () => {
+test('every category Jev chooses is cached per mint, including "other"', () => {
   forgetCategories()
   expect(cachedCategory(MINT)).toBeUndefined()
-  rememberCategory(MINT, 'meme')
-  expect(cachedCategory(MINT)).toBe('meme')
-  // Caching "unknown" forever would pin a token we simply had no text for at the time.
-  const other = 'So11111111111111111111111111111111111111112'
-  rememberCategory(other, 'unknown')
-  expect(cachedCategory(other)).toBeUndefined()
+  rememberCategory(MINT, 'memecoin')
+  expect(cachedCategory(MINT)).toBe('memecoin')
+  // 'other' is a decision, not a shrug: its criterion is "a real token that none of the 5 above
+  // describe", and the shrug has no name at all any more. So it caches like the other 5, which is
+  // what "decided once and cached for all users" means with 0 exceptions to remember.
+  const sol = 'So11111111111111111111111111111111111111112'
+  rememberCategory(sol, 'other')
+  expect(cachedCategory(sol)).toBe('other')
 })
