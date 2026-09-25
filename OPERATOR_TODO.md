@@ -7,6 +7,10 @@ licence. An agent that hits one of these writes the `OP-N` entry here, sets its 
 **Never fake a credential, a verification or a measurement to look done.** A blocked task with
 an honest `OP-N` is worth more than a green row with nothing behind it.
 
+Stars in front of an item mean it was still blocking work when the board was last swept, and
+one more is added each sweep, so the count says how often it has been asked for. The number of
+tasks waiting is on the item itself: if the two ever disagree, the waiting count wins.
+
 Entry format, and every entry says which task it unblocks:
 
 ```
@@ -24,7 +28,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 
 ---
 
-### OP-19, Fund a throwaway devnet keypair
+### ** OP-19, Fund a throwaway devnet keypair
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-26, so F5 has a result before CP1 on 2026-09-27
@@ -53,7 +57,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Why it cannot wait: F5 is existential. If the cap does not hold on-chain, CP1 decides whether
   Agon ships read-only, and that decision needs the measurement rather than an opinion.
 
-### OP-23, Pick 2 real trader wallets, and verify 50 rows by hand
+### * OP-23, Pick 2 real trader wallets, and verify 50 rows by hand
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-26, so F1 has a result before CP1 on 2026-09-27
@@ -73,7 +77,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: `spikes/F1/result.json` shows 50 of 50 classified correctly on each of 2 wallets,
   amounts exact to base units, with the coverage share recorded per wallet.
 
-### OP-1, Everyone trades from their test wallet, daily
+### * OP-1, Everyone trades from their test wallet, daily
 - Status: open
 - Owner: all, D coordinates
 - Needed by: starts 2026-09-24, 20+ closed trades per wallet by CP2 (2026-10-02)
@@ -95,7 +99,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Why it cannot wait: only time produces history. Monad's demo wallet had its whole history in
   one 3-hour window, which broke its period filters (T8.8, T8.9).
 
-### OP-2, Helius plan and credit budget
+### * OP-2, Helius plan and credit budget
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-25 for F1 and F2; before CP4 for the F8 index
@@ -110,7 +114,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: 3 separate keys exist, and the 3 credit budgets are written in `docs/plans/budget.md`
   with the cost per report calculated.
 
-### OP-3, Jupiter Portal API key
+### * OP-3, Jupiter Portal API key
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-26
@@ -132,7 +136,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: the key is in the hosted env and a nightly-only CI secret, and a 20-quote burst does
   not rate-limit.
 
-### OP-4, Decide where Jev comes from, and confirm rate limits
+### * OP-4, Decide where Jev comes from, and confirm rate limits
 - Status: open
 - Owner: <unassigned>
 - Needed by: CP1, 2026-09-27
@@ -154,7 +158,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: one provider is named in `docs/plans/decisions.md`, the rate limit is written down,
   and a 200-call run completes without a 429.
 
-### OP-5, Fund the mainnet team test wallets
+### * OP-5, Fund the mainnet team test wallets
 - Status: open
 - Owner: <unassigned>
 - Needed by: after T-D04 passes, before F6 on mainnet
@@ -166,7 +170,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   the pre-mainnet checklist box is ticked with a link.
 - Hard rule: do not fund anything until T-D04 has all 8 boxes ticked and 2 sign-offs.
 
-### OP-6, Neon Postgres
+### * OP-6, Neon Postgres
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-29
@@ -176,7 +180,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: the hosted app reads and writes one row, and a PR gets its own branch or CI skips
   the database tests cleanly.
 
-### OP-7, Create both GitHub repos and their tokens
+### * OP-7, Create both GitHub repos and their tokens
 - Status: open
 - Owner: B
 - Needed by: 2026-09-24
@@ -190,7 +194,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: a claim push to `dev` succeeds, a code push straight to `dev` is rejected by the
   `board` job, and a `release-*` tag reaches the public repo.
 
-### OP-8, Recruit the beta cohort
+### * OP-8, Recruit the beta cohort
 - Status: open
 - Owner: E
 - Needed by: 10 to 20 users by CP3 (2026-10-08); 50+ by CP6
@@ -202,7 +206,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   rule right about you?".
 - Why it cannot wait: recruiting is the slowest part of CP3, and CP3 has a 70% gate on it.
 
-### OP-9, Pin the LLM-guard baseline model
+### * OP-9, Pin the LLM-guard baseline model
 - Status: open
 - Owner: B
 - Needed by: CP2, 2026-10-02
@@ -214,7 +218,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: the model id, its version and the benchmark agent are written in
   `benchmark/arms/README.md` and referenced by the published headline.
 
-### OP-10, Name the team leader
+### * OP-10, Name the team leader
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-10-08
@@ -223,7 +227,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   it before submission.
 - Done when: the name is in `docs/plans/submission-wf.md`.
 
-### OP-11, Get the beta terms reviewed
+### * OP-11, Get the beta terms reviewed
 - Status: open
 - Owner: <unassigned>
 - Needed by: before any mainnet user, so after 2026-10-12
@@ -234,7 +238,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   due-diligence question (rules s.13).
 - Done when: a named reviewer has signed off and `docs/public/beta-terms.md` is published.
 
-### OP-12, Confirm the two-hackathon extension and the fall criteria
+### * OP-12, Confirm the two-hackathon extension and the fall criteria
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-10-12
@@ -247,7 +251,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: a written answer exists, with the person and the channel recorded. The current
   Decisions-log entry is marked unverified until then.
 
-### OP-13, Decide the licence
+### * OP-13, Decide the licence
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-26
@@ -290,7 +294,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: a second name is on Track E and at least 2 of the 6 jobs have moved to them in
   `TASKS.md`.
 
-### OP-17, Hosting project and the 3 environments
+### * OP-17, Hosting project and the 3 environments
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-26, before T-E03 puts anything on staging
@@ -310,7 +314,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: 1 PR shows a preview URL, a merge to `dev` updates staging, and a `release-*` tag
   updates production, with 3 separate key sets and 0 shared between environments.
 
-### OP-18, Put the waitlist somewhere, and give it an inbox
+### * OP-18, Put the waitlist somewhere, and give it an inbox
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-24, the same day, because recruiting is the slowest part of CP3
@@ -327,7 +331,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   arrives at an address someone on the team actually checked, and the URL is in T-E02's `Evidence:`
   line.
 
-### OP-20, CP1 decision: Jupiter is not on devnet, so F5 cases (a), (b) and (e) cannot run there
+### * OP-20, CP1 decision: Jupiter is not on devnet, so F5 cases (a), (b) and (e) cannot run there
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-27, CP1, because F5 is the gate on the arming UI
