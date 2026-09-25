@@ -7,6 +7,10 @@ licence. An agent that hits one of these writes the `OP-N` entry here, sets its 
 **Never fake a credential, a verification or a measurement to look done.** A blocked task with
 an honest `OP-N` is worth more than a green row with nothing behind it.
 
+Stars in front of an item mean it was still blocking work when the board was last swept, and
+one more is added each sweep, so the count says how often it has been asked for. The number of
+tasks waiting is on the item itself: if the two ever disagree, the waiting count wins.
+
 Entry format, and every entry says which task it unblocks:
 
 ```
@@ -24,7 +28,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 
 ---
 
-### OP-19, Fund a throwaway devnet keypair
+### ** OP-19, Fund a throwaway devnet keypair
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-26, so F5 has a result before CP1 on 2026-09-27
@@ -53,7 +57,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Why it cannot wait: F5 is existential. If the cap does not hold on-chain, CP1 decides whether
   Agon ships read-only, and that decision needs the measurement rather than an opinion.
 
-### OP-23, Pick 2 real trader wallets, and verify 50 rows by hand
+### * OP-23, Pick 2 real trader wallets, and verify 50 rows by hand
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-26, so F1 has a result before CP1 on 2026-09-27
@@ -73,7 +77,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: `spikes/F1/result.json` shows 50 of 50 classified correctly on each of 2 wallets,
   amounts exact to base units, with the coverage share recorded per wallet.
 
-### OP-1, Everyone trades from their test wallet, daily
+### * OP-1, Everyone trades from their test wallet, daily
 - Status: open
 - Owner: all, D coordinates
 - Needed by: starts 2026-09-24, 20+ closed trades per wallet by CP2 (2026-10-02)
@@ -95,7 +99,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Why it cannot wait: only time produces history. Monad's demo wallet had its whole history in
   one 3-hour window, which broke its period filters (T8.8, T8.9).
 
-### OP-2, Helius plan and credit budget
+### * OP-2, Helius plan and credit budget
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-25 for F1 and F2; before CP4 for the F8 index
@@ -110,7 +114,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: 3 separate keys exist, and the 3 credit budgets are written in `docs/plans/budget.md`
   with the cost per report calculated.
 
-### OP-3, Jupiter Portal API key
+### * OP-3, Jupiter Portal API key
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-26
@@ -132,7 +136,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: the key is in the hosted env and a nightly-only CI secret, and a 20-quote burst does
   not rate-limit.
 
-### OP-4, Decide where Jev comes from, and confirm rate limits
+### * OP-4, Decide where Jev comes from, and confirm rate limits
 - Status: open
 - Owner: <unassigned>
 - Needed by: CP1, 2026-09-27
@@ -154,7 +158,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: one provider is named in `docs/plans/decisions.md`, the rate limit is written down,
   and a 200-call run completes without a 429.
 
-### OP-5, Fund the mainnet team test wallets
+### * OP-5, Fund the mainnet team test wallets
 - Status: open
 - Owner: <unassigned>
 - Needed by: after T-D04 passes, before F6 on mainnet
@@ -166,7 +170,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   the pre-mainnet checklist box is ticked with a link.
 - Hard rule: do not fund anything until T-D04 has all 8 boxes ticked and 2 sign-offs.
 
-### OP-6, Neon Postgres
+### * OP-6, Neon Postgres
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-29
@@ -176,7 +180,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: the hosted app reads and writes one row, and a PR gets its own branch or CI skips
   the database tests cleanly.
 
-### OP-7, Create both GitHub repos and their tokens
+### * OP-7, Create both GitHub repos and their tokens
 - Status: open
 - Owner: B
 - Needed by: 2026-09-24
@@ -190,7 +194,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: a claim push to `dev` succeeds, a code push straight to `dev` is rejected by the
   `board` job, and a `release-*` tag reaches the public repo.
 
-### OP-8, Recruit the beta cohort
+### * OP-8, Recruit the beta cohort
 - Status: open
 - Owner: E
 - Needed by: 10 to 20 users by CP3 (2026-10-08); 50+ by CP6
@@ -202,7 +206,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   rule right about you?".
 - Why it cannot wait: recruiting is the slowest part of CP3, and CP3 has a 70% gate on it.
 
-### OP-9, Pin the LLM-guard baseline model
+### * OP-9, Pin the LLM-guard baseline model
 - Status: open
 - Owner: B
 - Needed by: CP2, 2026-10-02
@@ -214,7 +218,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: the model id, its version and the benchmark agent are written in
   `benchmark/arms/README.md` and referenced by the published headline.
 
-### OP-10, Name the team leader
+### * OP-10, Name the team leader
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-10-08
@@ -223,7 +227,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   it before submission.
 - Done when: the name is in `docs/plans/submission-wf.md`.
 
-### OP-11, Get the beta terms reviewed
+### * OP-11, Get the beta terms reviewed
 - Status: open
 - Owner: <unassigned>
 - Needed by: before any mainnet user, so after 2026-10-12
@@ -234,7 +238,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   due-diligence question (rules s.13).
 - Done when: a named reviewer has signed off and `docs/public/beta-terms.md` is published.
 
-### OP-12, Confirm the two-hackathon extension and the fall criteria
+### * OP-12, Confirm the two-hackathon extension and the fall criteria
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-10-12
@@ -247,7 +251,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: a written answer exists, with the person and the channel recorded. The current
   Decisions-log entry is marked unverified until then.
 
-### OP-13, Decide the licence
+### * OP-13, Decide the licence
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-26
@@ -257,7 +261,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: `LICENSE` is committed and the README states it.
 
 ### OP-14, Search for a project that already does this
-- Status: open
+- Status: done 2026-09-25: searched, the claim holds and the wording is tightened in docs/plans/novelty.md. Nearest miss is SENTINEL, which derives from history and enforces on-chain but for an x402 agent's own runtime spending on Algorand, not a trader's swaps. Colosseum's own directory and Copilot need an account and were NOT searched, so the PRD's 2,992-entry figure is still unverified by a second pair of eyes
 - Owner: <unassigned>
 - Needed by: 2026-09-27
 - Unblocks: the Novelty claim in the pitch, T-J01, T-J03
@@ -290,10 +294,19 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: a second name is on Track E and at least 2 of the 6 jobs have moved to them in
   `TASKS.md`.
 
-### OP-17, Hosting project and the 3 environments
+### * OP-17, Hosting project and the 3 environments
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-26, before T-E03 puts anything on staging
+- Done, the agent-facing third: https://agon-dev.onrender.com/mcp is live, deployed from the
+  Dockerfile on `dev`, 0 environment variables set. Verified end to end on 2026-09-25: health in
+  0.68s, initialize returns the 2,052 character instructions, tools/list returns the stable 4,
+  check_trade answers block with "12.4x your median size of 0.162 SOL, past your 2x limit" stamped
+  check-trade/1+mint-check/1 at slot 450115322, arm_rule refuses through isError, get_report
+  carries FIXTURE_NOTE, and an unrecorded wallet is refused rather than approved. It holds no key,
+  because the image defaults to AGON_NET_MODE=replay, so there is nothing on it to rotate and
+  nothing a caller can spend. The 2 remaining thirds of this row, the web app and the per
+  environment keys, still need everything below.
 - Ready for you: the MCP server is now a built and run image. `docker build -t agon-mcp .` then
   `docker run -p 8787:8787 agon-mcp` answers a real check_trade verdict with 0 keys set, because
   it defaults to AGON_NET_MODE=replay and ships no credential. Any host that builds a Dockerfile
@@ -310,7 +323,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: 1 PR shows a preview URL, a merge to `dev` updates staging, and a `release-*` tag
   updates production, with 3 separate key sets and 0 shared between environments.
 
-### OP-18, Put the waitlist somewhere, and give it an inbox
+### * OP-18, Put the waitlist somewhere, and give it an inbox
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-24, the same day, because recruiting is the slowest part of CP3
@@ -327,7 +340,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   arrives at an address someone on the team actually checked, and the URL is in T-E02's `Evidence:`
   line.
 
-### OP-20, CP1 decision: Jupiter is not on devnet, so F5 cases (a), (b) and (e) cannot run there
+### * OP-20, CP1 decision: Jupiter is not on devnet, so F5 cases (a), (b) and (e) cannot run there
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-27, CP1, because F5 is the gate on the arming UI
@@ -441,6 +454,44 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   person should either reword CLAUDE.md to say "the trading guard asks Jev only 3 questions" or say
   T-B08 does not get an exception.
 - Done when: CLAUDE.md's wording and TASKS.md's T-B08 row agree, in either direction.
+
+### OP-25, Two frozen contracts cannot say "refused" or "not applicable"
+- Status: open
+- Owner: <unassigned>
+- Needed by: CP2, 2026-10-02
+- Unblocks: T-C07's remaining review findings, and any client that has to act on a verdict
+- What exactly: an outside agent tested the deployed MCP server and raised 4 findings. 1 was a
+  marker gap and is fixed. The other 3 all landed on the same thing, which is more useful than any
+  of them alone: **the frozen contracts have no way to express a refusal or a check that did not
+  run.** Two changes, both needing the owners of both sides plus fixtures in the same commit.
+
+  1. **`Reason` has no tag.** `packages/core/src/check-trade.ts`, `Reason` is
+     `{rule, message, observed?, limit?, unit?}`. `quote-missing` and `text-not-screened` fire on
+     every single call regardless of the trade, so the reasons that actually depend on the trade
+     are buried among ones that never vary. Severity already exists inside the guard
+     (`packages/guard/src/check-trade.ts`, sorted block then unsure then note) and is mapped away
+     at the boundary before `CheckTradeOutput.parse`, so the information is computed and then
+     discarded. A client cannot tell which reason caused the verdict. Adding a tag or carrying
+     severity through is the smaller half of this row and the higher leverage: it makes every
+     other output legible before anything else is built on top.
+
+  2. **`ArmedRule` can only describe a rule that exists.** `packages/core/src/rule.ts`, it requires
+     a non-empty `swigRole.roleId`. So `arm_rule` cannot return a refusal in its success shape
+     without inventing an on-chain claim, which is the one thing that path refuses to do, and the
+     refusal goes out as `isError: true` instead. That is correct today and it is why naive clients
+     log a policy denial as a failure. Contrast `check_trade`, which returns `block` with
+     `isError: false` because its contract has a `Verdict` field that can say no. The fix is a
+     union, roughly `{armed: ArmedRule} | {refused: {code, spec, message}}`, so a refusal is
+     expressible without claiming anything exists.
+
+  Budget note, because this row has a gate of its own: `check_trade` is measured at 319 tokens of
+  400 with the fixture marker attached, and T-C13 is already tracking an 8-reason verdict at 452.
+  A new field on every reason needs a measured answer or it fails that gate.
+- Done when: both sides have agreed each change, the examples under `fixtures/contracts/` change in
+  the same commit, and the `check_trade` token budget is re-measured and still passes.
+- Why it cannot wait: it is cheap now and expensive later. Every client written against the
+  current shape has to change when these do, and the first outside agent to use the server hit
+  both inside an hour.
 
 ### OP-26, Decided: execution mode is the user's choice, and the stack does not fork
 - Status: decided 2026-09-25 by Jishnu, recorded here because the PRD Decisions log is outside

@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 import { TOOLS } from '@agon/core'
-import { reportRoute } from '@agon/web'
+import { FIXTURE_NOTE, reportRoute } from '@agon/web'
 import { callAsTool, callTool, isTool } from './index.js'
 import { textOf } from './test-support.js'
 
@@ -22,10 +22,18 @@ const SPEC = {
 // up on the stripped tree, which is the kind of thing T-E03 exists to find on day 2.
 
 test('get_report gives the agent and the web app the same answer, because it is one function', async () => {
-  const overHttp = await (
+  // Compared without the fixture marker, because the marker is not part of the answer and cannot
+  // be. `Report` is a plain `z.object`, so zod strips any key the contract does not declare: a note
+  // added inside `report()` is silently discarded by `Report.parse`. Each surface therefore attaches
+  // the shared constant itself, after parsing, and the thing that has to match across surfaces is
+  // what is left when you take it off. T-E13.
+  const overHttp = (await (
     await reportRoute(new Request(`https://x/api/report?wallet=${WALLET}`))
-  ).json()
-  expect(await callTool('get_report', { wallet: WALLET })).toEqual(overHttp)
+  ).json()) as Record<string, unknown>
+  const { note, ...answer } = overHttp
+  expect(await callTool('get_report', { wallet: WALLET })).toEqual(answer)
+  // And the marker is there, so this test can never pass by both sides losing it.
+  expect(note).toBe(FIXTURE_NOTE)
 })
 
 test('check_trade is the real guard now, and answers from the wallet own history', async () => {
