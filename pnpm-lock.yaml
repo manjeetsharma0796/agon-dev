@@ -55,6 +55,18 @@ importers:
       '@agon/chain':
         specifier: workspace:*
         version: link:../chain
+      '@agon/core':
+        specifier: workspace:*
+        version: link:../core
+      '@agon/decoder':
+        specifier: workspace:*
+        version: link:../decoder
+      '@agon/guard':
+        specifier: workspace:*
+        version: link:../guard
+      '@agon/miner':
+        specifier: workspace:*
+        version: link:../miner
 
   packages/core:
     dependencies:

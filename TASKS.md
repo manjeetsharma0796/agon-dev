@@ -170,7 +170,7 @@ agents can hold one each with no coordination beyond this file.
 | Wave | When | Parallel-safe set |
 |---|---|---|
 | P0 | Day 1, 09-24 | T-B01 **first, alone**; then T-C01, T-B02, T-C02, T-C03, T-E01, T-E02 |
-| P1 | 09-25 to CP1 | A: T-A01, T-F01a. B: T-B03. C: T-C04, T-F03, T-C05, T-F11a. D: T-D01, T-F05a, T-F05b, T-F06a. E: T-E03 |
+| P1 | 09-25 to CP1 | A: T-A01, T-F01a. B: T-B03, T-B10. C: T-C04, T-F03, T-C05, T-F11a. D: T-D01, T-F05a, T-F05b, T-F06a. E: T-E03 |
 | P2 | CP1 to CP2 | A: T-A02, T-A03, T-A04, T-F01b, T-F02. B: T-F09, T-B04, T-B08. C: T-C06, T-C07, T-C08, T-F04, T-F11b. D: T-D02, T-D03, T-F05c, T-F06b, T-F07. E: T-E04, T-E05, T-E10, T-E12 |
 | P3 | CP2 to CP3 | B: T-B05. C: T-C09. D: T-D04. E: T-E06, T-E07, T-E08, T-E09 |
 | P4 | CP3 to 10-11 | T-J01, T-J02, T-J03 |
@@ -324,7 +324,7 @@ and latency (a, b).
 - Kill criterion: none. Monad's worst bugs only appeared end to end (T1.7, T6.8)
 
 ### T-A01, Balance-change decoder
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-a01-decoder
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/23
 - Depends-on: T-C01, T-C02
 - Touches: packages/decoder/src/
 - Serves: Functionality (judged) ; F1
@@ -343,7 +343,7 @@ and latency (a, b).
 - Kill criterion: none, F1 is existential
 
 ### T-F01a, F1 spike on 2 wallets, for CP1
-- Status: blocked, see OP-20
+- Status: blocked, see OP-23
 - Depends-on: T-A01
 - Touches: spikes/F1/, scripts/board.mjs
 - Serves: Functionality (judged) ; CP1 gate
@@ -402,7 +402,7 @@ and latency (a, b).
 - Kill criterion: RugCheck stays optional either way; a miss on the 20 is a bug to fix, not a scope cut
 
 ### T-C05, Jev client, question schema and the injection screen
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-c05-jev
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/27
 - Depends-on: T-C01, T-C02
 - Touches: packages/guard/src/jev/
 - Serves: Novelty (judged) ; F11
@@ -433,7 +433,7 @@ and latency (a, b).
 - Kill criterion: fallback is an LLM guard with a stricter threshold, or Kev-0.5B locally
 
 ### T-D01, Swig role creation and removal in packages/chain
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-d01-swig-role
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/39
 - Depends-on: T-C01
 - Touches: packages/chain/src/swig/
 - Serves: Novelty (judged) ; F5
@@ -510,7 +510,7 @@ and latency (a, b).
 - Kill criterion: fallback is our local daemon polling price and executing through Swig, and the UI must then say "runs while your computer is on". The pitch loses 24/7 execution
 
 ### T-B03, Benchmark harness on a pinned mainnet fork
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-b03-harness
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/15
 - Depends-on: T-B01, T-E01
 - Touches: benchmark/runner/, benchmark/arms/
 - Serves: Functionality (judged) ; F9
@@ -521,6 +521,23 @@ and latency (a, b).
 - Evidence: <PR link, plus 2 runs with identical verdicts>
 - Kill criterion: fallback is publishing only the deterministic half (guardrail verdicts on fixed trades) and dropping the live-agent comparison
 
+### T-B10, Clear the parked operator ids out of published source
+- Status: open
+- Depends-on: T-B02
+- Touches: packages/core/src/net/index.ts, packages/core/src/net/record.ts, scripts/release.test.mjs
+- Note: these 3 files sit inside T-C02's and T-B02's `Touches:`, and both rows are blocked on a
+  human, so neither can move while every release is refused. This row is deliberately narrower
+  than either: 5 prose references and 2 `KNOWN` lines, 0 behaviour. It ends when they are gone.
+- Serves: Open source (judged) ; the release gate, red on dev today
+- Acceptance: `node scripts/release.mjs --out <dir>` then `--check <dir>` reports 0 of 6 internal
+  markers, against 2 reported today which stand for 5 live references across 2 files, because the
+  checker reports the first hit per file; the 2 `KNOWN` entries in `scripts/release.test.mjs` go in
+  the same commit, leaving 0 parked markers in the ratchet; `pnpm gates` exits 0; 0 numbers, 0
+  thresholds and 0 behaviour change, so the whole diff is comments plus 1 printed line
+- Evidence: <PR link, with the --check output before and after>
+- Kill criterion: none. Every release is refused until this lands, so there is nothing to fall back
+  to
+
 ---
 
 # P2, CP1 to CP2 (2026-10-02)
@@ -529,7 +546,7 @@ CP2 evidence required: F1 and F2 complete; F4; F5 in simulation; F6 on mainnet (
 F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, d, e).
 
 ### T-A02, FIFO P&L ledger
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-a02-fifo-quote-queues
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/64
 - Depends-on: T-A01
 - Touches: packages/decoder/src/pnl.ts
 - Serves: Functionality (judged) ; F1
@@ -629,7 +646,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none. monad rebuilt full history on every request (T3.6) and switching later was a rewrite
 
 ### T-C06, check_trade guard, arithmetic first
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-c06-check-trade
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/77 | Owner: Jishnu | Branch: feature/t-c06-check-trade
 - Depends-on: T-C04, T-C05, T-A03
 - Touches: packages/guard/src/check-trade.ts
 - Serves: Functionality (judged) ; F4
@@ -639,7 +656,16 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   call (1 account batch, 1 quote, 1 Jev call), asserted by a counting wrapper in tests; every
   verdict names the rule and the number ("4.1x your median size of 0.8 SOL") and is stamped with
   its data slot and rule version; response stays inside the 400-token budget on the golden wallets
-- Evidence: <PR link, plus the network-count and token-budget tests>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/77, with the counting wrapper in
+  packages/guard/src/check-trade.budget.test.ts (3 calls, 0 of them the guard's) and the budget in
+  packages/guard/src/check-trade.token.test.ts. Measured: 5 of 5 numeric checks arithmetic, 2 of 4
+  of F4's scripted trade kinds resolved with 0 model answers, 3 network calls, 395 tokens worst
+  case against 400. Golden wallets do not exist yet, so the budget is measured on worst cases
+- Finding: the worst case verdict was 417 tokens against the 400 budget, 4.3% over, and fits at 395
+  only after this file's own 4 messages lost 88 characters. 621 of those 1,578 characters, 39%, are
+  3 mint-check messages T-C06 does not own, so the guard controls about 61% of its own budget.
+  Separately, the 6 token categories the PRD freezes and the 6 T-C05 shipped share 0 names, and
+  style fit is arithmetic keyed on exactly those names
 - Kill criterion: none, a failure here is a bug and not a feasibility problem
 
 ### T-F04, F4 spike, 20 scripted verdicts
@@ -743,7 +769,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: fallback is no automatic expiry, a short recurring window instead, and the UI says "no end date: revoke from your wallet". Never fall back to giving the agent admin rights
 
 ### T-F07, F7 spike, pre-signed expiry
-- Status: open
+- Status: blocked, see OP-19
 - Depends-on: T-D02
 - Touches: spikes/F07/
 - Serves: UX (judged) ; CP2 gate
@@ -751,11 +777,29 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   answer; then the pre-signed removal lands after expiry and the next agent transaction fails; an
   earlier manual revoke still works and leaves the pre-signed transaction harmless; the agent key
   held `manageAuthority` in 0 of the runs
-- Evidence: <spikes/F07/result.json at a commit>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/83, spikes/F7/result.json, 7 of 7 SDK
+  checks. Clauses 2 to 4 need a funded devnet key, see OP-19.
+- Finding: Swig already has a native expiry, and T-D02 may not be needed. `@swig-wallet/lib`
+  defines a session based authority carrying `expirySlot` and `maxDuration`, created for a separate
+  key with `createSession({ roleId, newSessionKey, sessionDuration })`. So the shape Agon wants
+  exists in the program: give the agent a session key rather than an authority of its own, and when
+  the session expires it simply cannot sign. No pre-signed transaction, no durable nonce, no daemon
+  that has to be running at the right moment, and no bearer instrument to steal. The reason nobody
+  saw it is that the wrapper hides it: `@swig-wallet/classic`, which packages/chain imports and
+  which T-D01 and T-D02 were written against, exposes no expiry concept at all and its Actions
+  builder has 26 permission methods with no expiry among them. Checking only the wrapper is exactly
+  how a team concludes there is no native expiry and builds one, which is what happened, and it is
+  why this acceptance line says to check the protocol-level SDK first. The decisive follow-up is
+  whether a session key can renew itself, because a self renewing session is not an expiry: the SDK
+  says it cannot, since `getCreateSessionV1BaseAccountMetasWithAuthority` puts the authority in the
+  signer slot and the new session key is a parameter rather than a signer, but that is inference
+  from a type declaration and not proof from the program, and proving it needs devnet. 7 of 7 SDK
+  checks as expected against 2.1.0, versions recorded so a future release cannot quietly change the
+  answer.
 - Kill criterion: fallback is a short recurring window and no end date in the UI
 
 ### T-D03, Kill switch
-- Status: blocked, see OP-20
+- Status: blocked, see OP-19
 - Depends-on: T-D01
 - Touches: packages/chain/src/kill-switch.ts, packages/cli/src/commands/revoke.ts
 - Serves: UX (judged) ; Novelty (judged)
@@ -900,7 +944,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: share rate under 10% across 10+ reports at CP3, so it stops being a pitch line
 
 ### T-B08, Jev in our own dev workflow, a one-week trial
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-b08-jev-review
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/79, Branch: feature/t-b08-jev-review
 - Depends-on: T-B01, OP-4
 - Touches: scripts/jev-review.mjs, .github/workflows/board.yml, docs/plans/jev-trial.md
 - Serves: unblocks nothing; it is a measured bet on our own speed, kept or cut at CP2
@@ -919,11 +963,31 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   inside a session, because Claude writing a diff into a call costs more than Jev saves. Both
   candidate MCP servers are unofficial and would hold our TypeSafe key, so pin a commit and read
   the source before installing either.
-- Evidence: <docs/plans/jev-trial.md with the 4 measured numbers, plus the CP2 decision>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/79, docs/plans/jev-trial.md. Use (1)
+  only; uses (2) to (4) are not started, their bars stay open for whoever picks this up next
+- Finding: use (1)'s own bar, 38+/40 hits with 8 or fewer false flags on labelled past diffs, is
+  not measured: this environment has no JEV_API_KEY and OP-4 is still open. What was measured
+  without a key, 2026-09-24: 29 of this repo's 69 merged PRs are real `feature/*` work PRs with a
+  non-empty diff; the other 40 are `claim/*` and `board/*` housekeeping carrying no diff worth
+  measuring. Ground truth pulled from those 29 PRs' own "Second reviewer needed?" checkboxes: 3
+  money math, 4 transaction-building, 0 frozen contract, 11 cross-track docs, so the 40-diff set
+  this bar needs cannot come from `git log` alone, this repo's history alone supplies 0 of the 10
+  frozen-contract positives a balanced 40 would want. Second: `noul`, asked "is this urgent" on 3
+  texts outside this session, scored the real emergency lowest of the 3 at 0.0043, below "repaint
+  the kitchen next spring" at 0.0086, inverted rather than merely weak, a second and independent
+  reason (T-C05 found the first) this script uses `choice` and reads only `confidence`. Third: this
+  PR's own `/code-review` pass, run before any live measurement, caught the harness counting a hit
+  whenever anything was flagged on either side rather than the same category on both, which would
+  have let a money-math diff read as caught by a wrongly flagged transaction-building answer.
+  Fourth: pushing the `board.yml` wiring failed, this session's GitHub token carries `repo` scope
+  and not `workflow`; backed out, the 2 steps to paste in are documented, unapplied, in
+  docs/plans/jev-trial.md. Fifth: CLAUDE.md's "Jev answers only 3 non-numeric questions" line is
+  unqualified and this script asks 4 different ones about a diff, never a trade; written up as
+  OP-20 rather than decided quietly
 - Kill criterion: never used for anything numeric, for deciding a task is done, for approving a merge or deploy, or for anything touching keys or funds. A Jev answer is an input to a rule, never the rule itself. Any use that misses its bar is cut at CP2, not extended
 
 ### T-B09, Stop the CI gates over-firing
-- Status: claimed 2026-09-24 | Owner: manjeetsharma0796 | Branch: feature/t-b09-gate-overfiring
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/37
 - Depends-on: T-B01
 - Touches: .gitleaks.toml, .github/workflows/board.yml
 - Serves: Functionality (judged) ; unblocks T-A01 and T-E10, and every later PR carrying a fixture
@@ -936,7 +1000,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   which is worse than no gate
 
 ### T-E12, Build in public, weekly
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-e12-x-plan
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/13
 - Depends-on: T-B01
 - Touches: docs/plans/x-plan.md
 - Serves: Potential impact (judged) ; Business plan (judged) ; share rate
@@ -950,7 +1014,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none. It feeds 3 of the 6 judged criteria, and the rules do not restrict marketing or real users (rules s.8)
 
 ### T-E10, Failure-message catalogue
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-e10-messages
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/32
 - Depends-on: T-C01
 - Touches: packages/core/src/messages.ts
 - Serves: UX (judged)
@@ -1035,18 +1099,53 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 - Acceptance: installs, registers the MCP server with the user's assistants and starts the
   daemon in 1 command; cold start under 300 ms, asserted in CI; published to npm with
   provenance
-- Evidence: <npm package page, plus the cold-start number in CI>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/76 and the follow-up adding
+  `agon check`, which refuses a real trade with its numbers and exits 1, pasted in OP-22.
+  `agon report` runs the whole path on a real wallet: 100 transactions read, 77 of 80 swaps decoded at 96%, 28 closed trades,
+  3 rules mined, and it replays offline from a recorded fixture with 0 keys. The acceptance
+  itself is NOT met: npm publish and MCP registration need T-C07 and T-C08
+- Finding: the first end to end run threw immediately, and no isolated test could have caught
+  it. Helius has 2 transaction endpoints with different shapes: `getTransaction` returns
+  meta.preTokenBalances and postTokenBalances, and the enhanced endpoint, the only one that
+  pages a wallet's history, returns a flat signature and already-subtracted
+  accountData[].tokenBalanceChanges. Every decoder fixture was recorded in the first shape, so
+  every decoder test passed against a shape the product never fetches. Translated at the edge,
+  in the CLI's io layer, so the decoder stays single shaped and pure. Second finding, from the
+  same PR: the first file larger than 1 MB broke 2 shared gates at once. `scripts/board.mjs`
+  reads the PR diff through `execFileSync`, whose default maxBuffer is 1 MB, so hygiene died
+  with `spawnSync git ENOBUFS` and printed a megabyte of the diff instead of a reason. Raised
+  the buffer and said why in a comment. Separately the Helius enhanced response names token
+  accounts rather than owners, and gitleaks read 885 public base58 addresses as generic API
+  keys, so `tokenAccount`, `fromTokenAccount` and `toTokenAccount` join the match scoped
+  allowlist. Re-verified that a planted key in that same fixture still fails the scan
+- Finding 3: the slice only refuses once both halves are wired, and wiring them showed the guard
+  cannot say `pass` from the CLI at all today. With no quote and no injection screen, 2 of its 5
+  answers are "not read", and unscreened text is `unsure`, which is not a soft pass. That is the
+  contract behaving correctly and it means `agon check` is a refusal machine until the quote and
+  the screen are wired, which is worth knowing before a demo is built around a green verdict
 - Kill criterion: none, the MCP server is how any agent reaches the guard
 
 ### T-E08, Onboarding
-- Status: open
+- Status: blocked, see OP-8
 - Depends-on: T-C09, T-E04
 - Touches: apps/web/app/(onboarding)/, docs/public/quickstart.md
 - Serves: UX (judged)
 - Acceptance: a new user goes from the landing page to a report in 3 steps or fewer, measured
   on 5 beta users with 0 help from us; the quickstart and the MCP tool reference are in
   `docs/public/` so they reach the public repo
-- Evidence: <5 timed walkthroughs>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/88, 2 actions from landing to report.
+  The 5 timed walkthroughs need beta users, see OP-8.
+- Finding: there was no front door. `/` was a 404, because apps/web/app held api, report and
+  waitlist and no root page at all, so the landing page the acceptance measures from did not exist.
+  Worse, the public README already told a judge to "start with docs/public/quickstart.md", and
+  docs/public did not exist either, so the repo anybody clones opened with a dead link. Both are
+  now there and both reach the public tree, checked by running the release copy. Second: the MCP
+  tool reference is generated from the frozen contracts rather than written beside them. T-C01's
+  argument is 1 definition with 4 consumers proven by 1 shape change failing in all 4, and a
+  hand-written reference would be a fifth consumer that fails nowhere, still describing the old
+  shape, in the public repo, to the agent authors we want integrating. A test fails when the
+  committed file is stale. Third: the path is 2 actions and not 3, because the report reads the
+  address off the query string and starts itself, so arriving is not something the user does.
 - Kill criterion: none, UX is a judged criterion
 
 ### T-E09, Beta cohort, 10 to 20 read-only users
@@ -1133,7 +1232,7 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 - Kill criterion: fallback is poll-only triggers at 60 seconds, stated in the UI
 
 ### T-C11, Apply the CP1 decision: freezing is reported, seizure blocks
-- Status: claimed 2026-09-24 | Owner: manjeetsharma0796 | Branch: feature/t-c11-freeze-reports
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/68
 - Depends-on: T-C04, T-F03
 - Touches: packages/guard/src/mint-check.ts, packages/guard/src/mint-check.test.ts, spikes/F3/
 - Serves: Functionality (judged) ; CP1 decision on F3

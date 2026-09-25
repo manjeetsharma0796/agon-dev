@@ -31,3 +31,7 @@ spikes/*/snapshot.json
 # Hand written, and owned by other tasks. The comments in these carry the reasoning for each gate
 # and prettier would rewrap them.
 .github/
+
+# Agent worktrees are whole checkouts of this repo. Formatting them formats the same files twice
+# and fails the check on whatever another branch is mid-edit.
+.claude/worktrees/

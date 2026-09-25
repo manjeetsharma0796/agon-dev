@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import type { Report } from '@agon/core'
+import { useSearchParams } from 'next/navigation'
+import { Suspense, useCallback, useEffect, useState } from 'react'
+import type { Report as ReportShape } from '@agon/core'
 import { FIXTURE_NOTE } from '../../src/fixture-note.js'
 import {
   RULE_ANSWERS,
@@ -43,34 +44,55 @@ function Rows({ rows }: { rows: { label: string; value: string }[] }) {
   )
 }
 
+// useSearchParams has to sit inside a Suspense boundary or Next opts the whole route out of
+// static rendering at build time.
 export default function ReportPage() {
-  const [wallet, setWallet] = useState('')
-  const [report, setReport] = useState<Report | null>(null)
+  return (
+    <Suspense fallback={null}>
+      <Report />
+    </Suspense>
+  )
+}
+
+function Report() {
+  const fromLanding = useSearchParams().get('wallet') ?? ''
+  const [wallet, setWallet] = useState(fromLanding)
+  const [report, setReport] = useState<ReportShape | null>(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [answer, setAnswer] = useState<RuleAnswer | null>(null)
   const [answerNote, setAnswerNote] = useState('')
 
-  async function submit(event: React.FormEvent) {
-    event.preventDefault()
+  const load = useCallback(async (address: string) => {
     setError('')
     setReport(null)
     setAnswer(null)
     setAnswerNote('')
     setBusy(true)
     try {
-      const res = await fetch(`/api/report?wallet=${encodeURIComponent(wallet.trim())}`)
+      const res = await fetch(`/api/report?wallet=${encodeURIComponent(address.trim())}`)
       const body = await res.json()
       if (!res.ok) {
         setError(body.detail ?? body.error ?? `The report request came back ${res.status}.`)
         return
       }
-      setReport(body as Report)
+      setReport(body as ReportShape)
     } catch (cause) {
       setError(`The report request did not reach us (${(cause as Error).name}). Nothing was read.`)
     } finally {
       setBusy(false)
     }
+  }, [])
+
+  // Arriving from the landing page with an address already in hand is not a step the user takes,
+  // so the report starts itself. That is what keeps the path to a report at 2 actions.
+  useEffect(() => {
+    if (fromLanding !== '') void load(fromLanding)
+  }, [fromLanding, load])
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault()
+    await load(wallet)
   }
 
   async function answerQuestion(choice: RuleAnswer) {
