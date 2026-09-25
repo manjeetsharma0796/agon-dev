@@ -543,6 +543,15 @@ and latency (a, b).
 - Kill criterion: none. If the cap does not hold on-chain the custody story is gone, see T-F05a
 - Finding: two ways the cap reads as holding when it does not. (1) tokenSpendLimit returns the REMAINING allowance, not the configured cap, so a role whose window is spent reads 0 and assertAgentRoleShape throws "carries no spending limit"; kill-switch isAgentRole swallows that, planRevokeAll files the role under kept as "not ours to remove", and revokedMessage reports "No Agon roles were found". The emergency stop fails open on exactly the role that has been trading hardest, and Swig resets the window afterwards. (2) canUseProgram returns true unconditionally under ProgramAll, and the SDK silently appends programAll to any action set with no program action, so a stored role of programAll plus tokenRecurringLimit has count 2 and is ACCEPTED as "program = Jupiter". Also the approved cap AMOUNT is never compared to what the user signed, only that a limit exists, and the window is never checked beyond being positive. Fix is T-D06.
 ### T-F05a, F5 spike, 7 cases on a mainnet fork
+- Finding 4: on the fork the 6 scriptable cases fell through both of the runner's not-run tests
+  and were reported with an empty reason, which is the blank field the catalogue forbids. It read
+  as though each had been checked and produced no answer, when nothing had been checked at all.
+  Both historical blockers, funding and a missing Jupiter, are gone, so the remaining reason is the
+  case bodies. (c), (d) and (f) ask only whether Swig authorises an instruction and need no swap.
+  (a), (b) and (e) each need a real Jupiter swap that moves the capped mint, because a
+  `tokenRecurringLimit` is applied by comparing balances after the inner instructions run: a
+  synthetic instruction to Jupiter's id is rejected inside Jupiter before the limit is consulted,
+  and recording that as the cap holding measures the wrong thing
 - Finding 3: the platform works now and the cases are what is missing. On the fork the payer funds
   itself, both programs are present and executable, the agent role builds and passes
   `assertAgentRoleShape`, and the first transaction lands with a signature where the same
@@ -550,7 +559,7 @@ and latency (a, b).
   reason, because the case bodies were deliberately left unwritten while the platform was
   undecided. F5 is no longer blocked on a chain, a program or a faucet. It is blocked on code
   nobody has written, which is the first time that has been true
-- Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-f05a-fork-run
+- Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-f05a-case-reasons
 - Depends-on: T-D01
 - Touches: spikes/F5/, scripts/board.mjs
 - Serves: Novelty (judged) ; CP1 gate
