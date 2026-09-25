@@ -357,7 +357,7 @@ and latency (a, b).
 - Kill criterion: none, F1 is existential
 - Finding: the coverage number can lie. deltas() reads only meta.pre/postTokenBalances, and nothing in packages/ reads meta.pre/postBalances, so a swap paid in native SOL is invisible: the wSOL account is opened and closed inside the same transaction and appears in neither array. It returns not-a-swap "value only arrived the wallet", which carries no program id, is absent from unsupported, and is excluded from totalSwaps, so a wallet trading from native SOL reports 100% coverage while decoding none of its swaps. Two smaller ones: topProgram returns the first instruction with a programId, which on every real mainnet transaction is ComputeBudget, so all undecoded transactions collapse into one unsupported row named ComputeBudget; and decodeAll keeps only the first reason per program id. Fix is T-A07.
 ### T-A07, Decode swaps paid in native SOL
-- Status: open
+- Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-a07-native-sol
 - Depends-on: T-A01
 - Touches: packages/decoder/src/index.ts, packages/decoder/src/decoder.test.ts
 - Serves: Functionality (judged) ; F1 coverage share
@@ -394,7 +394,7 @@ and latency (a, b).
   medianSize and medianHoldSeconds required and not nullable, so a wallet with 0 closed trades has
   to report a median of 0, which reads as a measured fact rather than as nothing to measure. Needs
   its own task, because widening 2 fields to nullable moves every consumer of Metrics
-- Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-a06-coverage
+- Status: done
 - Depends-on: T-A01
 - Touches: packages/decoder/src/index.ts, packages/core/src/report.ts, packages/decoder/src/pnl.ts
 - Serves: Functionality (judged) ; F1 coverage share
