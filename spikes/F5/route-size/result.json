@@ -1,0 +1,394 @@
+{
+  "id": "F5b",
+  "pass": true,
+  "date": "2026-09-25",
+  "measured": "20 of 20 routes fit v1 inline with 0 lookup tables when asked to, against a bar of 18 of 20. Asked Jupiter's default way, 20 of 20 came back with lookup tables even though every one of them was already under the 64-account ceiling, so the tables were Jupiter's choice and not route complexity. Inline account totals ran 18 to 34, and inline bytes 811 to 1416.",
+  "thresholds": {
+    "v1MaxBytes": 4096,
+    "v1MaxAccounts": 64,
+    "routesFittingV1": 18
+  },
+  "note": "Routes are fetched live and not recorded, because real route complexity is the thing under test and a fixture would freeze it. This spike needs JUPITER_API_KEY and does not replay.",
+  "routes": [
+    {
+      "route": "0.1 SOL to USDC",
+      "jupiterDefault": {
+        "venues": 1,
+        "lookupTables": 1,
+        "accountsTotal": 19,
+        "serialisedBytes": 646,
+        "fitsV1Inline": false,
+        "withinLegacyBytes": true
+      },
+      "inline": {
+        "venues": 1,
+        "lookupTables": 0,
+        "accountsTotal": 18,
+        "serialisedBytes": 811,
+        "fitsV1Inline": true,
+        "withinLegacyBytes": true
+      }
+    },
+    {
+      "route": "1 SOL to USDC",
+      "jupiterDefault": {
+        "venues": 1,
+        "lookupTables": 1,
+        "accountsTotal": 18,
+        "serialisedBytes": 599,
+        "fitsV1Inline": false,
+        "withinLegacyBytes": true
+      },
+      "inline": {
+        "venues": 1,
+        "lookupTables": 0,
+        "accountsTotal": 20,
+        "serialisedBytes": 879,
+        "fitsV1Inline": true,
+        "withinLegacyBytes": true
+      }
+    },
+    {
+      "route": "10 SOL to USDC",
+      "jupiterDefault": {
+        "venues": 3,
+        "lookupTables": 3,
+        "accountsTotal": 28,
+        "serialisedBytes": 749,
+        "fitsV1Inline": false,
+        "withinLegacyBytes": true
+      },
+      "inline": {
+        "venues": 1,
+        "lookupTables": 0,
+        "accountsTotal": 19,
+        "serialisedBytes": 842,
+        "fitsV1Inline": true,
+        "withinLegacyBytes": true
+      }
+    },
+    {
+      "route": "100 SOL to USDC",
+      "jupiterDefault": {
+        "venues": 1,
+        "lookupTables": 1,
+        "accountsTotal": 18,
+        "serialisedBytes": 599,
+        "fitsV1Inline": false,
+        "withinLegacyBytes": true
+      },
+      "inline": {
+        "venues": 2,
+        "lookupTables": 0,
+        "accountsTotal": 23,
+        "serialisedBytes": 983,
+        "fitsV1Inline": true,
+        "withinLegacyBytes": true
+      }
+    },
+    {
+      "route": "0.1 SOL to USDT",
+      "jupiterDefault": {
+        "venues": 2,
+        "lookupTables": 2,
+        "accountsTotal": 31,
+        "serialisedBytes": 765,
+        "fitsV1Inline": false,
+        "withinLegacyBytes": true
+      },
+      "inline": {
+        "venues": 2,
+        "lookupTables": 0,
+        "accountsTotal": 27,
+        "serialisedBytes": 1118,
+        "fitsV1Inline": true,
+        "withinLegacyBytes": true
+      }
+    },
+    {
+      "route": "1 SOL to USDT",
+      "jupiterDefault": {
+        "venues": 2,
+        "lookupTables": 2,
+        "accountsTotal": 32,
+        "serialisedBytes": 765,
+        "fitsV1Inline": false,
+        "withinLegacyBytes": true
+      },
+      "inline": {
+        "venues": 2,
+        "lookupTables": 0,
+        "accountsTotal": 30,
+        "serialisedBytes": 1213,
+        "fitsV1Inline": true,
+        "withinLegacyBytes": true
+      }
+    },
+    {
+      "route": "10 SOL to USDT",
+      "jupiterDefault": {
+        "venues": 3,
+        "lookupTables": 3,
+        "accountsTotal": 37,
+        "serialisedBytes": 825,
+        "fitsV1Inline": false,
+        "withinLegacyBytes": true
+      },
+      "inline": {
+        "venues": 2,
+        "lookupTables": 0,
+        "accountsTotal": 26,
+        "serialisedBytes": 1087,
+        "fitsV1Inline": true,
+        "withinLegacyBytes": true
+      }
+    },
+    {
+      "route": "100 SOL to USDT",
+      "jupiterDefault": {
+        "venues": 4,
+        "lookupTables": 4,
+        "accountsTotal": 52,
+        "serialisedBytes": 1026,
+        "fitsV1Inline": false,
+        "withinLegacyBytes": true
+      },
+      "inline": {
+        "venues": 2,
+        "lookupTables": 0,
+        "accountsTotal": 29,
+        "serialisedBytes": 1181,
+        "fitsV1Inline": true,
+        "withinLegacyBytes": true
+      }
+    },
+    {
+      "route": "0.1 SOL to BONK",
+      "jupiterDefault": {
+        "venues": 2,
+        "lookupTables": 2,
+        "accountsTotal": 33,
+        "serialisedBytes": 779,
+        "fitsV1Inline": false,
+        "withinLegacyBytes": true
+      },
+      "inline": {
+        "venues": 1,
+        "lookupTables": 0,
+        "accountsTotal": 22,
+        "serialisedBytes": 956,
+        "fitsV1Inline": true,
+        "withinLegacyBytes": true
+      }
+    },
+    {
+      "route": "1 SOL to BONK",
+      "jupiterDefault": {
+        "venues": 3,
+        "lookupTables": 3,
+        "accountsTotal": 42,
+        "serialisedBytes": 938,
+        "fitsV1Inline": false,
+        "withinLegacyBytes": true
+      },
+      "inline": {
+        "venues": 1,
+        "lookupTables": 0,
+        "accountsTotal": 22,
+        "serialisedBytes": 956,
+        "fitsV1Inline": true,
+        "withinLegacyBytes": true
+      }
+    },
+    {
+      "route": "10 SOL to BONK",
+      "jupiterDefault": {
+        "venues": 4,
+        "lookupTables": 4,
+        "accountsTotal": 44,
+        "serialisedBytes": 1012,
+        "fitsV1Inline": false,
+        "withinLegacyBytes": true
+      },
+      "inline": {
+        "venues": 1,
+        "lookupTables": 0,
+        "accountsTotal": 22,
+        "serialisedBytes": 956,
+        "fitsV1Inline": true,
+        "withinLegacyBytes": true
+      }
+    },
+    {
+      "route": "100 SOL to BONK",
+      "jupiterDefault": {
+        "venues": 4,
+        "lookupTables": 4,
+        "accountsTotal": 49,
+        "serialisedBytes": 1094,
+        "fitsV1Inline": false,
+        "withinLegacyBytes": true
+      },
+      "inline": {
+        "venues": 1,
+        "lookupTables": 0,
+        "accountsTotal": 22,
+        "serialisedBytes": 956,
+        "fitsV1Inline": true,
+        "withinLegacyBytes": true
+      }
+    },
+    {
+      "route": "0.1 SOL to JUP",
+      "jupiterDefault": {
+        "venues": 2,
+        "lookupTables": 2,
+        "accountsTotal": 28,
+        "serialisedBytes": 764,
+        "fitsV1Inline": false,
+        "withinLegacyBytes": true
+      },
+      "inline": {
+        "venues": 2,
+        "lookupTables": 0,
+        "accountsTotal": 29,
+        "serialisedBytes": 1181,
+        "fitsV1Inline": true,
+        "withinLegacyBytes": true
+      }
+    },
+    {
+      "route": "1 SOL to JUP",
+      "jupiterDefault": {
+        "venues": 2,
+        "lookupTables": 2,
+        "accountsTotal": 29,
+        "serialisedBytes": 757,
+        "fitsV1Inline": false,
+        "withinLegacyBytes": true
+      },
+      "inline": {
+        "venues": 2,
+        "lookupTables": 0,
+        "accountsTotal": 34,
+        "serialisedBytes": 1416,
+        "fitsV1Inline": true,
+        "withinLegacyBytes": false
+      }
+    },
+    {
+      "route": "10 SOL to JUP",
+      "jupiterDefault": {
+        "venues": 2,
+        "lookupTables": 2,
+        "accountsTotal": 31,
+        "serialisedBytes": 825,
+        "fitsV1Inline": false,
+        "withinLegacyBytes": true
+      },
+      "inline": {
+        "venues": 1,
+        "lookupTables": 0,
+        "accountsTotal": 22,
+        "serialisedBytes": 956,
+        "fitsV1Inline": true,
+        "withinLegacyBytes": true
+      }
+    },
+    {
+      "route": "100 SOL to JUP",
+      "jupiterDefault": {
+        "venues": 3,
+        "lookupTables": 3,
+        "accountsTotal": 40,
+        "serialisedBytes": 1081,
+        "fitsV1Inline": false,
+        "withinLegacyBytes": true
+      },
+      "inline": {
+        "venues": 2,
+        "lookupTables": 0,
+        "accountsTotal": 31,
+        "serialisedBytes": 1317,
+        "fitsV1Inline": true,
+        "withinLegacyBytes": false
+      }
+    },
+    {
+      "route": "0.1 SOL to WIF",
+      "jupiterDefault": {
+        "venues": 2,
+        "lookupTables": 2,
+        "accountsTotal": 32,
+        "serialisedBytes": 917,
+        "fitsV1Inline": false,
+        "withinLegacyBytes": true
+      },
+      "inline": {
+        "venues": 1,
+        "lookupTables": 0,
+        "accountsTotal": 20,
+        "serialisedBytes": 876,
+        "fitsV1Inline": true,
+        "withinLegacyBytes": true
+      }
+    },
+    {
+      "route": "1 SOL to WIF",
+      "jupiterDefault": {
+        "venues": 1,
+        "lookupTables": 1,
+        "accountsTotal": 20,
+        "serialisedBytes": 664,
+        "fitsV1Inline": false,
+        "withinLegacyBytes": true
+      },
+      "inline": {
+        "venues": 1,
+        "lookupTables": 0,
+        "accountsTotal": 20,
+        "serialisedBytes": 876,
+        "fitsV1Inline": true,
+        "withinLegacyBytes": true
+      }
+    },
+    {
+      "route": "10 SOL to WIF",
+      "jupiterDefault": {
+        "venues": 4,
+        "lookupTables": 4,
+        "accountsTotal": 43,
+        "serialisedBytes": 1057,
+        "fitsV1Inline": false,
+        "withinLegacyBytes": true
+      },
+      "inline": {
+        "venues": 2,
+        "lookupTables": 0,
+        "accountsTotal": 25,
+        "serialisedBytes": 1037,
+        "fitsV1Inline": true,
+        "withinLegacyBytes": true
+      }
+    },
+    {
+      "route": "100 SOL to WIF",
+      "jupiterDefault": {
+        "venues": 2,
+        "lookupTables": 2,
+        "accountsTotal": 25,
+        "serialisedBytes": 704,
+        "fitsV1Inline": false,
+        "withinLegacyBytes": true
+      },
+      "inline": {
+        "venues": 2,
+        "lookupTables": 0,
+        "accountsTotal": 25,
+        "serialisedBytes": 1037,
+        "fitsV1Inline": true,
+        "withinLegacyBytes": true
+      }
+    }
+  ]
+}

@@ -615,7 +615,22 @@ and latency (a, b).
   owner BPFLoaderUpgradeable. 4.2 MB, committed for the same reason F9's 281 KB is
 
 ### T-F05b, F5 route size, 20 Jupiter routes against the v1 limit
-- Status: open
+- Evidence: spikes/F5/route-size/result.json. 20 of 20 routes fit v1 inline with 0 lookup tables,
+  against a bar of 18 of 20. Accounts 18 to 34 against a ceiling of 64, bytes 811 to 1416 against
+  4096, 0 routes over either. 5 mints from USDC to WIF at 0.1, 1, 10 and 100 SOL, 1 to 5 venues
+- Finding: the first run reported 0 of 20 and it was true and useless. Asked Jupiter's default way
+  every route came back with lookup tables, so nothing fit the inline bar. But every one of those
+  routes was already under the 64-account ceiling, which meant the tables were Jupiter's choice
+  rather than route complexity, and the spike had measured a default instead of a limit. Asking
+  with `asLegacyTransaction` returns the same route with every account inline and all 20 fit. The
+  number that answers this row is the second one, and the difference between them is the finding:
+  the constraint is a request parameter, not the market. Both are recorded per route so nobody has
+  to take that on trust
+- Second finding, from the same run: unpaced, 15 of the first 20 calls came back 429. Jupiter is 10
+  requests per 10 seconds on the tier OP-3 measured and this spike makes 2 calls per route, so it
+  rate-limits after the 5th. Paced at the 1100 ms `packages/core/src/net/record.ts` already uses,
+  0 of 40 calls failed. Reused rather than re-derived so there is 1 number to change if the tier does
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/127 | Owner: Jishnu | Branch: feature/t-f05b-route-size
 - Depends-on: T-D01, OP-3
 - Touches: spikes/F5/route-size/
 - Serves: Functionality (judged) ; CP1 gate
