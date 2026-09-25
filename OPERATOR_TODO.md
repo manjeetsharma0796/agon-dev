@@ -492,3 +492,34 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Why it cannot wait: it is cheap now and expensive later. Every client written against the
   current shape has to change when these do, and the first outside agent to use the server hit
   both inside an hour.
+
+### OP-26, Decided: execution mode is the user's choice, and the stack does not fork
+- Status: decided 2026-09-25 by Jishnu, recorded here because the PRD Decisions log is outside
+  this repo and Track C, D and E all build against it
+- Owner: <unassigned>, for copying into the PRD Decisions log
+- Needed by: now, it is already shaping T-C08, T-D06 and Track E
+- Unblocks: T-D06, and stops anyone building a second execution stack
+- What exactly: the question was whether Agon executes trades for the user or only advises them.
+  The answer is both, chosen per user. They can let the agent trade inside the cap, or keep the
+  key and trade themselves with the guard advising.
+
+  **The engineering consequence is the part worth writing down: the mode does not fork the
+  product.** Every mode runs the same `check_trade` over the same mined rules and the same mint
+  check. What changes is only who signs and when:
+
+  | mode | who signs | needs the agent key, Swig role, daemon, F5, F6, T-D04 |
+  | --- | --- | --- |
+  | agent trades, unattended | agent, under its capped role | yes, all of it |
+  | user reviews then signs | the user, from their own wallet | no |
+  | alerts only, user trades elsewhere | the user, outside Agon | no |
+
+  So there must be one guard, one rule miner and one verdict shape, with the signer swapped at the
+  edge. Two parallel execution stacks is the failure this row exists to prevent.
+
+  Two consequences nobody has costed yet. First, the user-signs path needs none of the on-chain
+  gates, so it is buildable today while F5 is failing, and it is the only path that is. Second,
+  the user-signs path does not exercise the capped revocable role, which is the novel claim, so
+  shipping only that path leaves Agon a trade screener. Both paths are wanted; the order they are
+  built in is a Track E call.
+- Done when: this is copied into the PRD Decisions log and Track E's screens name which mode they
+  are for.

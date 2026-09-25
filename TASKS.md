@@ -425,7 +425,7 @@ and latency (a, b).
 - Acceptance: on 2 wallets, 50 of 50 randomly sampled transactions classified correctly, amounts
   exact to base units, realised P&L within 1% of a hand-computed FIFO ledger; share of swaps
   decoded recorded per wallet, below 95% is a checkpoint finding and not a pass
-- Evidence: <spikes/F01/result.json at a commit>
+- Evidence: <spikes/F1/result.json at a commit>
 - Kill criterion: fallback is Jupiter-routed swaps only, with the covered share printed on the report ("based on 83% of your swaps")
 
 ### T-C04, Our own mint check
@@ -456,7 +456,7 @@ and latency (a, b).
 ### T-F03, F3 spike, token risk check on 30 labelled mints
 - Status: done
 - Depends-on: T-C04
-- Touches: spikes/F03/
+- Touches: spikes/F3/
 - Serves: Functionality (judged) ; CP1 gate
 - Acceptance: our own check flags all 20 dangerous mints (10 with live freeze or mint authority,
   10 Token-2022 with permanent delegate, transfer hook or transfer fee) and 0 of the 10 blue chips
@@ -564,24 +564,24 @@ and latency (a, b).
 ### T-F05b, F5 route size, 20 Jupiter routes against the v1 limit
 - Status: open
 - Depends-on: T-D01, OP-3
-- Touches: spikes/F05/route-size/
+- Touches: spikes/F5/route-size/
 - Serves: Functionality (judged) ; CP1 gate
 - Acceptance: 20 real Jupiter routes of increasing complexity wrapped in a Swig execute
   instruction; 18 or more of 20 fit the v1 limit (4,096 bytes, at most 64 accounts, all inline, no
   address lookup tables); the legacy 1,232-byte count is recorded for reference and is not a pass
   criterion
-- Evidence: <spikes/F05/route-size/result.json at a commit>
+- Evidence: <spikes/F5/route-size/result.json at a commit>
 - Kill criterion: fallback is lowering Jupiter `maxAccounts` until the route fits 64 inline accounts and measuring the price cost; a route still needing more than 64 accounts goes out as v0 with lookup tables inside 1,232 bytes
 
 ### T-F06a, F6 spike, Trigger order owned by a Swig wallet, in simulation
 - Status: open
 - Depends-on: T-D01, OP-3
-- Touches: spikes/F06/
+- Touches: spikes/F6/
 - Serves: Novelty (judged) ; CP1 gate
 - Acceptance: in mainnet simulation, a Trigger V2 order is created with the Swig wallet (a
   program-derived address) as owner, a cancel returns funds, and the vault deposit reduces the
   Swig allowance by exactly the deposit
-- Evidence: <spikes/F06/result.json at a commit>
+- Evidence: <spikes/F6/result.json at a commit>
 - Kill criterion: fallback is our local daemon polling price and executing through Swig, and the UI must then say "runs while your computer is on". The pitch loses 24/7 execution
 
 ### T-B03, Benchmark harness on a pinned mainnet fork
@@ -656,13 +656,13 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 ### T-F01b, F1 spike complete, 5 wallets
 - Status: open
 - Depends-on: T-A02, T-F01a, OP-1
-- Touches: spikes/F01/
+- Touches: spikes/F1/
 - Serves: Functionality (judged) ; CP2 gate
 - Acceptance: 3 team wallets plus 2 public wallets with 200+ swaps across at least 4 venues
   (Jupiter, Raydium, Orca, Meteora, pump.fun); 50 of 50 sampled transactions correct on every
   wallet, not on average; amounts exact to base units; P&L within 1% per wallet; every
   transaction either decoded or listed as unsupported with a named reason
-- Evidence: <spikes/F01/result.json at a commit>
+- Evidence: <spikes/F1/result.json at a commit>
 - Kill criterion: fallback is Jupiter-routed swaps only with the covered share printed on the report
 
 ### T-A03, Rule miner
@@ -697,14 +697,14 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 ### T-F02, F2 spike, planted rules and report timing
 - Status: open
 - Depends-on: T-A03, OP-1
-- Touches: spikes/F02/
+- Touches: spikes/F2/
 - Serves: Novelty (judged) ; CP2 gate
 - Acceptance: (a) on 20 trades exiting at an 8% loss plus 2 held to 20%+, the stop is found at 8%
   within 1 percentage point, exceptions counted as exactly 2 and their cost exact; (b) a
   random-exit ledger reports "no consistent stop rule"; (c) 2 runs on a real beta wallet give
   byte-identical output; a report for 2,000 transactions completes in 60 seconds or less including
   Helius pagination
-- Evidence: <spikes/F02/result.json at a commit>
+- Evidence: <spikes/F2/result.json at a commit>
 - Kill criterion: fallback is shipping only the metrics that passed, labelled "coming soon"
 
 ### T-A04, Incremental report store
@@ -746,13 +746,13 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 ### T-F04, F4 spike, 20 scripted verdicts
 - Status: open
 - Depends-on: T-C06
-- Touches: spikes/F04/
+- Touches: spikes/F4/
 - Serves: Functionality (judged) ; CP2 gate
 - Acceptance: 20 of 20 verdicts match the answers written down in advance (over usual size, past
   usual stop, new token outside the usual set, normal trade, and edge cases at exact thresholds);
   p95 latency 300 ms or less excluding the RugCheck call; each output names the rule and its
   number
-- Evidence: <spikes/F04/result.json at a commit>
+- Evidence: <spikes/F4/result.json at a commit>
 - Kill criterion: none needed, this is arithmetic
 
 ### T-F11b, F11 (c), (d) and (e), accuracy, adversarial and numeric routing
@@ -849,7 +849,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 ### T-F07, F7 spike, pre-signed expiry
 - Status: blocked, see OP-19
 - Depends-on: T-D02
-- Touches: spikes/F07/
+- Touches: spikes/F7/
 - Serves: UX (judged) ; CP2 gate
 - Acceptance: first check Swig's protocol-level SDK for a native expiry field and record the
   answer; then the pre-signed removal lands after expiry and the next agent transaction fails; an
@@ -907,32 +907,32 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 ### T-F05c, F5 spike in mainnet simulation
 - Status: open
 - Depends-on: T-F05a
-- Touches: spikes/F05/
+- Touches: spikes/F5/
 - Serves: Novelty (judged) ; CP2 gate
 - Acceptance: the same 7 cases pass against real mainnet accounts through `simulateTransaction`
   and a Surfpool mainnet fork, 0 unexpected successes; Swig rejects an over-cap swap and the
   user sees "This needs 3.2 SOL; 1.1 SOL left in this window, resets in about 4h 10m." with 0
   automatic retries at a smaller amount
-- Evidence: <spikes/F05/result.json at a commit>
+- Evidence: <spikes/F5/result.json at a commit>
 - Kill criterion: no fallback for the rejection cases. CP2 decides whether Agon ships read-only
 
 ### T-F06b, F6 spike on mainnet with $20 orders
 - Status: open
 - Depends-on: T-F06a, T-D04, OP-5
-- Touches: spikes/F06/
+- Touches: spikes/F6/
 - Serves: Novelty (judged) ; CP2 gate
 - Acceptance: with $20 per order, a stop order that should fill is filled by the keeper when the
   price condition is met, a take-profit that should not fill does not, proceeds return to the Swig
   wallet, a cancel returns funds, and the deposit reduces the Swig allowance by exactly the
   deposit; an unfilled order shows Jupiter's order status and the trigger price against the current
   price, and never says "executed" before it is
-- Evidence: <spikes/F06/result.json at a commit, plus the mainnet signatures>
+- Evidence: <spikes/F6/result.json at a commit, plus the mainnet signatures>
 - Kill criterion: fallback is the local daemon polling price, and the UI says "runs while your computer is on"
 
 ### T-F09, F9 spike, benchmark reproducibility
 - Status: done
 - Depends-on: T-B03
-- Touches: spikes/F09/
+- Touches: spikes/F9/
 - Serves: Functionality (judged) ; CP2 gate
 - Acceptance: run the benchmark twice from a clean checkout on a mainnet fork pinned to 1 slot;
   guardrail verdicts identical across runs; agent-side variance reported across at least 5 runs per
@@ -1423,12 +1423,12 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 ### T-F08, F8 spike, screener index
 - Status: open
 - Depends-on: T-A03, OP-2
-- Touches: spikes/F08/
+- Touches: spikes/F8/
 - Serves: Potential impact (judged) ; CP4 gate
 - Acceptance: seed 5,000 wallets with 50+ swaps in the last 90 days; full ingest in 24 hours or
   less within the Helius credit budget; rank correlation between the first and second half of each
   wallet's history of 0.5 or more; search p95 500 ms or less
-- Evidence: <spikes/F08/result.json at a commit>
+- Evidence: <spikes/F8/result.json at a commit>
 - Kill criterion: fallback is raw filters (hold time, size band, venues) with no consistency ranking, and the pitch drops the claim
 
 ### T-B06, Behavioural screener over the seeded index
