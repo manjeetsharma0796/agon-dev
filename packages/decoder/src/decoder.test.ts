@@ -134,3 +134,180 @@ test('nothing is dropped silently: a transfer and an ambiguous swap each land in
   expect(s.coverage.decodedSwaps).toBe(0)
   expect(s.coverage.share).toBe(0)
 })
+
+/**
+ * T-A07. A swap paid from native SOL was invisible: the wallet's wSOL account is opened, funded,
+ * swapped and closed inside the one transaction, so it appears in neither `preTokenBalances` nor
+ * `postTokenBalances`, and the only trace is a lamport change nothing in `packages/` read. The
+ * decoder called it not-a-swap, "value only arrived the wallet", which carries no program id and
+ * so is absent from the unsupported list too.
+ */
+const nativeTx = (
+  signature: string,
+  wallet: string,
+  lamports: { pre: number; post: number },
+  token: { mint: string; pre: string; post: string },
+  fee = 5000,
+): RawTransaction => ({
+  slot: 1,
+  transaction: {
+    signatures: [signature],
+    message: {
+      accountKeys: [{ pubkey: wallet }, { pubkey: 'TokenAccountOfTheWallet1111111111111111111' }],
+      instructions: [
+        { programId: 'ComputeBudget111111111111111111111111111111' },
+        { programId: 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4' },
+      ],
+    },
+  },
+  meta: {
+    err: null,
+    fee,
+    preBalances: [lamports.pre, 0],
+    postBalances: [lamports.post, 0],
+    preTokenBalances: [
+      { accountIndex: 1, mint: token.mint, owner: wallet, uiTokenAmount: { amount: token.pre } },
+    ],
+    postTokenBalances: [
+      { accountIndex: 1, mint: token.mint, owner: wallet, uiTokenAmount: { amount: token.post } },
+    ],
+  },
+})
+
+test('a buy paid in native SOL decodes as a buy, with the fee left out of the size', () => {
+  const W = 'WaLLeTwaLLeTwaLLeTwaLLeTwaLLeTwaLLeTwaLLeT'
+  const BONK = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263'
+  // 1 SOL leaves as lamports, 5000 of which is the fee, and BONK arrives.
+  const d = decodeTransaction(
+    nativeTx(
+      'native-buy',
+      W,
+      { pre: 2_000_000_000, post: 999_995_000 },
+      {
+        mint: BONK,
+        pre: '0',
+        post: '4200',
+      },
+    ),
+    W,
+  )
+
+  expect(d.kind, `decoded as ${d.kind}`).toBe('swap')
+  if (d.kind !== 'swap') return
+  expect(d.side).toBe('buy')
+  expect(d.soldMint).toBe('So11111111111111111111111111111111111111112')
+  // Exactly 1 SOL. The fee is the cost of sending the transaction, not part of what was traded,
+  // and counting it would overstate the cost basis of every position by a different amount.
+  expect(d.soldAmount).toBe('1000000000')
+  expect(d.boughtAmount).toBe('4200')
+})
+
+test('a sell into native SOL decodes as a sell', () => {
+  const W = 'WaLLeTwaLLeTwaLLeTwaLLeTwaLLeTwaLLeTwaLLeT'
+  const BONK = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263'
+  const d = decodeTransaction(
+    nativeTx(
+      'native-sell',
+      W,
+      { pre: 1_000_000_000, post: 1_499_995_000 },
+      {
+        mint: BONK,
+        pre: '4200',
+        post: '0',
+      },
+    ),
+    W,
+  )
+
+  expect(d.kind, `decoded as ${d.kind}`).toBe('swap')
+  if (d.kind !== 'swap') return
+  expect(d.side).toBe('sell')
+  expect(d.boughtMint).toBe('So11111111111111111111111111111111111111112')
+  expect(d.boughtAmount).toBe('500000000')
+  expect(d.soldAmount).toBe('4200')
+})
+
+test('wrapping SOL is not a trade, because lamports and wSOL are the same asset', () => {
+  const W = 'WaLLeTwaLLeTwaLLeTwaLLeTwaLLeTwaLLeTwaLLeT'
+  const SOL = 'So11111111111111111111111111111111111111112'
+  // Native out, wSOL in, same amount. Read as 2 mints this is a swap of SOL for SOL.
+  const d = decodeTransaction(
+    nativeTx(
+      'wrap',
+      W,
+      { pre: 2_000_000_000, post: 999_995_000 },
+      {
+        mint: SOL,
+        pre: '0',
+        post: '1000000000',
+      },
+    ),
+    W,
+  )
+
+  expect(d.kind).toBe('not-a-swap')
+  if (d.kind !== 'not-a-swap') return
+  expect(d.reason).toContain('no token balance of this wallet changed')
+})
+
+test('an undecoded transaction names the venue rather than ComputeBudget', () => {
+  // Every real mainnet transaction starts with a ComputeBudget instruction, so the first program
+  // with an id is always ComputeBudget, and every undecoded transaction on the 5 recorded fixtures
+  // collapsed into 1 unsupported row named after a program that never traded anything.
+  for (const tx of recordings) {
+    const pin = TRADERS[tx.transaction.signatures[0] ?? '']
+    if (pin === undefined) continue
+    const d = decodeTransaction({ ...tx, meta: null }, pin.wallet)
+    if (d.kind !== 'undecoded') continue
+    expect(d.programId, `${d.signature.slice(0, 12)} named a program that never traded`).not.toBe(
+      'ComputeBudget111111111111111111111111111111',
+    )
+  }
+})
+
+test('every distinct reason is kept per program, not just the first', () => {
+  const W = 'WaLLeTwaLLeTwaLLeTwaLLeTwaLLeTwaLLeTwaLLeT'
+  const VENUE = 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4'
+  const BONK = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263'
+  const WIF = 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm'
+  const bal = (mint: string, amount: string) => ({ mint, owner: W, uiTokenAmount: { amount } })
+  const at = (signature: string, pre: string[][], post: string[][]): RawTransaction => ({
+    slot: 1,
+    transaction: { signatures: [signature], message: { instructions: [{ programId: VENUE }] } },
+    meta: {
+      err: null,
+      preTokenBalances: pre.map(([m, a]) => bal(m as string, a as string)),
+      postTokenBalances: post.map(([m, a]) => bal(m as string, a as string)),
+    },
+  })
+
+  const s = decodeAll(
+    [
+      // Ambiguous: 2 mints left, 1 arrived.
+      at(
+        'ambiguous',
+        [
+          [BONK, '100'],
+          [WIF, '100'],
+        ],
+        [
+          [BONK, '50'],
+          [WIF, '50'],
+          ['EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', '7'],
+        ],
+      ),
+      // Neither side is a quote asset, which is a different failure of the same program.
+      at('no-quote', [[BONK, '100']], [[WIF, '7']]),
+    ],
+    W,
+  )
+
+  expect(s.unsupported).toHaveLength(1)
+  const row = s.unsupported[0]
+  expect(row?.count).toBe(2)
+  expect(
+    row?.reason,
+    'the second reason was dropped, so the row explained half of what it counted',
+  ).toContain('ambiguous')
+  expect(row?.reason).toContain('quote asset')
+})

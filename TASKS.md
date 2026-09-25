@@ -357,6 +357,28 @@ and latency (a, b).
 - Kill criterion: none, F1 is existential
 - Finding: the coverage number can lie. deltas() reads only meta.pre/postTokenBalances, and nothing in packages/ reads meta.pre/postBalances, so a swap paid in native SOL is invisible: the wSOL account is opened and closed inside the same transaction and appears in neither array. It returns not-a-swap "value only arrived the wallet", which carries no program id, is absent from unsupported, and is excluded from totalSwaps, so a wallet trading from native SOL reports 100% coverage while decoding none of its swaps. Two smaller ones: topProgram returns the first instruction with a programId, which on every real mainnet transaction is ComputeBudget, so all undecoded transactions collapse into one unsupported row named ComputeBudget; and decodeAll keeps only the first reason per program id. Fix is T-A07.
 ### T-A07, Decode swaps paid in native SOL
+- Evidence: re-running spikes/F1 moved 5CKAa7Wm's 50 sampled transactions from 50 identical
+  "value only arrived the wallet" to 9 rotations, 40 one-sided and 1 the other way, with 0 silent
+  drops, and moved 5Q544fKr's unsupported row from ComputeBudget to JUP6LkbZ. 5 tests, 1 per
+  clause, each failing before the fix. 5Q544fKr stayed at 29 swaps of 50, which is the check that
+  matters: a native leg added to a swap already read from token balances must change nothing
+- Finding: lamports are not a second mint, they are the same asset as wSOL, and adding them as a
+  separate one turns a wrap into a swap of SOL for SOL. Netting both into 1 mint is what makes
+  wrapping silent, which is correct, because wrapping is not a trade
+- Finding 2: the first rent rule cost 2 good decodes. Adding back the rent of every account opened
+  or closed anywhere in the transaction attributes other parties' accounts to this wallet, and on
+  5Q544fKr it turned 1 swap into ambiguous and 1 rotation into one-sided, both on transactions
+  whose lamport delta was 0. Scoped to token accounts this wallet owns, it changed 0 of the 100
+  sampled transactions, so it is reasoned rather than measured: an account opened and closed in the
+  same transaction needs no correction at all, because the rent left this balance and came back
+- Finding 3: T-A07's last clause cannot pass as written, and the decoder is not why. All 50 of
+  5CKAa7Wm's sampled transactions are arbitrage: token gains of 3840 lamports and 0.007 USDC
+  against a fee of the same order. The decoder now names every one of them correctly and the swap
+  count is still 0, because there are no swaps in them. Written up as OP-31
+- Finding 4: this fix does not reach production on its own. The product reads a wallet's history
+  from Helius's enhanced endpoint, and fromEnhanced carries only tokenBalanceChanges across, so the
+  native leg is dropped at the edge before the decoder ever sees it. packages/decoder/src/enhanced.ts
+  is not on this task's Touches line, so it is T-A08
 - Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-a07-native-sol
 - Depends-on: T-A01
 - Touches: packages/decoder/src/index.ts, packages/decoder/src/decoder.test.ts
@@ -367,9 +389,21 @@ and latency (a, b).
   transaction names the venue program rather than ComputeBudget on all 5 recorded fixtures; decodeAll
   keeps every distinct reason per program id, not just the first; the 50 sampled transactions of
   wallet 5CKAa7Wm in spikes/F1 stop reporting 0 swaps at 100% coverage
-- Evidence: <PR link, plus the F1 re-run showing the changed coverage number>
 - Kill criterion: none. A coverage number computed over silently dropped swaps is the failure the
   third bucket exists to prevent, and F1 is existential
+
+### T-A08, Carry the native SOL leg across the enhanced endpoint
+- Status: open
+- Depends-on: T-A07
+- Touches: packages/decoder/src/enhanced.ts, packages/decoder/src/decoder.test.ts
+- Serves: Functionality (judged) ; F1 coverage share
+- Acceptance: fromEnhanced carries nativeBalanceChange and the fee across, so a swap paid in native
+  SOL decodes the same whether it arrived from getTransaction or from the enhanced endpoint; 1
+  recorded enhanced transaction with a native leg asserted against the getTransaction decode of the
+  same signature, field by field
+- Evidence: <PR link, plus the 2 decodes of 1 signature agreeing>
+- Kill criterion: none. T-A07 fixed the decoder and the product does not use the shape it fixed, so
+  until this lands the coverage number a user sees is the old one
 
 ### T-A06, Fix the two coverage numbers that can lie
 - Evidence: re-running spikes/F1 moved 5CKAa7Wm from `share 1` to `share 0` and 5Q544fKr from
