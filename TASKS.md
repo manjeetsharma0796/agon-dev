@@ -615,6 +615,7 @@ and latency (a, b).
   owner BPFLoaderUpgradeable. 4.2 MB, committed for the same reason F9's 281 KB is
 
 ### T-F05b, F5 route size, 20 Jupiter routes against the v1 limit
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/127 | Owner: Jishnu | Branch: feature/t-f05b-route-size
 - Evidence: spikes/F5/route-size/result.json. 20 of 20 routes fit v1 inline with 0 lookup tables,
   against a bar of 18 of 20. Accounts 18 to 34 against a ceiling of 64, bytes 811 to 1416 against
   4096, 0 routes over either. 5 mints from USDC to WIF at 0.1, 1, 10 and 100 SOL, 1 to 5 venues
