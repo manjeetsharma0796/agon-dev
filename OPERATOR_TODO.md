@@ -29,23 +29,33 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 ### ** OP-19, Fund a throwaway devnet keypair
 - Status: open
 - Owner: <unassigned>
-- Needed by: 2026-09-26, so F5 and T-D03 have evidence before CP1 on 2026-09-27
-- Unblocks: T-F05a, T-F05b, T-F06a, T-D02, T-D03, and every task whose evidence is an on-chain read
-- What exactly: `DEVNET_KEYPAIR`, one throwaway devnet key, in the repo-ignored local env and as a
-  CI secret for the nightly job. **0.01 SOL is enough**, not the 2 SOL this item first asked for:
-  a run measured the real cost at 0.0015 SOL, being 1,503,680 lamports of rent for the 168-byte
-  two-role Swig account plus fees. Faucets will not provide it: the Helius devnet faucet is capped
-  at 1 SOL per project per day and was already exhausted, and `api.devnet.solana.com` answered
-  `requestAirdrop` with a 429 and then an internal error. Fund it once from a faucet that works, or
-  from an existing devnet balance. It is devnet, so the key is worth nothing and may live in CI,
-  unlike every mainnet key.
-- Done when: `agon revoke` runs end to end against 3 devnet wallets that really hold Agon roles and
-  the roles are really gone afterwards, which is T-D03's Evidence line, and `spikes/F5/result.json`
-  records the cases that do not need Jupiter.
-- Note: this does NOT unblock all of F5 on its own. Cases (a), (b) and (e) need a Jupiter program,
-  which devnet does not have. That is OP-21.
+- Needed by: 2026-09-26, so F5 has a result before CP1 on 2026-09-27
+- Unblocks: T-F05a, T-F05b, T-F06a, T-D02, T-D03, and through them T-E06, the arming UI,
+  and every other task whose evidence is an on-chain read
+- What exactly: 1 throwaway devnet keypair with **0.01 devnet SOL**. Not 2 SOL: the F5 run measured
+  what the 7 cases actually cost and it is 1,543,680 lamports, 0.0015 SOL, which is 1,503,680 of
+  rent for the 168-byte two-role Swig account plus 5,000 a transaction for 8 transactions. 0.01
+  covers several reruns. That changes who can unblock this: it does not need a faucet with a big
+  allowance, only somebody holding a dusting of devnet SOL. All 7 faucets reachable without a
+  browser refuse, listed in `spikes/F5/result.json` under `funding.faucetAttempts`, and 0.1 SOL was
+  refused as flatly as 1 SOL, so the limit is per day and not per amount. The web faucet at
+  faucet.solana.com wants a browser and a captcha. Devnet SOL has no value, so this is not the
+  mainnet funding step in OP-5 and needs none of its checklist. Put the key in the repo-ignored
+  `.devnet/agon-f5.json` and set `DEVNET_KEYPAIR` in the CI secrets from the same file. It is a
+  throwaway: it must never hold anything and must never be reused on mainnet.
+- Funding alone does not make F5 runnable. OP-20 is the other half.
+- Also, by hand, once F5 has run: case (g) of F5 is "removal done from Phantom, not only our CLI".
+  Connect the devnet Swig wallet in Phantom, remove the Agon role from there, and confirm the next
+  agent transaction fails. A script cannot assert that a person used a wallet, so this stays here.
+- Done when: `spikes/F5/result.json` exists with all 7 cases and 0 unexpected successes, the
+  Phantom removal in (g) is recorded with the signature that failed after it, and `agon revoke`
+  has run end to end against 3 devnet wallets that really held Agon roles with the roles really
+  gone afterwards, which is T-D03's Evidence line. That last clause arrived from a second OP-19
+  filed by another session for the same wall; the two rows are merged here.
+- Why it cannot wait: F5 is existential. If the cap does not hold on-chain, CP1 decides whether
+  Agon ships read-only, and that decision needs the measurement rather than an opinion.
 
-### * OP-20, Pick 2 real trader wallets, and verify 50 rows by hand
+### * OP-23, Pick 2 real trader wallets, and verify 50 rows by hand
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-26, so F1 has a result before CP1 on 2026-09-27
@@ -74,6 +84,16 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   holds 20 or more closed trades, including a few deliberate exceptions to a stop rule so the
   miner has exceptions to find. Spread the trades across days, not one session.
 - Done when: 5 wallets each show 20+ closed trades spanning 5 or more distinct days.
+- **Escalated 2026-09-24, and this is now the critical path.** Beats 1 and 2 of the demo, the first
+  50 seconds and the only part that is about the user's own history rather than about guardrails,
+  cannot be filmed without this. It is the one blocker on the board that writing code cannot
+  shorten. The arithmetic, from a board pass on 2026-09-24: submission closes 2026-10-11, 17 days
+  out, CP2 is 8 days out. Starting 2026-09-25 and trading daily, 5 distinct days lands 2026-09-29
+  at about 4 closed trades per wallet per day, which is comfortable. Every day nobody trades, the
+  required trades per day rises and the span shortens, and past roughly 2026-10-06 the 5 distinct
+  days cannot fit before submission at all. At that point beats 1 and 2 do not get cut for polish,
+  they become unfilmable. This is the exact failure the PRD cites from monad, whose demo wallet had
+  its whole history inside one 3-hour window.
 - Why it cannot wait: only time produces history. Monad's demo wallet had its whole history in
   one 3-hour window, which broke its period filters (T8.8, T8.9).
 
@@ -238,7 +258,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   an MIT repo with `check_trade` callable by any agent.
 - Done when: `LICENSE` is committed and the README states it.
 
-### * OP-14, Search for a project that already does this
+### OP-14, Search for a project that already does this
 - Status: done 2026-09-25: searched, the claim holds and the wording is tightened in docs/plans/novelty.md. Nearest miss is SENTINEL, which derives from history and enforces on-chain but for an x402 agent's own runtime spending on Algorand, not a trader's swaps. Colosseum's own directory and Copilot need an account and were NOT searched, so the PRD's 2,992-entry figure is still unverified by a second pair of eyes
 - Owner: <unassigned>
 - Needed by: 2026-09-27
@@ -276,6 +296,11 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-26, before T-E03 puts anything on staging
+- Ready for you: the MCP server is now a built and run image. `docker build -t agon-mcp .` then
+  `docker run -p 8787:8787 agon-mcp` answers a real check_trade verdict with 0 keys set, because
+  it defaults to AGON_NET_MODE=replay and ships no credential. Any host that builds a Dockerfile
+  takes it as is. That is the agent-facing third of this row and it needs none of the keys the
+  rest of the row is waiting on, so it can go up before OP-2, OP-3, OP-4 and OP-6 land
 - Unblocks: T-B01 (its last acceptance clause), T-E03
 - What exactly: create the hosting project and wire 3 environments, each with its own keys:
   preview on every PR push against devnet, staging on every merge to `dev` against devnet plus
@@ -304,7 +329,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   arrives at an address someone on the team actually checked, and the URL is in T-E02's `Evidence:`
   line.
 
-### * OP-21, CP1 decision: Jupiter is not on devnet, so F5 cases (a), (b) and (e) cannot run there
+### * OP-20, CP1 decision: Jupiter is not on devnet, so F5 cases (a), (b) and (e) cannot run there
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-27, CP1, because F5 is the gate on the arming UI
@@ -333,3 +358,88 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   So the most distinctive beat of the demo depends on this decision, and option 1 is the one that
   keeps it.
 
+
+### OP-21, Decide the shape of the World's Fair demo: read-only or live arming
+- Status: open
+- Owner: <unassigned>
+- Needed by: 2026-09-27, CP1, because it changes what Track E builds next
+- Unblocks: T-E06, T-E07, T-J01, and the shape of `docs/demo-script.md`
+- What exactly: the demo script currently assumes beat 4 arms a rule for real and beat 6 revokes it
+  from the wallet. Both need on-chain signing, which is gated behind F5, F6 and the T-D04
+  pre-mainnet checklist, and the PRD separately bars any arming UI until F5 and F6 pass. F5 has not
+  run, F6 has no spike directory, and the read-only beta is defined as signing nothing. So the
+  World's Fair cut is one of: (a) read-only, beats 1, 2, 3 and 7, with arming shown in simulation
+  and labelled as simulation; (b) live arming on a Surfpool mainnet fork, NOT devnet,
+  for the reason measured in OP-20: the pinned Jupiter id is not a program on devnet, so the cap
+  cases cannot run there at any funding level; (c) live arming on mainnet, which needs F5, F6, all 8
+  T-D04 boxes and 2 sign-offs, and OP-5 funds. Decide which, because Track E builds a different
+  screen for each and the demo script has to say the true thing on camera.
+- Done when: one option is written in the PRD Decisions log, `docs/demo-script.md` beat 4 and beat 6
+  match it, and T-E06 and T-E07 either have a target or are cut with a date and a reason.
+
+### OP-22, Film a thin working slice on devnet before building more
+- Status: open
+- Owner: <unassigned>
+- Needed by: 2026-09-27, CP1
+- Unblocks: nothing on paper, and the confidence of everyone reading the board
+- What exactly: about 9,000 lines have merged and no single path runs end to end yet. Every piece is
+  tested in isolation and nothing has been seen working together, which is how a repo arrives at a
+  demo week with 11 green components and no demo. Pick the shortest path that touches every layer
+  once, on devnet, with no UI: read a real wallet, decode its swaps, mine one rule, ask check_trade
+  about one trade, and have it refuse with a reason. Whatever it takes to make that run is the
+  priority, and whatever it does not touch is not.
+- Status note 2026-09-25: the read-only half is done and pasted below. `agon check` runs every
+  layer once in 1 command: read a real mainnet wallet, decode its swaps from balance changes, build
+  the FIFO ledger, mine the rules, read the mint's authorities off the chain, and refuse a trade
+  with the numbers behind the refusal. Exit code 1, because a script must not read a refusal as
+  permission.
+
+  ```
+  Wallet HLnpSz9h2S4hiLQ43rnSD9XkcUThA7B8hQMKmDaiTLcC
+  Mined from 16 closed trades: stop none, size 161695414, hold 1
+  Proposed: buy 2000000000 base units of EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+
+  Verdict: block
+    size-vs-median: 12.4x your median size of 0.162 SOL, past your 2x limit. Stopped. Send
+      0.323 SOL or less, or raise the limit. (12.4 against 2 x-median)
+    quote-missing: No quote was taken for this trade, so what the fill costs and how far it
+      moves the price are both unknown. Not safe to proceed. Quote the route and check again.
+    text-not-screened: This token's name and description were not screened, so an instruction
+      hidden in them would have reached your agent unread. Not safe to proceed.
+    mint-freeze-authority: Freeze authority is live on this token, held by
+      7dGbd2QZcCKcTndnHcTL8q7SMVXAkp688NTQYwrRCrar. That key can freeze your balance in place at
+      any time, including while you are trying to sell.
+    mint-authority-live: The supply of this token can still be increased by
+      BJE5MMbqXjVwjAF7oxwPYXnTXDyspzZyt4vwenNw5ruG.
+
+  Stamped check-trade/1+mint-check/1 at slot 450115322.
+  ```
+
+  What this does not prove, stated rather than left to be assumed. Nothing was signed and nothing
+  was armed: this is the guard refusing, not a Swig cap rejecting a transaction on chain, which is
+  still F5 and still OP-20. The quote and the injection screen were both skipped, which is why 2 of
+  the 5 reasons are "not read" rather than a finding, and it is why this command can never print
+  `pass`. The mint reasons are the F3 result showing up in the product: USDC has a live freeze
+  authority, so the guard blocks it, and that is the existential question CP1 has to answer. The
+  numbers moved between 2 runs an hour apart, 28 closed trades to 16, because the wallet kept
+  trading; the recording is stamped so a rerun is comparable.
+- Done when: the arming half also runs, 1 command producing 1 on-chain rejection against a real
+  mainnet-fork wallet, with the output pasted here. Read OP-20 before reaching for devnet.
+
+### OP-24, Reconcile CLAUDE.md's "3 questions" rule with T-B08's review-escalation questions
+- Status: open
+- Owner: <unassigned>
+- Needed by: CP2, 2026-10-02, alongside the T-B08 keep or cut decision
+- Unblocks: T-B08 (documentation only, not the code)
+- What exactly: CLAUDE.md's Non-negotiable section reads "Jev answers only 3 non-numeric
+  questions: token category, impersonation, injection screen", unqualified. `scripts/jev-review.mjs`
+  (T-B08 use 1) asks Jev 4 different `choice` questions (money math, transaction building, a
+  frozen contract, cross-track docs) about a PR diff, never about a trade. TASKS.md's own T-B08 row
+  describes exactly this design and was merged with it, so the row and CLAUDE.md's wording disagree
+  on paper even though neither touches the trading path: T-B08's questions never reach check_trade,
+  never carry a number, and its own kill criterion repeats the same "never numeric, never the rule
+  itself" constraint in different words. An agent should not silently decide whether the "3
+  questions" line is scoped to the trading guard or to every use of Jev anywhere in the repo; a
+  person should either reword CLAUDE.md to say "the trading guard asks Jev only 3 questions" or say
+  T-B08 does not get an exception.
+- Done when: CLAUDE.md's wording and TASKS.md's T-B08 row agree, in either direction.

@@ -11,6 +11,14 @@ const [command] = process.argv.slice(2)
 
 if (process.argv.includes('--version') || process.argv.includes('-v')) {
   console.log(version)
+} else if (command === 'check') {
+  // Dynamic for the same reason as the others: the guard pulls in the decoder and the miner, and
+  // none of that belongs inside the cold start gate for `agon --version`.
+  const [{ runCheck }, { liveCheckIo }] = await Promise.all([
+    import('./commands/check.js'),
+    import('./commands/report-io.js'),
+  ])
+  process.exitCode = await runCheck(process.argv.slice(3), liveCheckIo())
 } else if (command === 'revoke') {
   // Dynamic, so the chain package and the Swig SDK are only loaded when somebody actually revokes.
   // Importing them at the top would put the whole SDK inside the 300 ms cold start gate for every
@@ -24,5 +32,5 @@ if (process.argv.includes('--version') || process.argv.includes('-v')) {
   const { liveIo } = await import('./commands/report-io.js')
   process.exitCode = await runReport(process.argv.slice(3), liveIo())
 } else {
-  console.log(`agon ${version}. Commands: report, revoke.`)
+  console.log(`agon ${version}. Commands: check, report, revoke.`)
 }

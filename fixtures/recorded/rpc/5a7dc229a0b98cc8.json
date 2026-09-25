@@ -1,0 +1,59 @@
+{
+  "slot": 450115322,
+  "provider": "rpc",
+  "recordedAt": "2026-09-24T18:52:29.238Z",
+  "request": {
+    "method": "POST",
+    "url": "https://mainnet.helius-rpc.com/?api-key=REDACTED",
+    "headers": {},
+    "body": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "method": "getMultipleAccounts",
+      "params": [
+        [
+          "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+        ],
+        {
+          "encoding": "jsonParsed"
+        }
+      ]
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "jsonrpc": "2.0",
+      "result": {
+        "context": {
+          "slot": 450115322,
+          "apiVersion": "4.3.0-alpha.2"
+        },
+        "value": [
+          {
+            "lamports": 534788257985,
+            "data": {
+              "program": "spl-token",
+              "parsed": {
+                "info": {
+                  "decimals": 6,
+                  "freezeAuthority": "7dGbd2QZcCKcTndnHcTL8q7SMVXAkp688NTQYwrRCrar",
+                  "isInitialized": true,
+                  "mintAuthority": "BJE5MMbqXjVwjAF7oxwPYXnTXDyspzZyt4vwenNw5ruG",
+                  "supply": "7950839180333097"
+                },
+                "type": "mint"
+              },
+              "space": 82
+            },
+            "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+            "executable": false,
+            "rentEpoch": 18446744073709552000,
+            "space": 82
+          }
+        ]
+      },
+      "id": 1
+    }
+  }
+}

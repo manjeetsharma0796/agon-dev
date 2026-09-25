@@ -17,15 +17,21 @@ const approxTokens = (text: string): number => text.length / 4
 // until they land this is what get_report and check_trade are actually wired to serve, over MCP
 // and over HTTP alike, so it is what has to stay inside budget.
 const WALLET = '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM'
+
+// check_trade is no longer a fixture, so its budget is now measured against a real verdict over a
+// real wallet: T-C09's committed recording, replayed, no key. That matters, because a real verdict
+// carries every reason that fired and the stored example carried a shorter list. This is the
+// number that has to stay under budget, not the convenient one.
+const RECORDED = 'HLnpSz9h2S4hiLQ43rnSD9XkcUThA7B8hQMKmDaiTLcC'
 const TRADE = {
   mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
   side: 'buy',
-  size: '3200000000',
-  wallet: WALLET,
+  size: '2000000000',
+  wallet: RECORDED,
 }
 
-test('get_report stays inside the 2,000 token budget', () => {
-  const result = callAsTool('get_report', { wallet: WALLET })
+test('get_report stays inside the 2,000 token budget', async () => {
+  const result = await callAsTool('get_report', { wallet: WALLET })
   expect(result.isError).not.toBe(true)
   const tokens = approxTokens(textOf(result))
   expect(
@@ -34,8 +40,8 @@ test('get_report stays inside the 2,000 token budget', () => {
   ).toBeLessThanOrEqual(2000)
 })
 
-test('check_trade stays inside the 400 token budget', () => {
-  const result = callAsTool('check_trade', TRADE)
+test('check_trade stays inside the 400 token budget', async () => {
+  const result = await callAsTool('check_trade', TRADE)
   expect(result.isError).not.toBe(true)
   const tokens = approxTokens(textOf(result))
   expect(

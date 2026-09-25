@@ -8,6 +8,12 @@
   "references": [
     {
       "path": "../core"
+    },
+    {
+      "path": "../decoder"
+    },
+    {
+      "path": "../miner"
     }
   ]
 }

@@ -170,8 +170,8 @@ agents can hold one each with no coordination beyond this file.
 | Wave | When | Parallel-safe set |
 |---|---|---|
 | P0 | Day 1, 09-24 | T-B01 **first, alone**; then T-C01, T-B02, T-C02, T-C03, T-E01, T-E02 |
-| P1 | 09-25 to CP1 | A: T-A01, T-F01a. B: T-B03. C: T-C04, T-F03, T-C05, T-F11a. D: T-D01, T-F05a, T-F05b, T-F06a. E: T-E03 |
-| P2 | CP1 to CP2 | A: T-A02, T-A03, T-A04, T-F01b, T-F02. B: T-F09, T-B04, T-B08. C: T-C06, T-C07, T-C08, T-F04, T-F11b. D: T-D02, T-D03, T-F05c, T-F06b, T-F07. E: T-E04, T-E05, T-E10, T-E12 |
+| P1 | 09-25 to CP1 | A: T-A01, T-F01a. B: T-B03, T-B10. C: T-C04, T-F03, T-C05, T-F11a. D: T-D01, T-F05a, T-F05b, T-F06a. E: T-E03 |
+| P2 | CP1 to CP2 | A: T-A02, T-A03, T-A04, T-A05, T-F01b, T-F02. B: T-F09, T-B04, T-B08. C: T-C06, T-C07, T-C08, T-C12, T-C13, T-F04, T-F11b. D: T-D02, T-D03, T-F05c, T-F06b, T-F07. E: T-E04, T-E05, T-E10, T-E12 |
 | P3 | CP2 to CP3 | B: T-B05. C: T-C09. D: T-D04. E: T-E06, T-E07, T-E08, T-E09 |
 | P4 | CP3 to 10-11 | T-J01, T-J02, T-J03 |
 | P5 | Fall, CP4 to CP6 | T-F08, T-F10, T-F11c, T-B06, T-B07, T-C10, T-D05, T-E11, T-J04 |
@@ -313,9 +313,9 @@ CP1 evidence required: F1 on 2 wallets; F3; F5 on devnet; F6 in simulation; F11 
 and latency (a, b).
 
 ### T-E03, Thin end-to-end version on staging
-- Status: blocked, see OP-17
+- Status: blocked, see OP-17 | Branch: feature/t-e03-deployable-mcp
 - Depends-on: T-C01, T-C02
-- Touches: apps/web/app/report/, apps/web/app/api/, packages/mcp/src/index.ts
+- Touches: apps/web/app/report/, apps/web/app/api/, packages/mcp/src/index.ts, Dockerfile
 - Serves: Functionality (judged) ; UX (judged)
 - Acceptance: on staging, pasting an address returns a report built from fixtures, `check_trade`
   returns a fixture verdict, and arming is a no-op on devnet; all 3 legs work end to end by day 2,
@@ -341,8 +341,8 @@ and latency (a, b).
   coverage on transactions we read perfectly well, so they are not-a-swap with a stated reason and
   do not count against coverage.
 - Kill criterion: none, F1 is existential
-- Finding: the coverage number can lie. deltas() reads only meta.pre/postTokenBalances, and nothing in packages/ reads meta.pre/postBalances, so a swap paid in native SOL is invisible: the wSOL account is opened and closed inside the same transaction and appears in neither array. It returns not-a-swap "value only arrived the wallet", which carries no program id, is absent from unsupported, and is excluded from totalSwaps, so a wallet trading from native SOL reports 100% coverage while decoding none of its swaps. Two smaller ones: topProgram returns the first instruction with a programId, which on every real mainnet transaction is ComputeBudget, so all undecoded transactions collapse into one unsupported row named ComputeBudget; and decodeAll keeps only the first reason per program id. Fix is T-A05.
-### T-A05, Decode swaps paid in native SOL
+- Finding: the coverage number can lie. deltas() reads only meta.pre/postTokenBalances, and nothing in packages/ reads meta.pre/postBalances, so a swap paid in native SOL is invisible: the wSOL account is opened and closed inside the same transaction and appears in neither array. It returns not-a-swap "value only arrived the wallet", which carries no program id, is absent from unsupported, and is excluded from totalSwaps, so a wallet trading from native SOL reports 100% coverage while decoding none of its swaps. Two smaller ones: topProgram returns the first instruction with a programId, which on every real mainnet transaction is ComputeBudget, so all undecoded transactions collapse into one unsupported row named ComputeBudget; and decodeAll keeps only the first reason per program id. Fix is T-A07.
+### T-A07, Decode swaps paid in native SOL
 - Status: open
 - Depends-on: T-A01
 - Touches: packages/decoder/src/index.ts, packages/decoder/src/decoder.test.ts
@@ -389,7 +389,7 @@ and latency (a, b).
 - Kill criterion: none. This is the layer that assumes every layer above it failed
 
 ### T-F01a, F1 spike on 2 wallets, for CP1
-- Status: blocked, see OP-20
+- Status: blocked, see OP-23
 - Depends-on: T-A01
 - Touches: spikes/F1/, scripts/board.mjs
 - Serves: Functionality (judged) ; CP1 gate
@@ -499,7 +499,7 @@ and latency (a, b).
 - Kill criterion: none. If the cap does not hold on-chain the custody story is gone, see T-F05a
 - Finding: two ways the cap reads as holding when it does not. (1) tokenSpendLimit returns the REMAINING allowance, not the configured cap, so a role whose window is spent reads 0 and assertAgentRoleShape throws "carries no spending limit"; kill-switch isAgentRole swallows that, planRevokeAll files the role under kept as "not ours to remove", and revokedMessage reports "No Agon roles were found". The emergency stop fails open on exactly the role that has been trading hardest, and Swig resets the window afterwards. (2) canUseProgram returns true unconditionally under ProgramAll, and the SDK silently appends programAll to any action set with no program action, so a stored role of programAll plus tokenRecurringLimit has count 2 and is ACCEPTED as "program = Jupiter". Also the approved cap AMOUNT is never compared to what the user signed, only that a limit exists, and the window is never checked beyond being positive. Fix is T-D06.
 ### T-F05a, F5 spike, 7 cases on devnet
-- Status: blocked, see OP-21
+- Status: blocked, see OP-20
 - Depends-on: T-D01
 - Touches: spikes/F5/, scripts/board.mjs
 - Serves: Novelty (judged) ; CP1 gate
@@ -566,6 +566,23 @@ and latency (a, b).
   demo path reads a fixture marked `synthetic: true`
 - Evidence: <PR link, plus 2 runs with identical verdicts>
 - Kill criterion: fallback is publishing only the deterministic half (guardrail verdicts on fixed trades) and dropping the live-agent comparison
+
+### T-B10, Clear the parked operator ids out of published source
+- Status: claimed 2026-09-25 | Owner: jishnu-baruah | Branch: feature/t-b10-parked-markers
+- Depends-on: T-B02
+- Touches: packages/core/src/net/index.ts, packages/core/src/net/record.ts, scripts/release.test.mjs
+- Note: these 3 files sit inside T-C02's and T-B02's `Touches:`, and both rows are blocked on a
+  human, so neither can move while every release is refused. This row is deliberately narrower
+  than either: 5 prose references and 2 `KNOWN` lines, 0 behaviour. It ends when they are gone.
+- Serves: Open source (judged) ; the release gate, red on dev today
+- Acceptance: `node scripts/release.mjs --out <dir>` then `--check <dir>` reports 0 of 6 internal
+  markers, against 2 reported today which stand for 5 live references across 2 files, because the
+  checker reports the first hit per file; the 2 `KNOWN` entries in `scripts/release.test.mjs` go in
+  the same commit, leaving 0 parked markers in the ratchet; `pnpm gates` exits 0; 0 numbers, 0
+  thresholds and 0 behaviour change, so the whole diff is comments plus 1 printed line
+- Evidence: <PR link, with the --check output before and after>
+- Kill criterion: none. Every release is refused until this lands, so there is nothing to fall back
+  to
 
 ---
 
@@ -675,7 +692,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none. monad rebuilt full history on every request (T3.6) and switching later was a rewrite
 
 ### T-C06, check_trade guard, arithmetic first
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-c06-check-trade
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/77 | Owner: Jishnu | Branch: feature/t-c06-check-trade
 - Depends-on: T-C04, T-C05, T-A03
 - Touches: packages/guard/src/check-trade.ts
 - Serves: Functionality (judged) ; F4
@@ -685,7 +702,16 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   call (1 account batch, 1 quote, 1 Jev call), asserted by a counting wrapper in tests; every
   verdict names the rule and the number ("4.1x your median size of 0.8 SOL") and is stamped with
   its data slot and rule version; response stays inside the 400-token budget on the golden wallets
-- Evidence: <PR link, plus the network-count and token-budget tests>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/77, with the counting wrapper in
+  packages/guard/src/check-trade.budget.test.ts (3 calls, 0 of them the guard's) and the budget in
+  packages/guard/src/check-trade.token.test.ts. Measured: 5 of 5 numeric checks arithmetic, 2 of 4
+  of F4's scripted trade kinds resolved with 0 model answers, 3 network calls, 395 tokens worst
+  case against 400. Golden wallets do not exist yet, so the budget is measured on worst cases
+- Finding: the worst case verdict was 417 tokens against the 400 budget, 4.3% over, and fits at 395
+  only after this file's own 4 messages lost 88 characters. 621 of those 1,578 characters, 39%, are
+  3 mint-check messages T-C06 does not own, so the guard controls about 61% of its own budget.
+  Separately, the 6 token categories the PRD freezes and the 6 T-C05 shipped share 0 names, and
+  style fit is arithmetic keyed on exactly those names
 - Kill criterion: none, a failure here is a bug and not a feasibility problem
 
 ### T-F04, F4 spike, 20 scripted verdicts
@@ -714,9 +740,9 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: if (e) passes unexpectedly, numbers still stay on arithmetic. 1 lucky run is not evidence
 
 ### T-C07, MCP server, 4 tools and a stable list
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/80 | Owner: Jishnu | Branch: feature/t-c07-mcp
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/97 | Owner: Jishnu | Branch: feature/t-c07-fixture-marker
 - Depends-on: T-C06
-- Touches: packages/mcp/src/
+- Touches: packages/mcp/src/, packages/guard/src/assess.ts, packages/decoder/src/enhanced.ts
 - Serves: Functionality (judged) ; Open source (judged)
 - Acceptance: exactly 4 tools (`get_report`, `check_trade`, `arm_rule`, `list_rules`) in 1 stable
   list so prompt caches survive; token budgets enforced in tests on the golden wallets,
@@ -726,7 +752,10 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/80, plus the third-party client transcript in the PR
   body. Measured on the fixture wallet the mcp and web suites already share: get_report 815 chars,
   about 204 tokens, 9.8x headroom under the 2,000 budget; check_trade 315 chars, about 79 tokens,
-  5.1x headroom under the 400 budget. `check_trade`'s answer is still T-E03's fixture verdict, not
+  5.1x headroom under the 400 budget. Follow-up PR: `check_trade` is now T-C06's real guard over a
+  real wallet read, reachable over Streamable HTTP so it can be port forwarded, and `get_report`
+  carries FIXTURE_NOTE in its payload. Earlier state, kept because it is what the numbers above
+  were measured on: `check_trade`'s answer was still T-E03's fixture verdict, not
   T-C06's arithmetic guard, which lands separately: this PR proves the shape and the transport are
   correct and stay in budget, not that the verdict is right yet
 - Finding: T-E03's dispatch had no transport, so nothing actually spoke MCP; the 4-tool contract
@@ -789,7 +818,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: fallback is no automatic expiry, a short recurring window instead, and the UI says "no end date: revoke from your wallet". Never fall back to giving the agent admin rights
 
 ### T-F07, F7 spike, pre-signed expiry
-- Status: claimed 2026-09-25 | Owner: Prithwish | Branch: feature/t-f07-presigned-expiry
+- Status: blocked, see OP-19
 - Depends-on: T-D02
 - Touches: spikes/F07/
 - Serves: UX (judged) ; CP2 gate
@@ -797,7 +826,25 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   answer; then the pre-signed removal lands after expiry and the next agent transaction fails; an
   earlier manual revoke still works and leaves the pre-signed transaction harmless; the agent key
   held `manageAuthority` in 0 of the runs
-- Evidence: <spikes/F07/result.json at a commit>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/83, spikes/F7/result.json, 7 of 7 SDK
+  checks. Clauses 2 to 4 need a funded devnet key, see OP-19.
+- Finding: Swig already has a native expiry, and T-D02 may not be needed. `@swig-wallet/lib`
+  defines a session based authority carrying `expirySlot` and `maxDuration`, created for a separate
+  key with `createSession({ roleId, newSessionKey, sessionDuration })`. So the shape Agon wants
+  exists in the program: give the agent a session key rather than an authority of its own, and when
+  the session expires it simply cannot sign. No pre-signed transaction, no durable nonce, no daemon
+  that has to be running at the right moment, and no bearer instrument to steal. The reason nobody
+  saw it is that the wrapper hides it: `@swig-wallet/classic`, which packages/chain imports and
+  which T-D01 and T-D02 were written against, exposes no expiry concept at all and its Actions
+  builder has 26 permission methods with no expiry among them. Checking only the wrapper is exactly
+  how a team concludes there is no native expiry and builds one, which is what happened, and it is
+  why this acceptance line says to check the protocol-level SDK first. The decisive follow-up is
+  whether a session key can renew itself, because a self renewing session is not an expiry: the SDK
+  says it cannot, since `getCreateSessionV1BaseAccountMetasWithAuthority` puts the authority in the
+  signer slot and the new session key is a parameter rather than a signer, but that is inference
+  from a type declaration and not proof from the program, and proving it needs devnet. 7 of 7 SDK
+  checks as expected against 2.1.0, versions recorded so a future release cannot quietly change the
+  answer.
 - Kill criterion: fallback is a short recurring window and no end date in the UI
 
 ### T-D03, Kill switch
@@ -946,7 +993,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: share rate under 10% across 10+ reports at CP3, so it stops being a pitch line
 
 ### T-B08, Jev in our own dev workflow, a one-week trial
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-b08-jev-review
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/79, Branch: feature/t-b08-jev-review
 - Depends-on: T-B01, OP-4
 - Touches: scripts/jev-review.mjs, .github/workflows/board.yml, docs/plans/jev-trial.md
 - Serves: unblocks nothing; it is a measured bet on our own speed, kept or cut at CP2
@@ -965,7 +1012,27 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   inside a session, because Claude writing a diff into a call costs more than Jev saves. Both
   candidate MCP servers are unofficial and would hold our TypeSafe key, so pin a commit and read
   the source before installing either.
-- Evidence: <docs/plans/jev-trial.md with the 4 measured numbers, plus the CP2 decision>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/79, docs/plans/jev-trial.md. Use (1)
+  only; uses (2) to (4) are not started, their bars stay open for whoever picks this up next
+- Finding: use (1)'s own bar, 38+/40 hits with 8 or fewer false flags on labelled past diffs, is
+  not measured: this environment has no JEV_API_KEY and OP-4 is still open. What was measured
+  without a key, 2026-09-24: 29 of this repo's 69 merged PRs are real `feature/*` work PRs with a
+  non-empty diff; the other 40 are `claim/*` and `board/*` housekeeping carrying no diff worth
+  measuring. Ground truth pulled from those 29 PRs' own "Second reviewer needed?" checkboxes: 3
+  money math, 4 transaction-building, 0 frozen contract, 11 cross-track docs, so the 40-diff set
+  this bar needs cannot come from `git log` alone, this repo's history alone supplies 0 of the 10
+  frozen-contract positives a balanced 40 would want. Second: `noul`, asked "is this urgent" on 3
+  texts outside this session, scored the real emergency lowest of the 3 at 0.0043, below "repaint
+  the kitchen next spring" at 0.0086, inverted rather than merely weak, a second and independent
+  reason (T-C05 found the first) this script uses `choice` and reads only `confidence`. Third: this
+  PR's own `/code-review` pass, run before any live measurement, caught the harness counting a hit
+  whenever anything was flagged on either side rather than the same category on both, which would
+  have let a money-math diff read as caught by a wrongly flagged transaction-building answer.
+  Fourth: pushing the `board.yml` wiring failed, this session's GitHub token carries `repo` scope
+  and not `workflow`; backed out, the 2 steps to paste in are documented, unapplied, in
+  docs/plans/jev-trial.md. Fifth: CLAUDE.md's "Jev answers only 3 non-numeric questions" line is
+  unqualified and this script asks 4 different ones about a diff, never a trade; written up as
+  OP-20 rather than decided quietly
 - Kill criterion: never used for anything numeric, for deciding a task is done, for approving a merge or deploy, or for anything touching keys or funds. A Jev answer is an input to a rule, never the rule itself. Any use that misses its bar is cut at CP2, not extended
 
 ### T-B09, Stop the CI gates over-firing
@@ -1010,6 +1077,73 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   whether they wait and retry. The test that asserts every message names its number caught it, and
   the message now carries the timeout, because for a timeout the timeout is the number involved
 - Kill criterion: none, this is the difference between a demo and a product
+
+### T-C12, Token categories, the 6 names the PRD froze
+- Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-c12-prd-category-names
+- Depends-on: T-C05, T-C06
+- Touches: packages/guard/src/jev/index.ts, packages/guard/src/jev/jev.test.ts,
+  packages/guard/src/check-trade.ts, packages/guard/src/check-trade.test.ts,
+  packages/guard/src/check-trade.token.test.ts, packages/guard/src/check-trade.budget.test.ts
+- Note: these 6 files sit inside T-C05's and T-C06's `Touches:` and both rows are merged, so
+  neither can move again. This row is narrower than either: 1 list of 6 strings and the prose
+  that quotes it, 0 new behaviour. The PRD wins by the rule at the top of this file, so the
+  shipped names are the ones that change.
+- Serves: Functionality (judged) ; F11 (c), whose 40 labelled token-category cases are labelled
+  with the PRD names and would score 0 against the shipped ones
+- Acceptance: `TOKEN_CATEGORIES` is the 6 names the PRD freezes under F11 on p.15, character for
+  character (memecoin, stablecoin, liquid-staking token, blue chip, real-world asset, other), with
+  1 test pinning all 6 so a 7th or a reworded one fails the build; the count stays 6 so T-C05's
+  "6-way choice" still holds; an unparseable Jev answer produces 0 categories rather than a 7th
+  name, so `styleFinding` still refuses instead of scoring against a category the model never
+  chose; the rename costs 0 tokens, so T-C06's 7-reason worst case is still 395 against its
+  400-token budget and a pass is still 26
+- Evidence: <PR link, with the worst-case token count before and after>
+- Kill criterion: none. The PRD froze these names on 2026-09-23 and F11 (c) labels against them
+
+### T-A05, Category mix in the report, so style fit has something to compare against
+- Status: open
+- Depends-on: T-C12, T-A03
+- Touches: packages/core/src/report.ts, fixtures/contracts/report.json, packages/miner/src/
+- Note: changes frozen contract 2 of 3, so the PR body carries the "Changes a frozen contract in
+  `packages/core`" line, the diff carries the fixture, and a second person reviews. It exists
+  because `TradeFacts.categoryMix` has no producer anywhere: `packages/cli/src/commands/check.ts`
+  passes null, and null is the only value production has ever had.
+- Serves: Functionality (judged) ; F4, whose scripted verdicts include "new token outside the
+  usual set"
+- Acceptance: `Report` carries a mix over the 6 T-C12 names, shares summing to 1 within 0.001 or
+  the field is absent rather than partial; the miner stays pure with 0 network calls by taking a
+  mint to category map as a required argument, the way it already takes the quote, so 0 Jev calls
+  move inside it; at least 1 production path fills `TradeFacts.categoryMix`, taking the
+  `category-mix-missing` unsure from the 100% of calls it fires on today to 0 on that path
+- Evidence: <PR link, with the share of calls reaching a style-fit answer before and after>
+- Kill criterion: fallback is shipping style fit as the `category-mix-missing` unsure with the
+  reason printed, never a silent pass
+
+### T-C13, The 8-reason verdict is 452 tokens against a budget of 400
+- Note: the fixture marker adds about 20 tokens to any replayed verdict, so the 8-reason case this
+  row is about is now roughly 472 rather than 452. The 5-reason verdict the deployment serves
+  measures 319 with the note attached. Counted here so this row's target is the real number
+- Status: open
+- Depends-on: T-C06, T-C12
+- Touches: packages/guard/src/check-trade.ts, packages/guard/src/check-trade.token.test.ts
+- Note: overlaps T-C06's `Touches:`, which is merged. T-C06 measured 395 on 7 reasons and wrote
+  "if this ever goes over, the messages get shorter and the count of them stays". It went over.
+  Style fit is the 8th reason and every budget fixture in that PR traded a category the wallet
+  already held, so the 8th could not fire and nobody measured it. Found by T-C12: 448 tokens under
+  the 6 names it replaced and 452 under the PRD's, so 4 of the 52 over budget are the rename and
+  48 were already there.
+- Serves: Functionality (judged) ; the check_trade 400-token budget that CLAUDE.md and T-C07 both
+  pin, and monad T6.8 is the reason for
+- Acceptance: the 8-reason verdict is at or under 400 tokens, down from 452, with all 8 reasons
+  still present and each still naming its cause, its number and what the user can do next; 0
+  reasons dropped to make the budget. The arithmetic to beat: the response is 1,806 characters, of
+  which 621, 34%, are the 3 mint-check messages this row does not own, so 208 characters have to
+  come out of the 562 the guard writes itself, a 37% cut, and T-C06 already took 88 out of them
+- Evidence: <PR link, with the 8-reason count before and after>
+- Kill criterion: if 8 full reasons cannot fit 400 without dropping a cause, a number or a next
+  step, the choice between raising the budget and capping the reason count is not the guard's to
+  take alone. Write the measurement into an OP and stop, rather than quietly shipping a truncated
+  verdict
 
 ---
 
@@ -1081,8 +1215,9 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 - Acceptance: installs, registers the MCP server with the user's assistants and starts the
   daemon in 1 command; cold start under 300 ms, asserted in CI; published to npm with
   provenance
-- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/76. `agon report` runs the whole
-  path on a real wallet: 100 transactions read, 77 of 80 swaps decoded at 96%, 28 closed trades,
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/76 and the follow-up adding
+  `agon check`, which refuses a real trade with its numbers and exits 1, pasted in OP-22.
+  `agon report` runs the whole path on a real wallet: 100 transactions read, 77 of 80 swaps decoded at 96%, 28 closed trades,
   3 rules mined, and it replays offline from a recorded fixture with 0 keys. The acceptance
   itself is NOT met: npm publish and MCP registration need T-C07 and T-C08
 - Finding: the first end to end run threw immediately, and no isolated test could have caught
@@ -1099,17 +1234,53 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
   accounts rather than owners, and gitleaks read 885 public base58 addresses as generic API
   keys, so `tokenAccount`, `fromTokenAccount` and `toTokenAccount` join the match scoped
   allowlist. Re-verified that a planted key in that same fixture still fails the scan
+- Finding 3: the slice only refuses once both halves are wired, and wiring them showed the guard
+  cannot say `pass` from the CLI at all today. With no quote and no injection screen, 2 of its 5
+  answers are "not read", and unscreened text is `unsure`, which is not a soft pass. That is the
+  contract behaving correctly and it means `agon check` is a refusal machine until the quote and
+  the screen are wired, which is worth knowing before a demo is built around a green verdict
+- Finding: wiring the real guard behind MCP showed the server had no way to be reached at all.
+  `createServer()` existed and every test passed, because each one wired an in-memory transport
+  inside its own process, so "callable by any agent" was proven against a client that shared the
+  server's heap. There was no stdio entry, no HTTP entry and no bin, so a fresh assistant on
+  another machine had nothing to connect to. Added a Streamable HTTP entry on `node:http`, no
+  express, since the SDK transport takes a plain req and res. Second finding from the same pass:
+  `FIXTURE_NOTE` existed and was never surfaced over MCP, so an agent calling `get_report` got
+  example numbers with nothing saying they were examples, which is worse than not having the tool.
+  It now rides in the payload, 77 characters against a budget measured at 227 of 2,000
+- Finding 3, from an outside agent testing the deployed URL: a marker on the protected tool does
+  not protect the unprotected one. `get_report` carried FIXTURE_NOTE and the agent correctly
+  refused to quote its numbers. `check_trade` carried nothing, so when it named USDC's real freeze
+  and mint authorities the agent checked those facts against mainnet, found them true, and
+  reported that the tool was reading chain state. It was replaying a recording. Every number was
+  true and the conclusion was wrong, and nothing in the payload could contradict it. The cause was
+  a static list: fixture-backing is a runtime fact for `check_trade`, live with a key and replayed
+  without one, and a hardcoded list cannot express that. `NetResult.fromFixture` had existed since
+  the record wrapper was written with 0 consumers outside tests; it has one now. Measured at 319
+  tokens of the 400 budget with the note attached
 - Kill criterion: none, the MCP server is how any agent reaches the guard
 
 ### T-E08, Onboarding
-- Status: open
+- Status: blocked, see OP-8
 - Depends-on: T-C09, T-E04
 - Touches: apps/web/app/(onboarding)/, docs/public/quickstart.md
 - Serves: UX (judged)
 - Acceptance: a new user goes from the landing page to a report in 3 steps or fewer, measured
   on 5 beta users with 0 help from us; the quickstart and the MCP tool reference are in
   `docs/public/` so they reach the public repo
-- Evidence: <5 timed walkthroughs>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/88, 2 actions from landing to report.
+  The 5 timed walkthroughs need beta users, see OP-8.
+- Finding: there was no front door. `/` was a 404, because apps/web/app held api, report and
+  waitlist and no root page at all, so the landing page the acceptance measures from did not exist.
+  Worse, the public README already told a judge to "start with docs/public/quickstart.md", and
+  docs/public did not exist either, so the repo anybody clones opened with a dead link. Both are
+  now there and both reach the public tree, checked by running the release copy. Second: the MCP
+  tool reference is generated from the frozen contracts rather than written beside them. T-C01's
+  argument is 1 definition with 4 consumers proven by 1 shape change failing in all 4, and a
+  hand-written reference would be a fifth consumer that fails nowhere, still describing the old
+  shape, in the public repo, to the agent authors we want integrating. A test fails when the
+  committed file is stale. Third: the path is 2 actions and not 3, because the report reads the
+  address off the query string and starts itself, so arriving is not something the user does.
 - Kill criterion: none, UX is a judged criterion
 
 ### T-E09, Beta cohort, 10 to 20 read-only users

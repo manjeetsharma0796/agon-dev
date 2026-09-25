@@ -13,6 +13,10 @@
     "packages/*": {
       "entry": ["src/index.ts"],
       "project": ["src/**/*.ts"]
+    },
+    "packages/mcp": {
+      "entry": ["src/index.ts", "src/serve.ts"],
+      "project": ["src/**/*.ts"]
     }
   }
 }

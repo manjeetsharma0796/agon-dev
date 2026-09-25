@@ -9,6 +9,7 @@
     "@agon/chain": "workspace:*",
     "@agon/core": "workspace:*",
     "@agon/decoder": "workspace:*",
+    "@agon/guard": "workspace:*",
     "@agon/miner": "workspace:*"
   }
 }
