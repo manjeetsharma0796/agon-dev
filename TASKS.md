@@ -694,7 +694,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: if (e) passes unexpectedly, numbers still stay on arithmetic. 1 lucky run is not evidence
 
 ### T-C07, MCP server, 4 tools and a stable list
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/80 | Owner: Jishnu | Branch: feature/t-c07-mcp
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/97 | Owner: Jishnu | Branch: feature/t-c07-fixture-marker
 - Depends-on: T-C06
 - Touches: packages/mcp/src/, packages/guard/src/assess.ts, packages/decoder/src/enhanced.ts
 - Serves: Functionality (judged) ; Open source (judged)
@@ -1074,6 +1074,9 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   reason printed, never a silent pass
 
 ### T-C13, The 8-reason verdict is 452 tokens against a budget of 400
+- Note: the fixture marker adds about 20 tokens to any replayed verdict, so the 8-reason case this
+  row is about is now roughly 472 rather than 452. The 5-reason verdict the deployment serves
+  measures 319 with the note attached. Counted here so this row's target is the real number
 - Status: open
 - Depends-on: T-C06, T-C12
 - Touches: packages/guard/src/check-trade.ts, packages/guard/src/check-trade.token.test.ts
@@ -1199,6 +1202,16 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
   `FIXTURE_NOTE` existed and was never surfaced over MCP, so an agent calling `get_report` got
   example numbers with nothing saying they were examples, which is worse than not having the tool.
   It now rides in the payload, 77 characters against a budget measured at 227 of 2,000
+- Finding 3, from an outside agent testing the deployed URL: a marker on the protected tool does
+  not protect the unprotected one. `get_report` carried FIXTURE_NOTE and the agent correctly
+  refused to quote its numbers. `check_trade` carried nothing, so when it named USDC's real freeze
+  and mint authorities the agent checked those facts against mainnet, found them true, and
+  reported that the tool was reading chain state. It was replaying a recording. Every number was
+  true and the conclusion was wrong, and nothing in the payload could contradict it. The cause was
+  a static list: fixture-backing is a runtime fact for `check_trade`, live with a key and replayed
+  without one, and a hardcoded list cannot express that. `NetResult.fromFixture` had existed since
+  the record wrapper was written with 0 consumers outside tests; it has one now. Measured at 319
+  tokens of the 400 budget with the note attached
 - Kill criterion: none, the MCP server is how any agent reaches the guard
 
 ### T-E08, Onboarding

@@ -53,8 +53,14 @@ const handlers = {
   list_rules: (_input: unknown) => [],
 } satisfies Record<ToolName, Handler>
 
-/** Tools still answering from a recorded example. Their results carry FIXTURE_NOTE. */
-const FIXTURE_BACKED: readonly ToolName[] = ['get_report']
+/**
+ * Tools that answer from a recorded example no matter what the network is doing. `get_report`
+ * reads `fixtures/contracts` off disk, so no runtime flag can tell you: it is always an example.
+ *
+ * `check_trade` is not on this list and must not be. It is fixture-backed in the deployment and
+ * live when a key is set, which is a runtime fact, so it is marked from `io.usedFixture()` below.
+ */
+const ALWAYS_FIXTURE: readonly ToolName[] = ['get_report']
 
 /**
  * Calls one tool. The input is parsed against the frozen contract before the handler sees it and
@@ -150,9 +156,16 @@ export const callAsTool = async (
   try {
     const result = await callTool(name, input ?? {}, io)
     // A fixture-backed number goes out wearing the label. An agent repeating a figure it was given
-    // cannot know it was an example unless the payload says so, and the note costs 77 characters
-    // against a 2,000 token budget measured at roughly 204.
-    const text = FIXTURE_BACKED.includes(name)
+    // cannot know it was an example unless the payload says so.
+    //
+    // This used to be a static list holding `get_report` alone, and that was too narrow. An outside
+    // agent tested the deployment, saw `check_trade` name USDC's real freeze and mint authorities,
+    // verified those facts against mainnet and concluded the tool was reading the chain. It was
+    // replaying a recording. The facts were true, the inference was reasonable, and nothing in the
+    // payload could correct it, because the only tool carrying a marker was the one it had already
+    // been careful about. A marker on the protected tool does not protect the unprotected one.
+    const fromFixture = ALWAYS_FIXTURE.includes(name) || io.usedFixture()
+    const text = fromFixture
       ? JSON.stringify({ ...(result as object), note: FIXTURE_NOTE })
       : JSON.stringify(result)
     return { content: [{ type: 'text', text }] }
@@ -176,7 +189,7 @@ export const callAsTool = async (
  * second copy is exactly what drifts silently when a tool is added or reordered in
  * `packages/core`.
  */
-export const createServer = (io: ToolIo = liveIo()): McpServer => {
+export const createServer = (makeIo: () => ToolIo = liveIo): McpServer => {
   const server = new McpServer(
     { name: 'agon', version: '0.0.0' },
     { capabilities: { tools: {} }, instructions: INSTRUCTIONS },
@@ -186,7 +199,9 @@ export const createServer = (io: ToolIo = liveIo()): McpServer => {
     server.registerTool(
       name,
       { title: name, description: DESCRIPTIONS[name], inputSchema: toolContracts[name].input },
-      (args: unknown) => callAsTool(name, args, io),
+      // A fresh io per call, not per server: the fixture flag is per request, and a server that
+      // outlives one request would otherwise carry the first answer's flag onto every later one.
+      (args: unknown) => callAsTool(name, args, makeIo()),
     )
   }
 
