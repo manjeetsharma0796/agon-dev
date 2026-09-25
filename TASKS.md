@@ -372,7 +372,7 @@ and latency (a, b).
   third bucket exists to prevent, and F1 is existential
 
 ### T-A06, Fix the two coverage numbers that can lie
-- Status: open
+- Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-a06-coverage
 - Depends-on: T-A01
 - Touches: packages/decoder/src/index.ts, packages/core/src/report.ts, packages/decoder/src/pnl.ts
 - Serves: Functionality (judged) ; F1 coverage share
