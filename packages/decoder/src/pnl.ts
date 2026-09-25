@@ -88,7 +88,21 @@ export function fifoLedger(
 
   const seen = new Set<string>()
   const ordered = [...swaps]
-    .sort((a, b) => a.slot - b.slot || a.signature.localeCompare(b.signature))
+    // Slot, then buys before sells inside a slot.
+    //
+    // The tie-break used to be the base58 signature, which is an arbitrary string with nothing to
+    // do with what happened first, so a same-slot buy and sell netted to a closed trade or to a
+    // sold-more-than-held exception depending on which signature sorted first, and the same wallet
+    // could report different realised P&L on a rerun.
+    //
+    // Removing the tie-break is not enough on its own, because the order the swaps arrive in then
+    // decides the answer instead. Within one slot there is no ordering available to us: the block
+    // has one, and a decoded balance change does not carry it. So the tie is broken on the only
+    // thing that is knowable and economically meaningful, which is that a wallet cannot sell units
+    // it acquired in the same slot unless the buy is counted first. Counting the sell first invents
+    // a sold-more-than-held exception against units the wallet demonstrably held, and that
+    // exception is subtracted from realised P&L, so the conservative order is also the accurate one.
+    .sort((a, b) => a.slot - b.slot || (a.side === b.side ? 0 : a.side === 'buy' ? -1 : 1))
     .filter((swap) => {
       if (!seen.has(swap.signature)) {
         seen.add(swap.signature)
