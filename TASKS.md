@@ -385,8 +385,26 @@ and latency (a, b).
   role carrying programAll is REJECTED, asserted by a test building exactly that role; the approved
   cap amount and window are passed in and compared, so a role armed at 25,000 when the user signed
   25 is rejected; 0 of these tests pass against the current code before the fix
-- Evidence: <PR link, plus the 3 new negative controls>
+- Evidence: PR link below, 6 tests in packages/chain/src/swig/real-cap.test.ts, 253 passing across
+  36 files. The 3 required controls failed against the old code before the fix, plus 3 more the
+  reviews demanded. The spent-window case forges a real role by zeroing currentAmount in the encoded
+  bytes rather than stubbing one, with both candidate offsets probed to confirm which field is which
 - Kill criterion: none. This is the layer that assumes every layer above it failed
+- Finding: the fix almost shipped the same fail-open through a different door, which is the finding
+  worth keeping. Reading the CONFIGURED cap needs the token action before the program action in the
+  buffer, because `Actions.tokenSpend` does `find(a => a.tokenControl(mint).spendLimit != null)` and
+  `spendLimit` returns `0n` rather than `null` for an action with no token control, so the program
+  action always matched first and its empty controller came back. Requiring a readable cap in the
+  shape check therefore rejected every role armed program-first, which is every role the previous
+  code produced, and the kill switch would have reported "No Agon roles were found" for all of them
+  from the moment it shipped. The rule now written into the file: **the revoke path is never
+  stricter than the arm path**, or it cannot clean up what arming produced. Identity is checked
+  order-independently; the cap is compared only where an approved number exists to compare it to.
+  Also: `canUseProgram` cannot prove scoping, only a negative probe can, and the bypasses ruled out
+  are ProgramCurated and All (answer yes to the probe), ProgramScope and SubAccount (answer no to
+  Jupiter), and non-recurring TokenLimit (no recurringAmount). Left open for T-E06: `approved` is
+  optional because the kill switch cannot supply it, so an arming call that omits it silently skips
+  the cap comparison. T-E06 must pass it, and a test should assert the 1000x role is refused
 
 ### T-F01a, F1 spike on 2 wallets, for CP1
 - Status: blocked, see OP-23
