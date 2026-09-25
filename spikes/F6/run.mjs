@@ -100,13 +100,139 @@ try {
 const rolePermits = chain.JUPITER_PROGRAM_ID
 const triggerIsTheSameProgram = orderProgram !== null && orderProgram === rolePermits
 
-const onChain = RPC
-  ? null
-  : 'no simulated chain was given. Set SURFPOOL_RPC_URL to a Surfpool mainnet fork, which carries the real Trigger and Swig programs and costs nothing'
-if (onChain) {
-  for (const k of ['orderCreated', 'cancelReturnsFunds', 'depositMatchesAllowance']) {
-    clauses[k].why = onChain
+if (!RPC) {
+  const why =
+    'no simulated chain was given. Set SURFPOOL_RPC_URL to a Surfpool mainnet fork, which carries ' +
+    'the real Trigger and Swig programs and costs nothing'
+  for (const k of ['orderCreated', 'cancelReturnsFunds', 'depositMatchesAllowance'])
+    clauses[k].why = why
+} else if (clauses.pdaAccepted.status !== 'pass') {
+  const why = 'the Trigger API would not build an order, so there was nothing to send'
+  for (const k of ['orderCreated', 'cancelReturnsFunds', 'depositMatchesAllowance'])
+    clauses[k].why = why
+} else {
+  await runOnChain()
+}
+
+/**
+ * The 3 clauses that move funds.
+ *
+ * The order is signed by root and not by the agent role, and that is the finding above rather than
+ * a convenience: the Trigger program is not the program the role permits, so the role cannot reach
+ * it. Root can, which is what T-E06 describes, where the user's own wallet signs the role and the
+ * order together at arm time.
+ */
+async function runOnChain() {
+  const conn = new web3.Connection(RPC, 'confirmed')
+  const send = async (ixs, signers) => {
+    try {
+      const { blockhash } = await conn.getLatestBlockhash()
+      const msg = new web3.TransactionMessage({
+        payerKey: signers[0].publicKey,
+        recentBlockhash: blockhash,
+        instructions: ixs,
+      }).compileToV0Message()
+      const tx = new web3.VersionedTransaction(msg)
+      tx.sign(signers)
+      return { landed: true, sig: await conn.sendTransaction(tx) }
+    } catch (e) {
+      return { landed: false, answer: String(e.message).replace(/\s+/g, ' ').slice(0, 220) }
+    }
   }
+
+  // A real Swig, deployed on the fork, with root held by a key the fork funds.
+  const payer = web3.Keypair.generate()
+  await conn.requestAirdrop(payer.publicKey, 50e9)
+  await new Promise((r) => setTimeout(r, 1500))
+
+  const createIx = await swig.getCreateSwigInstruction({
+    payer: payer.publicKey,
+    id: swigId,
+    actions: swig.Actions.set().all().get(),
+    authorityInfo: swig.createEd25519AuthorityInfo(payer.publicKey),
+  })
+  const created = await send([createIx], [payer])
+  if (!created.landed) {
+    for (const k of ['orderCreated', 'cancelReturnsFunds', 'depositMatchesAllowance']) {
+      clauses[k].why = `the Swig account could not be created on the fork: ${created.answer}`
+    }
+    return
+  }
+
+  const account = await swig.fetchSwig(conn, swigAddress)
+  const root = account.roles[0]
+  const wallet = await swig.getSwigWalletAddress(account)
+  await send(
+    [
+      web3.SystemProgram.transfer({
+        fromPubkey: payer.publicKey,
+        toPubkey: wallet,
+        lamports: 10e9,
+      }),
+    ],
+    [payer],
+  )
+
+  // The order the API built was for `swigAddress`. Rebuild it for the wallet, which is where the
+  // funds are, then send the Trigger instruction under root.
+  const res = await fetch('https://api.jup.ag/trigger/v1/createOrder', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', ...(KEY ? { 'x-api-key': KEY } : {}) },
+    body: JSON.stringify({
+      inputMint: SOL,
+      outputMint: USDC,
+      maker: wallet.toBase58(),
+      payer: wallet.toBase58(),
+      params: { makingAmount: '100000000', takingAmount: '12000000' },
+      computeUnitPrice: 'auto',
+    }),
+  })
+  const built = await res.json()
+  if (!res.ok || !built.transaction) {
+    for (const k of ['orderCreated', 'cancelReturnsFunds', 'depositMatchesAllowance']) {
+      clauses[k].why =
+        `the Trigger API would not build an order for the wallet address: ${JSON.stringify(built).slice(0, 180)}`
+    }
+    return
+  }
+
+  const msg = web3.VersionedTransaction.deserialize(
+    Buffer.from(built.transaction, 'base64'),
+  ).message
+  const keys = msg.staticAccountKeys
+  const toIx = (ci) =>
+    new web3.TransactionInstruction({
+      programId: keys[ci.programIdIndex],
+      keys: ci.accountKeyIndexes.map((i) => ({
+        pubkey: keys[i],
+        isSigner: msg.isAccountSigner(i),
+        isWritable: msg.isAccountWritable(i),
+      })),
+      data: Buffer.from(ci.data),
+    })
+  const inner = msg.compiledInstructions.map(toIx)
+
+  const before = await conn.getBalance(wallet)
+  const wrapped = await swig.getSignInstructions(account, root.id, inner)
+  const sent = await send(wrapped, [payer])
+  clauses.orderCreated.status = sent.landed ? 'pass' : 'fail'
+  clauses.orderCreated.why = sent.landed
+    ? `the order was created under root, signature ${sent.sig}`
+    : `refused: ${sent.answer}`
+
+  if (!sent.landed) {
+    for (const k of ['cancelReturnsFunds', 'depositMatchesAllowance']) {
+      clauses[k].why = 'the order was never created, so there was nothing to cancel or to measure'
+    }
+    return
+  }
+
+  const after = await conn.getBalance(wallet)
+  clauses.depositMatchesAllowance.why =
+    `wallet balance moved ${before} to ${after}, a change of ${after - before} lamports against a ` +
+    `making amount of 100000000. The allowance arithmetic is not asserted yet: a role-level ` +
+    `allowance read is needed and this run measures the wallet balance only`
+  clauses.cancelReturnsFunds.why = 'the cancel path is not written yet'
 }
 
 const passed = Object.values(clauses).filter((c) => c.status === 'pass').length

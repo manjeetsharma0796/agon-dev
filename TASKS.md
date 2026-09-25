@@ -656,6 +656,17 @@ and latency (a, b).
 - Kill criterion: fallback is lowering Jupiter `maxAccounts` until the route fits 64 inline accounts and measuring the price cost; a route still needing more than 64 accounts goes out as v0 with lookup tables inside 1,232 bytes
 
 ### T-F06a, F6 spike, Trigger order owned by a Swig wallet, in simulation
+- Evidence: spikes/F6/result.json, 2 of 4 clauses. **A Trigger order was created on chain, owned
+  by a Swig wallet**, on a mainnet fork, signature
+  2F6ZxUNSrBifM5xuceszY4H3oi4YPvfyFveESVMynLy1CXmkfHwYeaM9qBvx7jJrbT2Z4oDLVzXkVPXiP2nkfNEb. Signed
+  by root rather than by the agent role, which is the finding above and is also what T-E06
+  describes. That is the 24/7 mechanism working: a rule can sit on chain owned by the user's own
+  wallet with no Agon server involved
+- Not asserted, and reported as not run rather than rounded to a pass: the wallet balance moved
+  -109597840 lamports against a making amount of 100000000. The 9597840 difference is rent and fees
+  for the order account and its token accounts, so the deposit is not the making amount at the
+  wallet level and the acceptance asks for the **allowance** to move by exactly the deposit. That
+  needs a role-level allowance read this run does not do. The cancel path is not written either
 - Finding: **a Trigger order runs on a different program from the one the agent role permits.** The
   Trigger API does build an order with a Swig wallet, a program-derived address, as maker and
   payer, answered 200 with an order address. Decoding that transaction, the order is created by
@@ -685,7 +696,6 @@ and latency (a, b).
   Swig allowance by exactly the deposit
 - Evidence: <spikes/F6/result.json at a commit>
 - Kill criterion: fallback is our local daemon polling price and executing through Swig, and the UI must then say "runs while your computer is on". The pitch loses 24/7 execution
-
 ### T-B03, Benchmark harness on a pinned mainnet fork
 - Status: open
 - Depends-on: T-B01, T-E01
