@@ -617,6 +617,14 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   a one-time approval reference, or arming simply not being an agent-callable tool at all, is the
   decision. The 3rd option is worth taking seriously: a cap the agent cannot request is a stronger
   claim than a cap it requests and is refused.
+- The plan already says the right thing, which narrows this a lot. T-E06's acceptance reads: "the
+  user's wallet signs the Swig role plus the Jupiter Trigger order in 1 flow; **the cap our code
+  sends is never higher than the number the user typed, asserted by a test**; wallet connection is
+  the only auth and there are still 0 accounts". So the user types the cap and the user's wallet
+  signs it, and nobody has to be talked into that. The gap is narrower than it first looked and
+  more mechanical: the contract does not encode what the plan already decided. `RuleSpec` has no
+  wallet and no evidence of approval, so the shape permits what T-E06 forbids, and the test T-E06
+  promises has nothing in the contract to assert against.
 - Done when: the owners of both sides agree the shape, `fixtures/contracts/` changes in the same
   commit, and T-E06's screen is designed against whichever answer wins.
 - Why it cannot wait: it is the difference between the pitch and the opposite of the pitch, and
