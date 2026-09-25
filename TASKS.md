@@ -1457,7 +1457,7 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 ### T-E13, Every surface that serves a fixture says so, not just the two that already do
 - Status: claimed 2026-09-25 | Owner: manjeetsharma0796 | Branch: feature/t-e13-fixture-note-surfaces
 - Depends-on: T-C07
-- Touches: apps/web/src/routes.ts, apps/web/src/card.ts, packages/mcp/src/mcp.test.ts
+- Touches: apps/web/src/routes.ts, apps/web/src/card.ts, apps/web/src/fixture-note-surfaces.test.ts, packages/mcp/src/mcp.test.ts
 - Serves: Functionality (judged) ; the honesty rule that a fixture is never served unlabelled
 - Acceptance: `FIXTURE_NOTE` appears in 0 places in `apps/web/src/routes.ts` today and in 2 after
   this, being the report and check_trade JSON responses; the share card's footer names itself an
