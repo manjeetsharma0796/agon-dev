@@ -1232,7 +1232,40 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
   never higher than the number the user typed, asserted by a test; wallet connection is the only
   auth and there are still 0 accounts
 - Evidence: <staging recording, plus the devnet role read>
+- What is gated and what is not, because "do not start" reads as all of it: the **arming screen**
+  is gated, and that is this row. Connecting a wallet and reading an address from it is not gated
+  by anything and is T-E14, which can start today. The gate is specific: if F5 fails the cap is
+  not known to hold and there must be no screen offering to arm one, and if F6 falls back to
+  daemon polling the same screen has to say "runs while your computer is on", which is a different
+  screen rather than a different sentence
+- Known gap, before anyone designs against the contract: `arm_rule`'s input is `RuleSpec`, which
+  carries `mints`, `cap`, `triggerType` and `expiresAt` and **no wallet and no evidence of
+  approval**. So the contract cannot express "this user approved this cap for this account", which
+  is exactly what this row's acceptance promises to assert. That is OP-27, and it is a frozen
+  contract, so it wants settling before the screen is built rather than after
 - Kill criterion: if F6 fell back to daemon polling, the screen must say "runs while your computer is on"
+
+### T-E14, Connect a wallet instead of pasting an address
+- Status: open
+- Depends-on: T-E04
+- Touches: apps/web/app/(onboarding)/, apps/web/app/wallet/
+- Serves: UX (judged) ; unblocks the arming flow without waiting for it
+- Acceptance: **this is not gated on F5 or F6 and can start today**, because nothing here signs
+  anything; connect works from Phantom and from Backpack; the address shown is read from the
+  connected key and is never typed; disconnect clears it; pasting an address still works for a
+  visitor with no wallet, because the read-only beta must not require one; 0 signature prompts are
+  raised anywhere in this task, asserted by a test that fails if `signTransaction` or
+  `signMessage` is reachable from this screen; 0 accounts are created and there is still no login
+- Evidence: <2 recordings, 1 per wallet, plus the test that proves 0 signature prompts>
+- Kill criterion: if no adapter works cleanly, the paste field stays and this is cut. Pasting an
+  address is the read-only beta's real entry point and it already works
+- Note for whoever picks this up: today `apps/web/app/(onboarding)/page.tsx` holds a text input and
+  pushes to `/report?wallet=...`. That handoff is the seam. Connecting a wallet replaces where the
+  address comes from and nothing downstream changes, which is why this is separable from T-E06 and
+  why it does not wait on a spike. No wallet adapter is in the repo today, so adding one is a new
+  dependency and the PR needs a `**Dependency:**` line saying why the stdlib will not do
+- Note on scope: connection only. The moment a screen asks for a signature it is T-E06, which is
+  gated, and the gate is real rather than cautious
 
 ### T-E07, Revoke from the wallet, live
 - Status: open
