@@ -48,7 +48,7 @@ const facts = (over: Partial<TradeFacts>): TradeFacts => ({
   quote: { priceImpactPct: '0.0027', slippageBps: 50, contextSlot: SLOT },
   jev: null,
   spendAsset: { symbol: 'SOL', decimals: 9 },
-  categoryMix: { major: 1 },
+  categoryMix: { 'blue chip': 1 },
   ruleVersion: 'profile-2026-09-24-a',
   ...over,
 })
@@ -77,7 +77,7 @@ test('a whole check costs 3 network calls, and the guard itself costs 0 of them'
   const jev = await ask(
     async () => {
       seen.push('jev')
-      return { answers: { tokenCategory: { choice: 'major' }, injection: { choice: 'no' } } }
+      return { answers: { tokenCategory: { choice: 'blue chip' }, injection: { choice: 'no' } } }
     },
     [
       { kind: 'tokenCategory', mint: MINT, text: 'A major asset.' },

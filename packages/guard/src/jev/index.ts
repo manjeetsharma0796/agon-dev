@@ -7,16 +7,22 @@
 // runtime guard to forget to call, because the type has no room for it.
 
 /**
- * The 6 token categories. A closed list, because the guard's rules are written against these names
- * and a seventh answer appearing later would silently match none of them.
+ * The 6 token categories, character for character from the PRD under F11 on p.15: "which category
+ * a token belongs to (memecoin, stablecoin, liquid-staking token, blue chip, real-world asset,
+ * other), cached per mint for all users".
+ *
+ * A closed list, because the guard's rules are written against these names and a seventh answer
+ * appearing later would silently match none of them. Copied rather than paraphrased for the same
+ * reason: style fit looks a category up in the wallet's mix by string, so a name that drifts from
+ * the PRD by one character matches nothing and reads as a token the user has never traded.
  */
 export const TOKEN_CATEGORIES = [
-  'major',
-  'established',
-  'mid-cap',
-  'new-listing',
-  'meme',
-  'unknown',
+  'memecoin',
+  'stablecoin',
+  'liquid-staking token',
+  'blue chip',
+  'real-world asset',
+  'other',
 ] as const
 export type TokenCategory = (typeof TOKEN_CATEGORIES)[number]
 
@@ -51,13 +57,15 @@ export interface JevVerdict {
 /** What the caller supplies: one transport, so the wrapper owns timing, replay and redaction. */
 export type JevTransport = (body: unknown) => Promise<unknown>
 
+// 'other' is the sixth answer, not the absence of one. Its criterion says so on purpose: a token
+// the text cannot place at all produces no category, further down, and never this one.
 const CATEGORY_CRITERIA: Record<TokenCategory, string> = {
-  major: 'a top tier asset such as SOL or a major stablecoin',
-  established: 'a token with a long history and deep liquidity across venues',
-  'mid-cap': 'a known token with moderate liquidity',
-  'new-listing': 'listed recently, with a short history',
-  meme: 'a meme or community token whose value is social rather than operational',
-  unknown: 'not enough information in the text to place it',
+  memecoin: 'a meme or community token whose value is social rather than operational',
+  stablecoin: 'a token that holds a peg to a currency or another asset',
+  'liquid-staking token': 'a receipt for staked tokens, tracking the value of a stake',
+  'blue chip': 'a top tier asset with a long history and deep liquidity across venues',
+  'real-world asset': 'a claim on something off chain, such as treasuries, credit or commodities',
+  other: 'a real token that none of the 5 above describe',
 }
 
 /**
@@ -123,8 +131,9 @@ const confidenceOf = (c: RawChoice | null): number =>
  *
  * Fails closed in both directions that matter. An unparseable or missing injection answer is
  * treated as injected, because the alternative is letting text we could not screen reach an agent
- * that can spend money. A missing category is `unknown`, which the arithmetic rules already treat
- * as the most restrictive case.
+ * that can spend money. An unparseable or missing category produces no category at all rather
+ * than one of the 6, because every one of the 6 is an answer the model chose and 'we could not
+ * read the answer' is not. Style fit refuses on a missing category, so this fails closed too.
  */
 export async function ask(
   transport: JevTransport,
@@ -162,7 +171,8 @@ export async function ask(
   if (asked.has('tokenCategory')) {
     const c = choiceOf(raw, 'tokenCategory')
     const named = TOKEN_CATEGORIES.find((k) => k === c?.choice)
-    answers.tokenCategory = { category: named ?? 'unknown', confidence: confidenceOf(c) }
+    if (named !== undefined)
+      answers.tokenCategory = { category: named, confidence: confidenceOf(c) }
   }
 
   if (asked.has('impersonation')) {
@@ -210,8 +220,11 @@ const categoryCache = new Map<string, TokenCategory>()
 
 export const cachedCategory = (mint: string): TokenCategory | undefined => categoryCache.get(mint)
 
+// Every one of the 6 is a decision the model made, including 'other', so all 6 cache with no
+// exception to remember. The case that must never be cached, a token whose text placed it
+// nowhere, has no category to pass in here at all.
 export function rememberCategory(mint: string, category: TokenCategory): void {
-  if (category !== 'unknown') categoryCache.set(mint, category)
+  categoryCache.set(mint, category)
 }
 
 /** Test seam. Nothing in production clears it, because the answer never goes stale. */
