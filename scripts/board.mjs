@@ -81,6 +81,22 @@ function lint() {
   const tasks = parseTasks(body, rest.length > 0 ? before.split(/\r?\n/).length : 0)
   if (tasks.length === 0) return fail('No task rows found in TASKS.md below section 5.')
 
+  // An unresolved merge leaves these behind, and every other check here reads straight past them:
+  // a conflicted TASKS.md still parses, still counts its rows, and still reports "lint ok". That
+  // was measured by planting a conflict block and watching the lint pass, after a real botched
+  // resolution was committed and pushed with the markers still in it. Both board files are
+  // checked, because one merge can conflict either.
+  for (const file of ['TASKS.md', 'OPERATOR_TODO.md']) {
+    if (!existsSync(file)) continue
+    readFileSync(file, 'utf8')
+      .split(/\r?\n/)
+      .forEach((line, i) => {
+        if (/^(<{7}|={7}|>{7})(\s|$)/.test(line)) {
+          fail(`${file}:${i + 1}: unresolved merge conflict marker "${line.slice(0, 7)}".`)
+        }
+      })
+  }
+
   const ops = existsSync('OPERATOR_TODO.md')
     ? new Set(parseTasks(readFileSync('OPERATOR_TODO.md', 'utf8')).map((t) => t.id))
     : new Set()

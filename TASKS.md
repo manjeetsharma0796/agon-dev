@@ -1237,9 +1237,9 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 - Kill criterion: if the LLM-guard baseline is not beaten, the speed claim does not get published at all
 
 ### T-C09, agon CLI
-- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-c09-cli
+- Status: claimed 2026-09-24 | Owner: Jishnu | Branch: feature/t-c09-conflict-lint
 - Depends-on: T-C07, T-C08
-- Touches: packages/cli/src/
+- Touches: packages/cli/src/, scripts/board.mjs
 - Serves: UX (judged) ; Open source (judged)
 - Acceptance: installs, registers the MCP server with the user's assistants and starts the
   daemon in 1 command; cold start under 300 ms, asserted in CI; published to npm with
