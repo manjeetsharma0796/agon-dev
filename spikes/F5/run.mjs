@@ -55,8 +55,11 @@ const heliusKey = process.env.HELIUS_API_KEY ?? ''
  * mainnet fork: the run would have reported measurements "on devnet" that were taken somewhere
  * else. A result that misnames the chain it ran against is worse than no result.
  */
-const CHAIN =
-  /127\.0\.0\.1|localhost/.test(RPC) ? 'a local mainnet fork' : RPC.includes('devnet') ? 'devnet' : RPC
+const CHAIN = /127\.0\.0\.1|localhost/.test(RPC)
+  ? 'a local mainnet fork'
+  : RPC.includes('devnet')
+    ? 'devnet'
+    : RPC
 
 const FAUCETS = [
   // The chain under test comes first, because on a Surfpool fork it is also the faucet and it
