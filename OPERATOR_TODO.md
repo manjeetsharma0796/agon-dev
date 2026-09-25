@@ -298,6 +298,15 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Status: open
 - Owner: <unassigned>
 - Needed by: 2026-09-26, before T-E03 puts anything on staging
+- Done, the agent-facing third: https://agon-dev.onrender.com/mcp is live, deployed from the
+  Dockerfile on `dev`, 0 environment variables set. Verified end to end on 2026-09-25: health in
+  0.68s, initialize returns the 2,052 character instructions, tools/list returns the stable 4,
+  check_trade answers block with "12.4x your median size of 0.162 SOL, past your 2x limit" stamped
+  check-trade/1+mint-check/1 at slot 450115322, arm_rule refuses through isError, get_report
+  carries FIXTURE_NOTE, and an unrecorded wallet is refused rather than approved. It holds no key,
+  because the image defaults to AGON_NET_MODE=replay, so there is nothing on it to rotate and
+  nothing a caller can spend. The 2 remaining thirds of this row, the web app and the per
+  environment keys, still need everything below.
 - Ready for you: the MCP server is now a built and run image. `docker build -t agon-mcp .` then
   `docker run -p 8787:8787 agon-mcp` answers a real check_trade verdict with 0 keys set, because
   it defaults to AGON_NET_MODE=replay and ships no credential. Any host that builds a Dockerfile
