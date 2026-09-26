@@ -1356,6 +1356,22 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   take alone. Write the measurement into an OP and stop, rather than quietly shipping a truncated
   verdict
 
+### T-C16, Say which network, to people and to agents
+- Status: claimed 2026-09-26 | Owner: manjeetsharma0796 | Branch: feature/t-c16-network-label
+- Depends-on: T-C07
+- Touches: packages/core/src/network.ts, packages/core/src/network.test.ts,
+  packages/core/src/index.ts, packages/mcp/src/index.ts, packages/mcp/src/mcp.test.ts,
+  apps/web/app/NetworkBanner.tsx, apps/web/app/layout.tsx, .env.example
+- Serves: UX (judged) ; 0 users or agents who read test funds as real, or real funds as test
+- Acceptance: 1 env var, `AGON_NETWORK`, read by both the web app and the MCP server; every web
+  page shows a banner naming fork, devnet or mainnet; all 4 MCP tools return `network` as the first
+  key of their result and every refusal starts with "Network:", because an agent's client shows no
+  banner of ours; unset or any other value reads "not set" and never mainnet, tested on 5 bad
+  values; `check_trade` stays inside its 400-token budget with the label on
+- Evidence: <PR link, with the check_trade token count before and after>
+- Kill criterion: none. Saying which chain a number came from is not optional once anything can
+  sign
+
 ---
 
 # P3, CP2 to CP3, World's Fair freeze (2026-10-08)
@@ -1406,7 +1422,8 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 ### T-E14, Connect a wallet instead of pasting an address
 - Status: open
 - Depends-on: T-E04
-- Touches: apps/web/app/(onboarding)/, apps/web/app/wallet/
+- Touches: apps/web/app/(onboarding)/, apps/web/app/wallet/, apps/web/package.json,
+  pnpm-lock.yaml
 - Serves: UX (judged) ; unblocks the arming flow without waiting for it
 - Acceptance: **this is not gated on F5 or F6 and can start today**, because nothing here signs
   anything; connect works from Phantom and from Backpack; the address shown is read from the
