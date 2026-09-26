@@ -19,6 +19,9 @@ export * from './rule.js'
 // work lives here, so "something went wrong" has nowhere to be written.
 export * from './messages.js'
 
+// Which chain this deployment points at, shown to people and agents alike.
+export * from './network.js'
+
 // The record and replay wrapper, T-C02. Everything above is the frozen contract; this is the
 // one door every external call goes through.
 export * from './net/index.js'

@@ -6,7 +6,7 @@
 // differently, because there is only one answer to give.
 
 import { FIXTURE_NOTE, armRule, report } from '@agon/web'
-import { TOOLS, mode, type ToolName, toolContracts } from '@agon/core'
+import { TOOLS, mode, network, type ToolName, toolContracts } from '@agon/core'
 import { assessTrade } from '@agon/guard'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
@@ -111,6 +111,9 @@ slot they were read at in "dataSlot".`
 
 const INSTRUCTIONS = `Agon turns a trader's own on-chain history into a spending limit their agent has to trade inside.
 
+Network: ${network(process.env['AGON_NETWORK']).short}. Every result starts with this as "network"
+(an error starts with "Network:"). Tell the user which network before quoting any number from it.
+
 ${dataSource()}
 
 What works right now, with nothing to set up:
@@ -180,6 +183,7 @@ export const callAsTool = async (
   input: unknown,
   io: ToolIo = liveIo(),
 ): Promise<CallToolResult> => {
+  const net = network(process.env['AGON_NETWORK'])
   try {
     const result = await callTool(name, input ?? {}, io)
     // A fixture-backed number goes out wearing the label. An agent repeating a figure it was given
@@ -191,15 +195,18 @@ export const callAsTool = async (
     // replaying a recording. The facts were true, the inference was reasonable, and nothing in the
     // payload could correct it, because the only tool carrying a marker was the one it had already
     // been careful about. A marker on the protected tool does not protect the unprotected one.
+    //
+    // `network` goes first, because an agent's client shows no banner of ours: the first thing it
+    // reads is the only place to say whether these are real funds.
     const fromFixture = ALWAYS_FIXTURE.includes(name) || io.usedFixture()
-    const text = fromFixture
-      ? JSON.stringify({ ...(result as object), note: FIXTURE_NOTE })
-      : JSON.stringify(result)
+    const labelled = { network: net.short, ...(result as object) }
+    const text = JSON.stringify(fromFixture ? { ...labelled, note: FIXTURE_NOTE } : labelled)
     return { content: [{ type: 'text', text }] }
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
     return {
       isError: true,
-      content: [{ type: 'text', text: error instanceof Error ? error.message : String(error) }],
+      content: [{ type: 'text', text: `Network: ${net.short}. ${message}` }],
     }
   }
 }
