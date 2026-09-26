@@ -1,7 +1,10 @@
 import { network } from '@agon/core'
+import { connection } from 'next/server'
 
 // Which chain this deployment points at, on every page, so test money is never mistaken for real
 // money or the reverse. Server side, so it reads the same AGON_NETWORK the MCP server does.
+// Read per request, not at build, or a page prerendered with one value would contradict an MCP
+// server started with another.
 // Foreground and background are both set, so it reads the same in a light or a dark theme.
 
 const TONES = {
@@ -10,7 +13,8 @@ const TONES = {
   warn: { background: '#fef3c7', color: '#78350f', borderBottom: '1px solid #fcd34d' },
 } as const
 
-export default function NetworkBanner() {
+export default async function NetworkBanner() {
+  await connection()
   const net = network(process.env['AGON_NETWORK'])
   return (
     <div

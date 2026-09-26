@@ -163,6 +163,8 @@ test('every result names its network first, because an agent sees no banner of o
   const payload = JSON.parse(textOf(ok)) as Record<string, unknown>
   expect(Object.keys(payload)[0]).toBe('network')
   expect(payload['network']).toBe('not set, treat nothing here as real')
+  // list_rules' contract is a list. Spread into an object it would come out as {"0": ...}.
+  expect(payload['rules']).toEqual([])
 
   const refused = await callAsTool('arm_rule', SPEC)
   expect(refused.isError).toBe(true)

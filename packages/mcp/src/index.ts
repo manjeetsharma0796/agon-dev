@@ -127,8 +127,8 @@ What works right now, with nothing to set up:
 - The size rule is checked on a BUY only. A sell is not sized against the median, because the
   median is a cost basis counted in the quote asset and a sell's size is counted in the mint. So a
   large sell returns no size reason. That is a gap, not a pass.
-- list_rules is real and currently returns an empty list for every wallet, because arming is off.
-  Empty means nothing is armed, not that the wallet has no history.
+- list_rules is real and currently returns an empty "rules" list for every wallet, because arming
+  is off. Empty means nothing is armed, not that the wallet has no history.
 
 What is not real yet, so do not present it as a measurement:
 
@@ -197,9 +197,13 @@ export const callAsTool = async (
     // been careful about. A marker on the protected tool does not protect the unprotected one.
     //
     // `network` goes first, because an agent's client shows no banner of ours: the first thing it
-    // reads is the only place to say whether these are real funds.
+    // reads is the only place to say whether these are real funds. A list (list_rules) cannot carry
+    // a first key, and spreading one into an object turns [r0, r1] into {"0": r0, "1": r1}, so a
+    // list goes out under "rules" instead.
     const fromFixture = ALWAYS_FIXTURE.includes(name) || io.usedFixture()
-    const labelled = { network: net.short, ...(result as object) }
+    const labelled = Array.isArray(result)
+      ? { network: net.short, rules: result }
+      : { network: net.short, ...(result as object) }
     const text = JSON.stringify(fromFixture ? { ...labelled, note: FIXTURE_NOTE } : labelled)
     return { content: [{ type: 'text', text }] }
   } catch (error) {
