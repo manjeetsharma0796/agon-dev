@@ -599,9 +599,23 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: this is copied into the PRD Decisions log and Track E's screens name which mode they
   are for.
 
-### OP-27, arm_rule lets the agent choose its own spending limit
-- Status: open
-- Owner: <unassigned>
+### OP-27, Decided: the miner suggests the cap, the user sets it in the web UI, the agent cannot name one
+- Status: decided 2026-09-26 by Jishnu. `arm_rule` stops carrying a cap. It names a wallet and
+  hands back a link to the arming screen, where the number the miner computed is shown and the
+  user edits and signs it. So the agent can say a wallet is ready to arm and can never say how
+  much. This keeps the frozen tool list at 4 and needs no new surface, because the arming screen
+  is T-E06 and already exists on the board. Recorded here because the PRD Decisions log is outside
+  this repo
+- The 3 contract changes this implies, all in `packages/core/src/rule.ts` and all frozen, so the
+  fixtures move in the same commit and the PR body carries the frozen-contract line: `RuleSpec`
+  gains the wallet the rule is for, it loses `cap` as a caller-supplied field, and `arm_rule`'s
+  output becomes an arming request rather than an armed rule
+- Why a signature alone was not enough, recorded so nobody reopens it: people approve pre-filled
+  numbers. A cap proposed by a model and signed by a tired user is still a cap chosen by a model,
+  and the claim that the limit comes from the user's own history stops being true the moment the
+  model can write the number. A cap the agent cannot request is a stronger claim than one it
+  requests and is refused
+- Owner: <unassigned>, for copying into the PRD Decisions log
 - Needed by: before any arming UI is designed, so before T-E06
 - Unblocks: T-E06, T-C08, and the honesty of the core claim
 - What exactly: the product's claim is a spending limit the agent has to trade inside. The contract
@@ -635,7 +649,22 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   every client written against today's shape has to change when it does.
 
 ### OP-28, CP1 wording: does the program limit gate every call, or only calls that move value
-- Status: open
+- Status: open, and not answerable by wording alone. Jishnu ruled 2026-09-26 that the measurement
+  below runs before the clause is rewritten, because "moves value" is being used as a proxy for
+  "can hurt the user" and nobody has checked that the proxy holds
+- The measurement, before the wording: case (d) showed a memo instruction, 0 accounts and no value
+  moved, is authorised under a Jupiter-only role. A memo is harmless. The question the rewrite
+  would be assuming away is whether every no-value instruction is harmless. Approving a delegate
+  on one of the vault's token accounts, or setting an authority, moves no value in that
+  instruction and is very much not harmless: a delegate can drain the account afterwards, outside
+  any window and outside the cap. So the probe is 1 instruction, an SPL `Approve` naming an
+  arbitrary delegate on the vault's wSOL account, wrapped in the agent's role and sent. If Swig
+  refuses it, "gates value movement" is an honest description and option A is safe. If Swig
+  authorises it, the Jupiter-only role does not bound the agent at all and this stops being a
+  wording item
+- Why it cannot wait, updated: it was a wording call and it is now a security question with a
+  measurement attached. About 20 minutes on the fork, and it can be added beside case (d) in
+  `spikes/F5/run.mjs`
 - Owner: <unassigned>
 - Needed by: 2026-09-27, CP1, because F5 case (d) fails on the wording rather than on the role
 - Unblocks: T-F05a's case (d), and the same clause in T-F05c and T-D04
@@ -657,8 +686,20 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Why it cannot wait: F5 is existential and 1 of its 7 cases currently cannot pass as written, so
   the row cannot go green on any platform until the sentence is fixed.
 
-### OP-29, CP1 wording: whose allowance does a Trigger order's deposit come out of
-- Status: open
+### OP-29, Decided: the owner places the Trigger order at arm time, and the agent's cap is not involved
+- Status: decided 2026-09-26 by Jishnu, option A for CP1, with option C as a follow-up rather than
+  a blocker: find out separately whether Swig can cap the Trigger program at all. If it can, the
+  agent managing its own orders inside a cap becomes the better product and this is revisited. If
+  it cannot, option A is the only safe answer and stays. Recorded here because the PRD Decisions
+  log is outside this repo
+- Why not option B today: a Trigger deposit does not touch the agent's allowance, measured at
+  500000000 before and after a 100000000 deposit. Granting the agent the Trigger program would
+  therefore hand it a way to move funds the cap cannot see, which is a bypass of the one thing the
+  product sells. That is only not true if the Trigger program can itself be capped, which is
+  exactly what the follow-up measures
+- Follow-up, not blocking CP1: does Swig offer an action that caps spending through a second
+  program, or is `programLimit` plus `tokenRecurringLimit` the whole vocabulary? Needs a read of
+  the Swig SDK's action list and 1 fork probe
 - Owner: <unassigned>
 - Needed by: 2026-09-27, CP1, because F6 clause 4 cannot pass as written
 - Unblocks: T-F06a's last clause, and the same sentence in T-F06b and T-D04
@@ -707,8 +748,11 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 
 ---
 
-### OP-32, CP1: the cap allows 2x its number across a window edge
-- Status: open
+### OP-32, Decided: the cap allows 2x its number across a window edge, and the product says so
+- Status: decided 2026-09-26 by Jishnu, option A: arm exactly the number the user typed and print
+  the rolling worst case beside it everywhere the cap appears. Nothing in the chain code changes,
+  which is the point: this is a wording defect and it is fixed in wording. Recorded here because
+  the PRD Decisions log is outside this repo
 - Owner: Jishnu
 - Needed by: 2026-09-27
 - Unblocks: T-E06's arming copy, T-C07's list_rules, T-E04's report copy, and the PRD's own
