@@ -21,10 +21,10 @@ test('Phantom and Backpack are offered, a wallet with no Solana chain or no conn
 })
 
 test('the address shown is the Solana account the wallet returned, never a guess', () => {
-  const key = '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM'
-  expect(solanaAddress([account('0xabc', ['eip155:1']), account(key, ['solana:mainnet'])])).toBe(
-    key,
-  )
+  const address = '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM'
+  expect(
+    solanaAddress([account('0xabc', ['eip155:1']), account(address, ['solana:mainnet'])]),
+  ).toBe(address)
   // A wallet that connects but shares no Solana account gives no address, so nothing is invented.
   expect(solanaAddress([account('0xabc', ['eip155:1'])])).toBeNull()
   expect(solanaAddress([])).toBeNull()
