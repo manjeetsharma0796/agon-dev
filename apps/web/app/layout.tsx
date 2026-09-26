@@ -1,3 +1,5 @@
+import NetworkBanner from './NetworkBanner'
+
 export const metadata = {
   title: 'Agon',
   description: 'Your own trading history, as a spending limit your agent has to trade inside.',
@@ -6,7 +8,10 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body style={{ margin: 0 }}>
+        <NetworkBanner />
+        {children}
+      </body>
     </html>
   )
 }
