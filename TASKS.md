@@ -1427,7 +1427,7 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 - Kill criterion: if F6 fell back to daemon polling, the screen must say "runs while your computer is on"
 
 ### T-E14, Connect a wallet instead of pasting an address
-- Status: claimed 2026-09-26 | Owner: manjeetsharma0796 | Branch: feature/t-e14-connect-wallet
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/141 | Owner: manjeetsharma0796 | Branch: feature/t-e14-connect-wallet
 - Depends-on: T-E04
 - Touches: apps/web/app/(onboarding)/, apps/web/app/wallet/, apps/web/package.json,
   pnpm-lock.yaml
@@ -1438,7 +1438,14 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
   visitor with no wallet, because the read-only beta must not require one; 0 signature prompts are
   raised anywhere in this task, asserted by a test that fails if `signTransaction` or
   `signMessage` is reachable from this screen; 0 accounts are created and there is still no login
-- Evidence: <2 recordings, 1 per wallet, plus the test that proves 0 signature prompts>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/141, with `no-signing.test.ts` proving
+  0 signature prompts across the 3 sources behind the screen. Connect, account switch, lock,
+  disconnect and the /report handoff checked in the browser with a Wallet Standard test wallet.
+  The 2 recordings with the real Phantom and Backpack extensions are still owed
+- Finding: the page did not follow the wallet's own account changes, so switching accounts in
+  Phantom left it showing a key that was no longer connected; now fixed with the standard:events
+  listener. And knip scanned only `apps/*/src`, so all of `apps/web/app` was invisible to it and
+  the new dependency read as unused
 - Kill criterion: if no adapter works cleanly, the paste field stays and this is cut. Pasting an
   address is the read-only beta's real entry point and it already works
 - Note for whoever picks this up: today `apps/web/app/(onboarding)/page.tsx` holds a text input and
