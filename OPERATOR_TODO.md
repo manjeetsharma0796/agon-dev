@@ -704,3 +704,34 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Why it cannot wait: F1 is existential and its headline number is "swaps decoded of 50 sampled per
   wallet". Half that number is currently measuring a wallet that has no swaps to decode, which
   makes the spike read as a decoder failure when the decoder is correct.
+
+---
+
+### OP-32, CP1: the cap allows 2x its number across a window edge
+- Status: open
+- Owner: Jishnu
+- Needed by: 2026-09-27
+- Unblocks: T-E06's arming copy, T-C07's list_rules, T-E04's report copy, and the PRD's own
+  description of what a cap is
+- What exactly: measured on a mainnet fork on 2026-09-26. A Swig recurring limit resets on the
+  global slot clock rather than on the role: lastReset is floor(slot / 150) * 150, so every role
+  shares the same window boundaries and a fresh role reads lastReset 0. A spend is refused while
+  slot - lastReset is 150 or less and allowed once it is more, probed every slot across 1
+  boundary.
+  The consequence is the decision. An agent can spend its whole allowance at the end of one window
+  and its whole allowance again at the start of the next, so a cap of 0.5 wSOL per 150 slots
+  permits 1.0 wSOL in as little as 2 slots. Measured: 0.9 wSOL in 37 slots against a 0.5 per 150
+  cap. Swig is counting correctly and this is not a Swig bug. Agon is the one making the promise,
+  and the number we put in front of a user is not the most their agent can spend in any 150 slots.
+  The worst case is twice it.
+  Two options. A: print the rolling worst case beside the cap everywhere the cap appears, so a
+  user arming 0.5 reads "up to 1.0 in a short burst across a window edge". B: arm half the number
+  the user typed, so the rolling worst case equals what they asked for. A keeps the armed number
+  equal to the typed one, which is what T-E06 asserts. B makes them differ and has to be explained
+  anyway, so it buys nothing A does not.
+- Done when: the answer is in the PRD Decisions log, and whichever wording wins is a row in the
+  T-E10 catalogue so the arming screen and list_rules cannot state the cap without it.
+- Why it cannot wait: this is the product's headline claim. Every other honesty defect found so
+  far erred toward under-promising: a coverage share that read 0 instead of inventing one, an
+  allowance that reads lower than it is. This one overstates the protection, which is the
+  direction that costs a user money, and CP1 is 2026-09-27.
