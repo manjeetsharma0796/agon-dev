@@ -1427,7 +1427,7 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 - Kill criterion: if F6 fell back to daemon polling, the screen must say "runs while your computer is on"
 
 ### T-E14, Connect a wallet instead of pasting an address
-- Status: open
+- Status: claimed 2026-09-26 | Owner: manjeetsharma0796 | Branch: feature/t-e14-connect-wallet
 - Depends-on: T-E04
 - Touches: apps/web/app/(onboarding)/, apps/web/app/wallet/, apps/web/package.json,
   pnpm-lock.yaml
