@@ -16,6 +16,14 @@ interface ConnectFeature {
 interface DisconnectFeature {
   disconnect(): Promise<void>
 }
+interface EventsFeature {
+  on(
+    event: 'change',
+    listener: (change: {
+      accounts?: readonly { address: string; chains: readonly string[] }[]
+    }) => void,
+  ): () => void
+}
 
 const buttonStyle = { padding: '0.7rem 1.4rem', font: 'inherit', fontWeight: 600 } as const
 
@@ -38,6 +46,19 @@ export default function ConnectWallet({ onRead }: { onRead: (address: string) =>
       offUnregister()
     }
   }, [])
+
+  // Switching or locking the account in the wallet has to reach the page, or it would keep showing,
+  // and reading the history of, a key that is no longer the connected one.
+  const connectedWallet = connected?.wallet
+  useEffect(() => {
+    if (!connectedWallet) return
+    const events = connectedWallet.features['standard:events'] as EventsFeature | undefined
+    return events?.on('change', ({ accounts }) => {
+      if (accounts === undefined) return
+      const address = solanaAddress(accounts)
+      setConnected(address === null ? null : { wallet: connectedWallet, address })
+    })
+  }, [connectedWallet])
 
   const connect = async (wallet: Wallet) => {
     setBusy(true)
