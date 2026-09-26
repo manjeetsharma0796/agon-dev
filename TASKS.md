@@ -1357,7 +1357,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   verdict
 
 ### T-C16, Say which network, to people and to agents
-- Status: claimed 2026-09-26 | Owner: manjeetsharma0796 | Branch: feature/t-c16-network-label
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/140 | Owner: manjeetsharma0796 | Branch: feature/t-c16-network-label
 - Depends-on: T-C07
 - Touches: packages/core/src/network.ts, packages/core/src/network.test.ts,
   packages/core/src/index.ts, packages/mcp/src/index.ts, packages/mcp/src/mcp.test.ts,
@@ -1368,7 +1368,14 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   key of their result and every refusal starts with "Network:", because an agent's client shows no
   banner of ours; unset or any other value reads "not set" and never mainnet, tested on 5 bad
   values; `check_trade` stays inside its 400-token budget with the label on
-- Evidence: <PR link, with the check_trade token count before and after>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/140. check_trade 337 tokens with
+  `fork`, 333 unset, 329 `mainnet`, from about 321 with no label. Built with the variable unset and
+  served with `fork`, the page reads `fork`
+- Finding: spreading the label into a result broke `list_rules`, whose contract is a list: `[]` came
+  out as `{"network": ...}` and 2 rules would have come out as `{"0": ..., "1": ...}`. The first test
+  checked only the first key and passed on it. A list now goes out under `rules`. And the banner was
+  prerendered at build while the MCP server reads at start, so a host setting the variable only at
+  runtime would have shown 2 different networks; the banner now reads per request
 - Kill criterion: none. Saying which chain a number came from is not optional once anything can
   sign
 
