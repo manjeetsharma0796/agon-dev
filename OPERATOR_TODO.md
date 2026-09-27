@@ -72,8 +72,15 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   Agon ships read-only, and that decision needs the measurement rather than an opinion.
 
 ### * OP-23, Pick 2 real trader wallets, and verify 50 rows by hand
-- Status: open
-- Owner: <unassigned>
+- Status: claimed 2026-09-27 | Owner: Jishnu. Decided: replace 1 wallet, then hand-verify 50 rows
+  on each of the 2
+- Narrowed 2026-09-27, and it is half the work the row describes. T-A06 and T-A07 landed, so the
+  decoder now reads a swap paid in native SOL. On that basis 5Q544fKr decodes 29 swaps of 50 and is
+  a real trader, so it stays and only needs verifying. 5CKAa7Wm is the one to replace: all 50 of
+  its sampled transactions are arbitrage, token gains of 3840 lamports and 0.007 USDC against a fee
+  of the same order, which is OP-31. So this is 1 wallet to find, 1 fixture to re-record with a
+  Helius key, and 2 hours of hand verification rather than the wallet hunt the row was written for
+- Owner: Jishnu
 - Needed by: 2026-09-26, so F1 has a result before CP1 on 2026-09-27
 - Unblocks: T-F01a, and through it T-F01b and the whole report
 - What exactly: two things, both needing a person.
@@ -114,7 +121,15 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   one 3-hour window, which broke its period filters (T8.8, T8.9).
 
 ### * OP-2, Helius plan and credit budget
-- Status: open
+- Status: decided 2026-09-27 by Jishnu: stay on the free tier, and use Surfpool wherever a fork
+  answers the question instead of an API. Not closed, because the row's own budget clauses are
+  still unmet and the constraint below is now a known risk we accepted rather than one we have not
+  met
+- The accepted risk, written down because OP-23 depends on it: re-recording F1's fixture needs
+  `AGON_NET_MODE=record` against Helius, and that recording already died halfway once on this tier
+  and left a partial fixture, which is why `spikes/F1/run.mjs` carries retry and backoff. OP-23
+  spends about 2 hours of hand verification against whatever that recording produces, so the
+  recording is checked complete before the verification starts, not after
 - Owner: <unassigned>
 - Needed by: 2026-09-25 for F1 and F2; before CP4 for the F8 index
 - Unblocks: T-F01a, T-F01b, T-F02, T-A04, T-F08, T-F10
@@ -147,8 +162,17 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   cosmetic: T-C06 budgets 1 quote per `check_trade`, so on this tier the guard tops out near 1
   check per second, and Benchmark A v2 (100 scenarios x 5 runs x 3 arms) is about 25 minutes of
   quote wall time on its own.
-- Done when: the key is in the hosted env and a nightly-only CI secret, and a 20-quote burst does
-  not rate-limit.
+- Decided 2026-09-27 by Jishnu: reword the criterion rather than buy a tier. The done-when below is
+  replaced by the paced one, and the ceiling is recorded as a known limit instead of being designed
+  around.
+- **The ceiling, stated because it is a product limit and not a spike limit.** T-C06 budgets 1
+  quote per `check_trade`, so on this tier the guard tops out near 1 check per second across every
+  agent calling the MCP server. Agon is positioned as a component other agents call, and 1 per
+  second is the ceiling on that claim until the tier changes. Benchmark A v2, 100 scenarios by 5
+  runs by 3 arms, is about 25 minutes of quote wall time on its own. Neither is a reason to buy the
+  tier today; both are reasons to write the number down before someone promises otherwise.
+- Done when: the key is in the hosted env and a nightly-only CI secret, and 20 quotes paced under
+  1 per second return 20 x 200 and 0 x 429. Measured already at 50/min: 20 x 200 in 23 s.
 
 ### * OP-4, Decide where Jev comes from, and confirm rate limits
 - Status: open
@@ -195,6 +219,11 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   the database tests cleanly.
 
 ### * OP-7, Create both GitHub repos and their tokens
+- Cleared to proceed 2026-09-27: OP-13 decided MIT, so nothing is waiting on a decision any more.
+  3 things close this, and only the third needs a person: point `PUBLIC_REPO` at
+  `manjeetsharma0796/agon` in `scripts/release.mjs` and set it in `release.yml`, commit `LICENSE`
+  and the README line, and add the `PUBLIC_REPO_TOKEN` Actions secret. The first 2 are a code PR
+  and cannot ride a `board/` branch
 - Updated 2026-09-25, later the same day: the public repo now exists. `manjeetsharma0796/agon`,
   public, default branch `main`, empty, and the invite is accepted. What is still wrong is that
   nothing points at it. `scripts/release.mjs` defaults `PUBLIC_REPO` to `agon-dev/agon`, which is a
@@ -280,8 +309,12 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: a written answer exists, with the person and the channel recorded. The current
   Decisions-log entry is marked unverified until then.
 
-### * OP-13, Decide the licence
-- Status: open
+### * OP-13, Decided: MIT
+- Status: decided 2026-09-27 by Jishnu: MIT, which confirms the assumption the PRD already makes
+  rather than choosing something new. The remaining work is 2 commits and 1 human action, split
+  because a `board/` PR cannot carry them: `LICENSE` at the repo root and the README line are a
+  code PR, `scripts/release.mjs`'s `PUBLIC_REPO` default and `release.yml` setting it are the same
+  PR, and the `PUBLIC_REPO_TOKEN` Actions secret needs someone with repo settings. See OP-7
 - Owner: <unassigned>
 - Needed by: 2026-09-26
 - Unblocks: T-J02
@@ -438,15 +471,30 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   keeps it.
 
 
-### OP-21, Decide the shape of the World's Fair demo: read-only or live arming
+### OP-21, Decided: everything runs on the fork until the mainnet gates pass
 - Note 2026-09-25, from the OP-20 fork decision: a fork answers "where does the demo run", not
   "where do new users try it". Those are different questions and the fork only answers the first.
   For users, the read-only path needs no fork, no signing, no custom RPC and no keypair: it is what
   `check_trade` already does on a real mainnet wallet today. That is the only path that can be
   opened to people before F5 and F6 pass, and it is available now
-- Status: open
-- Owner: <unassigned>
-- Needed by: 2026-09-27, CP1, because it changes what Track E builds next
+- Status: decided 2026-09-27 by Jishnu, option (b): live arming on a Surfpool mainnet fork, for
+  the demo and for testers both, and it stays there until every mainnet gate passes and real money
+  is safe to spend. Not (a), because arming on the fork is now measured end to end with a real
+  Phantom rather than simulated, so the demo does not need a simulation caveat. Not (c), because
+  T-D04 has 8 boxes and 0 are ticked. Recorded here because the PRD Decisions log is outside this
+  repo
+- What this costs, so nobody discovers it on camera: Phantom reaches the fork through Developer
+  Settings, Solana Localnet, and in that mode **Phantom's own balance and activity screens read
+  "not supported"**. So a tester cannot watch their money move in their wallet, and Agon's own
+  screens or the Solana Explorer on a custom cluster have to carry that. Phantom also adds 80,000
+  lamports of priority fee per transaction, which will appear in any cost we quote. And the fork
+  resets when it stops, so no tester's state survives a restart
+- What it still needs: rows 2, 3 and 5 of the critical path, all unassigned. The chain code that
+  builds create-vault plus agent-limit plus pockets plus deposit as 1 wallet-signed transaction,
+  T-E06's screen, and T-C08's agent side. Row 4, a wallet that can reach the fork, is answered and
+  row 6 is OP-27, decided
+- Owner: <unassigned>, for copying into the PRD Decisions log
+- Needed by: was 2026-09-27, CP1. Decided on the day next
 - Unblocks: T-E06, T-E07, T-J01, and the shape of `docs/demo-script.md`
 - What exactly: the demo script currently assumes beat 4 arms a rule for real and beat 6 revokes it
   from the wallet. Both need on-chain signing, which is gated behind F5, F6 and the T-D04
@@ -599,9 +647,23 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: this is copied into the PRD Decisions log and Track E's screens name which mode they
   are for.
 
-### OP-27, arm_rule lets the agent choose its own spending limit
-- Status: open
-- Owner: <unassigned>
+### OP-27, Decided: the miner suggests the cap, the user sets it in the web UI, the agent cannot name one
+- Status: decided 2026-09-26 by Jishnu. `arm_rule` stops carrying a cap. It names a wallet and
+  hands back a link to the arming screen, where the number the miner computed is shown and the
+  user edits and signs it. So the agent can say a wallet is ready to arm and can never say how
+  much. This keeps the frozen tool list at 4 and needs no new surface, because the arming screen
+  is T-E06 and already exists on the board. Recorded here because the PRD Decisions log is outside
+  this repo
+- The 3 contract changes this implies, all in `packages/core/src/rule.ts` and all frozen, so the
+  fixtures move in the same commit and the PR body carries the frozen-contract line: `RuleSpec`
+  gains the wallet the rule is for, it loses `cap` as a caller-supplied field, and `arm_rule`'s
+  output becomes an arming request rather than an armed rule
+- Why a signature alone was not enough, recorded so nobody reopens it: people approve pre-filled
+  numbers. A cap proposed by a model and signed by a tired user is still a cap chosen by a model,
+  and the claim that the limit comes from the user's own history stops being true the moment the
+  model can write the number. A cap the agent cannot request is a stronger claim than one it
+  requests and is refused
+- Owner: <unassigned>, for copying into the PRD Decisions log
 - Needed by: before any arming UI is designed, so before T-E06
 - Unblocks: T-E06, T-C08, and the honesty of the core claim
 - What exactly: the product's claim is a spending limit the agent has to trade inside. The contract
@@ -635,7 +697,23 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   every client written against today's shape has to change when it does.
 
 ### OP-28, CP1 wording: does the program limit gate every call, or only calls that move value
-- Status: open
+- Status: open, and not answerable by wording alone. Jishnu ruled 2026-09-26 that the measurement
+  below runs before the clause is rewritten, because "moves value" is being used as a proxy for
+  "can hurt the user" and nobody has checked that the proxy holds
+- Owner: Manjeet, for the probe
+- The measurement, before the wording: case (d) showed a memo instruction, 0 accounts and no value
+  moved, is authorised under a Jupiter-only role. A memo is harmless. The question the rewrite
+  would be assuming away is whether every no-value instruction is harmless. Approving a delegate
+  on one of the vault's token accounts, or setting an authority, moves no value in that
+  instruction and is very much not harmless: a delegate can drain the account afterwards, outside
+  any window and outside the cap. So the probe is 1 instruction, an SPL `Approve` naming an
+  arbitrary delegate on the vault's wSOL account, wrapped in the agent's role and sent. If Swig
+  refuses it, "gates value movement" is an honest description and option A is safe. If Swig
+  authorises it, the Jupiter-only role does not bound the agent at all and this stops being a
+  wording item
+- Why it cannot wait, updated: it was a wording call and it is now a security question with a
+  measurement attached. About 20 minutes on the fork, and it can be added beside case (d) in
+  `spikes/F5/run.mjs`
 - Owner: <unassigned>
 - Needed by: 2026-09-27, CP1, because F5 case (d) fails on the wording rather than on the role
 - Unblocks: T-F05a's case (d), and the same clause in T-F05c and T-D04
@@ -657,8 +735,20 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Why it cannot wait: F5 is existential and 1 of its 7 cases currently cannot pass as written, so
   the row cannot go green on any platform until the sentence is fixed.
 
-### OP-29, CP1 wording: whose allowance does a Trigger order's deposit come out of
-- Status: open
+### OP-29, Decided: the owner places the Trigger order at arm time, and the agent's cap is not involved
+- Status: decided 2026-09-26 by Jishnu, option A for CP1, with option C as a follow-up rather than
+  a blocker: find out separately whether Swig can cap the Trigger program at all. If it can, the
+  agent managing its own orders inside a cap becomes the better product and this is revisited. If
+  it cannot, option A is the only safe answer and stays. Recorded here because the PRD Decisions
+  log is outside this repo
+- Why not option B today: a Trigger deposit does not touch the agent's allowance, measured at
+  500000000 before and after a 100000000 deposit. Granting the agent the Trigger program would
+  therefore hand it a way to move funds the cap cannot see, which is a bypass of the one thing the
+  product sells. That is only not true if the Trigger program can itself be capped, which is
+  exactly what the follow-up measures
+- Follow-up, not blocking CP1: does Swig offer an action that caps spending through a second
+  program, or is `programLimit` plus `tokenRecurringLimit` the whole vocabulary? Needs a read of
+  the Swig SDK's action list and 1 fork probe
 - Owner: <unassigned>
 - Needed by: 2026-09-27, CP1, because F6 clause 4 cannot pass as written
 - Unblocks: T-F06a's last clause, and the same sentence in T-F06b and T-D04
@@ -704,3 +794,37 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Why it cannot wait: F1 is existential and its headline number is "swaps decoded of 50 sampled per
   wallet". Half that number is currently measuring a wallet that has no swaps to decode, which
   makes the spike read as a decoder failure when the decoder is correct.
+
+---
+
+### OP-32, Decided: the cap allows 2x its number across a window edge, and the product says so
+- Status: decided 2026-09-26 by Jishnu, option A: arm exactly the number the user typed and print
+  the rolling worst case beside it everywhere the cap appears. Nothing in the chain code changes,
+  which is the point: this is a wording defect and it is fixed in wording. Recorded here because
+  the PRD Decisions log is outside this repo
+- Owner: Jishnu
+- Needed by: 2026-09-27
+- Unblocks: T-E06's arming copy, T-C07's list_rules, T-E04's report copy, and the PRD's own
+  description of what a cap is
+- What exactly: measured on a mainnet fork on 2026-09-26. A Swig recurring limit resets on the
+  global slot clock rather than on the role: lastReset is floor(slot / 150) * 150, so every role
+  shares the same window boundaries and a fresh role reads lastReset 0. A spend is refused while
+  slot - lastReset is 150 or less and allowed once it is more, probed every slot across 1
+  boundary.
+  The consequence is the decision. An agent can spend its whole allowance at the end of one window
+  and its whole allowance again at the start of the next, so a cap of 0.5 wSOL per 150 slots
+  permits 1.0 wSOL in as little as 2 slots. Measured: 0.9 wSOL in 37 slots against a 0.5 per 150
+  cap. Swig is counting correctly and this is not a Swig bug. Agon is the one making the promise,
+  and the number we put in front of a user is not the most their agent can spend in any 150 slots.
+  The worst case is twice it.
+  Two options. A: print the rolling worst case beside the cap everywhere the cap appears, so a
+  user arming 0.5 reads "up to 1.0 in a short burst across a window edge". B: arm half the number
+  the user typed, so the rolling worst case equals what they asked for. A keeps the armed number
+  equal to the typed one, which is what T-E06 asserts. B makes them differ and has to be explained
+  anyway, so it buys nothing A does not.
+- Done when: the answer is in the PRD Decisions log, and whichever wording wins is a row in the
+  T-E10 catalogue so the arming screen and list_rules cannot state the cap without it.
+- Why it cannot wait: this is the product's headline claim. Every other honesty defect found so
+  far erred toward under-promising: a coverage share that read 0 instead of inventing one, an
+  allowance that reads lower than it is. This one overstates the protection, which is the
+  direction that costs a user money, and CP1 is 2026-09-27.
