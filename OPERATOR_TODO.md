@@ -121,7 +121,15 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   one 3-hour window, which broke its period filters (T8.8, T8.9).
 
 ### * OP-2, Helius plan and credit budget
-- Status: open
+- Status: decided 2026-09-27 by Jishnu: stay on the free tier, and use Surfpool wherever a fork
+  answers the question instead of an API. Not closed, because the row's own budget clauses are
+  still unmet and the constraint below is now a known risk we accepted rather than one we have not
+  met
+- The accepted risk, written down because OP-23 depends on it: re-recording F1's fixture needs
+  `AGON_NET_MODE=record` against Helius, and that recording already died halfway once on this tier
+  and left a partial fixture, which is why `spikes/F1/run.mjs` carries retry and backoff. OP-23
+  spends about 2 hours of hand verification against whatever that recording produces, so the
+  recording is checked complete before the verification starts, not after
 - Owner: <unassigned>
 - Needed by: 2026-09-25 for F1 and F2; before CP4 for the F8 index
 - Unblocks: T-F01a, T-F01b, T-F02, T-A04, T-F08, T-F10
@@ -211,6 +219,11 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   the database tests cleanly.
 
 ### * OP-7, Create both GitHub repos and their tokens
+- Cleared to proceed 2026-09-27: OP-13 decided MIT, so nothing is waiting on a decision any more.
+  3 things close this, and only the third needs a person: point `PUBLIC_REPO` at
+  `manjeetsharma0796/agon` in `scripts/release.mjs` and set it in `release.yml`, commit `LICENSE`
+  and the README line, and add the `PUBLIC_REPO_TOKEN` Actions secret. The first 2 are a code PR
+  and cannot ride a `board/` branch
 - Updated 2026-09-25, later the same day: the public repo now exists. `manjeetsharma0796/agon`,
   public, default branch `main`, empty, and the invite is accepted. What is still wrong is that
   nothing points at it. `scripts/release.mjs` defaults `PUBLIC_REPO` to `agon-dev/agon`, which is a
@@ -296,8 +309,12 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: a written answer exists, with the person and the channel recorded. The current
   Decisions-log entry is marked unverified until then.
 
-### * OP-13, Decide the licence
-- Status: open
+### * OP-13, Decided: MIT
+- Status: decided 2026-09-27 by Jishnu: MIT, which confirms the assumption the PRD already makes
+  rather than choosing something new. The remaining work is 2 commits and 1 human action, split
+  because a `board/` PR cannot carry them: `LICENSE` at the repo root and the README line are a
+  code PR, `scripts/release.mjs`'s `PUBLIC_REPO` default and `release.yml` setting it are the same
+  PR, and the `PUBLIC_REPO_TOKEN` Actions secret needs someone with repo settings. See OP-7
 - Owner: <unassigned>
 - Needed by: 2026-09-26
 - Unblocks: T-J02
@@ -454,15 +471,30 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   keeps it.
 
 
-### OP-21, Decide the shape of the World's Fair demo: read-only or live arming
+### OP-21, Decided: everything runs on the fork until the mainnet gates pass
 - Note 2026-09-25, from the OP-20 fork decision: a fork answers "where does the demo run", not
   "where do new users try it". Those are different questions and the fork only answers the first.
   For users, the read-only path needs no fork, no signing, no custom RPC and no keypair: it is what
   `check_trade` already does on a real mainnet wallet today. That is the only path that can be
   opened to people before F5 and F6 pass, and it is available now
-- Status: open
-- Owner: <unassigned>
-- Needed by: 2026-09-27, CP1, because it changes what Track E builds next
+- Status: decided 2026-09-27 by Jishnu, option (b): live arming on a Surfpool mainnet fork, for
+  the demo and for testers both, and it stays there until every mainnet gate passes and real money
+  is safe to spend. Not (a), because arming on the fork is now measured end to end with a real
+  Phantom rather than simulated, so the demo does not need a simulation caveat. Not (c), because
+  T-D04 has 8 boxes and 0 are ticked. Recorded here because the PRD Decisions log is outside this
+  repo
+- What this costs, so nobody discovers it on camera: Phantom reaches the fork through Developer
+  Settings, Solana Localnet, and in that mode **Phantom's own balance and activity screens read
+  "not supported"**. So a tester cannot watch their money move in their wallet, and Agon's own
+  screens or the Solana Explorer on a custom cluster have to carry that. Phantom also adds 80,000
+  lamports of priority fee per transaction, which will appear in any cost we quote. And the fork
+  resets when it stops, so no tester's state survives a restart
+- What it still needs: rows 2, 3 and 5 of the critical path, all unassigned. The chain code that
+  builds create-vault plus agent-limit plus pockets plus deposit as 1 wallet-signed transaction,
+  T-E06's screen, and T-C08's agent side. Row 4, a wallet that can reach the fork, is answered and
+  row 6 is OP-27, decided
+- Owner: <unassigned>, for copying into the PRD Decisions log
+- Needed by: was 2026-09-27, CP1. Decided on the day next
 - Unblocks: T-E06, T-E07, T-J01, and the shape of `docs/demo-script.md`
 - What exactly: the demo script currently assumes beat 4 arms a rule for real and beat 6 revokes it
   from the wallet. Both need on-chain signing, which is gated behind F5, F6 and the T-D04
