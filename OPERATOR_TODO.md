@@ -72,8 +72,15 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   Agon ships read-only, and that decision needs the measurement rather than an opinion.
 
 ### * OP-23, Pick 2 real trader wallets, and verify 50 rows by hand
-- Status: open
-- Owner: <unassigned>
+- Status: claimed 2026-09-27 | Owner: Jishnu. Decided: replace 1 wallet, then hand-verify 50 rows
+  on each of the 2
+- Narrowed 2026-09-27, and it is half the work the row describes. T-A06 and T-A07 landed, so the
+  decoder now reads a swap paid in native SOL. On that basis 5Q544fKr decodes 29 swaps of 50 and is
+  a real trader, so it stays and only needs verifying. 5CKAa7Wm is the one to replace: all 50 of
+  its sampled transactions are arbitrage, token gains of 3840 lamports and 0.007 USDC against a fee
+  of the same order, which is OP-31. So this is 1 wallet to find, 1 fixture to re-record with a
+  Helius key, and 2 hours of hand verification rather than the wallet hunt the row was written for
+- Owner: Jishnu
 - Needed by: 2026-09-26, so F1 has a result before CP1 on 2026-09-27
 - Unblocks: T-F01a, and through it T-F01b and the whole report
 - What exactly: two things, both needing a person.
@@ -147,8 +154,17 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   cosmetic: T-C06 budgets 1 quote per `check_trade`, so on this tier the guard tops out near 1
   check per second, and Benchmark A v2 (100 scenarios x 5 runs x 3 arms) is about 25 minutes of
   quote wall time on its own.
-- Done when: the key is in the hosted env and a nightly-only CI secret, and a 20-quote burst does
-  not rate-limit.
+- Decided 2026-09-27 by Jishnu: reword the criterion rather than buy a tier. The done-when below is
+  replaced by the paced one, and the ceiling is recorded as a known limit instead of being designed
+  around.
+- **The ceiling, stated because it is a product limit and not a spike limit.** T-C06 budgets 1
+  quote per `check_trade`, so on this tier the guard tops out near 1 check per second across every
+  agent calling the MCP server. Agon is positioned as a component other agents call, and 1 per
+  second is the ceiling on that claim until the tier changes. Benchmark A v2, 100 scenarios by 5
+  runs by 3 arms, is about 25 minutes of quote wall time on its own. Neither is a reason to buy the
+  tier today; both are reasons to write the number down before someone promises otherwise.
+- Done when: the key is in the hosted env and a nightly-only CI secret, and 20 quotes paced under
+  1 per second return 20 x 200 and 0 x 429. Measured already at 50/min: 20 x 200 in 23 s.
 
 ### * OP-4, Decide where Jev comes from, and confirm rate limits
 - Status: open
@@ -652,6 +668,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Status: open, and not answerable by wording alone. Jishnu ruled 2026-09-26 that the measurement
   below runs before the clause is rewritten, because "moves value" is being used as a proxy for
   "can hurt the user" and nobody has checked that the proxy holds
+- Owner: Manjeet, for the probe
 - The measurement, before the wording: case (d) showed a memo instruction, 0 accounts and no value
   moved, is authorised under a Jupiter-only role. A memo is harmless. The question the rewrite
   would be assuming away is whether every no-value instruction is harmless. Approving a delegate
