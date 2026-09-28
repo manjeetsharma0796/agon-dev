@@ -27,7 +27,7 @@ export const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
 
 /**
  * The Swig id for a wallet, derived rather than random, so a wallet's vault can be found again from
- * the wallet alone (OP-35): 1 account read, no search, no index.
+ * the wallet alone: 1 account read, no search, no index.
  *
  * `createWithSeed` is sha256(wallet, seed, Swig program), a Solana primitive that runs in a browser
  * as well as in node, used here as a namespaced hash. The result is an id, not an address anyone
