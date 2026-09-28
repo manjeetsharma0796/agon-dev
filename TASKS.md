@@ -1471,7 +1471,7 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 
 ### T-E06, Arm a rule, wallet-signed
 - Status: open
-- Depends-on: T-F05a, T-F06a, T-D01, T-D02
+- Depends-on: T-F05a, T-F06a, T-D01, T-D07
 - Touches: apps/web/app/arm/
 - Serves: UX (judged) ; Novelty (judged)
 - Retargeted 2026-09-28 against what the fork measured, replacing "do not start this until F5 and
@@ -2142,3 +2142,19 @@ _(empty)_
   retries on a truncated "Simulation failed." before it read the full logs
 - Kill criterion: if the 5th tool is refused in DECISIONS.md, the builder moves to the `agon` CLI on
   the user's machine with the same acceptance, and the MCP instructions point agents at it
+
+### T-D07, The arming transactions, built once in packages/chain
+- Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Depends-on: T-D01
+- Touches: packages/chain/src/arm.ts, packages/chain/src/arm.test.ts, packages/chain/src/index.ts
+- Serves: UX (judged) ; the blocker between the measured fork flow and T-E06's screen
+- Acceptance: 2 builders with 0 network calls inside, returning instructions a wallet signs;
+  `fundVault` creates the Swig with the owner as root, the vault's wSOL and USDC token accounts
+  and the deposit in 1 transaction, which works because the vault address is derived from the Swig
+  id before the Swig exists; `hireAgent` adds the production role through `agentRoleActions` and
+  `assertAgentRoleShape`, so the cap sent equals the cap typed; the derived vault address equals
+  `getSwigWalletAddress` on the fork for 1 real vault; both transactions land on the fork signed
+  by the owner alone, and a 0.1 wSOL agent swap lands afterwards
+- Evidence: <PR link, plus the fork signatures>
+- Kill criterion: none. It is item 2 of the critical path, and without it T-E06 would build these
+  transactions inside a page, where they cannot be tested without a browser
