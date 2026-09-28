@@ -1381,6 +1381,29 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none. Saying which chain a number came from is not optional once anything can
   sign
 
+### T-B16, One compose file: the fork and the MCP server, side by side, locally
+- Status: open
+- Depends-on: T-C07, T-C16
+- Touches: compose.yaml, .dockerignore
+- Serves: Functionality (judged) ; unblocks T-E15's setup page and a local run of T-E06
+- Acceptance: `docker compose up` from a clean checkout starts exactly 2 services. `fork` runs
+  `surfpool/surfpool:1.6.0`, pinned by tag, and answers `getSlot` on `127.0.0.1:8899` within 60 s;
+  its upstream is `--rpc-url` from `SURFPOOL_DATASOURCE_RPC_URL` when set and `--network mainnet`
+  otherwise, never both, because Surfpool refuses the pair. `mcp` is built from the repo's own
+  `Dockerfile` and answers `GET /health` 200 on `127.0.0.1:8787` with `AGON_NETWORK=fork`, so every
+  result names the fork, and in its default replay mode, so it needs 0 keys to start. Every host
+  port is bound to 127.0.0.1 and 0 to 0.0.0.0; 0 keys in the file or either image; `docker compose
+  down` leaves 0 containers running. The 2 images are the ones OP-33's hosted target runs, so the
+  only local-only lines are the port bindings
+- Evidence: <PR link, plus the `getSlot` and `/health` answers from a clean checkout>
+- Note, so nobody reads more into it: compose starts the 2 side by side and connects nothing. The
+  MCP server reads recordings or Helius, never the fork, until T-C17 gives it a vault to read. And
+  no row on the board adds a tool that builds a trade, so an agent pointed at this compose still
+  has no trading path through Agon: it improvises a script, which is what the fork session measured
+  (about 11 retries on a truncated "Simulation failed." before reading the full logs)
+- Kill criterion: if the MCP image cannot start inside compose without a key, it stays out of the
+  file and this row says why, rather than a key going into compose
+
 ---
 
 # P3, CP2 to CP3, World's Fair freeze (2026-10-08)
