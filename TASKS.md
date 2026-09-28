@@ -2144,7 +2144,7 @@ _(empty)_
   the user's machine with the same acceptance, and the MCP instructions point agents at it
 
 ### T-D07, The arming transactions, built once in packages/chain
-- Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: T-D01
 - Touches: packages/chain/src/arm.ts, packages/chain/src/arm.test.ts, packages/chain/src/index.ts
 - Serves: UX (judged) ; the blocker between the measured fork flow and T-E06's screen
