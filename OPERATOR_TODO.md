@@ -63,6 +63,16 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Also, by hand, once F5 has run: case (g) of F5 is "removal done from Phantom, not only our CLI".
   Connect the devnet Swig wallet in Phantom, remove the Agon role from there, and confirm the next
   agent transaction fails. A script cannot assert that a person used a wallet, so this stays here.
+- Note 2026-09-26, measured: (g) can be done on the fork with Phantom. Phantom's Developer
+  Settings list "Solana Localnet", which reached a Surfpool fork at `127.0.0.1:8899` on the same
+  machine (Phantom's docs list only Devnet and Testnet, so the app is ahead of its docs). From a
+  local test page, a Phantom account holding 0 SOL on mainnet signed: creating a Swig as root,
+  adding the production agent role, and removing it. As a control, the agent's 0.1 wSOL Jupiter
+  swap was simulated before the removal and would have landed; the same pre-signed swap sent after
+  the removal was refused by Swig, `custom program error: 0xc`, Jupiter not reached. Phantom's own
+  balance and activity screens say "not supported when Solana Localnet is enabled", and it adds a
+  priority fee to every transaction (80,000 lamports observed). The removal was built by a test
+  page, not by the product: `agon revoke` is CLI only and the wallet page is T-E07, open
 - Done when: `spikes/F5/result.json` exists with all 7 cases and 0 unexpected successes, the
   Phantom removal in (g) is recorded with the signature that failed after it, and `agon revoke`
   has run end to end against 3 devnet wallets that really held Agon roles with the roles really
@@ -697,10 +707,25 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   every client written against today's shape has to change when it does.
 
 ### OP-28, CP1 wording: does the program limit gate every call, or only calls that move value
-- Status: open, and not answerable by wording alone. Jishnu ruled 2026-09-26 that the measurement
-  below runs before the clause is rewritten, because "moves value" is being used as a proxy for
-  "can hurt the user" and nobody has checked that the proxy holds
-- Owner: Manjeet, for the probe
+- **The sentence, decided 2026-09-29 by Jishnu on the measurement below: the program limit gates
+  every instruction that uses the vault's authority. An instruction that uses none of it cannot
+  act on the vault, and is not gated.** Neither of the 2 options this row offered, because the
+  probe found a third answer and it is the only one that explains both observations
+- Status: decided 2026-09-29 by Jishnu. F5 case (d) is rewritten against this sentence by T-F05a,
+  from "a call to a non-Jupiter program is rejected" to "a non-Jupiter instruction using the
+  vault's authority is rejected". The memo stays in the spike as a recorded non-case
+- Why neither option was right: `0xbbe` is the same error Swig gives when Jupiter's own setup
+  instructions are refused, so it means the program is not permitted. But the memo is also not
+  permitted and it was authorised. Those 2 facts cannot both hold if the limit gates by program
+  id. The Approve explains them: the memo carried 0 accounts and no signer, the Approve carried
+  the vault as signer. So the limit is conditional on the vault's authority being used, and **case
+  (d) was never a hole**: a memo signed by nobody and touching nothing cannot reach the vault, and
+  the acceptance was asking the wrong question of a role that was doing its job
+- The limit on this, which the probe states itself: the rule is inferred from 1 instruction.
+  `SetAuthority` and `CloseAccount` both use the vault's authority and both can drain, so both
+  should be refused if it holds, and neither was tried. Worth 20 minutes on the same harness
+  before the sentence goes in front of a judge
+- Owner: Manjeet, for the probe, done
 - The measurement, before the wording: case (d) showed a memo instruction, 0 accounts and no value
   moved, is authorised under a Jupiter-only role. A memo is harmless. The question the rewrite
   would be assuming away is whether every no-value instruction is harmless. Approving a delegate
@@ -859,3 +884,40 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   far erred toward under-promising: a coverage share that read 0 instead of inventing one, an
   allowance that reads lower than it is. This one overstates the protection, which is the
   direction that costs a user money, and CP1 is 2026-09-27.
+
+---
+
+### OP-33, A hosted fork testers can reach, and the decision about how often it is wiped
+- Status: open
+- Owner: <unassigned>
+- Needed by: 2026-10-02, CP2, because T-E06 and T-E07 are P3 work and both need somewhere to run
+- Unblocks: T-E06, T-E07, T-C20, T-E09's cohort, and 6 of the 8 pre-mainnet boxes
+- What exactly: 1 small cloud instance running `surfpool/surfpool:1.6.0`, behind authentication,
+  so a tester's Phantom can reach it through the local proxy in T-C20. 4 things have to be decided
+  with it rather than after it, and the first is the one that bites.
+  1. **A shared fork degrades, and this is measured rather than feared.** Surfpool copies a pool
+     from mainnet on first touch and keeps that copy, while Jupiter quotes the live pool. Every
+     swap anyone makes moves the copy further from the quote. On a fork 5 hours old, every swap at
+     50 bps failed inside Jupiter, which reads exactly like the cap refusing. So the instance needs
+     resetting on a schedule, and **a reset destroys every tester's vault, role and balance**.
+     Decide the period and say it on the screen, or testers lose work without being told.
+  2. **Authentication, because the alternative is a public chain anyone can spend and read.** The
+     fork answers `requestAirdrop` without limit and holds every tester's transactions. The proxy
+     carries the header; a wallet cannot. That is the reason the proxy exists at all rather than
+     pointing Phantom at a URL.
+  3. **An upstream RPC that will answer.** The fork fetches accounts on first touch, and the public
+     `api.mainnet-beta.solana.com` failed mid-simulation here with `Failed to fetch accounts from
+     remote`, which surfaced as 3 cases not running. It needs a keyed URL through `--rpc-url`, and
+     note that `--network` and `--rpc-url` cannot both be passed.
+  4. **Instance size.** State grows as accounts are copied in and never released, so the reset
+     period in 1 also decides the disk.
+- Done when: a URL exists with its auth scheme written down, the reset period is decided and
+  stated in the UI, and `agon fork-proxy` reaches it from a machine that is not the host.
+- Why it cannot wait: OP-21 decided everything runs on a fork until the mainnet gates pass, and
+  T-E06 and T-E07 are scheduled for CP2 to CP3. Without this they have nowhere to run and the
+  arming flow can only be demonstrated on the machine that runs Docker.
+- **What a fork can and cannot close.** It closes the 6 pre-mainnet boxes that ask whether the code
+  works: F5, F6, pinned program ids, no `manageAuthority` on the agent key, the signature-status
+  check, and the kill switch. It cannot close the 2 that are about time on mainnet: test wallets
+  funded with $50 or less, and 2 weeks of team-wallet mainnet use with no unexplained transaction.
+  Those stay mainnet-only however good the fork is, and no amount of fork testing ticks them.

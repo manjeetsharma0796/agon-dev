@@ -395,7 +395,7 @@ and latency (a, b).
   third bucket exists to prevent, and F1 is existential
 
 ### T-A08, Carry the native SOL leg across the enhanced endpoint
-- Status: open
+- Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-a08-enhanced-native
 - Depends-on: T-A07
 - Touches: packages/decoder/src/enhanced.ts, packages/decoder/src/decoder.test.ts
 - Serves: Functionality (judged) ; F1 coverage share
@@ -2060,3 +2060,20 @@ _(empty)_
 - Evidence: <PR link, plus a transcript of an agent that had not seen this conversation>
 - Kill criterion: none, but the docs correction is the gate on the rest: a paste-and-go prompt
   built on a false promise ships that promise to every agent that reads it
+
+### T-C20, agon fork-proxy, so Phantom can reach a hosted fork
+- Status: open
+- Depends-on: T-C08, OP-33
+- Touches: packages/cli/src/
+- Serves: UX (judged) ; unblocks T-E06 and T-E07 for anyone not running Docker
+- Acceptance: `agon fork-proxy` binds `127.0.0.1:8899` and `127.0.0.1:8900` and forwards both to
+  the hosted fork with its auth header attached, which is the whole reason it exists: Phantom's
+  Solana Localnet is fixed at 127.0.0.1 and a wallet cannot send a header, so a shared fork is
+  either public or unreachable without this; it refuses to start if the target is not the
+  configured fork host, so it can never be pointed at mainnet; 1 test asserts a request without
+  the header is refused by the target rather than passed through; the websocket is forwarded too,
+  because confirmations arrive on it and a proxy without it hangs every send
+- Evidence: <PR link, plus a Phantom transaction signed on a machine that is not the fork host>
+- Kill criterion: if Backpack's custom RPC reaches the hosted fork directly, this stays for
+  Phantom users but stops being on the critical path, so check that first: it is 10 minutes and it
+  decides whether this blocks the cohort or only part of it
