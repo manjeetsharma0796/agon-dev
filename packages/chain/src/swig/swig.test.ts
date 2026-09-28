@@ -141,8 +141,16 @@ test('an uncapped role has no remaining figure to report, and says so instead of
 test('a vault lists its agent role with the real allowance, and never the owner root role', () => {
   const agent = agentRoleActions({ mint: USDC, recurringAmount: 500_000_000n, window: 150n })
   const roles = [
-    { id: 0, authority: { addressString: 'Owner1111111111111111111111111111111111111' }, actions: asRole(Actions.set().all().get()) },
-    { id: 1, authority: { addressString: 'Agent1111111111111111111111111111111111111' }, actions: agent },
+    {
+      id: 0,
+      authority: { addressString: 'Owner1111111111111111111111111111111111111' },
+      actions: asRole(Actions.set().all().get()),
+    },
+    {
+      id: 1,
+      authority: { addressString: 'Agent1111111111111111111111111111111111111' },
+      actions: agent,
+    },
   ]
   const rules = agentRulesOf(roles, [USDC], 1_000_000n)
   expect(rules).toHaveLength(1)
@@ -160,6 +168,12 @@ test('a vault lists its agent role with the real allowance, and never the owner 
 })
 
 test('a vault with no agent role lists nothing, which means nothing is armed', () => {
-  const roles = [{ id: 0, authority: { addressString: 'Owner1111111111111111111111111111111111111' }, actions: asRole(Actions.set().all().get()) }]
+  const roles = [
+    {
+      id: 0,
+      authority: { addressString: 'Owner1111111111111111111111111111111111111' },
+      actions: asRole(Actions.set().all().get()),
+    },
+  ]
   expect(agentRulesOf(roles, [USDC], 1_000_000n)).toEqual([])
 })

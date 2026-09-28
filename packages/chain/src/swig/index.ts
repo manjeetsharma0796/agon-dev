@@ -321,3 +321,67 @@ export async function verifyRoleOnChain(
   assertAgentRoleShape(role, mint, approved)
   return role
 }
+
+/** A role as the SDK reads it off a Swig account: only the parts listing a vault needs. */
+export interface ChainRole {
+  readonly id: number
+  readonly authority: { readonly addressString: string }
+  readonly actions: RoleActions
+}
+
+/** One agent rule as the chain proves it: what `list_rules` reports, before any formatting. */
+export interface ChainAgentRule {
+  roleId: number
+  /** The agent key the role is granted to. */
+  authority: string
+  mint: string
+  /** The configured cap per window, in base units. */
+  amount: bigint
+  /** Window length in slots, exactly as Swig enforces it, never converted to seconds. */
+  windowSlots: bigint
+  /** What the agent can spend at the slot asked about, from `effectiveRemaining`. */
+  effectiveRemaining: bigint
+  /** 2 full windows across an edge, because windows follow the slot clock (OP-32). */
+  rollingWorstCase: bigint
+}
+
+/**
+ * The agent rules on a vault at `slot`. Pure: the caller reads the roles and the slot.
+ *
+ * A role is listed only if it has the production agent shape for the mint, so the owner's root role
+ * and anything hand-made are never reported as an agent's rule. A role whose configured cap cannot
+ * be read is an error rather than a smaller number, because a missing rule reads as "nothing armed".
+ */
+export function agentRulesOf(
+  roles: readonly ChainRole[],
+  mints: readonly string[],
+  slot: bigint,
+): ChainAgentRule[] {
+  const rules: ChainAgentRule[] = []
+  for (const role of roles) {
+    for (const mint of mints) {
+      try {
+        assertAgentRoleShape(role.actions, mint)
+      } catch {
+        continue
+      }
+      const spend = role.actions.tokenSpend(mint)
+      if (spend.recurringLimit === undefined || spend.window === null) {
+        throw new Error(
+          `Role ${role.id} limits ${mint} but its configured cap or window could not be read, so its ` +
+            `remaining allowance is not reported rather than reported wrong.`,
+        )
+      }
+      rules.push({
+        roleId: role.id,
+        authority: role.authority.addressString,
+        mint,
+        amount: spend.recurringLimit,
+        windowSlots: spend.window,
+        effectiveRemaining: effectiveRemaining(spend, slot),
+        rollingWorstCase: spend.recurringLimit * 2n,
+      })
+    }
+  }
+  return rules
+}
