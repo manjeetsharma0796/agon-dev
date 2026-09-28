@@ -859,3 +859,40 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   far erred toward under-promising: a coverage share that read 0 instead of inventing one, an
   allowance that reads lower than it is. This one overstates the protection, which is the
   direction that costs a user money, and CP1 is 2026-09-27.
+
+---
+
+### OP-33, A hosted fork testers can reach, and the decision about how often it is wiped
+- Status: open
+- Owner: <unassigned>
+- Needed by: 2026-10-02, CP2, because T-E06 and T-E07 are P3 work and both need somewhere to run
+- Unblocks: T-E06, T-E07, T-C20, T-E09's cohort, and 6 of the 8 pre-mainnet boxes
+- What exactly: 1 small cloud instance running `surfpool/surfpool:1.6.0`, behind authentication,
+  so a tester's Phantom can reach it through the local proxy in T-C20. 4 things have to be decided
+  with it rather than after it, and the first is the one that bites.
+  1. **A shared fork degrades, and this is measured rather than feared.** Surfpool copies a pool
+     from mainnet on first touch and keeps that copy, while Jupiter quotes the live pool. Every
+     swap anyone makes moves the copy further from the quote. On a fork 5 hours old, every swap at
+     50 bps failed inside Jupiter, which reads exactly like the cap refusing. So the instance needs
+     resetting on a schedule, and **a reset destroys every tester's vault, role and balance**.
+     Decide the period and say it on the screen, or testers lose work without being told.
+  2. **Authentication, because the alternative is a public chain anyone can spend and read.** The
+     fork answers `requestAirdrop` without limit and holds every tester's transactions. The proxy
+     carries the header; a wallet cannot. That is the reason the proxy exists at all rather than
+     pointing Phantom at a URL.
+  3. **An upstream RPC that will answer.** The fork fetches accounts on first touch, and the public
+     `api.mainnet-beta.solana.com` failed mid-simulation here with `Failed to fetch accounts from
+     remote`, which surfaced as 3 cases not running. It needs a keyed URL through `--rpc-url`, and
+     note that `--network` and `--rpc-url` cannot both be passed.
+  4. **Instance size.** State grows as accounts are copied in and never released, so the reset
+     period in 1 also decides the disk.
+- Done when: a URL exists with its auth scheme written down, the reset period is decided and
+  stated in the UI, and `agon fork-proxy` reaches it from a machine that is not the host.
+- Why it cannot wait: OP-21 decided everything runs on a fork until the mainnet gates pass, and
+  T-E06 and T-E07 are scheduled for CP2 to CP3. Without this they have nowhere to run and the
+  arming flow can only be demonstrated on the machine that runs Docker.
+- **What a fork can and cannot close.** It closes the 6 pre-mainnet boxes that ask whether the code
+  works: F5, F6, pinned program ids, no `manageAuthority` on the agent key, the signature-status
+  check, and the kill switch. It cannot close the 2 that are about time on mainnet: test wallets
+  funded with $50 or less, and 2 weeks of team-wallet mainnet use with no unexplained transaction.
+  Those stay mainnet-only however good the fork is, and no amount of fork testing ticks them.
