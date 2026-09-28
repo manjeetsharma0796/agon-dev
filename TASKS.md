@@ -207,7 +207,7 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: none, this blocks everything
 
 ### T-C01, Freeze the three contracts in packages/core
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: T-B01
 - Touches: packages/core/, fixtures/contracts/
 - Serves: Functionality (judged) ; 5 tracks in parallel from day 2
@@ -260,7 +260,7 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: if C slips past day 2 this moves to B, per the PRD load check
 
 ### T-C03, Measure the region for API, RPC and Jev
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: T-B01
 - Touches: docs/plans/region.md, apps/web/vercel.json
 - Serves: Functionality (judged) ; decision speed
@@ -280,7 +280,7 @@ defaults to its fallback. The decision goes in the PRD Decisions log the same da
 - Kill criterion: none, it is a setting and not code, so it is measured once and cheap
 
 ### T-E01, Demo script and the committed benchmark scenario list
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: none
 - Touches: docs/demo-script.md, benchmark/scenarios/
 - Serves: UX (judged) ; Functionality (judged)
@@ -340,7 +340,7 @@ and latency (a, b).
 - Kill criterion: none. Monad's worst bugs only appeared end to end (T1.7, T6.8)
 
 ### T-A01, Balance-change decoder
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: T-C01, T-C02
 - Touches: packages/decoder/src/
 - Serves: Functionality (judged) ; F1
@@ -431,7 +431,7 @@ and latency (a, b).
   medianSize and medianHoldSeconds required and not nullable, so a wallet with 0 closed trades has
   to report a median of 0, which reads as a measured fact rather than as nothing to measure. Needs
   its own task, because widening 2 fields to nullable moves every consumer of Metrics
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: T-A01
 - Touches: packages/decoder/src/index.ts, packages/core/src/report.ts, packages/decoder/src/pnl.ts
 - Serves: Functionality (judged) ; F1 coverage share
@@ -445,7 +445,7 @@ and latency (a, b).
 - Kill criterion: none. A coverage number that reads 100% when nothing decoded is the single defect
   positioned to turn a real run green, and it is live today in spikes/F1/result.json
 ### T-D06, Verify the cap that is on chain, not the one we meant to send
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: T-D01
 - Touches: packages/chain/src/swig/index.ts, packages/chain/src/swig/real-cap.test.ts,
   packages/chain/src/expiry.test.ts, packages/cli/src/commands/revoke.test.ts, and NOT
@@ -500,7 +500,7 @@ and latency (a, b).
 - Kill criterion: fallback is Jupiter-routed swaps only, with the covered share printed on the report ("based on 83% of your swaps")
 
 ### T-C04, Our own mint check
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: T-C01, T-C02
 - Touches: packages/guard/src/mint-check.ts
 - Serves: Functionality (judged) ; F3
@@ -525,7 +525,7 @@ and latency (a, b).
 - Kill criterion: none, this is the primary path
 
 ### T-F03, F3 spike, token risk check on 30 labelled mints
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: T-C04
 - Touches: spikes/F3/
 - Serves: Functionality (judged) ; CP1 gate
@@ -548,7 +548,7 @@ and latency (a, b).
 - Kill criterion: RugCheck stays optional either way; a miss on the 20 is a bug to fix, not a scope cut
 
 ### T-C05, Jev client, question schema and the injection screen
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: T-C01, T-C02
 - Touches: packages/guard/src/jev/
 - Serves: Novelty (judged) ; F11
@@ -579,7 +579,7 @@ and latency (a, b).
 - Kill criterion: fallback is an LLM guard with a stricter threshold, or Kev-0.5B locally
 
 ### T-D01, Swig role creation and removal in packages/chain
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: T-C01
 - Touches: packages/chain/src/swig/
 - Serves: Novelty (judged) ; F5
@@ -712,7 +712,7 @@ and latency (a, b).
   owner BPFLoaderUpgradeable. 4.2 MB, committed for the same reason F9's 281 KB is
 
 ### T-F05b, F5 route size, 20 Jupiter routes against the v1 limit
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Evidence: spikes/F5/route-size/result.json. 20 of 20 routes fit v1 inline with 0 lookup tables,
   against a bar of 18 of 20. Accounts 18 to 34 against a ceiling of 64, bytes 811 to 1416 against
   4096, 0 routes over either. 5 mints from USDC to WIF at 0.1, 1, 10 and 100 SOL, 1 to 5 venues
@@ -832,7 +832,7 @@ CP2 evidence required: F1 and F2 complete; F4; F5 in simulation; F6 on mainnet (
 F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, d, e).
 - Finding: re-opened. benchmark/ holds only README.md and scenarios/scenarios.json: no runner, no arms, forkSlot null and all 100 scenario mints null. PR #15 landed the plan and says so in its own body, deferring the harness to a second PR that was never opened. The one clause that is met, CI refusing a synthetic fixture on the benchmark path, came from T-B01.
 ### T-A02, FIFO P&L ledger
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: T-A01
 - Touches: packages/decoder/src/pnl.ts
 - Serves: Functionality (judged) ; F1
@@ -877,7 +877,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: fallback is Jupiter-routed swaps only with the covered share printed on the report
 
 ### T-A03, Rule miner
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: T-A02
 - Touches: packages/miner/src/
 - Serves: Novelty (judged) ; F2
@@ -932,7 +932,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none. monad rebuilt full history on every request (T3.6) and switching later was a rewrite
 
 ### T-C06, check_trade guard, arithmetic first
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: T-C04, T-C05, T-A03
 - Touches: packages/guard/src/check-trade.ts
 - Serves: Functionality (judged) ; F4
@@ -980,7 +980,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: if (e) passes unexpectedly, numbers still stay on arithmetic. 1 lucky run is not evidence
 
 ### T-C07, MCP server, 4 tools and a stable list
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: T-C06
 - Touches: packages/mcp/src/, packages/guard/src/assess.ts, packages/decoder/src/enhanced.ts
 - Serves: Functionality (judged) ; Open source (judged)
@@ -1150,7 +1150,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: fallback is the local daemon polling price, and the UI says "runs while your computer is on"
 
 ### T-F09, F9 spike, benchmark reproducibility
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: T-B03
 - Touches: spikes/F9/
 - Serves: Functionality (judged) ; CP2 gate
@@ -1242,7 +1242,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: share rate under 10% across 10+ reports at CP3, so it stops being a pitch line
 
 ### T-B08, Jev in our own dev workflow, a one-week trial
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: T-B01, OP-4
 - Touches: scripts/jev-review.mjs, .github/workflows/board.yml, docs/plans/jev-trial.md
 - Serves: unblocks nothing; it is a measured bet on our own speed, kept or cut at CP2
@@ -1285,7 +1285,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: never used for anything numeric, for deciding a task is done, for approving a merge or deploy, or for anything touching keys or funds. A Jev answer is an input to a rule, never the rule itself. Any use that misses its bar is cut at CP2, not extended
 
 ### T-B09, Stop the CI gates over-firing
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: T-B01
 - Touches: .gitleaks.toml, .github/workflows/board.yml
 - Serves: Functionality (judged) ; unblocks T-A01 and T-E10, and every later PR carrying a fixture
@@ -1312,7 +1312,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none. It feeds 3 of the 6 judged criteria, and the rules do not restrict marketing or real users (rules s.8)
 
 ### T-E10, Failure-message catalogue
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: T-C01
 - Touches: packages/core/src/messages.ts
 - Serves: UX (judged)
@@ -1395,7 +1395,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   verdict
 
 ### T-C16, Say which network, to people and to agents
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: T-C07
 - Touches: packages/core/src/network.ts, packages/core/src/network.test.ts,
   packages/core/src/index.ts, packages/mcp/src/index.ts, packages/mcp/src/mcp.test.ts,
@@ -1724,7 +1724,7 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 - Kill criterion: fallback is poll-only triggers at 60 seconds, stated in the UI
 
 ### T-C11, Apply the CP1 decision: freezing is reported, seizure blocks
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: T-C04, T-F03
 - Touches: packages/guard/src/mint-check.ts, packages/guard/src/mint-check.test.ts, spikes/F3/
 - Serves: Functionality (judged) ; CP1 decision on F3
@@ -1908,7 +1908,7 @@ it measured. This section is the honest history of the build, so nothing leaves 
 _(empty)_
 
 ### T-B11, Key material gitleaks cannot see
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: T-B01
 - Touches: .github/workflows/gates.yml, scripts/secret-shapes.mjs
 - Serves: Functionality (judged) ; protects every PR that carries a fixture or a key
@@ -1930,7 +1930,7 @@ _(empty)_
   is never opened. The gate is not weakly configured, it is asked for something regex cannot do
 
 ### T-B12, Star the operator queue by sweep count, and let the parser read it
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: T-B01
 - Touches: OPERATOR_TODO.md, scripts/board.mjs
 - Serves: Functionality (judged) ; stops the queue being read in file order when order is not priority
@@ -1966,7 +1966,7 @@ _(empty)_
   is still unverified by a second pair of eyes
 
 ### T-B13, A decisions log in the repo, and a lint that keeps it honest
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: T-B01
 - Touches: DECISIONS.md, scripts/board.mjs
 - Serves: Functionality (judged) ; stops 8 decisions living only in a queue nobody reads as a log
@@ -1994,7 +1994,7 @@ _(empty)_
   file was removed, and a generated log walks back into it
 
 ### T-B14, One PRD in the repo, and the PDF goes
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: T-B13
 - Touches: PRD.md, TASKS.md, README.md
 - Serves: Functionality (judged) ; the source of truth TASKS.md line 8 points at
@@ -2020,7 +2020,7 @@ _(empty)_
   decisions accumulate with nowhere to go
 
 ### T-B15, Amend the arming gate to what it was protecting
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: T-B14
 - Touches: CLAUDE.md, DECISIONS.md
 - Serves: UX (judged) ; unblocks T-E06 without weakening T-D04
@@ -2144,7 +2144,7 @@ _(empty)_
   the user's machine with the same acceptance, and the MCP instructions point agents at it
 
 ### T-D07, The arming transactions, built once in packages/chain
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/166 | Owner: Jishnu | Branch: feature/t-d07-arm-builder
+- Status: done
 - Depends-on: T-D01
 - Touches: packages/chain/src/arm.ts, packages/chain/src/arm.test.ts, packages/chain/src/index.ts
 - Serves: UX (judged) ; the blocker between the measured fork flow and T-E06's screen
