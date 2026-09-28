@@ -2050,3 +2050,30 @@ _(empty)_
 - Kill criterion: if Backpack's custom RPC reaches the hosted fork directly, this stays for
   Phantom users but stops being on the critical path, so check that first: it is 10 minutes and it
   decides whether this blocks the cohort or only part of it
+
+### T-C21, prepare_swap: the MCP builds the trade, the agent signs it on its own machine
+- Status: open
+- Depends-on: T-C07, T-C17
+- Touches: packages/core/src/index.ts, packages/core/src/trade.ts, packages/mcp/src/index.ts,
+  packages/mcp/src/mcp.test.ts, fixtures/contracts/, docs/public/mcp-tools.md, DECISIONS.md
+- Serves: Functionality (judged) ; Novelty (judged) ; the only path from an armed vault to a trade
+- Acceptance: a `DECISIONS.md` entry grows the tool list from 4 to 5 before any code, because the
+  list is frozen on purpose ("adding or reordering a tool costs every user a cache miss",
+  `packages/core/src/index.ts`) and the test and quickstart both assert 4; the new tool is appended
+  last so the first 4 keep their order. `prepare_swap` takes the vault, input mint, output mint,
+  amount in base units and slippage in bps, and returns 1 unsigned transaction: a compute-unit
+  limit plus Swig's sign instruction wrapping Jupiter's `swapInstruction` alone (no setup, no
+  cleanup, `wrapAndUnwrapSol` false, 0 lookup tables), with the agent's public key as fee payer and
+  the only signer. It never takes, returns or logs a private key. It fails closed, each refusal
+  naming its cause and number: `check_trade` not `pass`; the amount over `effectiveRemaining` from
+  T-C17; slippage over 100 bps; or the transaction failing simulation on the configured chain,
+  refused with the innermost failing program named, never returned for the agent to try. Measured
+  on the fork: a 0.1 wSOL swap it builds lands when the agent signs it locally, and a 0.45 request
+  with 0.4 left is refused by the tool before building, citing 0.4. The response fits a token
+  budget set in the same PR from a measured legacy transaction
+- Evidence: <PR link, plus the landed signature and the refusal text from the fork>
+- Why it is its own row: nothing on the board builds a trade. Without it an armed vault has no
+  path to a swap through Agon, and an agent writes its own script, which on the fork took about 11
+  retries on a truncated "Simulation failed." before it read the full logs
+- Kill criterion: if the 5th tool is refused in DECISIONS.md, the builder moves to the `agon` CLI on
+  the user's machine with the same acceptance, and the MCP instructions point agents at it
