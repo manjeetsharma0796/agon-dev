@@ -177,8 +177,9 @@ agents can hold one each with no coordination beyond this file.
 | P4 | CP3 to 10-11 | T-J01, T-J02, T-J03 |
 | P5 | Fall, CP4 to CP6 | T-F08, T-F10, T-F11c, T-B06, T-B07, T-C10, T-D05, T-E11, T-J04 |
 
-Two hard gates from the PRD: **no arming UI until F5 and F6 pass** (T-E06 depends on both),
-and **no mainnet transaction until the pre-mainnet checklist is ticked** (T-D04).
+Two hard gates from the PRD: **no arming UI until its shape is known** (amended 2026-09-28, see
+T-B15 and DECISIONS.md; it read "until F5 and F6 pass"), and **no mainnet transaction until the
+pre-mainnet checklist is ticked** (T-D04), which is unchanged.
 
 When a test fails, nobody debates it on the spot. It is logged and decided at the next
 checkpoint, one of: keep, fallback, cut, extend once. An undecided test at a checkpoint
@@ -1408,11 +1409,16 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 - Depends-on: T-F05a, T-F06a, T-D01, T-D02
 - Touches: apps/web/app/arm/
 - Serves: UX (judged) ; Novelty (judged)
-- Acceptance: **do not start this until F5 and F6 pass**, because the screen changes shape if
-  either fails; the user's wallet signs the Swig role (`program = Jupiter`,
-  `tokenRecurringLimit`) plus the Jupiter Trigger order in 1 flow; the cap our code sends is
-  never higher than the number the user typed, asserted by a test; wallet connection is the only
-  auth and there are still 0 accounts
+- Retargeted 2026-09-28 against what the fork measured, replacing "do not start this until F5 and
+  F6 pass". See T-B15 for why the gate moved rather than opened
+- Acceptance: 1 flow on the fork in which
+  the user's wallet creates the Swig, adds the agent role (`program = Jupiter`,
+  `tokenRecurringLimit`), creates the vault's token accounts and funds them, with the vault
+  signing nothing; the cap our code sends equals the number the user typed, asserted by a test,
+  and the rolling worst case is printed beside it per OP-32; the screen shows the vault's balances
+  itself, because Phantom reads "not supported" on Solana Localnet; any Trigger order is placed by
+  the owner here, per OP-29, and never by the agent; wallet connection is the only auth and there
+  are still 0 accounts; 0 mainnet transactions, which stays gated by T-D04
 - Evidence: <staging recording, plus the devnet role read>
 - What is gated and what is not, because "do not start" reads as all of it: the **arming screen**
   is gated, and that is this row. Connecting a wallet and reading an address from it is not gated
@@ -1947,3 +1953,77 @@ _(empty)_
 - Kill criterion: none, but 2 PRDs is the failure this closes. If the PDF ever comes back beside
   PRD.md the row has failed: nobody can tell which one is true, which is the state that let 9
   decisions accumulate with nowhere to go
+
+### T-B15, Amend the arming gate to what it was protecting
+- Status: claimed 2026-09-28 | Owner: Jishnu | Branch: feature/t-b15-arming-gate
+- Depends-on: T-B14
+- Touches: CLAUDE.md, DECISIONS.md
+- Serves: UX (judged) ; unblocks T-E06 without weakening T-D04
+- Acceptance: CLAUDE.md's "No arming UI until F5 and F6 pass" is replaced by the reason it
+  carried, that the screen must not be built while its shape is unknown, with the measured shape
+  named; the mainnet gate in T-D04 is quoted unchanged in the same line so the amendment cannot be
+  read as loosening it; a row in DECISIONS.md records the amendment and its date
+- Evidence: <PR link>
+- Kill criterion: if F5 case (d) comes back showing the Jupiter-only role authorises an instruction
+  that can move funds later, this amendment is wrong and the gate goes back: the shape would not be
+  known after all, because the screen would have to say something different about what the role
+  prevents
+
+### T-C17, The real allowance, end to end
+- Status: open
+- Depends-on: T-D01, T-C07
+- Touches: packages/chain/src/swig/index.ts, packages/core/src/rule.ts, packages/mcp/src/index.ts, fixtures/contracts/
+- Serves: Novelty (judged) ; the number a user is shown about their own agent
+- Acceptance: `TokenSpend` carries `lastReset`; a pure `effectiveRemaining(spend, slot)` returns
+  `recurringLimit` when `slot - lastReset > window` and `spendLimit` otherwise, with 1 test on each
+  side of that boundary; `ArmedRule` carries the vault address and that effective remaining;
+  `list_rules` returns the role read from chain rather than an unconditional empty list, and 0
+  callers are handed the raw field; the 2x rolling worst case is printed beside every remaining
+  figure, per OP-32
+- Evidence: <PR link, plus a fork read where the raw field says 0.05 and the reported figure says 0.5>
+- Kill criterion: none. A wrong number about a user's own budget is the defect T-A06 and T-A07
+  exist to prevent, reached through a different door, and this one errs toward under-reporting only
+  by luck
+
+### T-C18, arm_rule hands back a link, and cannot carry a cap
+- Status: open
+- Depends-on: T-C07, T-C17
+- Touches: packages/core/src/rule.ts, apps/web/src/legs.ts, fixtures/contracts/
+- Serves: Novelty (judged) ; the honesty of the core claim
+- Acceptance: the 3 changes OP-27 names, `RuleSpec` gains the wallet the rule is for, loses `cap`
+  as a caller-supplied field, and `arm_rule` returns an arming request rather than an armed rule;
+  a test asserts no caller can submit a cap; the frozen tool list is still exactly 4 in the same
+  order; `docs/public/mcp-tools.md` regenerates from the contracts with no hand edit
+- Evidence: <PR link, plus the refused call carrying a cap>
+- Kill criterion: none. Today `armRule` refuses 100% of calls, so nothing can exploit the current
+  shape; it bites the moment T-E06 exists, and it is a frozen contract, so it is cheaper now
+
+### T-C19, MCP errors come from the catalogue, and name who refused
+- Status: open
+- Depends-on: T-E10, T-C07
+- Touches: packages/mcp/src/index.ts, packages/core/src/messages.ts
+- Serves: UX (judged) ; the agent surface
+- Acceptance: `packages/mcp` answers failures from the message catalogue rather than ad-hoc Error
+  strings, with a test asserting 0 ad-hoc messages on the tool paths; 2 new rows, the Swig cap
+  refusal translated out of `insufficient funds for instruction` into cause, number and reset slot,
+  and the rule that the innermost failing program decides who refused so a Jupiter slippage error
+  is never reported as the cap; every message's first sentence stands alone, asserted by a test
+- Evidence: <PR link, plus the 2 raw refusals from the fork that the rows translate>
+- Kill criterion: none. Measured on the fork: an agent given a truncated "Simulation failed." with
+  no reason retried about 11 times. Our server does not truncate, the client did, which is why the
+  first sentence has to carry the answer
+
+### T-E15, A startup prompt a fresh agent can paste, and the docs it reads
+- Status: open
+- Depends-on: T-C17, T-C18, T-C19, T-E06
+- Touches: docs/public/
+- Serves: Open source (judged) ; Potential impact (judged)
+- Acceptance: `docs/public/quickstart.md` stops claiming what `arm_rule` and `list_rules` do not
+  do, checked against their handlers; 1 setup page carrying the MCP endpoint with a config snippet
+  per client, the network and that every answer names it, where the agent's key lives and that it
+  is never the user's, how to find the vault and cap through `list_rules`, the swap recipe that
+  makes a trade land, and how to read a refusal; a fresh agent following it reaches a passing
+  `check_trade` with 0 questions asked of a human
+- Evidence: <PR link, plus a transcript of an agent that had not seen this conversation>
+- Kill criterion: none, but the docs correction is the gate on the rest: a paste-and-go prompt
+  built on a false promise ships that promise to every agent that reads it
