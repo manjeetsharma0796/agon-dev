@@ -697,10 +697,6 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   every client written against today's shape has to change when it does.
 
 ### OP-28, CP1 wording: does the program limit gate every call, or only calls that move value
-<<<<<<< HEAD
-- Status: open
-- Owner: <unassigned>
-=======
 - Status: open, and not answerable by wording alone. Jishnu ruled 2026-09-26 that the measurement
   below runs before the clause is rewritten, because "moves value" is being used as a proxy for
   "can hurt the user" and nobody has checked that the proxy holds
@@ -750,7 +746,6 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Why it cannot wait, updated: it was a wording call and it is now a security question with a
   measurement attached. About 20 minutes on the fork, and it can be added beside case (d) in
   `spikes/F5/run.mjs`
->>>>>>> origin/dev
 - Needed by: 2026-09-27, CP1, because F5 case (d) fails on the wording rather than on the role
 - Unblocks: T-F05a's case (d), and the same clause in T-F05c and T-D04
 - What exactly: F5 ran 3 of its cases on the fork and 2 pass. Case (d) fails, and it fails on a
@@ -770,8 +765,6 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   against whichever answer wins.
 - Why it cannot wait: F5 is existential and 1 of its 7 cases currently cannot pass as written, so
   the row cannot go green on any platform until the sentence is fixed.
-<<<<<<< HEAD
-=======
 
 ### OP-29, Decided: the owner places the Trigger order at arm time, and the agent's cap is not involved
 - Status: decided 2026-09-26 by Jishnu, option A for CP1, with option C as a follow-up rather than
@@ -866,4 +859,3 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   far erred toward under-promising: a coverage share that read 0 instead of inventing one, an
   allowance that reads lower than it is. This one overstates the protection, which is the
   direction that costs a user money, and CP1 is 2026-09-27.
->>>>>>> origin/dev
