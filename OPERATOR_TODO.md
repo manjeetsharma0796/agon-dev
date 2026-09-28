@@ -967,3 +967,24 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   "live elsewhere", are wrong; nothing sensitive goes into a commit or PR; the ruleset is unchanged.
 - Done when: billing is fixed, the repo is private again, and a PR shows the 4 checks green after
   the switch back
+
+### OP-34, Grow the MCP tool list from 4 to 5 for prepare_swap, or build the trade in the CLI
+- Status: open
+- Owner: <unassigned>
+- Needed by: before T-C21 starts, because its acceptance puts this decision before any code
+- Unblocks: T-C21, and through it the only path from an armed vault to a trade
+- What exactly: the tool list is frozen at 4 on purpose. `packages/core/src/index.ts` says
+  "adding or reordering a tool costs every user a cache miss", and `packages/mcp/src/mcp.test.ts`
+  and `docs/public/quickstart.md` both assert 4. T-C21 needs somewhere to build an unsigned trade
+  (Jupiter's `swapInstruction` alone, wrapped by Swig, the agent as the only signer) for the agent to
+  sign on its own machine. 2 options:
+  A. A 5th MCP tool, `prepare_swap`, appended last so the first 4 keep their order. Every MCP client
+  gets it with no install; each client pays 1 cache miss when the list changes. The server builds
+  but never signs, so "anything hosted only reads" still holds.
+  B. The same builder in the `agon` CLI on the user's machine, with the MCP instructions pointing
+  agents at it. The tool list stays at 4, but an agent needs the CLI installed and a way to run it.
+  Either way the builder fails closed: it refuses when `check_trade` is not `pass`, the amount is
+  over T-C17's `effectiveRemaining`, slippage is over 100 bps, or the transaction fails simulation,
+  naming the innermost failing program.
+- Done when: A or B is decided, with a `DECISIONS.md` row naming OP-34 in the same PR, as the lint
+  requires
