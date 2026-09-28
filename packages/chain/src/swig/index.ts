@@ -89,6 +89,31 @@ export interface TokenSpend {
   readonly window: bigint | null
   /** The CONFIGURED amount per window. This is the cap, and it does not move as funds are spent. */
   readonly recurringLimit: bigint | undefined
+  /**
+   * The slot the current window started at, always a multiple of `window` (0 on a fresh role).
+   * Swig rewrites `spendLimit` only on the next spend, so this is what tells a stale reading apart.
+   */
+  readonly lastReset?: bigint | undefined
+}
+
+/**
+ * What the agent can really spend at `slot`. Swig refills the allowance once more than `window`
+ * slots have passed since `lastReset` (measured on a fork: refused at `lastReset + 150`, allowed
+ * from `+151`), but leaves `spendLimit` stale until the next spend, so the raw field under-reports.
+ *
+ * Money logic, so it never reports more than it can prove: a field it cannot read falls back to
+ * the raw remaining figure, and an uncapped role has no figure at all.
+ */
+export function effectiveRemaining(spend: TokenSpend, slot: bigint): bigint {
+  if (spend.spendLimit === null) {
+    throw new Error(
+      'This role has no cap on the mint, so there is no remaining figure to report. Arm a recurring limit first.',
+    )
+  }
+  const { window, lastReset, recurringLimit } = spend
+  if (window === null || lastReset === undefined || recurringLimit === undefined)
+    return spend.spendLimit
+  return slot - lastReset > window ? recurringLimit : spend.spendLimit
 }
 
 /** Exactly what the user signed for, to compare against what reached the chain. */

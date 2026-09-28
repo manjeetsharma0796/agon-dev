@@ -124,9 +124,13 @@ test('a role that cannot be read in full is never reported above what it reads',
   // raw remaining figure rather than to the cap.
   expect(effectiveRemaining({ ...measured, lastReset: undefined }, 450_717_301n)).toBe(50_000_000n)
   expect(effectiveRemaining({ ...measured, window: null }, 450_717_301n)).toBe(50_000_000n)
-  expect(effectiveRemaining({ ...measured, recurringLimit: undefined }, 450_717_301n)).toBe(50_000_000n)
+  expect(effectiveRemaining({ ...measured, recurringLimit: undefined }, 450_717_301n)).toBe(
+    50_000_000n,
+  )
 })
 
 test('an uncapped role has no remaining figure to report, and says so instead of a number', () => {
-  expect(() => effectiveRemaining({ ...measured, spendLimit: null }, 450_717_301n)).toThrow(/no cap/)
+  expect(() => effectiveRemaining({ ...measured, spendLimit: null }, 450_717_301n)).toThrow(
+    /no cap/,
+  )
 })
