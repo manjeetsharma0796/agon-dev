@@ -1,9 +1,9 @@
 # DECISIONS.md
 
 Every decision taken after the PRD was written, in the PRD's own shape: date, topic, decision,
-why. The PRD (`Agon PRD hackathon build with feasibility gates.pdf`) is the day-one artefact,
-exported 2026-09-23 and committed once. Its own Decisions log ends there. **Where that log and
-this file disagree, this file wins, because it is dated.**
+why. `PRD.md` is the product; this is the log of what changed since it was first written on
+2026-09-23. **Where the two disagree, this file wins, because it is dated**, and `PRD.md` is then
+corrected to match.
 
 **Hand-written, append-only, newest last.** Nothing here is derived from another file, on purpose.
 `scripts/board.mjs` records why the last derived board file was removed: it held a summary
