@@ -945,3 +945,25 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   check, and the kill switch. It cannot close the 2 that are about time on mainnet: test wallets
   funded with $50 or less, and 2 weeks of team-wallet mainnet use with no unexplained transaction.
   Those stay mainnet-only however good the fork is, and no amount of fork testing ticks them.
+
+### OP-36, dev was made public to get CI running again, temporarily
+- Status: decided 2026-09-29 by manjeetsharma0796: the repo stays public only until Actions
+  billing is fixed, then goes private again
+- Owner: manjeetsharma0796
+- Needed by: the billing fix, which ends it
+- Unblocks: every open PR; the required checks run again
+- What exactly: from 2026-09-28 the Actions jobs failed with no runner and no steps; GitHub's
+  annotation: "The job was not started because recent account payments have failed or your spending
+  limit needs to be increased". By 2026-09-29 all 4 required checks failed on every PR, other
+  people's branches included. The repo was private on a personal account, so Actions minutes past
+  the free allowance are billed. On 2026-09-29 the owner made it public, which makes Actions free;
+  the 4 checks then passed on the next re-run (PR #165).
+- What is public while this lasts, because it cannot be un-published afterwards: every file and
+  every commit on every branch and PR, including `TASKS.md`, `OPERATOR_TODO.md`, `DECISIONS.md`,
+  `docs/plans/` (which `.publicinclude` keeps out of the public repo on purpose), spike results and
+  recorded fixtures. A gitleaks 8.24.3 scan of all 252 commits across every branch found 0 real
+  secrets; its 2 hits are a public wallet address in a test, the known `const key` false positive.
+- While public: the README's lines saying this repo is private, and that in-progress branches
+  "live elsewhere", are wrong; nothing sensitive goes into a commit or PR; the ruleset is unchanged.
+- Done when: billing is fixed, the repo is private again, and a PR shows the 4 checks green after
+  the switch back
