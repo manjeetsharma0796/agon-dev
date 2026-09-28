@@ -1892,3 +1892,18 @@ _(empty)_
   an anomaly score after the fact, not a capped permission set before the agent trades. Colosseum's
   own directory and Copilot need an account and were NOT searched, so the PRD's 2,992-entry figure
   is still unverified by a second pair of eyes
+
+### T-B13, A decisions log in the repo, and a lint that keeps it honest
+- Status: claimed 2026-09-28 | Owner: Jishnu | Branch: feature/t-b13-decisions
+- Depends-on: T-B01
+- Touches: DECISIONS.md, scripts/board.mjs
+- Serves: Functionality (judged) ; stops 8 decisions living only in a queue nobody reads as a log
+- Acceptance: DECISIONS.md carries 1 row per decision in the PRD's own shape, date, topic,
+  decision, why, and the OP it came from; the 8 decisions already made outside the PRD are in it;
+  `node scripts/board.mjs` fails when an OP whose Status starts with "decided" has no row naming
+  it, proved by a control run with a row removed; DECISIONS.md is in both board allowlists so a
+  board PR can carry a decision and its log entry together; 0 content is derived from another file
+- Evidence: <PR link, plus the lint run with and without a row>
+- Kill criterion: none, but the shape is load-bearing. If DECISIONS.md is ever generated from
+  OPERATOR_TODO.md this row has failed: scripts/board.mjs:218 records why the last derived board
+  file was removed, and a generated log walks back into it
