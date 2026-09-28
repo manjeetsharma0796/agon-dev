@@ -988,3 +988,30 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   naming the innermost failing program.
 - Done when: A or B is decided, with a `DECISIONS.md` row naming OP-34 in the same PR, as the lint
   requires
+
+### OP-35, How the MCP finds a wallet's vault, reaches the chain, and extends ArmedRule
+- Status: decided 2026-09-29 by manjeetsharma0796, and the ArmedRule part with Jishnu
+- Owner: manjeetsharma0796
+- Needed by: before T-C17's `list_rules` work, which cannot be built without all 3
+- Unblocks: T-C17, and through it T-C21, T-E06 and T-C18
+- What exactly, and what was decided:
+  1. **Finding the vault.** `list_rules` receives a wallet address and must return that wallet's
+     vault. Decided: the Swig's 32-byte id is derived from the wallet address at arm time (T-E06),
+     so the vault's address can be recomputed from the wallet alone, 1 account read, no search and
+     no index. Rejected: searching all Swig accounts by root authority (slow, and tied to Swig's
+     account layout); the agent passing the vault address (it could name the wrong vault, and it
+     changes a frozen input). Cost accepted: 1 Agon vault per wallet, and vaults made any other way
+     are not found.
+  2. **Reaching the chain.** The MCP server has no chain connection today; it reads recordings or
+     Helius. Decided: 1 setting, `AGON_RPC_URL`, pointing at `http://fork:8899` in compose and at
+     the hosted fork when hosted. Unset, `list_rules` answers that no chain is configured rather than
+     returning an empty list. The server refuses to start if the URL disagrees with `AGON_NETWORK`,
+     so an agent is never told "fork" while reading mainnet. Rejected: reusing the Helius mainnet URL
+     (no Agon vault exists on mainnet until T-D04, so it would always read empty); hard-coding
+     `127.0.0.1:8899` (wrong inside compose and hosted, and against config-pinned ids).
+  3. **The ArmedRule contract.** T-C17 needs it to carry the vault and the real remaining
+     allowance, and OP-32 the rolling worst case. Decided with Jishnu: add `vault`,
+     `effectiveRemaining` and `rollingWorstCase` and change nothing existing, fixtures updated in the
+     same commit. Rejected: a second type beside ArmedRule (2 shapes for 1 rule that can drift);
+     postponing (T-C17 and T-C21 stay blocked).
+- Done when: the 3 rows naming OP-35 are in `DECISIONS.md`, which this PR adds
