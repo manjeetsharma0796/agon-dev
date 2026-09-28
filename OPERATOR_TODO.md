@@ -711,10 +711,41 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   refuses it, "gates value movement" is an honest description and option A is safe. If Swig
   authorises it, the Jupiter-only role does not bound the agent at all and this stops being a
   wording item
+- Measured 2026-09-29 (about 2026-09-28 20:50 UTC), outcome 1. Fresh Surfpool 1.6.0 mainnet fork,
+  started at slot 451431145; probe began at slot 451431237. Throwaway owner and agent keys, the
+  owner created the Swig and the vault's wSOL account with 1 wSOL, and the agent role was the
+  production one, `agentRoleActions({ mint: wSOL, recurringAmount: 500000000n, window: 150n })`,
+  checked with `assertAgentRoleShape`. Outcomes were written down before the run.
+  Probe: SPL Token `Approve` (data `[4]` + u64 LE 1000000000), accounts the vault's wSOL account
+  `6BKCqx2dLKFPucySFQapvDZHgink5N3iYtFeAXceS6bG` (writable), a throwaway delegate (read only), the
+  vault `C7Bz4nps2z1NDftJUBzXQyeR2iDE5j5ztad5q1k4iA8R` as signer; wrapped with
+  `getSignInstructions(swig, agentRole.id, [approveIx])`, signed by the agent alone. Refused at
+  slot 451431244. Program lines, unedited:
+  `Program ComputeBudget111111111111111111111111111111 invoke [1]`,
+  `Program ComputeBudget111111111111111111111111111111 success`,
+  `Program swigypWHEksbC64pWKwah1WTeh9JXwx8H1rJHLdbQMB invoke [1]`,
+  `Program swigypWHEksbC64pWKwah1WTeh9JXwx8H1rJHLdbQMB failed: custom program error: 0xbbe`.
+  The innermost failed program is Swig, and the Token program was never invoked.
+  Control: the identical `Approve` through the root role, signed by the owner, landed at slot
+  451431245, signature
+  `TUV3WEmkcuoV71FSAZy3FyRqTtv73C9pV4sjztUhHgbQzHKPmWX8Vu8W7zDQrgExCWTFL8nf4g1b15eJpSkMsUp`.
+  Program lines, unedited: `Program ComputeBudget111111111111111111111111111111 invoke [1]`,
+  `Program ComputeBudget111111111111111111111111111111 success`,
+  `Program swigypWHEksbC64pWKwah1WTeh9JXwx8H1rJHLdbQMB invoke [1]`,
+  `Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [2]`,
+  `Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success`,
+  `Program swigypWHEksbC64pWKwah1WTeh9JXwx8H1rJHLdbQMB success`.
+  Delegate field of the vault's wSOL account: null before the run, null after the agent's attempt,
+  and after the control `J35SopERMRkQMWUcro1tSsBVW7oHSD6CiSyhJw22eLHn` (the root's delegate) with
+  1000000000 delegated. In the words written before the run: Swig refuses the Approve, so "moves
+  value" is the wrong description but the role is safe, and the likely real rule is that the role
+  gates anything done with the vault's authority, while a memo with 0 accounts uses none of it.
+  Not measured here: other authority-using instructions (SetAuthority, CloseAccount, Revoke), so
+  "anything done with the vault's authority" is the likely rule from 1 instruction, not a tested
+  one. Case (d) is not rewritten here; that is T-F05a
 - Why it cannot wait, updated: it was a wording call and it is now a security question with a
   measurement attached. About 20 minutes on the fork, and it can be added beside case (d) in
   `spikes/F5/run.mjs`
-- Owner: <unassigned>
 - Needed by: 2026-09-27, CP1, because F5 case (d) fails on the wording rather than on the role
 - Unblocks: T-F05a's case (d), and the same clause in T-F05c and T-D04
 - What exactly: F5 ran 3 of its cases on the fork and 2 pass. Case (d) fails, and it fails on a
