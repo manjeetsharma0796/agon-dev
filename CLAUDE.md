@@ -26,7 +26,8 @@ capped revocable Swig role, 24/7 rules run as Jupiter Trigger orders and not on 
 - **The agent key never holds `manageAuthority`** and never leaves the OS keychain. No mainnet
   signing key in CI, `.env`, logs, chat or anything we host.
 - **No mainnet transaction until `TASKS.md` T-D04 has all 8 boxes ticked and 2 sign-offs.**
-- **No arming UI until F5 and F6 pass.** The screen changes shape if either fails.
+- **No arming UI until its shape is known** (amended 2026-09-28 from "until F5 and F6 pass", see
+  T-B15), and **no mainnet transaction until T-D04**, which is unchanged.
 - Every failure message names the cause, the number involved and what the user can do next. No
   blank fields, no "N/A", no "something went wrong".
 - Every verdict is stamped with its data slot and rule version.
