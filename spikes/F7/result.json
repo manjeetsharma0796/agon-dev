@@ -1,9 +1,9 @@
 {
   "id": "F7",
   "pass": false,
-  "measured": "clause 1 of 4 answered: Swig has a native expiry, 7 of 7 SDK checks as expected. Clauses 2 to 4 need a transaction to land on devnet and there is no funded key, so 0 runs happened and manageAuthority was observed in 0 of 0",
-  "date": "2026-09-24",
-  "commit": "bd1c369bc5058f2259180b8823a9a3258f5d3384",
+  "measured": "clause 1 of 4 answered: Swig has a native expiry, 7 of 7 SDK checks as expected. On chain that native expiry holds: a session expired at slot 486, was tested at 489, and the session key could act after it: false. The agent key held manageAuthority: false, which answers clause 4. Clauses 2 and 3 describe a pre-signed removal, which is a mechanism for something the protocol already does, and are not run pending OP-30",
+  "date": "2026-09-25",
+  "commit": "fde9a0df092a8ab017c093ec780d9de57c5950eb",
   "nativeExpiryExists": true,
   "versions": {
     "classic": "2.1.0",
@@ -47,11 +47,25 @@
       "asExpected": true
     }
   ],
+  "onChain": {
+    "ran": true,
+    "why": "",
+    "observations": {
+      "agentHeldManageAuthority": false,
+      "maxDuration": "50",
+      "expirySlot": 486,
+      "slotWhenTested": 489,
+      "expired": true,
+      "sessionKeyCouldActAfterExpiry": false,
+      "refusal": "Simulation failed. Message: Transaction simulation failed: Error processing Instruction 0: custom program error: 0xbc6: 3 log messages: Program swigypWHEksbC64pWKwah1WTeh9JXwx8H1rJHLdbQMB invoke [1] P"
+    }
+  },
+  "nativeExpiryHeldOnChain": true,
   "clauses": {
     "native expiry field checked and recorded": "done",
-    "pre-signed removal lands after expiry, next agent transaction fails": "not run, no funded devnet key",
-    "earlier manual revoke leaves the pre-signed transaction harmless": "not run, no funded devnet key",
-    "agent key held manageAuthority in 0 of the runs": "not run, 0 runs"
+    "pre-signed removal lands after expiry, next agent transaction fails": "not run, and the reason is a finding rather than a blocker: the native expiry holds on chain, so a pre-signed removal is a mechanism for something the protocol already does. Whether it is still wanted is OP-30",
+    "earlier manual revoke leaves the pre-signed transaction harmless": "not run, for the same reason: there is no pre-signed transaction unless OP-30 says to build one",
+    "agent key held manageAuthority in 0 of the runs": "pass, read off the role rather than inferred from nothing going wrong"
   },
   "notes": "Swig has a native expiry: a session based authority carries an expirySlot and a maxDuration, and a session is created for a separate key with a duration. That makes T-D02s pre-signed transaction and durable nonce potentially unnecessary. See README.md in this directory."
 }
