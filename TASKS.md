@@ -1920,3 +1920,18 @@ _(empty)_
 - Kill criterion: none, but the shape is load-bearing. If DECISIONS.md is ever generated from
   OPERATOR_TODO.md this row has failed: scripts/board.mjs:218 records why the last derived board
   file was removed, and a generated log walks back into it
+
+### T-B14, One PRD in the repo, and the PDF goes
+- Status: claimed 2026-09-28 | Owner: Jishnu | Branch: feature/t-b14-prd
+- Depends-on: T-B13
+- Touches: PRD.md, TASKS.md, README.md
+- Serves: Functionality (judged) ; the source of truth TASKS.md line 8 points at
+- Acceptance: PRD.md carries every section of the PDF that has no other home in the repo, with the
+  9 decisions in DECISIONS.md applied rather than appended; the sections already owned by
+  CLAUDE.md, TASKS.md, FEASIBILITY.md or spikes/ are pointed at rather than copied, with the
+  pointer table naming each; the PDF is deleted and TASKS.md's "source of truth" line names PRD.md;
+  0 references to the PDF remain outside git history
+- Evidence: <PR link, plus the extraction the transcription came from>
+- Kill criterion: none, but 2 PRDs is the failure this closes. If the PDF ever comes back beside
+  PRD.md the row has failed: nobody can tell which one is true, which is the state that let 9
+  decisions accumulate with nowhere to go
