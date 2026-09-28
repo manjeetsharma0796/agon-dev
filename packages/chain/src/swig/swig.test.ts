@@ -3,6 +3,7 @@ import { Actions, SWIG_PROGRAM_ADDRESS } from '@swig-wallet/classic'
 import {
   agentRoleActions,
   effectiveRemaining,
+  agentRulesOf,
   assertAgentRoleShape,
   verifyRoleOnChain,
   AGENT_ROLE_ACTION_COUNT,
@@ -133,4 +134,32 @@ test('an uncapped role has no remaining figure to report, and says so instead of
   expect(() => effectiveRemaining({ ...measured, spendLimit: null }, 450_717_301n)).toThrow(
     /no cap/,
   )
+})
+
+// T-C17: what list_rules reports for a vault, from its roles and the slot. Pure, so the MCP only
+// does the reading.
+test('a vault lists its agent role with the real allowance, and never the owner root role', () => {
+  const agent = agentRoleActions({ mint: USDC, recurringAmount: 500_000_000n, window: 150n })
+  const roles = [
+    { id: 0, authority: { addressString: 'Owner1111111111111111111111111111111111111' }, actions: asRole(Actions.set().all().get()) },
+    { id: 1, authority: { addressString: 'Agent1111111111111111111111111111111111111' }, actions: agent },
+  ]
+  const rules = agentRulesOf(roles, [USDC], 1_000_000n)
+  expect(rules).toHaveLength(1)
+  expect(rules[0]).toMatchObject({
+    roleId: 1,
+    authority: 'Agent1111111111111111111111111111111111111',
+    mint: USDC,
+    amount: 500_000_000n,
+    windowSlots: 150n,
+    // A fresh role reads lastReset 0, so at any real slot the whole cap is spendable.
+    effectiveRemaining: 500_000_000n,
+    // OP-32: 2 full windows across an edge.
+    rollingWorstCase: 1_000_000_000n,
+  })
+})
+
+test('a vault with no agent role lists nothing, which means nothing is armed', () => {
+  const roles = [{ id: 0, authority: { addressString: 'Owner1111111111111111111111111111111111111' }, actions: asRole(Actions.set().all().get()) }]
+  expect(agentRulesOf(roles, [USDC], 1_000_000n)).toEqual([])
 })
