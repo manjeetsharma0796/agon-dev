@@ -26,6 +26,73 @@ export const WSOL_MINT = 'So11111111111111111111111111111111111111112'
 export const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
 
 /**
+ * The Swig id for a wallet, derived rather than random, so a wallet's vault can be found again from
+ * the wallet alone (OP-35): 1 account read, no search, no index.
+ *
+ * `createWithSeed` is sha256(wallet, seed, Swig program), a Solana primitive that runs in a browser
+ * as well as in node, used here as a namespaced hash. The result is an id, not an address anyone
+ * signs for.
+ *
+ * `attempt` exists because a derivable id is squattable. Swig ids are not access-controlled, so
+ * anyone can compute this and create a Swig here first with themselves as root. `resolveVault` steps
+ * past a squatted id to the next attempt, which makes squatting cost a transaction per attempt
+ * rather than blocking a user forever.
+ */
+export async function swigIdFor(owner: PublicKey, attempt = 0): Promise<Uint8Array> {
+  if (!Number.isInteger(attempt) || attempt < 0 || attempt >= MAX_ATTEMPTS) {
+    throw new Error(`Vault attempt ${attempt} is outside 0 to ${MAX_ATTEMPTS - 1}.`)
+  }
+  const seeded = await PublicKey.createWithSeed(
+    owner,
+    `agon-vault-${attempt}`,
+    SWIG_PROGRAM_ADDRESS,
+  )
+  return seeded.toBytes()
+}
+
+/** How many ids `resolveVault` will step through before it gives up and says so. */
+export const MAX_ATTEMPTS = 8
+
+/**
+ * Whether this wallet holds root on this Swig. A Swig found at a wallet's derived id is that
+ * wallet's vault only if this is true, and never because of where it was found.
+ */
+export function isOwnedBy(swig: Swig, owner: PublicKey): boolean {
+  return swig.findRolesByEd25519SignerPk(owner.toBase58()).some((r) => r.actions.isRoot())
+}
+
+/** Reads a Swig account, or null when none exists. Injected, so this file stays network-free. */
+export type SwigReader = (swigAddress: PublicKey) => Promise<Swig | null>
+
+export interface ResolvedVault {
+  attempt: number
+  swigId: Uint8Array
+  /** The wallet's existing Swig, or null when this id is free and arming should create it. */
+  existing: Swig | null
+  /** How many earlier ids held a Swig this wallet does not own. Worth telling the user. */
+  squatted: number
+}
+
+/**
+ * Find a wallet's vault, or the id to create it at. Fails closed: a Swig the wallet is not root on
+ * is never returned as the wallet's vault, whatever id it sits at.
+ */
+export async function resolveVault(read: SwigReader, owner: PublicKey): Promise<ResolvedVault> {
+  let squatted = 0
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    const swigId = await swigIdFor(owner, attempt)
+    const existing = await read(findSwigPda(swigId))
+    if (existing === null) return { attempt, swigId, existing: null, squatted }
+    if (isOwnedBy(existing, owner)) return { attempt, swigId, existing, squatted }
+    squatted++
+  }
+  throw new Error(
+    `All ${MAX_ATTEMPTS} vault ids for ${owner.toBase58()} hold a Swig this wallet is not root on. ` +
+      `Someone created them first. Nothing was armed; report it rather than retrying.`,
+  )
+}
+
+/**
  * Where the vault's funds live, derived from the Swig id before the Swig exists.
  *
  * This is what lets creation and funding share one transaction: the token accounts need the
@@ -82,7 +149,7 @@ function syncNative(pocket: PublicKey): TransactionInstruction {
 export interface FundVault {
   /** The user's wallet. It becomes root, and it pays. */
   owner: PublicKey
-  /** 32 random bytes. The caller keeps it: the Swig and the vault are both derived from it. */
+  /** From `resolveVault`, which derives it from the owner and steps past squatted ids. */
   swigId: Uint8Array
   /** Lamports to move into the vault as wSOL. What the agent can ever trade is at most this. */
   depositLamports: bigint
@@ -126,6 +193,8 @@ export async function fundVault(spec: FundVault): Promise<TransactionInstruction
 export interface HireAgent {
   /** The Swig as read back after transaction 1 landed. */
   swig: Swig
+  /** The wallet that is root on it, and signs this transaction. */
+  owner: PublicKey
   /** The agent's PUBLIC key. Its private key never reaches this code, or any code we host. */
   agent: PublicKey
   /** The mint the agent may spend. */
@@ -155,10 +224,14 @@ export async function hireAgent(spec: HireAgent): Promise<TransactionInstruction
     window: spec.approved.window,
   })
   assertAgentRoleShape(actions, spec.mint, spec.approved)
-  const root = spec.swig.roles[0]
+  // The owner's own root role, found by its signer, rather than whichever role is first. A Swig
+  // the owner is not root on is refused here, before a signature is asked for.
+  const root = spec.swig
+    .findRolesByEd25519SignerPk(spec.owner.toBase58())
+    .find((r) => r.actions.isRoot())
   if (!root) {
     throw new Error(
-      'This Swig has no roles, so there is no root to add the agent from. Read it again after it lands.',
+      `${spec.owner.toBase58()} is not root on this Swig, so it cannot add an agent to it. Nothing was built.`,
     )
   }
   // `agentRoleActions` declares the narrow `RoleActions` it is read through, but the object it

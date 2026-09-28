@@ -1,7 +1,17 @@
-import { Keypair } from '@solana/web3.js'
-import { findSwigPda } from '@swig-wallet/classic/dist/index.js'
-import { expect, test } from 'vitest'
-import { fundVault, pocketOf, USDC_MINT, vaultAddress, WSOL_MINT } from './arm.js'
+import { Keypair, type PublicKey } from '@solana/web3.js'
+import { findSwigPda, type Swig } from '@swig-wallet/classic/dist/index.js'
+import { describe, expect, test } from 'vitest'
+import {
+  fundVault,
+  isOwnedBy,
+  MAX_ATTEMPTS,
+  pocketOf,
+  resolveVault,
+  swigIdFor,
+  USDC_MINT,
+  vaultAddress,
+  WSOL_MINT,
+} from './arm.js'
 
 const id = new Uint8Array(32).fill(7)
 const owner = Keypair.generate().publicKey
@@ -40,4 +50,48 @@ test('funding refuses what cannot work, naming the number', async () => {
     fundVault({ owner, swigId: new Uint8Array(31), depositLamports: 1n }),
   ).rejects.toThrow(/31/)
   await expect(fundVault({ owner, swigId: id, depositLamports: 0n })).rejects.toThrow(/0 lamports/)
+})
+
+describe('finding a wallet vault', () => {
+  const wallet = Keypair.generate().publicKey
+  const attacker = Keypair.generate().publicKey
+  /** A stand-in Swig whose only root role is signed by `root`. Enough for the lookup to answer. */
+  const swigRootedTo = (root: PublicKey) =>
+    ({
+      findRolesByEd25519SignerPk: (pk: string) =>
+        pk === root.toBase58() ? [{ actions: { isRoot: () => true } }] : [],
+    }) as unknown as Swig
+
+  test('the id is derived from the wallet, so the vault can be found again from the wallet alone', async () => {
+    expect(await swigIdFor(wallet, 0)).toEqual(await swigIdFor(wallet, 0))
+    expect(await swigIdFor(wallet, 0)).not.toEqual(await swigIdFor(wallet, 1))
+    expect(await swigIdFor(wallet, 0)).not.toEqual(await swigIdFor(attacker, 0))
+  })
+
+  test('a Swig squatted at the derived id is skipped, never returned as the wallet vault', async () => {
+    // The attack a derived id invites: compute the victim's id, create a Swig there first with
+    // yourself as root, and wait for the victim's lookup to report it as theirs.
+    const squatAt = findSwigPda(await swigIdFor(wallet, 0)).toBase58()
+    const read = async (at: PublicKey) =>
+      at.toBase58() === squatAt ? swigRootedTo(attacker) : null
+
+    const found = await resolveVault(read, wallet)
+    expect(found.attempt).toBe(1)
+    expect(found.existing).toBeNull()
+    expect(found.squatted).toBe(1)
+  })
+
+  test('the wallet own Swig is found where it was made', async () => {
+    const mine = swigRootedTo(wallet)
+    const found = await resolveVault(async () => mine, wallet)
+    expect(found.attempt).toBe(0)
+    expect(found.existing).toBe(mine)
+    expect(isOwnedBy(mine, attacker)).toBe(false)
+  })
+
+  test('every id squatted is a refusal naming the count, not a guess', async () => {
+    await expect(resolveVault(async () => swigRootedTo(attacker), wallet)).rejects.toThrow(
+      new RegExp(`All ${MAX_ATTEMPTS} vault ids`),
+    )
+  })
 })

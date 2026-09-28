@@ -2160,6 +2160,16 @@ _(empty)_
   with `0x1788` while the allowance stayed at 500000000. A fresh fork landed the identical swap.
   That is OP-33's drift reached from the product side rather than the spike side, and it is why a
   hosted fork needs resetting before testers meet it
+- Finding 3, from reviewing OP-35 while this was open: a vault id derived from the wallet is
+  squattable, because Swig ids are not access-controlled. Measured on the fork: an attacker created
+  a Swig at the victim's derived id rooted to itself, and it landed. A lookup that trusts the id
+  would report that Swig as the victim's vault and point their deposit at it. So `resolveVault`
+  counts a Swig as the wallet's only when the wallet holds root on it, found by signer rather than
+  by position, and steps to the next id otherwise. On the fork it skipped the squatted id
+  (`squatted: 1`), armed at attempt 1, and a second lookup found the victim's own vault there, not
+  the attacker's. `hireAgent` refused to add an agent to the squatted Swig before any signature.
+  It also stopped assuming `roles[0]` is root, which the security review had shown fails closed but
+  which picked the owner by position rather than by key
 - Finding 2: packages/chain built 0 instructions before this. The kill switch only plans, so this
   is the first code there that needs web3 types, and `@solana/web3.js` becomes a direct dependency
   pinned to the 1.99.0 already in the tree through `@swig-wallet/classic`, so nothing new installs
