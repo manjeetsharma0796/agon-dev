@@ -19,7 +19,7 @@ export const RecurringLimit = z
     windowSeconds: z.number().int().positive().optional(),
     /**
      * What Swig enforces. Present when read back from chain, and never converted from seconds by
-     * guessing a slot time: numbers are arithmetic, and slot time is not a constant (OP-35).
+     * guessing a slot time: numbers are arithmetic, and slot time is not a constant.
      */
     windowSlots: z.number().int().positive().optional(),
   })
@@ -53,7 +53,7 @@ export const RuleSpec = z.object({
 export const ArmedRule = z.object({
   /**
    * What the user asked for. Null when the rule is read back from chain (`list_rules`), because the
-   * chain stores the role and not the trigger type or the expiry (OP-35).
+   * chain stores the role and not the trigger type or the expiry.
    */
   spec: RuleSpec.nullable(),
   swigRole: z.object({
@@ -75,7 +75,7 @@ export const ArmedRule = z.object({
   effectiveRemaining: BaseUnits,
   /**
    * The most the agent can spend across a window edge: 2 full windows in about 2 slots, because
-   * windows follow the slot clock (OP-32). Printed beside every remaining figure.
+   * windows follow the slot clock. Printed beside every remaining figure.
    */
   rollingWorstCase: BaseUnits,
 })

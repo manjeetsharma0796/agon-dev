@@ -162,7 +162,7 @@ test('a vault lists its agent role with the real allowance, and never the owner 
     windowSlots: 150n,
     // A fresh role reads lastReset 0, so at any real slot the whole cap is spendable.
     effectiveRemaining: 500_000_000n,
-    // OP-32: 2 full windows across an edge.
+    // 2 full windows across an edge, because windows follow the slot clock.
     rollingWorstCase: 1_000_000_000n,
   })
 })

@@ -341,7 +341,7 @@ export interface ChainAgentRule {
   windowSlots: bigint
   /** What the agent can spend at the slot asked about, from `effectiveRemaining`. */
   effectiveRemaining: bigint
-  /** 2 full windows across an edge, because windows follow the slot clock (OP-32). */
+  /** 2 full windows across an edge, because windows follow the slot clock. */
   rollingWorstCase: bigint
 }
 

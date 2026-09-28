@@ -132,7 +132,7 @@ describe('a contract refuses a dishonest value', () => {
   })
 })
 
-// T-C17, OP-35. list_rules reads a rule back from chain, and the chain stores the role but not the
+// T-C17. list_rules reads a rule back from chain, and the chain stores the role but not the
 // spec (trigger type, expiry) or the order id, and counts its window in slots. So a rule read from
 // chain carries a null spec and a slot window, and never a converted guess at seconds.
 describe('an ArmedRule read back from chain', () => {
