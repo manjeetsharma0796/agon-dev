@@ -1963,7 +1963,13 @@ _(empty)_
   carried, that the screen must not be built while its shape is unknown, with the measured shape
   named; the mainnet gate in T-D04 is quoted unchanged in the same line so the amendment cannot be
   read as loosening it; a row in DECISIONS.md records the amendment and its date
-- Evidence: <PR link>
+- Evidence: CLAUDE.md line 29 replaced, 2 lines against the 8 a full explanation took, because
+  CLAUDE.md's own budget is about 60 lines and it was already at 65. The reasoning lives here and
+  in DECISIONS.md, which is where TASKS.md section 3 says detail belongs
+- Finding: the gate had 3 copies, not 1: CLAUDE.md line 29, TASKS.md's hard-gates summary, and
+  T-E06's own Acceptance line. Amending 1 would have left 2 saying the opposite, and the one most
+  likely to be read by whoever starts the work is T-E06's, which is the last place anybody looks
+  for a rule
 - Kill criterion: if F5 case (d) comes back showing the Jupiter-only role authorises an instruction
   that can move funds later, this amendment is wrong and the gate goes back: the shape would not be
   known after all, because the screen would have to say something different about what the role
