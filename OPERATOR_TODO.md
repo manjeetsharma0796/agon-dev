@@ -697,10 +697,25 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   every client written against today's shape has to change when it does.
 
 ### OP-28, CP1 wording: does the program limit gate every call, or only calls that move value
-- Status: open, and not answerable by wording alone. Jishnu ruled 2026-09-26 that the measurement
-  below runs before the clause is rewritten, because "moves value" is being used as a proxy for
-  "can hurt the user" and nobody has checked that the proxy holds
-- Owner: Manjeet, for the probe
+- **The sentence, decided 2026-09-29 by Jishnu on the measurement below: the program limit gates
+  every instruction that uses the vault's authority. An instruction that uses none of it cannot
+  act on the vault, and is not gated.** Neither of the 2 options this row offered, because the
+  probe found a third answer and it is the only one that explains both observations
+- Status: decided 2026-09-29 by Jishnu. F5 case (d) is rewritten against this sentence by T-F05a,
+  from "a call to a non-Jupiter program is rejected" to "a non-Jupiter instruction using the
+  vault's authority is rejected". The memo stays in the spike as a recorded non-case
+- Why neither option was right: `0xbbe` is the same error Swig gives when Jupiter's own setup
+  instructions are refused, so it means the program is not permitted. But the memo is also not
+  permitted and it was authorised. Those 2 facts cannot both hold if the limit gates by program
+  id. The Approve explains them: the memo carried 0 accounts and no signer, the Approve carried
+  the vault as signer. So the limit is conditional on the vault's authority being used, and **case
+  (d) was never a hole**: a memo signed by nobody and touching nothing cannot reach the vault, and
+  the acceptance was asking the wrong question of a role that was doing its job
+- The limit on this, which the probe states itself: the rule is inferred from 1 instruction.
+  `SetAuthority` and `CloseAccount` both use the vault's authority and both can drain, so both
+  should be refused if it holds, and neither was tried. Worth 20 minutes on the same harness
+  before the sentence goes in front of a judge
+- Owner: Manjeet, for the probe, done
 - The measurement, before the wording: case (d) showed a memo instruction, 0 accounts and no value
   moved, is authorised under a Jupiter-only role. A memo is harmless. The question the rewrite
   would be assuming away is whether every no-value instruction is harmless. Approving a delegate
