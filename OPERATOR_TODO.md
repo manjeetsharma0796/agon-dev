@@ -1002,6 +1002,15 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
      account layout); the agent passing the vault address (it could name the wrong vault, and it
      changes a frozen input). Cost accepted: 1 Agon vault per wallet, and vaults made any other way
      are not found.
+     **Amended 2026-09-29 on a measurement: a derived id is squattable, so the vault is found by
+     `resolveVault` in `packages/chain/src/arm.ts` and never by trusting the id.** Swig ids are not
+     access-controlled. On the fork an attacker created a Swig at a victim's derived id rooted to
+     itself, and it landed; a lookup that trusts the id would return it as the victim's vault and a
+     UI would point the deposit at it. `resolveVault` counts a Swig as the wallet's only when the
+     wallet holds root on it, found by signer rather than by position, and otherwise steps to the
+     next of 8 derived ids. On the fork it skipped the squat, armed at the next id, and found the
+     victim's own vault on a second lookup. T-C17's `list_rules` and T-E06 both call it rather than
+     deriving the id themselves, so there is 1 copy of the check
   2. **Reaching the chain.** The MCP server has no chain connection today; it reads recordings or
      Helius. Decided: 1 setting, `AGON_RPC_URL`, pointing at `http://fork:8899` in compose and at
      the hosted fork when hosted. Unset, `list_rules` answers that no chain is configured rather than
