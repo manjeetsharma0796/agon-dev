@@ -1470,9 +1470,13 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 - Kill criterion: none. Nothing moves to mainnet with an unticked box
 
 ### T-E06, Arm a rule, wallet-signed
-- Status: open
+- Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-e06-vault-screen
 - Depends-on: T-F05a, T-F06a, T-D01, T-D07
-- Touches: apps/web/app/arm/
+- Touches: apps/web/app/arm/, apps/web/src/arm-flow.ts, apps/web/src/arm-flow.test.ts,
+  apps/web/package.json, packages/chain/src/arm.ts, packages/chain/src/arm.test.ts
+- Scope, 2026-09-29: working functionality only, no visual polish, which is T-E16's and a person's.
+  The same screen carries revoke, because revoking is part of managing the vault and T-E07 is now
+  the outside test of it rather than a second page
 - Serves: UX (judged) ; Novelty (judged)
 - Retargeted 2026-09-28 against what the fork measured, replacing "do not start this until F5 and
   F6 pass". See T-B15 for why the gate moved rather than opened
@@ -1484,7 +1488,7 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
   itself, because Phantom reads "not supported" on Solana Localnet; any Trigger order is placed by
   the owner here, per OP-29, and never by the agent; wallet connection is the only auth and there
   are still 0 accounts; 0 mainnet transactions, which stays gated by T-D04
-- Evidence: <staging recording, plus the devnet role read>
+- Evidence: <PR link, plus the arm, fund and revoke flow landing on the fork>
 - What is gated and what is not, because "do not start" reads as all of it: the **arming screen**
   is gated, and that is this row. Connecting a wallet and reading an address from it is not gated
   by anything and is T-E14, which can start today. The gate is specific: if F5 fails the cap is
@@ -1530,9 +1534,12 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 
 ### T-E07, Revoke from the wallet, live
 - Status: open
-- Depends-on: T-D03, T-E06
-- Touches: apps/web/app/rules/
+- Depends-on: T-E06
+- Touches: none, it is a test by a person
 - Serves: Novelty (judged) ; UX (judged)
+- Retargeted 2026-09-29: the revoke button lives on T-E06's screen, and a Phantom removal was
+  already measured on the fork, so this no longer waits on T-D03. What is left is the part no agent
+  can do: a person outside the team using it
 - Acceptance: revocation tested from Phantom and Backpack by at least 1 person outside the
   team, with 0 Agon involvement in the transaction; the page states plainly that revoking needs 0
   help from us
@@ -2181,3 +2188,16 @@ _(empty)_
   pinned to the 1.99.0 already in the tree through `@swig-wallet/classic`, so nothing new installs
 - Kill criterion: none. It is item 2 of the critical path, and without it T-E06 would build these
   transactions inside a page, where they cannot be tested without a browser
+
+### T-E16, Polish the vault screen, with a person in the loop
+- Status: open
+- Depends-on: T-E06
+- Touches: apps/web/app/arm/
+- Serves: UX (judged)
+- Acceptance: a person, not an agent, uses T-E06's screen end to end on the fork with Phantom and
+  lists what is confusing, ugly or slow; each item is fixed or rejected with a reason; the layout
+  works at 375 px wide; every control is reachable by keyboard and has a label a screen reader
+  announces; 0 changes to what the screen does, only to how it looks and reads
+- Evidence: <the person's list, and a screenshot before and after>
+- Kill criterion: none. Kept separate from T-E06 on purpose, so polish is judged by someone looking
+  at it and cannot quietly change the behaviour T-E06 measured
