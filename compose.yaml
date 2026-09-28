@@ -1,0 +1,45 @@
+# T-B16: the Surfpool mainnet fork and the Agon MCP server, side by side, on this machine only.
+#
+#   docker compose up -d --build     then: fork on 127.0.0.1:8899, MCP on 127.0.0.1:8787/mcp
+#                                    (AGON_MCP_PORT=8788 docker compose up ... if 8787 is taken)
+#   docker compose down              stops and removes both
+#
+# It connects nothing: the MCP server reads committed recordings (replay mode, no keys), never the
+# fork, until T-C17 gives it a vault to read. The same 2 images are what OP-33's hosted target runs;
+# only the port bindings below are local.
+name: agon
+
+services:
+  fork:
+    image: surfpool/surfpool:1.6.0
+    # No --network on purpose. Surfpool forks mainnet by default, and a set SURFPOOL_DATASOURCE_RPC_URL
+    # (a keyed URL, from your shell, never written here) replaces it. Passing --network as well is
+    # refused, so the choice lives in that one variable.
+    command: ['start', '--host', '0.0.0.0', '--no-tui', '--no-deploy', '--no-studio']
+    environment:
+      - SURFPOOL_DATASOURCE_RPC_URL
+    ports:
+      - '127.0.0.1:8899:8899' # RPC
+      - '127.0.0.1:8900:8900' # websocket, which transaction confirmations arrive on
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -sf
+        - -H
+        - 'content-type: application/json'
+        - -d
+        - '{"jsonrpc":"2.0","id":1,"method":"getSlot"}'
+        - http://127.0.0.1:8899
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  mcp:
+    build: .
+    environment:
+      # Every result names the fork first, so an agent cannot mistake it for mainnet.
+      AGON_NETWORK: fork
+    ports:
+      # 8787 is also Cloudflare wrangler's default dev port. If it is taken, set AGON_MCP_PORT.
+      - '127.0.0.1:${AGON_MCP_PORT:-8787}:8787'

@@ -32,6 +32,7 @@ the OP row, which is what the last column points at.
 | 2026-09-29 | What the Jupiter-only role gates | Every instruction that uses the vault's authority; one that uses none of it is not gated and cannot act on the vault | Measured: an SPL Approve through the agent role was refused by Swig with 0xbbe and the Token program was never invoked, while the identical Approve through root landed and set the delegate. A memo with 0 accounts and no signer was authorised, and only this rule explains both | OP-28 |
 | 2026-09-28 | The arming gate | Amended from "until F5 and F6 pass" to "until its shape is known", with T-D04 unchanged | The shape is measured on a fork with a real Phantom, and F5's open case decides what we may claim the role prevents rather than what the screen looks like | T-B15 |
 | 2026-09-28 | Where decisions live | This file, hand-written and append-only, with a lint that every decided OP appears in it | The PRD's log is a page in a PDF outside the repo with no URL recorded anywhere, so 8 decisions accumulated with nowhere to go | T-B13 |
+| 2026-09-29 | CI blocked by Actions billing | Make `dev` public until billing is fixed, then private again; the ruleset stays as it is | Public repos get Actions free, and every PR was blocked, while pausing the required checks would have left no scan for leaked keys | OP-36 |
 
 ## Still open, and dated
 

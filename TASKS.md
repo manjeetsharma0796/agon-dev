@@ -1418,7 +1418,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   sign
 
 ### T-B16, One compose file: the fork and the MCP server, side by side, locally
-- Status: claimed 2026-09-29 | Owner: manjeetsharma0796 | Branch: feature/t-b16-compose
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/159 | Owner: manjeetsharma0796 | Branch: feature/t-b16-compose
 - Depends-on: T-C07, T-C16
 - Touches: compose.yaml, .dockerignore
 - Serves: Functionality (judged) ; unblocks T-E15's setup page and a local run of T-E06
@@ -1431,7 +1431,13 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   port is bound to 127.0.0.1 and 0 to 0.0.0.0; 0 keys in the file or either image; `docker compose
   down` leaves 0 containers running. The 2 images are the ones OP-33's hosted target runs, so the
   only local-only lines are the port bindings
-- Evidence: <PR link, plus the `getSlot` and `/health` answers from a clean checkout>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/159. From a clean checkout: 2
+  services, both healthy; `getSlot` answered on the first poll (slot 451453874); `/health` 200;
+  a real MCP client's `list_rules` answered `{"network":"fork, ...","rules":[]}`; host bindings
+  127.0.0.1 only; 0 key variables in the MCP environment; `down` left 0 containers
+- Finding: 8787 is also Cloudflare wrangler's default dev port, and a `workerd` from another
+  project held it, so the first `up` failed. The host port is `${AGON_MCP_PORT:-8787}`; the
+  measurements used 8788, so the default binding was not itself measured on that machine
 - Note, so nobody reads more into it: compose starts the 2 side by side and connects nothing. The
   MCP server reads recordings or Helius, never the fork, until T-C17 gives it a vault to read. And
   no row on the board adds a tool that builds a trade, so an agent pointed at this compose still
@@ -2035,7 +2041,7 @@ _(empty)_
   prevents
 
 ### T-C17, The real allowance, end to end
-- Status: open
+- Status: claimed 2026-09-29 | Owner: manjeetsharma0796 | Branch: feature/t-c17-real-allowance
 - Depends-on: T-D01, T-C07
 - Touches: packages/chain/src/swig/index.ts, packages/core/src/rule.ts, packages/mcp/src/index.ts, fixtures/contracts/
 - Serves: Novelty (judged) ; the number a user is shown about their own agent

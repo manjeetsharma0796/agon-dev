@@ -945,3 +945,46 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   check, and the kill switch. It cannot close the 2 that are about time on mainnet: test wallets
   funded with $50 or less, and 2 weeks of team-wallet mainnet use with no unexplained transaction.
   Those stay mainnet-only however good the fork is, and no amount of fork testing ticks them.
+
+### OP-36, dev was made public to get CI running again, temporarily
+- Status: decided 2026-09-29 by manjeetsharma0796: the repo stays public only until Actions
+  billing is fixed, then goes private again
+- Owner: manjeetsharma0796
+- Needed by: the billing fix, which ends it
+- Unblocks: every open PR; the required checks run again
+- What exactly: from 2026-09-28 the Actions jobs failed with no runner and no steps; GitHub's
+  annotation: "The job was not started because recent account payments have failed or your spending
+  limit needs to be increased". By 2026-09-29 all 4 required checks failed on every PR, other
+  people's branches included. The repo was private on a personal account, so Actions minutes past
+  the free allowance are billed. On 2026-09-29 the owner made it public, which makes Actions free;
+  the 4 checks then passed on the next re-run (PR #165).
+- What is public while this lasts, because it cannot be un-published afterwards: every file and
+  every commit on every branch and PR, including `TASKS.md`, `OPERATOR_TODO.md`, `DECISIONS.md`,
+  `docs/plans/` (which `.publicinclude` keeps out of the public repo on purpose), spike results and
+  recorded fixtures. A gitleaks 8.24.3 scan of all 252 commits across every branch found 0 real
+  secrets; its 2 hits are a public wallet address in a test, the known `const key` false positive.
+- While public: the README's lines saying this repo is private, and that in-progress branches
+  "live elsewhere", are wrong; nothing sensitive goes into a commit or PR; the ruleset is unchanged.
+- Done when: billing is fixed, the repo is private again, and a PR shows the 4 checks green after
+  the switch back
+
+### OP-34, Grow the MCP tool list from 4 to 5 for prepare_swap, or build the trade in the CLI
+- Status: open
+- Owner: <unassigned>
+- Needed by: before T-C21 starts, because its acceptance puts this decision before any code
+- Unblocks: T-C21, and through it the only path from an armed vault to a trade
+- What exactly: the tool list is frozen at 4 on purpose. `packages/core/src/index.ts` says
+  "adding or reordering a tool costs every user a cache miss", and `packages/mcp/src/mcp.test.ts`
+  and `docs/public/quickstart.md` both assert 4. T-C21 needs somewhere to build an unsigned trade
+  (Jupiter's `swapInstruction` alone, wrapped by Swig, the agent as the only signer) for the agent to
+  sign on its own machine. 2 options:
+  A. A 5th MCP tool, `prepare_swap`, appended last so the first 4 keep their order. Every MCP client
+  gets it with no install; each client pays 1 cache miss when the list changes. The server builds
+  but never signs, so "anything hosted only reads" still holds.
+  B. The same builder in the `agon` CLI on the user's machine, with the MCP instructions pointing
+  agents at it. The tool list stays at 4, but an agent needs the CLI installed and a way to run it.
+  Either way the builder fails closed: it refuses when `check_trade` is not `pass`, the amount is
+  over T-C17's `effectiveRemaining`, slippage is over 100 bps, or the transaction fails simulation,
+  naming the innermost failing program.
+- Done when: A or B is decided, with a `DECISIONS.md` row naming OP-34 in the same PR, as the lint
+  requires
