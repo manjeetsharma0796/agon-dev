@@ -2,6 +2,7 @@ import { expect, test } from 'vitest'
 import { Actions, SWIG_PROGRAM_ADDRESS } from '@swig-wallet/classic'
 import {
   agentRoleActions,
+  effectiveRemaining,
   assertAgentRoleShape,
   verifyRoleOnChain,
   AGENT_ROLE_ACTION_COUNT,
@@ -97,4 +98,35 @@ test('verification reads the chain, and a missing role arms nothing', async () =
   await expect(
     verifyRoleOnChain(() => Promise.resolve(tampered), 'SwigAcct', 1, USDC),
   ).rejects.toThrow(/manageAuthority/)
+})
+
+// T-C17. The real allowance, measured on a Surfpool mainnet fork on 2026-09-26 with the production
+// role: lastReset read 450717150 with 0.05 wSOL left, a swap needing a reset was refused at slot
+// 450717300 and allowed from 450717301. Swig only rewrites spendLimit on the next spend, so reading
+// it raw after the window shows 0.05 while 0.5 is spendable.
+const measured = {
+  spendLimit: 50_000_000n,
+  window: 150n,
+  lastReset: 450_717_150n,
+  recurringLimit: 500_000_000n,
+}
+
+test('inside the window the remaining allowance is what the role reads, measured at the edge', () => {
+  expect(effectiveRemaining(measured, 450_717_300n)).toBe(50_000_000n)
+})
+
+test('once the window has passed the whole cap is spendable, though the raw field still reads 0.05', () => {
+  expect(effectiveRemaining(measured, 450_717_301n)).toBe(500_000_000n)
+})
+
+test('a role that cannot be read in full is never reported above what it reads', () => {
+  // Under-reporting a budget is safe and over-reporting is not, so a missing field falls back to the
+  // raw remaining figure rather than to the cap.
+  expect(effectiveRemaining({ ...measured, lastReset: undefined }, 450_717_301n)).toBe(50_000_000n)
+  expect(effectiveRemaining({ ...measured, window: null }, 450_717_301n)).toBe(50_000_000n)
+  expect(effectiveRemaining({ ...measured, recurringLimit: undefined }, 450_717_301n)).toBe(50_000_000n)
+})
+
+test('an uncapped role has no remaining figure to report, and says so instead of a number', () => {
+  expect(() => effectiveRemaining({ ...measured, spendLimit: null }, 450_717_301n)).toThrow(/no cap/)
 })
