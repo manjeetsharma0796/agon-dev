@@ -2035,7 +2035,7 @@ _(empty)_
   prevents
 
 ### T-C17, The real allowance, end to end
-- Status: open
+- Status: claimed 2026-09-29 | Owner: manjeetsharma0796 | Branch: feature/t-c17-real-allowance
 - Depends-on: T-D01, T-C07
 - Touches: packages/chain/src/swig/index.ts, packages/core/src/rule.ts, packages/mcp/src/index.ts, fixtures/contracts/
 - Serves: Novelty (judged) ; the number a user is shown about their own agent
