@@ -600,6 +600,33 @@ and latency (a, b).
 - Kill criterion: none. If the cap does not hold on-chain the custody story is gone, see T-F05a
 - Finding: two ways the cap reads as holding when it does not. (1) tokenSpendLimit returns the REMAINING allowance, not the configured cap, so a role whose window is spent reads 0 and assertAgentRoleShape throws "carries no spending limit"; kill-switch isAgentRole swallows that, planRevokeAll files the role under kept as "not ours to remove", and revokedMessage reports "No Agon roles were found". The emergency stop fails open on exactly the role that has been trading hardest, and Swig resets the window afterwards. (2) canUseProgram returns true unconditionally under ProgramAll, and the SDK silently appends programAll to any action set with no program action, so a stored role of programAll plus tokenRecurringLimit has count 2 and is ACCEPTED as "program = Jupiter". Also the approved cap AMOUNT is never compared to what the user signed, only that a limit exists, and the window is never checked beyond being positive. Fix is T-D06.
 ### T-F05a, F5 spike, 7 cases on a mainnet fork
+- Evidence 2026-09-29: 5 of 7 pass on a local fork, up from 2. (a) 0.1 wSOL through Raydium CLMM,
+  the wallet paid exactly 100000000 base units, received 11885799 USDC against a quote of
+  11887909, allowance 500000000 to 400000000. (b) 0.45 with 400000000 left, refused by the Swig
+  program with balances unchanged, and the control at 0.35 landed through the same venue inside
+  the same window. (d) now passes against the sentence OP-28 decided. (e) reports "not run" and
+  (g) needs a person
+- Finding 7: the control nearly proved nothing and the fix is a window check, not more care. A
+  recurring limit resets on the slot clock, `lastReset = floor(slot / window) * window`, so 3
+  swaps sent back to back can straddle a boundary and the control then draws on a fresh allowance
+  while looking like it fits the old one. The case now asserts `lastReset` is unchanged across
+  (a), (b) and the control, and downgrades (b) to "not run" when it is not
+- Finding 8: exact amounts cannot be asserted and it took 3 runs to see why. The fork copies a
+  pool on first touch and keeps that copy, while Jupiter quotes the live pool, so received drifts
+  below quoted by more the longer the fork runs and the more we have traded it. First run 11891519
+  received against 11891519 quoted, exact; the next 11885799 against 11887909. The case asserts
+  the slippage floor and that the wallet's input fell by exactly what was sent, which held every
+  time
+- Finding 9: case (e) cannot be measured after the other 3. Its boundary probe was answered by
+  Raydium rather than Swig, because by then our own swaps had moved the fork's copy of the pool
+  out of tolerance. It reports "not run" rather than guessing, for the same reason (b) does. A
+  spike that asserts the reset slot needs a fresh pool per probe, or a fresh fork
+- Finding 10: 2 of the 3 runs failed on infrastructure rather than on the cases, and neither
+  failure was about Swig. The payer is funded 1 SOL by the faucet loop, which covered the 6 cases
+  that move nothing and not 0.9 wSOL of swaps plus 2 token accounts at 2039280 lamports of rent
+  each; and the agent had no lamports of its own once it became the fee payer. Both are now funded
+  explicitly, the agent by the owner and with fee money only, so every lamport it could trade with
+  sits in the vault behind the cap
 - Finding 6, from probing (a) on a live fork: **Swig authorises a Jupiter swap through the capped
   role.** The wrapped instruction reaches Jupiter, `Program swigypWHEksb... invoke [1] Program
   JUP6LkbZ...`, and comes back with `custom program error: 0x1789`, which is a Jupiter error and
