@@ -1,0 +1,33 @@
+{
+  "id": "F6",
+  "pass": false,
+  "date": "2026-09-25",
+  "measured": "2 of 4 clauses pass. A Trigger order can be built with a Swig wallet, a program-derived address, as maker and payer. The order invokes j1o2qRpjcyUwEvwtcfhEQefh773ZgjxcVRry7LDqg5X, and the agent role permits JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4, so they are NOT the same program.",
+  "triggerProgram": "j1o2qRpjcyUwEvwtcfhEQefh773ZgjxcVRry7LDqg5X",
+  "agentRolePermits": "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4",
+  "agentRoleCouldManageOrders": false,
+  "orderAddress": "48JB725by9dJTF174kSBJhwQtpFgNdMkFFzuHUeJ5oeu",
+  "swigWallet": "35bA3zXEt4P8eMJb2cuze1R4nSoHptPfwA2bxgj9ZTGd",
+  "clauses": {
+    "pdaAccepted": {
+      "states": "the Trigger API builds an order with a Swig wallet as maker",
+      "status": "pass",
+      "why": "the API built an order with the Swig wallet as maker and payer, order 48JB725by9dJTF174kSBJhwQtpFgNdMkFFzuHUeJ5oeu, invoking j1o2qRpjcyUwEvwtcfhEQefh773ZgjxcVRry7LDqg5X"
+    },
+    "orderCreated": {
+      "states": "the order is created on a simulated chain",
+      "status": "pass",
+      "why": "the order was created under root, signature pgjDxe4o622cSKhAQYbUVNvgpSN8MUZAVwF9NqWZjXdmnxFnd8L1NTdp2kSMhsrCDPgAsoPZbT9zNRmSTXT1Cqu"
+    },
+    "cancelReturnsFunds": {
+      "states": "a cancel returns the funds",
+      "status": "not run",
+      "why": "Jupiter builds cancel transactions from its own mainnet index, so an order created on a fork is unknown to it and the endpoint answers \"Unable to cancel specified order\", checked against the order this run created. Cancelling a fork order needs the instruction built against the Trigger program directly rather than through the API, which is the remaining work on this clause"
+    },
+    "depositMatchesAllowance": {
+      "states": "the vault deposit reduces the Swig allowance by exactly the deposit",
+      "status": "fail",
+      "why": "the allowance did not move at all: 500000000 before and after, against a deposit of 100000000. The order was signed by root, and root holds every action, so the deposit never passed the agent's cap. That is the honest answer to this clause and it is worth more than a pass: a Trigger order created by root moves funds the agent cap does not see. It is only safe because the agent cannot create one, which is this spike's other finding. Wallet balance moved -109597840 lamports over the same period, which is the deposit plus rent"
+    }
+  }
+}

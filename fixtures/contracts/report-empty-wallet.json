@@ -1,0 +1,30 @@
+{
+  "synthetic": true,
+  "wallet": "8pNyrpC1zmb8DfTXYBFhVLzQGLrEQvB2W1JhnKtF4rTa",
+  "range": {
+    "readTransactions": 0,
+    "estimatedTotal": 0,
+    "throughSlot": 312904411,
+    "complete": true,
+    "stoppedBecause": null
+  },
+  "metrics": {
+    "closedTrades": 0,
+    "medianSize": "0",
+    "medianHoldSeconds": 0,
+    "realisedPnl": "0"
+  },
+  "rules": [],
+  "exceptions": {
+    "count": 0,
+    "cost": "0"
+  },
+  "coverage": {
+    "decodedSwaps": 0,
+    "totalSwaps": 0,
+    "share": 0
+  },
+  "unsupported": [],
+  "dataSlot": 312904411,
+  "ruleVersion": "profile-2026-09-24-a"
+}

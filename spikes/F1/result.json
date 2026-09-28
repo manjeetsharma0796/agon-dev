@@ -1,10 +1,10 @@
 {
   "id": "F1",
   "pass": false,
-  "measured": "100 transactions decoded across 2 wallets, 0 silent drops; 0 of 50 verified against a hand-built ledger, which is what the acceptance asks for and what OP-23 is; 5CKAa7Wm 0 swaps decoded of 50 sampled over 3 venues; 5Q544fKr 29 swaps decoded of 50 sampled over 7 venues",
-  "date": "2026-09-24",
-  "commit": "ef20311eb0a7b7a68c6a0313a6c3340c76ec7ef0",
-  "notes": "FAIL, and not because the decoder is wrong. Two findings, both measured. (1) Helius /addresses/{x}/transactions returns everything INVOLVING x, so an address that is never the owner of a token balance looks like a busy trader: 7xKXtg2C showed 21 swaps per 100 transactions and decoded to 0 of 42, correctly, because no balance of that wallet moved. (2) Even for a real owner, Helius SWAP and our swap mean different things: 22 of 50 on 5Q544fKr were quote-to-quote rotations that open and close no position, which the decoder excludes on purpose. So the enhanced API cannot be the oracle, and the hand-built ledger the PRD asks for is not bureaucracy, it is the only source that settles the question. Neither wallet here is a retail trader either: 5CKAa7Wm is 50 of 50 value-only-arrived, a payout address. Picking the 2 wallets needs a person, which is OP-23.",
+  "measured": "100 transactions decoded across 2 wallets, 0 silent drops; 0 of 50 verified against a hand-built ledger, which is what the acceptance asks for and what OP-20 is; 5CKAa7Wm 0 swaps decoded of 50 sampled over 3 venues; 5Q544fKr 29 swaps decoded of 50 sampled over 7 venues",
+  "date": "2026-09-25",
+  "commit": "508a6dfe0543d197b40da5f79b69d20d802508ee",
+  "notes": "FAIL, and not because the decoder is wrong. Two findings, both measured. (1) Helius /addresses/{x}/transactions returns everything INVOLVING x, so an address that is never the owner of a token balance looks like a busy trader: 7xKXtg2C showed 21 swaps per 100 transactions and decoded to 0 of 42, correctly, because no balance of that wallet moved. (2) Even for a real owner, Helius SWAP and our swap mean different things: 22 of 50 on 5Q544fKr were quote-to-quote rotations that open and close no position, which the decoder excludes on purpose. So the enhanced API cannot be the oracle, and the hand-built ledger the PRD asks for is not bureaucracy, it is the only source that settles the question. (3) Corrected by T-A07: 5CKAa7Wm was read as 50 of 50 value-only-arrived and called a payout address, and that was the decoder missing the native SOL leg. It now reads as 9 rotations and 41 one-sided, which is arbitrage flow rather than a payout address, and the swap count is still 0 because there are no swaps in it: the token gains are 3840 lamports and 0.007 USDC against a fee of the same order. So the decoder is right and the wallet is wrong, which is OP-31. Picking the 2 wallets needs a person, which is OP-20.",
   "perWallet": [
     {
       "wallet": "5CKAa7WmJwK2UjgVZXiZHwDD6rJ1nuHMm7Ki2PsrKYPQ",
@@ -16,14 +16,16 @@
       ],
       "sampled": 50,
       "outcomes": {
-        "not-a-swap: value only arrived the wallet, which is a transfer and not a swap": 50
+        "not-a-swap: value only left the wallet, which is a transfer and not a swap": 1,
+        "not-a-swap: value only arrived the wallet, which is a transfer and not a swap": 40,
+        "not-a-swap: both sides are quote assets, so no position was opened or closed": 9
       },
       "swapsDecoded": 0,
       "noSilentDrops": true,
       "coverage": {
         "decodedSwaps": 0,
-        "totalSwaps": 0,
-        "share": 1
+        "totalSwaps": 50,
+        "share": 0
       },
       "unsupported": []
     },
@@ -50,12 +52,12 @@
       "noSilentDrops": true,
       "coverage": {
         "decodedSwaps": 29,
-        "totalSwaps": 30,
-        "share": 0.9666666666666667
+        "totalSwaps": 50,
+        "share": 0.58
       },
       "unsupported": [
         {
-          "programId": "ComputeBudget111111111111111111111111111111",
+          "programId": "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4",
           "count": 1,
           "reason": "2 mints left and 1 arrived, so the pairing is ambiguous"
         }

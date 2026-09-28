@@ -214,9 +214,13 @@ const result = {
     '(2) Even for a real owner, Helius SWAP and our swap mean different things: 22 of 50 on ' +
     '5Q544fKr were quote-to-quote rotations that open and close no position, which the decoder ' +
     'excludes on purpose. So the enhanced API cannot be the oracle, and the hand-built ledger the ' +
-    'PRD asks for is not bureaucracy, it is the only source that settles the question. Neither ' +
-    'wallet here is a retail trader either: 5CKAa7Wm is 50 of 50 value-only-arrived, a payout ' +
-    'address. Picking the 2 wallets needs a person, which is OP-20.',
+    'PRD asks for is not bureaucracy, it is the only source that settles the question. (3) ' +
+    'Corrected by T-A07: 5CKAa7Wm was read as 50 of 50 value-only-arrived and called a payout ' +
+    'address, and that was the decoder missing the native SOL leg. It now reads as 9 rotations ' +
+    'and 41 one-sided, which is arbitrage flow rather than a payout address, and the swap count ' +
+    'is still 0 because there are no swaps in it: the token gains are 3840 lamports and 0.007 ' +
+    'USDC against a fee of the same order. So the decoder is right and the wallet is wrong, ' +
+    'which is OP-31. Picking the 2 wallets needs a person, which is OP-20.',
   perWallet: results,
 }
 

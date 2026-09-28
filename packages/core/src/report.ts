@@ -73,9 +73,17 @@ export const Coverage = z
   .refine((c) => c.decodedSwaps <= c.totalSwaps, {
     message: 'cannot decode more swaps than were seen',
   })
-  .refine((c) => c.totalSwaps === 0 || Math.abs(c.share - c.decodedSwaps / c.totalSwaps) < 1e-6, {
-    message: 'share must equal decodedSwaps / totalSwaps, not a separately reported number',
-  })
+  // No exemption for an empty wallet, and the exemption is what let the lie through. With
+  // `totalSwaps === 0 ||` in front, the check short-circuited and `share` could be anything, so a
+  // wallet where nothing decoded reported 1 and read as "we understood all of it". 0 over 0 is 0
+  // here: we decoded none of what we saw, which is the true statement.
+  .refine(
+    (c) => Math.abs(c.share - (c.totalSwaps === 0 ? 0 : c.decodedSwaps / c.totalSwaps)) < 1e-6,
+    {
+      message:
+        'share must equal decodedSwaps / totalSwaps, and 0 when nothing was seen, not a separately reported number',
+    },
+  )
 
 /**
  * Transactions we did not decode, counted and named. Every transaction is either decoded or listed

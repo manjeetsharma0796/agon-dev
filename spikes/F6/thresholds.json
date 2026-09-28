@@ -1,0 +1,9 @@
+{
+  "test": "F6",
+  "name": "Trigger order owned by a Swig wallet, in simulation",
+  "threshold": "in mainnet simulation, a Trigger V2 order is created with the Swig wallet (a program-derived address) as owner, a cancel returns funds, and the vault deposit reduces the Swig allowance by exactly the deposit",
+  "checkpoint": "CP1",
+  "existential": true,
+  "written": "2026-09-25",
+  "notes": "Copied from T-F06a's Acceptance line before anything ran. Exactly is the strict word in the last clause: a deposit reducing the allowance by more would let a rule eat an agent's budget, by less would let an agent spend past its cap through the vault, so the bar is equality and not a tolerance. The clause that needs no chain is checked first, because a refusal there makes the rest unreachable."
+}

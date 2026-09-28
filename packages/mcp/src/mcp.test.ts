@@ -155,3 +155,30 @@ test('the instructions say which data source is actually in use', async () => {
   expect(instructions).toContain('REPLAY MODE')
   expect(instructions).not.toMatch(/reads the mint's authorities off the chain/)
 })
+
+test('every result names its network first, because an agent sees no banner of ours', async () => {
+  // Claude Code, opencode and the rest render our data, not our page. The first key is the one
+  // place we can say whether these are real funds, and unset must never read as mainnet.
+  const ok = await callAsTool('list_rules', { wallet: WALLET })
+  const payload = JSON.parse(textOf(ok)) as Record<string, unknown>
+  expect(Object.keys(payload)[0]).toBe('network')
+  expect(payload['network']).toBe('not set, treat nothing here as real')
+  // list_rules' contract is a list. Spread into an object it would come out as {"0": ...}.
+  expect(payload['rules']).toEqual([])
+
+  const refused = await callAsTool('arm_rule', SPEC)
+  expect(refused.isError).toBe(true)
+  expect(textOf(refused)).toMatch(/^Network: not set, treat nothing here as real\. /)
+})
+
+test('the network follows AGON_NETWORK per call', async () => {
+  const before = process.env['AGON_NETWORK']
+  process.env['AGON_NETWORK'] = 'fork'
+  try {
+    const result = await callAsTool('list_rules', { wallet: WALLET })
+    expect(JSON.parse(textOf(result)).network).toMatch(/^fork, .*no real funds$/)
+  } finally {
+    if (before === undefined) delete process.env['AGON_NETWORK']
+    else process.env['AGON_NETWORK'] = before
+  }
+})
