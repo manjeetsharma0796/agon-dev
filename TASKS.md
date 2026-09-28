@@ -1488,7 +1488,23 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
   itself, because Phantom reads "not supported" on Solana Localnet; any Trigger order is placed by
   the owner here, per OP-29, and never by the agent; wallet connection is the only auth and there
   are still 0 accounts; 0 mainnet transactions, which stays gated by T-D04
-- Evidence: <PR link, plus the arm, fund and revoke flow landing on the fork>
+- Evidence: `apps/web/src/arm-flow.test.ts` on a fork, in the order the screen runs: arm in 2
+  wallet approvals; the vault reads back 1000000000 lamports of wSOL; the cap as the CHAIN holds it
+  equals the 500000000 typed, and the rolling worst case 1000000000 is shown beside it; a second
+  arm on the same wallet is refused; revoke removes 1 agent role and leaves the 1000000000 in the
+  vault; re-hire adds 1 back. Passes in 2.9 s against the fork and skips in CI, which has no chain.
+  In a browser: `/arm` renders with 0 console errors, `Buffer` exists at runtime; served as
+  mainnet the same page refuses and has 0 Connect buttons. 3 tests on SOL parsing
+- Not evidenced here, on purpose: a real Phantom clicking through this screen. That is T-E07's
+  outside tester and T-E16's person, because a click-through by an agent in a browser with no
+  wallet extension would be a demonstration of nothing
+- Finding: typed SOL must not pass through a float. 0.3 as a double is 0.2999999999999999889, so a
+  cap parsed with `Number` is not the cap the user typed, which is the one number this screen must
+  never get wrong. `parseSol` is string arithmetic on 9 decimal places, and the negative case was
+  caught reporting "not a number" rather than its real reason by the test written before it
+- Finding 2: the `buffer` dependency was unnecessary and knip was right twice. Next.js bundles its
+  own `buffer` for client code, and `'buffer'` is also Node's builtin name, so the import never
+  reached the declared package. Removed rather than silenced
 - What is gated and what is not, because "do not start" reads as all of it: the **arming screen**
   is gated, and that is this row. Connecting a wallet and reading an address from it is not gated
   by anything and is T-E14, which can start today. The gate is specific: if F5 fails the cap is

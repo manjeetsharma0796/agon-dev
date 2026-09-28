@@ -6,7 +6,9 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "dependencies": {
+    "@agon/chain": "workspace:*",
     "@agon/core": "workspace:*",
+    "@solana/web3.js": "1.99.0",
     "@wallet-standard/app": "1",
     "next": "15",
     "react": "19",

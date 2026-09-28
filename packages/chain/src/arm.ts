@@ -12,13 +12,19 @@ import { PublicKey, SystemProgram, TransactionInstruction } from '@solana/web3.j
 import {
   Actions,
   createEd25519AuthorityInfo,
+  fetchSwig,
   findSwigPda,
   getAddAuthorityInstructions,
   getCreateSwigInstruction,
+  getRemoveAuthorityInstructions,
   SWIG_PROGRAM_ADDRESS,
   type Swig,
 } from '@swig-wallet/classic/dist/index.js'
+import { planRevokeAll, type OnChainRole, type RevokePlan } from './kill-switch.js'
 import { agentRoleActions, assertAgentRoleShape, type ApprovedCap } from './swig/index.js'
+
+// Re-exported so a caller reading a Swig uses the same SDK copy these builders were written for.
+export { fetchSwig, findSwigPda }
 
 const TOKEN_PROGRAM = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
 const ATA_PROGRAM = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL')
@@ -53,12 +59,17 @@ export async function swigIdFor(owner: PublicKey, attempt = 0): Promise<Uint8Arr
 /** How many ids `resolveVault` will step through before it gives up and says so. */
 export const MAX_ATTEMPTS = 8
 
+/** The owner's own root role on a Swig, found by signer, or null when the owner is not root. */
+function ownerRoot(swig: Swig, owner: PublicKey) {
+  return swig.findRolesByEd25519SignerPk(owner.toBase58()).find((r) => r.actions.isRoot()) ?? null
+}
+
 /**
  * Whether this wallet holds root on this Swig. A Swig found at a wallet's derived id is that
  * wallet's vault only if this is true, and never because of where it was found.
  */
 export function isOwnedBy(swig: Swig, owner: PublicKey): boolean {
-  return swig.findRolesByEd25519SignerPk(owner.toBase58()).some((r) => r.actions.isRoot())
+  return ownerRoot(swig, owner) !== null
 }
 
 /** Reads a Swig account, or null when none exists. Injected, so this file stays network-free. */
@@ -226,9 +237,7 @@ export async function hireAgent(spec: HireAgent): Promise<TransactionInstruction
   assertAgentRoleShape(actions, spec.mint, spec.approved)
   // The owner's own root role, found by its signer, rather than whichever role is first. A Swig
   // the owner is not root on is refused here, before a signature is asked for.
-  const root = spec.swig
-    .findRolesByEd25519SignerPk(spec.owner.toBase58())
-    .find((r) => r.actions.isRoot())
+  const root = ownerRoot(spec.swig, spec.owner)
   if (!root) {
     throw new Error(
       `${spec.owner.toBase58()} is not root on this Swig, so it cannot add an agent to it. Nothing was built.`,
@@ -244,4 +253,48 @@ export async function hireAgent(spec: HireAgent): Promise<TransactionInstruction
     createEd25519AuthorityInfo(spec.agent),
     actions as unknown as Actions,
   )
+}
+
+/**
+ * The mint an agent role caps, for the kill switch's plan. Only the 2 mints `fundVault` gives a
+ * vault are asked about: a role capping anything else was not armed here, and the plan then keeps
+ * it with its reason rather than removing a role nobody can say is ours.
+ */
+const cappedMint = (role: OnChainRole): string | null =>
+  [WSOL_MINT, USDC_MINT].find((m) => role.actions.canSpendToken(m)) ?? null
+
+export interface RevokeAgents {
+  swig: Swig
+  /** The wallet that is root on the Swig. It signs, and nobody else can. */
+  owner: PublicKey
+}
+
+/**
+ * Remove every agent role Agon armed on this Swig, signed by the owner alone.
+ *
+ * The decision of which roles to remove is the kill switch's, not a second copy of it: root is
+ * never removed, a role that does not match the agent shape is kept with its reason, and more
+ * removals than fit 1 signature are refused rather than split without saying so. What this adds is
+ * the instructions.
+ */
+export async function revokeAgents(
+  spec: RevokeAgents,
+): Promise<{ instructions: TransactionInstruction[]; plan: RevokePlan }> {
+  const root = ownerRoot(spec.swig, spec.owner)
+  if (!root) {
+    throw new Error(
+      `${spec.owner.toBase58()} is not root on this Swig, so it cannot remove anything from it. Nothing was built.`,
+    )
+  }
+  const plan = planRevokeAll(spec.swig.roles as unknown as OnChainRole[], cappedMint)
+  if (!plan.oneSignature) {
+    throw new Error(
+      `${plan.revoke.length} agent roles do not fit in 1 transaction. Nothing was built; remove them in the wallet, or ask for this to be split.`,
+    )
+  }
+  const instructions: TransactionInstruction[] = []
+  for (const id of plan.revoke) {
+    instructions.push(...(await getRemoveAuthorityInstructions(spec.swig, root.id, id)))
+  }
+  return { instructions, plan }
 }
