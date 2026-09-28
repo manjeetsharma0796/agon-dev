@@ -1903,7 +1903,20 @@ _(empty)_
   `node scripts/board.mjs` fails when an OP whose Status starts with "decided" has no row naming
   it, proved by a control run with a row removed; DECISIONS.md is in both board allowlists so a
   board PR can carry a decision and its log entry together; 0 content is derived from another file
-- Evidence: <PR link, plus the lint run with and without a row>
+- Evidence: the lint run with and without a row. With the OP-32 row removed it fails with
+  "OPERATOR_TODO.md:800 OP-32: Status is decided and DECISIONS.md has no row naming it"; restored,
+  lint ok on 79 rows
+- Finding: the obvious check, does the log mention the id, is wrong by default. 8 of the 9 decided
+  ids are a prefix of another id in the same file, so a plain substring test lets OP-2 be satisfied
+  by the OP-20, OP-21, OP-27 or OP-29 rows and the gap never shows. Proved by removing only the
+  OP-2 row with the other 4 present: with a word boundary it fails, and that is the case worth
+  keeping a control for, because the file will always contain something that looks close enough
+- Finding 2: the shape was chosen against a scar rather than from taste. scripts/board.mjs:218
+  records that README.md carried a board summary derived from Status lines, the check ran against
+  the merge commit, and every PR went stale when anyone else's claim landed. A log generated from
+  OPERATOR_TODO.md is the same shape, and worse, because every board PR adds an OP row while only
+  1 task owns a spike result at a time, which is why FEASIBILITY.md can be generated and this
+  cannot
 - Kill criterion: none, but the shape is load-bearing. If DECISIONS.md is ever generated from
   OPERATOR_TODO.md this row has failed: scripts/board.mjs:218 records why the last derived board
   file was removed, and a generated log walks back into it

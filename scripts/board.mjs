@@ -86,7 +86,7 @@ function lint() {
   // was measured by planting a conflict block and watching the lint pass, after a real botched
   // resolution was committed and pushed with the markers still in it. Both board files are
   // checked, because one merge can conflict either.
-  for (const file of ['TASKS.md', 'OPERATOR_TODO.md']) {
+  for (const file of ['TASKS.md', 'OPERATOR_TODO.md', 'DECISIONS.md']) {
     if (!existsSync(file)) continue
     readFileSync(file, 'utf8')
       .split(/\r?\n/)
@@ -97,9 +97,27 @@ function lint() {
       })
   }
 
-  const ops = existsSync('OPERATOR_TODO.md')
-    ? new Set(parseTasks(readFileSync('OPERATOR_TODO.md', 'utf8')).map((t) => t.id))
-    : new Set()
+  const opRows = existsSync('OPERATOR_TODO.md')
+    ? parseTasks(readFileSync('OPERATOR_TODO.md', 'utf8'))
+    : []
+  const ops = new Set(opRows.map((t) => t.id))
+
+  // A decision that is only in the queue is not a log. DECISIONS.md is hand written rather than
+  // generated from these rows, for the reason in `assertStatusOnly`: the last derived board file
+  // was computed at merge time and went stale whenever anyone else's claim landed. So the link
+  // between the two is a check, not a generator, and it is the check that makes drift impossible.
+  if (existsSync('DECISIONS.md')) {
+    const log = readFileSync('DECISIONS.md', 'utf8')
+    for (const op of opRows) {
+      if (!/^decided\b/.test(op.fields.Status ?? '')) continue
+      // Word boundary, so OP-2 does not match a row for OP-29.
+      if (new RegExp(`\\b${op.id}\\b`).test(log)) continue
+      fail(
+        `OPERATOR_TODO.md:${op.line} ${op.id}: Status is decided and DECISIONS.md has no row ` +
+          `naming it. Add the row in the same PR as the decision.`,
+      )
+    }
+  }
   const ids = new Set(tasks.map((t) => t.id))
   const seen = new Set()
   const claims = new Map()
@@ -221,7 +239,11 @@ function assertStatusOnly(base, head, what) {
   // is gone: the check ran against the MERGE commit, so the counts were computed from merged task
   // statuses while the file was committed from the branch, and every PR went stale the moment
   // anyone else's claim landed. A claim touches the board files and nothing else again.
-  const edited = ['TASKS.md', 'OPERATOR_TODO.md']
+  // DECISIONS.md rides along because a decision and its log row must land together: the lint
+  // above refuses either without the other, so a claim that could not touch it could never merge.
+  // Unlike the README summary this replaced, nothing in it is computed, so there is no merge-time
+  // staleness to go wrong.
+  const edited = ['TASKS.md', 'OPERATOR_TODO.md', 'DECISIONS.md']
   const allowed = edited
   for (const f of changedFiles(base, head)) {
     if (!allowed.includes(f)) {
@@ -269,7 +291,7 @@ function pr() {
       )
     }
     if (!base || /^0+$/.test(base)) return warn('No PR_BASE_SHA, skipping the board diff check.')
-    const allowed = ['TASKS.md', 'OPERATOR_TODO.md']
+    const allowed = ['TASKS.md', 'OPERATOR_TODO.md', 'DECISIONS.md']
     for (const f of changedFiles(base, head)) {
       if (!allowed.includes(f)) {
         fail(`"${f}" changed in a board/ PR, which may only edit ${allowed.join(', ')}.`)
