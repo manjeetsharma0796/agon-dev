@@ -33,6 +33,9 @@ the OP row, which is what the last column points at.
 | 2026-09-28 | The arming gate | Amended from "until F5 and F6 pass" to "until its shape is known", with T-D04 unchanged | The shape is measured on a fork with a real Phantom, and F5's open case decides what we may claim the role prevents rather than what the screen looks like | T-B15 |
 | 2026-09-28 | Where decisions live | This file, hand-written and append-only, with a lint that every decided OP appears in it | The PRD's log is a page in a PDF outside the repo with no URL recorded anywhere, so 8 decisions accumulated with nowhere to go | T-B13 |
 | 2026-09-29 | CI blocked by Actions billing | Make `dev` public until billing is fixed, then private again; the ruleset stays as it is | Public repos get Actions free, and every PR was blocked, while pausing the required checks would have left no scan for leaked keys | OP-36 |
+| 2026-09-29 | How the MCP finds a wallet's vault | The Swig id is derived from the wallet address at arm time, so the vault is recomputed from the wallet, no search | 1 account read and no index, at the cost of 1 Agon vault per wallet | OP-35 |
+| 2026-09-29 | How the MCP reaches the chain | 1 setting, `AGON_RPC_URL`; unset means "no chain configured", and a URL that disagrees with `AGON_NETWORK` stops the server | It works locally, in compose and hosted, and the network label can never disagree with the data | OP-35 |
+| 2026-09-29 | Extending ArmedRule | Add `vault`, `effectiveRemaining` and `rollingWorstCase`; change nothing existing; fixtures in the same commit | The smallest change to a frozen contract that lets `list_rules` show the real allowance, agreed by both owners | OP-35 |
 
 ## Still open, and dated
 
