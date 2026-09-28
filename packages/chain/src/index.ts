@@ -8,3 +8,6 @@ export * from './kill-switch.js'
 
 // Rule expiry without admin rights. T-D02.
 export * from './expiry.js'
+
+// The 2 arming transactions a wallet signs. T-D07.
+export * from './arm.js'

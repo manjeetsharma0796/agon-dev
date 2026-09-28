@@ -2149,6 +2149,19 @@ _(empty)_
   `assertAgentRoleShape`, so the cap sent equals the cap typed; the derived vault address equals
   `getSwigWalletAddress` on the fork for 1 real vault; both transactions land on the fork signed
   by the owner alone, and a 0.1 wSOL agent swap lands afterwards
-- Evidence: <PR link, plus the fork signatures>
+- Evidence: on a fresh fork, both transactions landed signed by the owner alone. Transaction 1
+  created the Swig, both token accounts and the deposit, and the vault read back 1000000000
+  lamports of wSOL; the vault address derived from the Swig id before the Swig existed equals
+  `getSwigWalletAddress`. Transaction 2 left 2 roles, an agent allowance of 500000000 and
+  `manageAuthority` false. The agent then swapped 0.1 wSOL signing alone: landed, 11831014 USDC,
+  allowance 500000000 to 400000000. 3 unit tests pass without a network
+- Finding: the first run of the swap failed and it was the fork, not the builder. The same fork had
+  served about a dozen swaps through the same Raydium pool for over an hour, and Jupiter refused
+  with `0x1788` while the allowance stayed at 500000000. A fresh fork landed the identical swap.
+  That is OP-33's drift reached from the product side rather than the spike side, and it is why a
+  hosted fork needs resetting before testers meet it
+- Finding 2: packages/chain built 0 instructions before this. The kill switch only plans, so this
+  is the first code there that needs web3 types, and `@solana/web3.js` becomes a direct dependency
+  pinned to the 1.99.0 already in the tree through `@swig-wallet/classic`, so nothing new installs
 - Kill criterion: none. It is item 2 of the critical path, and without it T-E06 would build these
   transactions inside a page, where they cannot be tested without a browser
