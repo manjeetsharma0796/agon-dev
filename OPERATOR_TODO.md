@@ -63,6 +63,16 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Also, by hand, once F5 has run: case (g) of F5 is "removal done from Phantom, not only our CLI".
   Connect the devnet Swig wallet in Phantom, remove the Agon role from there, and confirm the next
   agent transaction fails. A script cannot assert that a person used a wallet, so this stays here.
+- Note 2026-09-26, measured: (g) can be done on the fork with Phantom. Phantom's Developer
+  Settings list "Solana Localnet", which reached a Surfpool fork at `127.0.0.1:8899` on the same
+  machine (Phantom's docs list only Devnet and Testnet, so the app is ahead of its docs). From a
+  local test page, a Phantom account holding 0 SOL on mainnet signed: creating a Swig as root,
+  adding the production agent role, and removing it. As a control, the agent's 0.1 wSOL Jupiter
+  swap was simulated before the removal and would have landed; the same pre-signed swap sent after
+  the removal was refused by Swig, `custom program error: 0xc`, Jupiter not reached. Phantom's own
+  balance and activity screens say "not supported when Solana Localnet is enabled", and it adds a
+  priority fee to every transaction (80,000 lamports observed). The removal was built by a test
+  page, not by the product: `agon revoke` is CLI only and the wallet page is T-E07, open
 - Done when: `spikes/F5/result.json` exists with all 7 cases and 0 unexpected successes, the
   Phantom removal in (g) is recorded with the signature that failed after it, and `agon revoke`
   has run end to end against 3 devnet wallets that really held Agon roles with the roles really
