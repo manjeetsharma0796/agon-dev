@@ -1418,7 +1418,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   sign
 
 ### T-B16, One compose file: the fork and the MCP server, side by side, locally
-- Status: open
+- Status: claimed 2026-09-29 | Owner: manjeetsharma0796 | Branch: feature/t-b16-compose
 - Depends-on: T-C07, T-C16
 - Touches: compose.yaml, .dockerignore
 - Serves: Functionality (judged) ; unblocks T-E15's setup page and a local run of T-E06
