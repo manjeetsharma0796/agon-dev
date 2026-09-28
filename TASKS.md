@@ -5,9 +5,10 @@ The board and the lock. Nothing else is the board: not an issue tracker, not a c
 **If you are an agent or a person about to write code, read sections 1 to 3 first. They are the
 whole protocol. Then claim exactly one task and work only on that task.**
 
-Source of truth for scope, numbers and dates: `Agon PRD: hackathon build with feasibility
-gates`. Every acceptance number here is copied from it verbatim. If a number here disagrees
-with the PRD, the PRD wins and you fix this file in the same commit.
+Source of truth for scope, numbers and dates: `PRD.md`. Every acceptance number here is copied
+from it verbatim. If a number here disagrees with the PRD, the PRD wins and you fix this file in
+the same commit. Decisions taken since the PRD was written are in `DECISIONS.md`, and where the
+two disagree `DECISIONS.md` wins, because it is dated.
 
 Day 1 is 2026-09-24. CP1 2026-09-27, CP2 2026-10-02, CP3 2026-10-08, World's Fair
 submission 2026-10-11, CP4 2026-10-16, CP5 2026-10-23, CP6 2026-10-30, fall submission
@@ -1931,7 +1932,18 @@ _(empty)_
   CLAUDE.md, TASKS.md, FEASIBILITY.md or spikes/ are pointed at rather than copied, with the
   pointer table naming each; the PDF is deleted and TASKS.md's "source of truth" line names PRD.md;
   0 references to the PDF remain outside git history
-- Evidence: <PR link, plus the extraction the transcription came from>
+- Evidence: 40 of 40 pages recovered and transcribed; PRD.md is 340 lines against the PDF's 40
+  pages, because 8 of its 19 sections are pointed at rather than copied
+- Finding: the PDF was unreadable by any installed tool and that is why it was never edited. It is
+  a Google Docs export with subsetted fonts, so every string in the content streams is hex glyph
+  ids like `<0002> Tj` rather than text, and the only way back is each font's ToUnicode CMap. A
+  combined map across all 10 fonts would be wrong, because each subset numbers its glyphs from 1
+  and they collide, so the extractor has to resolve `/F4` through the page's own Resources dict
+  first. A document nobody can grep is a document nobody updates: 9 decisions accumulated
+  elsewhere while it sat there
+- Finding 2: the deletion is the point rather than a side effect. Keeping the PDF beside PRD.md
+  would leave 2 PRDs and no rule for which is true, which is the state that produced the 13 copies
+  of the line "recorded here because the PRD Decisions log is outside this repo"
 - Kill criterion: none, but 2 PRDs is the failure this closes. If the PDF ever comes back beside
   PRD.md the row has failed: nobody can tell which one is true, which is the state that let 9
   decisions accumulate with nowhere to go
