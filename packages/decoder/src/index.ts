@@ -60,16 +60,25 @@ export type Decoded = Swap | NotASwap | Undecoded
 export interface RawTokenBalance {
   mint: string
   owner?: string
+  /** Which account of the transaction holds this balance. Needed to read its rent. */
+  accountIndex?: number
   uiTokenAmount: { amount: string }
 }
 export interface RawTransaction {
   slot: number
   transaction: {
     signatures: string[]
-    message: { instructions: { programId?: string }[] }
+    message: {
+      /** Present on `getTransaction`, absent on the enhanced shape. Optional, never assumed. */
+      accountKeys?: (string | { pubkey: string })[]
+      instructions: { programId?: string }[]
+    }
   }
   meta: {
     err: unknown
+    fee?: number
+    preBalances?: number[]
+    postBalances?: number[]
     preTokenBalances?: RawTokenBalance[]
     postTokenBalances?: RawTokenBalance[]
   } | null
@@ -77,12 +86,86 @@ export interface RawTransaction {
 
 const UNKNOWN_PROGRAM = '11111111111111111111111111111111'
 
-/** The outermost program that ran, which is the one worth naming when we could not decode. */
+/** Wrapped SOL. Lamports are the same asset, so both sides are netted into this one mint. */
+const WSOL = 'So11111111111111111111111111111111111111112'
+
+/**
+ * Programs that appear on almost every transaction and trade nothing.
+ *
+ * `topProgram` returned the first instruction with an id, and on real mainnet data that is
+ * ComputeBudget every single time, so every undecoded transaction on all 5 recorded fixtures
+ * collapsed into 1 unsupported row naming a program that has never moved a token. An unsupported
+ * list has to name what we would have to teach the decoder next, and ComputeBudget answers nothing.
+ */
+const NEVER_A_VENUE: readonly string[] = [
+  'ComputeBudget111111111111111111111111111111',
+  '11111111111111111111111111111111',
+  'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+  'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
+  'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL',
+  'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr',
+  'Memo1UhkJRfHyvLMcVucJwxXeuD728EqVDDwQDxFMNo',
+]
+
+/** The outermost program that could plausibly have been the venue, and is worth naming. */
 function topProgram(tx: RawTransaction): string {
-  for (const ix of tx.transaction.message.instructions) {
-    if (typeof ix.programId === 'string' && ix.programId.length > 0) return ix.programId
+  const ids = tx.transaction.message.instructions
+    .map((ix) => ix.programId)
+    .filter((id): id is string => typeof id === 'string' && id.length > 0)
+  // The fallback is the first program of any kind rather than nothing: a transaction that really
+  // was only a ComputeBudget call should say so rather than report an id it never ran.
+  return ids.find((id) => !NEVER_A_VENUE.includes(id)) ?? ids[0] ?? UNKNOWN_PROGRAM
+}
+
+/** Where this wallet's address sits in the transaction's account list, or -1. */
+function walletIndex(tx: RawTransaction, wallet: string): number {
+  const keys = tx.transaction.message.accountKeys
+  if (keys === undefined) return -1
+  return keys.findIndex((k) => (typeof k === 'string' ? k : k.pubkey) === wallet)
+}
+
+/**
+ * The wallet's native SOL movement, in lamports, as a trade would see it.
+ *
+ * A swap paid from native SOL opens the wallet's wSOL account, funds it, swaps and closes it inside
+ * the one transaction, so the account is in neither `preTokenBalances` nor `postTokenBalances` and
+ * the only trace left is this number. Reading only token balances made every such swap invisible:
+ * it came back not-a-swap, "value only arrived the wallet", which carries no program id and so is
+ * absent from the unsupported list too.
+ *
+ * Two corrections, both arithmetic:
+ *
+ * - The fee is the cost of sending the transaction, not part of what was traded. Only the fee payer
+ *   pays it, and the fee payer is always the first account.
+ * - Rent on a token account this wallet opened or closed here is the cost of having an account. An
+ *   account opened and closed in the same transaction needs no correction, because the rent went
+ *   out of this balance and came back into it. One left open does, and for a wSOL account its token
+ *   balance is part of those same lamports, so it is subtracted out rather than counted twice.
+ */
+function nativeDelta(tx: RawTransaction, wallet: string): bigint {
+  const at = walletIndex(tx, wallet)
+  const pre = tx.meta?.preBalances
+  const post = tx.meta?.postBalances
+  if (at < 0 || pre === undefined || post === undefined) return 0n
+  if (at >= pre.length || at >= post.length) return 0n
+
+  let lamports = BigInt(post[at] as number) - BigInt(pre[at] as number)
+  if (at === 0) lamports += BigInt(tx.meta?.fee ?? 0)
+
+  const rentOf = (row: RawTokenBalance, held: number): bigint =>
+    BigInt(held) - (row.mint === WSOL ? BigInt(row.uiTokenAmount.amount) : 0n)
+
+  for (const row of tx.meta?.postTokenBalances ?? []) {
+    const i = row.accountIndex
+    if (row.owner !== wallet || i === undefined || i === at || i >= pre.length) continue
+    if (pre[i] === 0 && (post[i] as number) > 0) lamports += rentOf(row, post[i] as number)
   }
-  return UNKNOWN_PROGRAM
+  for (const row of tx.meta?.preTokenBalances ?? []) {
+    const i = row.accountIndex
+    if (row.owner !== wallet || i === undefined || i === at || i >= post.length) continue
+    if ((pre[i] as number) > 0 && post[i] === 0) lamports -= rentOf(row, pre[i] as number)
+  }
+  return lamports
 }
 
 /**
@@ -101,6 +184,10 @@ function deltas(tx: RawTransaction, wallet: string): Map<string, bigint> {
   }
   apply(tx.meta?.preTokenBalances, -1n)
   apply(tx.meta?.postTokenBalances, 1n)
+  // Lamports are wSOL. Netted into the same mint rather than added as a second one, because
+  // wrapping is not a trade: read as 2 mints, a wrap is a swap of SOL for SOL.
+  const native = nativeDelta(tx, wallet)
+  if (native !== 0n) out.set(WSOL, (out.get(WSOL) ?? 0n) + native)
   for (const [mint, d] of [...out]) if (d === 0n) out.delete(mint)
   return out
 }
@@ -232,22 +319,38 @@ export function decodeAll(
     else undecoded.push(d)
   }
 
-  const byProgram = new Map<string, { programId: string; count: number; reason: string }>()
+  // Every distinct reason, not just the first. One program fails in more than one way, and a row
+  // that counted 40 transactions while explaining the first of them said less than it appeared to.
+  const byProgram = new Map<string, { programId: string; count: number; reasons: Set<string> }>()
   for (const u of undecoded) {
     const seen = byProgram.get(u.programId)
-    if (seen) seen.count += 1
-    else byProgram.set(u.programId, { programId: u.programId, count: 1, reason: u.reason })
+    if (seen) {
+      seen.count += 1
+      seen.reasons.add(u.reason)
+    } else {
+      byProgram.set(u.programId, { programId: u.programId, count: 1, reasons: new Set([u.reason]) })
+    }
   }
 
-  const totalSwaps = swaps.length + undecoded.length
+  // Everything the wallet was a party to, not just swaps plus undecoded. Leaving not-a-swap out of
+  // the denominator meant a wallet of transfers scored 100%: the decoder dropped from the count
+  // exactly what it had chosen not to explain, so the share could never fall below the 95% the PRD
+  // treats as a finding. The name stays `totalSwaps` because it is a frozen contract field.
+  const totalSwaps = swaps.length + notSwaps.length + undecoded.length
   return {
     swaps,
     notSwaps,
-    unsupported: [...byProgram.values()],
+    unsupported: [...byProgram.values()].map(({ programId, count, reasons }) => ({
+      programId,
+      count,
+      reason: [...reasons].join('; '),
+    })),
     coverage: {
       decodedSwaps: swaps.length,
       totalSwaps,
-      share: totalSwaps === 0 ? 1 : swaps.length / totalSwaps,
+      // 0 when nothing was seen. It read 1, which claimed we understood everything about a wallet
+      // we had read nothing of, and that number goes in front of a user.
+      share: totalSwaps === 0 ? 0 : swaps.length / totalSwaps,
     },
   }
 }

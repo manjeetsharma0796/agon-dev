@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import ConnectWallet from '../wallet/ConnectWallet'
 
 // The landing page, at /. A route group so the URL stays bare.
 //
@@ -12,6 +13,7 @@ import { useState } from 'react'
 export default function Landing() {
   const router = useRouter()
   const [wallet, setWallet] = useState('')
+  const read = (address: string) => router.push(`/report?wallet=${encodeURIComponent(address)}`)
 
   return (
     <main
@@ -30,10 +32,13 @@ export default function Landing() {
         a cap enforced on Solana. Start by looking at your own history.
       </p>
 
+      {/* Connecting is optional: the paste field below still works for a visitor with no wallet. */}
+      <ConnectWallet onRead={read} />
+
       <form
         onSubmit={(e) => {
           e.preventDefault()
-          router.push(`/report?wallet=${encodeURIComponent(wallet.trim())}`)
+          read(wallet.trim())
         }}
         style={{ margin: '2rem 0' }}
       >
@@ -41,7 +46,7 @@ export default function Landing() {
           htmlFor="wallet"
           style={{ display: 'block', fontWeight: 600, marginBottom: '0.3rem' }}
         >
-          Your Solana address
+          Or paste a Solana address
         </label>
         <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
           <input
@@ -67,7 +72,10 @@ export default function Landing() {
       {/* The three things a stranger needs to believe before pasting an address. */}
       <ul style={{ listStyle: 'none', padding: 0, color: 'var(--muted)' }}>
         <li>No account and no login. Nothing to sign up for.</li>
-        <li>Read only. No signature, no wallet connection, and your key is never involved.</li>
+        <li>
+          Read only. Connecting a wallet only reads its address. Nothing is ever signed, and your
+          key is never involved.
+        </li>
         <li>
           An address is public. Pasting one here tells us nothing the chain does not already say.
         </li>

@@ -5,9 +5,10 @@ The board and the lock. Nothing else is the board: not an issue tracker, not a c
 **If you are an agent or a person about to write code, read sections 1 to 3 first. They are the
 whole protocol. Then claim exactly one task and work only on that task.**
 
-Source of truth for scope, numbers and dates: `Agon PRD: hackathon build with feasibility
-gates`. Every acceptance number here is copied from it verbatim. If a number here disagrees
-with the PRD, the PRD wins and you fix this file in the same commit.
+Source of truth for scope, numbers and dates: `PRD.md`. Every acceptance number here is copied
+from it verbatim. If a number here disagrees with the PRD, the PRD wins and you fix this file in
+the same commit. Decisions taken since the PRD was written are in `DECISIONS.md`, and where the
+two disagree `DECISIONS.md` wins, because it is dated.
 
 Day 1 is 2026-09-24. CP1 2026-09-27, CP2 2026-10-02, CP3 2026-10-08, World's Fair
 submission 2026-10-11, CP4 2026-10-16, CP5 2026-10-23, CP6 2026-10-30, fall submission
@@ -176,8 +177,9 @@ agents can hold one each with no coordination beyond this file.
 | P4 | CP3 to 10-11 | T-J01, T-J02, T-J03 |
 | P5 | Fall, CP4 to CP6 | T-F08, T-F10, T-F11c, T-B06, T-B07, T-C10, T-D05, T-E11, T-J04 |
 
-Two hard gates from the PRD: **no arming UI until F5 and F6 pass** (T-E06 depends on both),
-and **no mainnet transaction until the pre-mainnet checklist is ticked** (T-D04).
+Two hard gates from the PRD: **no arming UI until its shape is known** (amended 2026-09-28, see
+T-B15 and DECISIONS.md; it read "until F5 and F6 pass"), and **no mainnet transaction until the
+pre-mainnet checklist is ticked** (T-D04), which is unchanged.
 
 When a test fails, nobody debates it on the spot. It is logged and decided at the next
 checkpoint, one of: keep, fallback, cut, extend once. An undecided test at a checkpoint
@@ -357,7 +359,29 @@ and latency (a, b).
 - Kill criterion: none, F1 is existential
 - Finding: the coverage number can lie. deltas() reads only meta.pre/postTokenBalances, and nothing in packages/ reads meta.pre/postBalances, so a swap paid in native SOL is invisible: the wSOL account is opened and closed inside the same transaction and appears in neither array. It returns not-a-swap "value only arrived the wallet", which carries no program id, is absent from unsupported, and is excluded from totalSwaps, so a wallet trading from native SOL reports 100% coverage while decoding none of its swaps. Two smaller ones: topProgram returns the first instruction with a programId, which on every real mainnet transaction is ComputeBudget, so all undecoded transactions collapse into one unsupported row named ComputeBudget; and decodeAll keeps only the first reason per program id. Fix is T-A07.
 ### T-A07, Decode swaps paid in native SOL
-- Status: open
+- Evidence: re-running spikes/F1 moved 5CKAa7Wm's 50 sampled transactions from 50 identical
+  "value only arrived the wallet" to 9 rotations, 40 one-sided and 1 the other way, with 0 silent
+  drops, and moved 5Q544fKr's unsupported row from ComputeBudget to JUP6LkbZ. 5 tests, 1 per
+  clause, each failing before the fix. 5Q544fKr stayed at 29 swaps of 50, which is the check that
+  matters: a native leg added to a swap already read from token balances must change nothing
+- Finding: lamports are not a second mint, they are the same asset as wSOL, and adding them as a
+  separate one turns a wrap into a swap of SOL for SOL. Netting both into 1 mint is what makes
+  wrapping silent, which is correct, because wrapping is not a trade
+- Finding 2: the first rent rule cost 2 good decodes. Adding back the rent of every account opened
+  or closed anywhere in the transaction attributes other parties' accounts to this wallet, and on
+  5Q544fKr it turned 1 swap into ambiguous and 1 rotation into one-sided, both on transactions
+  whose lamport delta was 0. Scoped to token accounts this wallet owns, it changed 0 of the 100
+  sampled transactions, so it is reasoned rather than measured: an account opened and closed in the
+  same transaction needs no correction at all, because the rent left this balance and came back
+- Finding 3: T-A07's last clause cannot pass as written, and the decoder is not why. All 50 of
+  5CKAa7Wm's sampled transactions are arbitrage: token gains of 3840 lamports and 0.007 USDC
+  against a fee of the same order. The decoder now names every one of them correctly and the swap
+  count is still 0, because there are no swaps in them. Written up as OP-31
+- Finding 4: this fix does not reach production on its own. The product reads a wallet's history
+  from Helius's enhanced endpoint, and fromEnhanced carries only tokenBalanceChanges across, so the
+  native leg is dropped at the edge before the decoder ever sees it. packages/decoder/src/enhanced.ts
+  is not on this task's Touches line, so it is T-A08
+- Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-a07-native-sol
 - Depends-on: T-A01
 - Touches: packages/decoder/src/index.ts, packages/decoder/src/decoder.test.ts
 - Serves: Functionality (judged) ; F1 coverage share
@@ -367,12 +391,47 @@ and latency (a, b).
   transaction names the venue program rather than ComputeBudget on all 5 recorded fixtures; decodeAll
   keeps every distinct reason per program id, not just the first; the 50 sampled transactions of
   wallet 5CKAa7Wm in spikes/F1 stop reporting 0 swaps at 100% coverage
-- Evidence: <PR link, plus the F1 re-run showing the changed coverage number>
 - Kill criterion: none. A coverage number computed over silently dropped swaps is the failure the
   third bucket exists to prevent, and F1 is existential
 
+### T-A08, Carry the native SOL leg across the enhanced endpoint
+- Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-a08-enhanced-native
+- Depends-on: T-A07
+- Touches: packages/decoder/src/enhanced.ts, packages/decoder/src/decoder.test.ts
+- Serves: Functionality (judged) ; F1 coverage share
+- Acceptance: fromEnhanced carries nativeBalanceChange and the fee across, so a swap paid in native
+  SOL decodes the same whether it arrived from getTransaction or from the enhanced endpoint; 1
+  recorded enhanced transaction with a native leg asserted against the getTransaction decode of the
+  same signature, field by field
+- Evidence: <PR link, plus the 2 decodes of 1 signature agreeing>
+- Kill criterion: none. T-A07 fixed the decoder and the product does not use the shape it fixed, so
+  until this lands the coverage number a user sees is the old one
+
 ### T-A06, Fix the two coverage numbers that can lie
-- Status: open
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/134. Re-running spikes/F1 moved
+  5CKAa7Wm from `share 1` to `share 0` and 5Q544fKr from 0.9666666666666667 to 0.58, which is
+  29 of the 50 sampled, exactly the 2 numbers the acceptance predicted. 4 tests, 1 per defect,
+  each failing before the fix
+- Finding: removing the signature tie-break was not enough on its own, and the test caught it. With
+  no tie-break the order the swaps arrive in decides the answer instead, so a same-slot sell that
+  arrived first still invented a sold-more-than-held against units the wallet demonstrably held.
+  Within 1 slot there is no ordering available to us: the block has one and a decoded balance
+  change does not carry it. So the tie is broken on the only thing knowable and economically
+  meaningful, which is that a wallet cannot sell units it acquired in the same slot unless the buy
+  is counted first. That exception is subtracted from realised P&L, so the conservative order is
+  also the accurate one
+- Finding 2: the old denominator could not fall below the 95% the PRD treats as a finding, however
+  little was understood, because it dropped from the count exactly what the decoder had chosen not
+  to explain. 2 existing tests asserted that shape and were updated with their reasons rather than
+  their numbers: a rotation and a transfer both count in the denominator now, for different
+  reasons, because the share answers "how much of what we saw did we explain" rather than "how much
+  of what we already agreed was a swap"
+- Finding 3: writing the empty-wallet fixture the frozen-contract gate asks for found a third
+  number of the same family, left alone because it is a different contract: Metrics makes
+  medianSize and medianHoldSeconds required and not nullable, so a wallet with 0 closed trades has
+  to report a median of 0, which reads as a measured fact rather than as nothing to measure. Needs
+  its own task, because widening 2 fields to nullable moves every consumer of Metrics
+- Status: done
 - Depends-on: T-A01
 - Touches: packages/decoder/src/index.ts, packages/core/src/report.ts, packages/decoder/src/pnl.ts
 - Serves: Functionality (judged) ; F1 coverage share
@@ -383,10 +442,8 @@ and latency (a, b).
   5CKAa7Wm from 100% to 0% and 5Q544fKr from 96.7% to the share over all 50 sampled; and fifoLedger
   stops tie-breaking same-slot swaps on the base58 signature, with 1 test asserting a same-slot buy
   and sell produce 1 closed trade whichever order they are passed in
-- Evidence: <PR link, plus the F1 coverage numbers before and after>
 - Kill criterion: none. A coverage number that reads 100% when nothing decoded is the single defect
   positioned to turn a real run green, and it is live today in spikes/F1/result.json
-
 ### T-D06, Verify the cap that is on chain, not the one we meant to send
 - Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/103 | Owner: manjeetsharma0796 | Branch: feature/t-d06-verify-real-cap
 - Depends-on: T-D01
@@ -543,6 +600,33 @@ and latency (a, b).
 - Kill criterion: none. If the cap does not hold on-chain the custody story is gone, see T-F05a
 - Finding: two ways the cap reads as holding when it does not. (1) tokenSpendLimit returns the REMAINING allowance, not the configured cap, so a role whose window is spent reads 0 and assertAgentRoleShape throws "carries no spending limit"; kill-switch isAgentRole swallows that, planRevokeAll files the role under kept as "not ours to remove", and revokedMessage reports "No Agon roles were found". The emergency stop fails open on exactly the role that has been trading hardest, and Swig resets the window afterwards. (2) canUseProgram returns true unconditionally under ProgramAll, and the SDK silently appends programAll to any action set with no program action, so a stored role of programAll plus tokenRecurringLimit has count 2 and is ACCEPTED as "program = Jupiter". Also the approved cap AMOUNT is never compared to what the user signed, only that a limit exists, and the window is never checked beyond being positive. Fix is T-D06.
 ### T-F05a, F5 spike, 7 cases on a mainnet fork
+- Evidence 2026-09-29: 5 of 7 pass on a local fork, up from 2. (a) 0.1 wSOL through Raydium CLMM,
+  the wallet paid exactly 100000000 base units, received 11885799 USDC against a quote of
+  11887909, allowance 500000000 to 400000000. (b) 0.45 with 400000000 left, refused by the Swig
+  program with balances unchanged, and the control at 0.35 landed through the same venue inside
+  the same window. (d) now passes against the sentence OP-28 decided. (e) reports "not run" and
+  (g) needs a person
+- Finding 7: the control nearly proved nothing and the fix is a window check, not more care. A
+  recurring limit resets on the slot clock, `lastReset = floor(slot / window) * window`, so 3
+  swaps sent back to back can straddle a boundary and the control then draws on a fresh allowance
+  while looking like it fits the old one. The case now asserts `lastReset` is unchanged across
+  (a), (b) and the control, and downgrades (b) to "not run" when it is not
+- Finding 8: exact amounts cannot be asserted and it took 3 runs to see why. The fork copies a
+  pool on first touch and keeps that copy, while Jupiter quotes the live pool, so received drifts
+  below quoted by more the longer the fork runs and the more we have traded it. First run 11891519
+  received against 11891519 quoted, exact; the next 11885799 against 11887909. The case asserts
+  the slippage floor and that the wallet's input fell by exactly what was sent, which held every
+  time
+- Finding 9: case (e) cannot be measured after the other 3. Its boundary probe was answered by
+  Raydium rather than Swig, because by then our own swaps had moved the fork's copy of the pool
+  out of tolerance. It reports "not run" rather than guessing, for the same reason (b) does. A
+  spike that asserts the reset slot needs a fresh pool per probe, or a fresh fork
+- Finding 10: 2 of the 3 runs failed on infrastructure rather than on the cases, and neither
+  failure was about Swig. The payer is funded 1 SOL by the faucet loop, which covered the 6 cases
+  that move nothing and not 0.9 wSOL of swaps plus 2 token accounts at 2039280 lamports of rent
+  each; and the agent had no lamports of its own once it became the fee payer. Both are now funded
+  explicitly, the agent by the owner and with fee money only, so every lamport it could trade with
+  sits in the vault behind the cap
 - Finding 6, from probing (a) on a live fork: **Swig authorises a Jupiter swap through the capped
   role.** The wrapped instruction reaches Jupiter, `Program swigypWHEksb... invoke [1] Program
   JUP6LkbZ...`, and comes back with `custom program error: 0x1789`, which is a Jupiter error and
@@ -1310,6 +1394,29 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   take alone. Write the measurement into an OP and stop, rather than quietly shipping a truncated
   verdict
 
+### T-C16, Say which network, to people and to agents
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/140 | Owner: manjeetsharma0796 | Branch: feature/t-c16-network-label
+- Depends-on: T-C07
+- Touches: packages/core/src/network.ts, packages/core/src/network.test.ts,
+  packages/core/src/index.ts, packages/mcp/src/index.ts, packages/mcp/src/mcp.test.ts,
+  apps/web/app/NetworkBanner.tsx, apps/web/app/layout.tsx, .env.example
+- Serves: UX (judged) ; 0 users or agents who read test funds as real, or real funds as test
+- Acceptance: 1 env var, `AGON_NETWORK`, read by both the web app and the MCP server; every web
+  page shows a banner naming fork, devnet or mainnet; all 4 MCP tools return `network` as the first
+  key of their result and every refusal starts with "Network:", because an agent's client shows no
+  banner of ours; unset or any other value reads "not set" and never mainnet, tested on 5 bad
+  values; `check_trade` stays inside its 400-token budget with the label on
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/140. check_trade 337 tokens with
+  `fork`, 333 unset, 329 `mainnet`, from about 321 with no label. Built with the variable unset and
+  served with `fork`, the page reads `fork`
+- Finding: spreading the label into a result broke `list_rules`, whose contract is a list: `[]` came
+  out as `{"network": ...}` and 2 rules would have come out as `{"0": ..., "1": ...}`. The first test
+  checked only the first key and passed on it. A list now goes out under `rules`. And the banner was
+  prerendered at build while the MCP server reads at start, so a host setting the variable only at
+  runtime would have shown 2 different networks; the banner now reads per request
+- Kill criterion: none. Saying which chain a number came from is not optional once anything can
+  sign
+
 ---
 
 # P3, CP2 to CP3, World's Fair freeze (2026-10-08)
@@ -1338,11 +1445,16 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 - Depends-on: T-F05a, T-F06a, T-D01, T-D02
 - Touches: apps/web/app/arm/
 - Serves: UX (judged) ; Novelty (judged)
-- Acceptance: **do not start this until F5 and F6 pass**, because the screen changes shape if
-  either fails; the user's wallet signs the Swig role (`program = Jupiter`,
-  `tokenRecurringLimit`) plus the Jupiter Trigger order in 1 flow; the cap our code sends is
-  never higher than the number the user typed, asserted by a test; wallet connection is the only
-  auth and there are still 0 accounts
+- Retargeted 2026-09-28 against what the fork measured, replacing "do not start this until F5 and
+  F6 pass". See T-B15 for why the gate moved rather than opened
+- Acceptance: 1 flow on the fork in which
+  the user's wallet creates the Swig, adds the agent role (`program = Jupiter`,
+  `tokenRecurringLimit`), creates the vault's token accounts and funds them, with the vault
+  signing nothing; the cap our code sends equals the number the user typed, asserted by a test,
+  and the rolling worst case is printed beside it per OP-32; the screen shows the vault's balances
+  itself, because Phantom reads "not supported" on Solana Localnet; any Trigger order is placed by
+  the owner here, per OP-29, and never by the agent; wallet connection is the only auth and there
+  are still 0 accounts; 0 mainnet transactions, which stays gated by T-D04
 - Evidence: <staging recording, plus the devnet role read>
 - What is gated and what is not, because "do not start" reads as all of it: the **arming screen**
   is gated, and that is this row. Connecting a wallet and reading an address from it is not gated
@@ -1358,9 +1470,10 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 - Kill criterion: if F6 fell back to daemon polling, the screen must say "runs while your computer is on"
 
 ### T-E14, Connect a wallet instead of pasting an address
-- Status: open
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/141 | Owner: manjeetsharma0796 | Branch: feature/t-e14-connect-wallet
 - Depends-on: T-E04
-- Touches: apps/web/app/(onboarding)/, apps/web/app/wallet/
+- Touches: apps/web/app/(onboarding)/, apps/web/app/wallet/, apps/web/package.json,
+  pnpm-lock.yaml
 - Serves: UX (judged) ; unblocks the arming flow without waiting for it
 - Acceptance: **this is not gated on F5 or F6 and can start today**, because nothing here signs
   anything; connect works from Phantom and from Backpack; the address shown is read from the
@@ -1368,7 +1481,14 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
   visitor with no wallet, because the read-only beta must not require one; 0 signature prompts are
   raised anywhere in this task, asserted by a test that fails if `signTransaction` or
   `signMessage` is reachable from this screen; 0 accounts are created and there is still no login
-- Evidence: <2 recordings, 1 per wallet, plus the test that proves 0 signature prompts>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/141, with `no-signing.test.ts` proving
+  0 signature prompts across the 3 sources behind the screen. Connect, account switch, lock,
+  disconnect and the /report handoff checked in the browser with a Wallet Standard test wallet.
+  The 2 recordings with the real Phantom and Backpack extensions are still owed
+- Finding: the page did not follow the wallet's own account changes, so switching accounts in
+  Phantom left it showing a key that was no longer connected; now fixed with the standard:events
+  listener. And knip scanned only `apps/*/src`, so all of `apps/web/app` was invisible to it and
+  the new dependency read as unused
 - Kill criterion: if no adapter works cleanly, the paste field stays and this is cut. Pasting an
   address is the read-only beta's real entry point and it already works
 - Note for whoever picks this up: today `apps/web/app/(onboarding)/page.tsx` holds a text input and
@@ -1815,3 +1935,154 @@ _(empty)_
   an anomaly score after the fact, not a capped permission set before the agent trades. Colosseum's
   own directory and Copilot need an account and were NOT searched, so the PRD's 2,992-entry figure
   is still unverified by a second pair of eyes
+
+### T-B13, A decisions log in the repo, and a lint that keeps it honest
+- Status: claimed 2026-09-28 | Owner: Jishnu | Branch: feature/t-b13-decisions
+- Depends-on: T-B01
+- Touches: DECISIONS.md, scripts/board.mjs
+- Serves: Functionality (judged) ; stops 8 decisions living only in a queue nobody reads as a log
+- Acceptance: DECISIONS.md carries 1 row per decision in the PRD's own shape, date, topic,
+  decision, why, and the OP it came from; the 8 decisions already made outside the PRD are in it;
+  `node scripts/board.mjs` fails when an OP whose Status starts with "decided" has no row naming
+  it, proved by a control run with a row removed; DECISIONS.md is in both board allowlists so a
+  board PR can carry a decision and its log entry together; 0 content is derived from another file
+- Evidence: the lint run with and without a row. With the OP-32 row removed it fails with
+  "OPERATOR_TODO.md:800 OP-32: Status is decided and DECISIONS.md has no row naming it"; restored,
+  lint ok on 79 rows
+- Finding: the obvious check, does the log mention the id, is wrong by default. 8 of the 9 decided
+  ids are a prefix of another id in the same file, so a plain substring test lets OP-2 be satisfied
+  by the OP-20, OP-21, OP-27 or OP-29 rows and the gap never shows. Proved by removing only the
+  OP-2 row with the other 4 present: with a word boundary it fails, and that is the case worth
+  keeping a control for, because the file will always contain something that looks close enough
+- Finding 2: the shape was chosen against a scar rather than from taste. scripts/board.mjs:218
+  records that README.md carried a board summary derived from Status lines, the check ran against
+  the merge commit, and every PR went stale when anyone else's claim landed. A log generated from
+  OPERATOR_TODO.md is the same shape, and worse, because every board PR adds an OP row while only
+  1 task owns a spike result at a time, which is why FEASIBILITY.md can be generated and this
+  cannot
+- Kill criterion: none, but the shape is load-bearing. If DECISIONS.md is ever generated from
+  OPERATOR_TODO.md this row has failed: scripts/board.mjs:218 records why the last derived board
+  file was removed, and a generated log walks back into it
+
+### T-B14, One PRD in the repo, and the PDF goes
+- Status: claimed 2026-09-28 | Owner: Jishnu | Branch: feature/t-b14-prd
+- Depends-on: T-B13
+- Touches: PRD.md, TASKS.md, README.md
+- Serves: Functionality (judged) ; the source of truth TASKS.md line 8 points at
+- Acceptance: PRD.md carries every section of the PDF that has no other home in the repo, with the
+  9 decisions in DECISIONS.md applied rather than appended; the sections already owned by
+  CLAUDE.md, TASKS.md, FEASIBILITY.md or spikes/ are pointed at rather than copied, with the
+  pointer table naming each; the PDF is deleted and TASKS.md's "source of truth" line names PRD.md;
+  0 references to the PDF remain outside git history
+- Evidence: 40 of 40 pages recovered and transcribed; PRD.md is 340 lines against the PDF's 40
+  pages, because 8 of its 19 sections are pointed at rather than copied
+- Finding: the PDF was unreadable by any installed tool and that is why it was never edited. It is
+  a Google Docs export with subsetted fonts, so every string in the content streams is hex glyph
+  ids like `<0002> Tj` rather than text, and the only way back is each font's ToUnicode CMap. A
+  combined map across all 10 fonts would be wrong, because each subset numbers its glyphs from 1
+  and they collide, so the extractor has to resolve `/F4` through the page's own Resources dict
+  first. A document nobody can grep is a document nobody updates: 9 decisions accumulated
+  elsewhere while it sat there
+- Finding 2: the deletion is the point rather than a side effect. Keeping the PDF beside PRD.md
+  would leave 2 PRDs and no rule for which is true, which is the state that produced the 13 copies
+  of the line "recorded here because the PRD Decisions log is outside this repo"
+- Kill criterion: none, but 2 PRDs is the failure this closes. If the PDF ever comes back beside
+  PRD.md the row has failed: nobody can tell which one is true, which is the state that let 9
+  decisions accumulate with nowhere to go
+
+### T-B15, Amend the arming gate to what it was protecting
+- Status: claimed 2026-09-28 | Owner: Jishnu | Branch: feature/t-b15-arming-gate
+- Depends-on: T-B14
+- Touches: CLAUDE.md, DECISIONS.md
+- Serves: UX (judged) ; unblocks T-E06 without weakening T-D04
+- Acceptance: CLAUDE.md's "No arming UI until F5 and F6 pass" is replaced by the reason it
+  carried, that the screen must not be built while its shape is unknown, with the measured shape
+  named; the mainnet gate in T-D04 is quoted unchanged in the same line so the amendment cannot be
+  read as loosening it; a row in DECISIONS.md records the amendment and its date
+- Evidence: CLAUDE.md line 29 replaced, 2 lines against the 8 a full explanation took, because
+  CLAUDE.md's own budget is about 60 lines and it was already at 65. The reasoning lives here and
+  in DECISIONS.md, which is where TASKS.md section 3 says detail belongs
+- Finding: the gate had 3 copies, not 1: CLAUDE.md line 29, TASKS.md's hard-gates summary, and
+  T-E06's own Acceptance line. Amending 1 would have left 2 saying the opposite, and the one most
+  likely to be read by whoever starts the work is T-E06's, which is the last place anybody looks
+  for a rule
+- Kill criterion: if F5 case (d) comes back showing the Jupiter-only role authorises an instruction
+  that can move funds later, this amendment is wrong and the gate goes back: the shape would not be
+  known after all, because the screen would have to say something different about what the role
+  prevents
+
+### T-C17, The real allowance, end to end
+- Status: open
+- Depends-on: T-D01, T-C07
+- Touches: packages/chain/src/swig/index.ts, packages/core/src/rule.ts, packages/mcp/src/index.ts, fixtures/contracts/
+- Serves: Novelty (judged) ; the number a user is shown about their own agent
+- Acceptance: `TokenSpend` carries `lastReset`; a pure `effectiveRemaining(spend, slot)` returns
+  `recurringLimit` when `slot - lastReset > window` and `spendLimit` otherwise, with 1 test on each
+  side of that boundary; `ArmedRule` carries the vault address and that effective remaining;
+  `list_rules` returns the role read from chain rather than an unconditional empty list, and 0
+  callers are handed the raw field; the 2x rolling worst case is printed beside every remaining
+  figure, per OP-32
+- Evidence: <PR link, plus a fork read where the raw field says 0.05 and the reported figure says 0.5>
+- Kill criterion: none. A wrong number about a user's own budget is the defect T-A06 and T-A07
+  exist to prevent, reached through a different door, and this one errs toward under-reporting only
+  by luck
+
+### T-C18, arm_rule hands back a link, and cannot carry a cap
+- Status: open
+- Depends-on: T-C07, T-C17
+- Touches: packages/core/src/rule.ts, apps/web/src/legs.ts, fixtures/contracts/
+- Serves: Novelty (judged) ; the honesty of the core claim
+- Acceptance: the 3 changes OP-27 names, `RuleSpec` gains the wallet the rule is for, loses `cap`
+  as a caller-supplied field, and `arm_rule` returns an arming request rather than an armed rule;
+  a test asserts no caller can submit a cap; the frozen tool list is still exactly 4 in the same
+  order; `docs/public/mcp-tools.md` regenerates from the contracts with no hand edit
+- Evidence: <PR link, plus the refused call carrying a cap>
+- Kill criterion: none. Today `armRule` refuses 100% of calls, so nothing can exploit the current
+  shape; it bites the moment T-E06 exists, and it is a frozen contract, so it is cheaper now
+
+### T-C19, MCP errors come from the catalogue, and name who refused
+- Status: open
+- Depends-on: T-E10, T-C07
+- Touches: packages/mcp/src/index.ts, packages/core/src/messages.ts
+- Serves: UX (judged) ; the agent surface
+- Acceptance: `packages/mcp` answers failures from the message catalogue rather than ad-hoc Error
+  strings, with a test asserting 0 ad-hoc messages on the tool paths; 2 new rows, the Swig cap
+  refusal translated out of `insufficient funds for instruction` into cause, number and reset slot,
+  and the rule that the innermost failing program decides who refused so a Jupiter slippage error
+  is never reported as the cap; every message's first sentence stands alone, asserted by a test
+- Evidence: <PR link, plus the 2 raw refusals from the fork that the rows translate>
+- Kill criterion: none. Measured on the fork: an agent given a truncated "Simulation failed." with
+  no reason retried about 11 times. Our server does not truncate, the client did, which is why the
+  first sentence has to carry the answer
+
+### T-E15, A startup prompt a fresh agent can paste, and the docs it reads
+- Status: open
+- Depends-on: T-C17, T-C18, T-C19, T-E06
+- Touches: docs/public/
+- Serves: Open source (judged) ; Potential impact (judged)
+- Acceptance: `docs/public/quickstart.md` stops claiming what `arm_rule` and `list_rules` do not
+  do, checked against their handlers; 1 setup page carrying the MCP endpoint with a config snippet
+  per client, the network and that every answer names it, where the agent's key lives and that it
+  is never the user's, how to find the vault and cap through `list_rules`, the swap recipe that
+  makes a trade land, and how to read a refusal; a fresh agent following it reaches a passing
+  `check_trade` with 0 questions asked of a human
+- Evidence: <PR link, plus a transcript of an agent that had not seen this conversation>
+- Kill criterion: none, but the docs correction is the gate on the rest: a paste-and-go prompt
+  built on a false promise ships that promise to every agent that reads it
+
+### T-C20, agon fork-proxy, so Phantom can reach a hosted fork
+- Status: open
+- Depends-on: T-C08, OP-33
+- Touches: packages/cli/src/
+- Serves: UX (judged) ; unblocks T-E06 and T-E07 for anyone not running Docker
+- Acceptance: `agon fork-proxy` binds `127.0.0.1:8899` and `127.0.0.1:8900` and forwards both to
+  the hosted fork with its auth header attached, which is the whole reason it exists: Phantom's
+  Solana Localnet is fixed at 127.0.0.1 and a wallet cannot send a header, so a shared fork is
+  either public or unreachable without this; it refuses to start if the target is not the
+  configured fork host, so it can never be pointed at mainnet; 1 test asserts a request without
+  the header is refused by the target rather than passed through; the websocket is forwarded too,
+  because confirmations arrive on it and a proxy without it hangs every send
+- Evidence: <PR link, plus a Phantom transaction signed on a machine that is not the fork host>
+- Kill criterion: if Backpack's custom RPC reaches the hosted fork directly, this stays for
+  Phantom users but stops being on the critical path, so check that first: it is 10 minutes and it
+  decides whether this blocks the cohort or only part of it

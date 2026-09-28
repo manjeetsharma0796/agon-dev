@@ -44,6 +44,16 @@ describe('examples parse against their contract', () => {
   it('armed rule', () => {
     expect(() => ArmedRule.parse(example('armed-rule'))).not.toThrow()
   })
+
+  // A wallet we read nothing for. It is a separate file because the interesting part is a value
+  // rather than a shape: share must be 0 here, and until T-A06 the contract exempted this exact
+  // case from its own arithmetic, so a report claiming we had understood 100% of a wallet we had
+  // decoded none of parsed clean.
+  it('report for a wallet with nothing decoded', () => {
+    const empty = example('report-empty-wallet')
+    expect(() => Report.parse(empty)).not.toThrow()
+    expect(() => Report.parse({ ...empty, coverage: { ...empty.coverage, share: 1 } })).toThrow()
+  })
 })
 
 describe('the tool list is the stable four', () => {

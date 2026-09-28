@@ -6,14 +6,18 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "dependencies": {
+    "@agon/core": "workspace:*",
+    "@wallet-standard/app": "1",
     "next": "15",
     "react": "19",
-    "react-dom": "19",
-    "@agon/core": "workspace:*"
+    "react-dom": "19"
   },
   "scripts": {
     "build": "next build",
     "dev": "next dev -p 3111",
     "start": "next start -p 3111"
+  },
+  "devDependencies": {
+    "@types/react": "19"
   }
 }
