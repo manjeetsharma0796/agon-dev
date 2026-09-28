@@ -127,6 +127,53 @@ describe('a contract refuses a dishonest value', () => {
     const big = '18446744073709551615'
     expect(Number(big).toString()).not.toBe(big)
     const parsed = ArmedRule.parse(example('armed-rule'))
-    expect(typeof parsed.spec.cap.amount).toBe('string')
+    expect(typeof parsed.spec?.cap.amount).toBe('string')
+    expect(typeof parsed.effectiveRemaining).toBe('string')
+  })
+})
+
+// T-C17, OP-35. list_rules reads a rule back from chain, and the chain stores the role but not the
+// spec (trigger type, expiry) or the order id, and counts its window in slots. So a rule read from
+// chain carries a null spec and a slot window, and never a converted guess at seconds.
+describe('an ArmedRule read back from chain', () => {
+  const vault = 'C7Bz4nps2z1NDftJUBzXQyeR2iDE5j5ztad5q1k4iA8R'
+  const fromChain = {
+    spec: null,
+    swigRole: {
+      roleId: '1',
+      authority: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM',
+      program: 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4',
+      tokenRecurringLimit: {
+        mint: 'So11111111111111111111111111111111111111112',
+        amount: '500000000',
+        windowSlots: 150,
+      },
+    },
+    jupiterOrderId: null,
+    vault,
+    effectiveRemaining: '500000000',
+    rollingWorstCase: '1000000000',
+  }
+
+  it('parses with a null spec and a window in slots', () => {
+    expect(() => ArmedRule.parse(fromChain)).not.toThrow()
+  })
+
+  it('refuses a limit with no window in either unit', () => {
+    const noWindow = {
+      ...fromChain,
+      swigRole: {
+        ...fromChain.swigRole,
+        tokenRecurringLimit: { mint: fromChain.swigRole.tokenRecurringLimit.mint, amount: '1' },
+      },
+    }
+    expect(ArmedRule.safeParse(noWindow).success).toBe(false)
+  })
+
+  it('refuses a rule that does not say where its vault is or what is left', () => {
+    const { vault: _v, ...noVault } = fromChain
+    const { effectiveRemaining: _e, ...noRemaining } = fromChain
+    expect(ArmedRule.safeParse(noVault).success).toBe(false)
+    expect(ArmedRule.safeParse(noRemaining).success).toBe(false)
   })
 })
