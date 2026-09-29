@@ -1470,7 +1470,11 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 - Kill criterion: none. Nothing moves to mainnet with an unticked box
 
 ### T-E06, Arm a rule, wallet-signed
-- Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-e06-vault-screen
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/170 | Owner: Jishnu | Branch: feature/t-e06-vault-screen
+- Why in-review and not done, 2026-09-29: #170 merged and the flow is measured on the fork with a
+  keypair in the wallet's place. The acceptance says the user's wallet, and no real Phantom has
+  clicked through it yet. That is T-E07's outside tester or T-E16's person; this moves to done when
+  either records it
 - Depends-on: T-F05a, T-F06a, T-D01, T-D07
 - Touches: apps/web/app/arm/, apps/web/src/arm-flow.ts, apps/web/src/arm-flow.test.ts,
   apps/web/package.json, packages/chain/src/arm.ts, packages/chain/src/arm.test.ts
@@ -2096,7 +2100,7 @@ _(empty)_
   by luck
 
 ### T-C18, arm_rule hands back a link, and cannot carry a cap
-- Status: open
+- Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-c18-arm-link
 - Depends-on: T-C07, T-C17
 - Touches: packages/core/src/rule.ts, apps/web/src/legs.ts, fixtures/contracts/
 - Serves: Novelty (judged) ; the honesty of the core claim
@@ -2233,3 +2237,17 @@ _(empty)_
 - Evidence: <the person's list, and a screenshot before and after>
 - Kill criterion: none. Kept separate from T-E06 on purpose, so polish is judged by someone looking
   at it and cannot quietly change the behaviour T-E06 measured
+
+### T-B17, The board lint refuses 2 rows on 1 branch, whatever their status
+- Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-b17-branch-once
+- Depends-on: T-B01
+- Touches: scripts/board.mjs
+- Serves: Functionality (judged) ; the board's only job, which is answering what is left
+- Acceptance: `node scripts/board.mjs` fails when 2 or more rows name the same branch in their
+  Status, whether `claimed` or `in-review`; the failure names every row and the branch; a control
+  reproduces what reached `dev` on 2026-09-29, 27 rows `in-review` on 1 branch, and it fails;
+  today's board passes
+- Evidence: <the lint run on the reproduced board and on today's board>
+- Kill criterion: none. Measured: a `sed` meant for 1 row rewrote 26 done rows to "in-review on
+  #166", it passed the lint and merged, and it sat on `dev` for about 5 minutes until the next PR
+  reversed it. The lint checked branch uniqueness for `claimed` rows only
