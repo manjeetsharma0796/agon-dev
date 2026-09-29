@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { expect, test } from 'vitest'
 import { BaseUnits } from '@agon/core'
 import { decodeAll, decodeTransaction, type RawTransaction } from './index.js'
+import { fromEnhanced, type EnhancedTransaction } from './enhanced.js'
 
 /**
  * Real mainnet transactions, replayed. Recorded by the T-C02 wrapper and pinned by signature, so
@@ -310,4 +311,24 @@ test('every distinct reason is kept per program, not just the first', () => {
     'the second reason was dropped, so the row explained half of what it counted',
   ).toContain('ambiguous')
   expect(row?.reason).toContain('quote asset')
+})
+
+test('a swap paid in native SOL decodes the same from the enhanced endpoint as from getTransaction', () => {
+  // 1 real mainnet buy, recorded in both shapes on 2026-09-29: a pump.fun token bought for about
+  // 0.503 SOL, paid from native SOL. Its only SOL trace is the lamport change, so it is a swap only
+  // if that leg arrives. The enhanced endpoint is what the product reads.
+  const load = (name: string): unknown =>
+    (
+      JSON.parse(readFileSync(`fixtures/recorded/native-leg/${name}.json`, 'utf8')) as {
+        response: { body: unknown }
+      }
+    ).response.body
+  const raw = (load('get-transaction') as { result: RawTransaction }).result
+  const [enhanced] = load('enhanced') as EnhancedTransaction[]
+  const wallet = 'Hj47mxzg7sF7uymbeXx3TMt1g2VW81zUhYidXKxZqBFn'
+
+  const fromRaw = decodeTransaction(raw, wallet)
+  expect(fromRaw).toMatchObject({ kind: 'swap', side: 'buy', soldAmount: '502806022' })
+  // Field by field, not "both are swaps": the amount is where a dropped fee or rent would show.
+  expect(decodeTransaction(fromEnhanced(enhanced as EnhancedTransaction), wallet)).toEqual(fromRaw)
 })
