@@ -2373,7 +2373,7 @@ _(empty)_
   `feature/t-c22-jev-in-check`, unmerged, with the USDC recordings, until OP-38 decides
 
 ### T-C23, Issuer stablecoins pass with their authorities noted, from a pinned list
-- Status: open
+- Status: cut
 - Depends-on: T-C06
 - Touches: packages/guard/src/check-trade.ts, packages/guard/src/check-trade.test.ts,
   packages/guard/src/issuers.ts
@@ -2386,6 +2386,13 @@ _(empty)_
 - Evidence: <PR link, plus the USDC and memecoin verdicts before and after>
 - Kill criterion: none. OP-37 decided it; a mint is added to the list only by a PR naming its issuer
 
+- Cut 2026-09-29, measured before any code: the premise is false. USDC's mint check already
+  answers `pass`, with `mint-freeze-authority` and `mint-authority-live` attached as notes, as F3's
+  threshold decided at CP1. Given a quote and a clean text screen, a USDC buy through
+  `checkTrade` answers `pass` today, with those 2 notes. What keeps it `unsure` in production is
+  `quote-missing` and `text-not-screened`, which fire on every token: T-C22 and OP-38. An issuer
+  list is still useful for impersonation, where Jev called the genuine USDC an imitation at 0.97,
+  so it moves to OP-38's measurement
 ### T-B18, CLAUDE.md scopes the Jev rule to the trading guard
 - Status: done 2026-09-29 | Owner: Jishnu | PR: #205
 - Depends-on: OP-24

@@ -1032,7 +1032,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   (a second shape for 1 rule); storing the spec off-chain (needs a database, OP-6, not set up)
 
 ### OP-37, Should a live mint or freeze authority stop a stablecoin like USDC from ever passing?
-- Status: decided 2026-09-29 by Jishnu: a pinned allowlist of issuer-run mints (USDC, USDT, PYUSD and the like) in config, never from user input. For those, a live mint or freeze authority is a note and the trade can pass; every other token with a live authority stays unsure. Users can trade any token either way; this changes only what check_trade advises. T-C23
+- Status: decided 2026-09-29 by Jishnu, then found moot the same day: a pinned issuer allowlist was chosen, but measured before building, USDC already passes with a quote and a clean screen, because its authorities are notes and never were the gate. T-C23 is cut. The allowlist idea moves to impersonation, under OP-38
 - Owner: Jishnu, for a product call
 - Needed by: before an agent is pointed at any USDC pair, including the fork demo
 - Unblocks: a `check_trade` that can ever answer `pass` on a USDC buy
