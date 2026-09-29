@@ -245,8 +245,10 @@ const styleFinding = (
   mix: Partial<Record<TokenCategory, number>> | null,
   rules: readonly MinedRule[],
 ): Finding | null => {
+  // No category at all, which is what `ask()` reports when Jev's answer was not one of the 6.
+  // 'other' is not this case: it is one of the 6 and scores against the mix like any other name.
   const category = jev.answers.tokenCategory?.category
-  if (category === undefined || category === 'unknown') {
+  if (category === undefined) {
     return unsure(
       'category-unknown',
       `This token could not be placed in a category, so it could not be checked against the ` +
@@ -266,8 +268,8 @@ const styleFinding = (
   return block({
     rule: 'style-fit',
     message:
-      `0 of your ${closedTrades} closed trades are ${category} tokens; this would be your ` +
-      `first. Stopped. Trade a category you already trade, or add this one.`,
+      `0 of your ${closedTrades} closed trades are in the ${category} category; this would be ` +
+      `your first. Stopped. Trade a category you already trade, or add this one.`,
     observed: traded,
     limit: 1,
     unit: 'trades',

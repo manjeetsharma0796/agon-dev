@@ -70,7 +70,7 @@ const rules = (over: Partial<Record<MinedRule['kind'], MinedRule>> = {}): MinedR
 
 const jevClean = (): JevVerdict => ({
   answers: {
-    tokenCategory: { category: 'major', confidence: 0.9 },
+    tokenCategory: { category: 'blue chip', confidence: 0.9 },
     injection: { looksInjected: false, confidence: 0.9 },
   },
   dataSlot: SLOT,
@@ -85,7 +85,7 @@ const facts = (over: Partial<TradeFacts> = {}): TradeFacts => ({
   quote: { priceImpactPct: '0.0027', slippageBps: 50, contextSlot: SLOT },
   jev: jevClean(),
   spendAsset: { symbol: 'SOL', decimals: 9 },
-  categoryMix: { major: 0.7, meme: 0.3 },
+  categoryMix: { 'blue chip': 0.7, memecoin: 0.3 },
   ruleVersion: 'profile-2026-09-24-a',
   ...over,
 })
@@ -219,23 +219,26 @@ test('a route quoted with more slippage than the band blocks, and one inside it 
 })
 
 test('a category this wallet has never traded blocks, and one it has does not', () => {
-  const newListing: JevVerdict = {
+  const untraded: JevVerdict = {
     ...jevClean(),
     answers: {
-      tokenCategory: { category: 'new-listing', confidence: 0.8 },
+      tokenCategory: { category: 'real-world asset', confidence: 0.8 },
       injection: { looksInjected: false, confidence: 0.9 },
     },
   }
-  const out = checkTrade(buy(MEDIAN), facts({ jev: newListing }))
+  const out = checkTrade(buy(MEDIAN), facts({ jev: untraded }))
   expect(out.verdict).toBe('block')
   const fit = out.reasons.find((r) => r.rule === 'style-fit')
   expect(fit?.observed).toBe(0)
   expect(fit?.message).toContain('214')
+  // The 6 PRD names are phrases, not single words, so the sentence has to hold one without
+  // reading "real-world asset tokens" or, worse, "liquid-staking token tokens".
+  expect(fit?.message).toContain('in the real-world asset category')
 
   const traded: JevVerdict = {
     ...jevClean(),
     answers: {
-      tokenCategory: { category: 'meme', confidence: 0.8 },
+      tokenCategory: { category: 'memecoin', confidence: 0.8 },
       injection: { looksInjected: false, confidence: 0.9 },
     },
   }

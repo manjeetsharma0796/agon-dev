@@ -42,7 +42,7 @@ const facts = (over: Partial<TradeFacts> = {}): TradeFacts => ({
   quote: { priceImpactPct: '0.0027', slippageBps: 50, contextSlot: SLOT },
   jev: {
     answers: {
-      tokenCategory: { category: 'major', confidence: 0.9 },
+      tokenCategory: { category: 'blue chip', confidence: 0.9 },
       injection: { looksInjected: false, confidence: 0.9 },
     },
     dataSlot: SLOT,
@@ -51,7 +51,7 @@ const facts = (over: Partial<TradeFacts> = {}): TradeFacts => ({
     reasons: [],
   },
   spendAsset: { symbol: 'SOL', decimals: 9 },
-  categoryMix: { major: 1 },
+  categoryMix: { 'blue chip': 1 },
   ruleVersion: 'profile-2026-09-24-a',
   ...over,
 })
