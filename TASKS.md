@@ -2372,7 +2372,16 @@ _(empty)_
 
 ### T-C21, prepare_swap: the MCP builds the trade, the agent signs it on its own machine
 - Status: claimed 2026-09-29 | Owner: manjeetsharma0796 | Branch: feature/t-c21-prepare-swap
-- Depends-on: T-C07, T-C17
+- Waiting on T-C22, 2026-09-29: `check_trade` in the MCP cannot answer `pass` until T-C22's
+  deterministic token screen lands, and this row builds only on a pass. Paused by
+  manjeetsharma0796 until then. Pushed so far on the branch: the `prepare_swap` contract appended as
+  tool 5, its fixtures and its tests. No file overlap with T-C22, which touches only
+  `packages/guard` and CLAUDE.md
+- Decided 2026-09-29 by manjeetsharma0796: `check_trade` judges the trade against a separate
+  `historyWallet`, the user's real address, read only, while the vault belongs to `owner`. A fresh
+  fork test key has no history and `check_trade` fails closed on none, so 1 address for both would
+  refuse every fork trade. On mainnet the 2 are usually the same address
+- Depends-on: T-C07, T-C17, T-C22
 - Touches: packages/core/src/index.ts, packages/core/src/trade.ts, packages/mcp/src/index.ts,
   packages/mcp/src/mcp.test.ts, fixtures/contracts/, docs/public/mcp-tools.md, DECISIONS.md
 - Serves: Functionality (judged) ; Novelty (judged) ; the only path from an armed vault to a trade
