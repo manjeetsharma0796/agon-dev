@@ -13,7 +13,7 @@
     "outAmount": "12049123",
     "minOutAmount": "11928632",
     "slippageBps": 100,
-    "route": ["Raydium CLMM"]
+    "route": ["8sLbNZoA1cfnvMJLPfp98ZLAnFSYCFApfJKMbiXNLwxj"]
   },
   "effectiveRemaining": "500000000",
   "lastValidBlockHeight": 430000000,

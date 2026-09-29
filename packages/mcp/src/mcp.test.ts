@@ -3,7 +3,17 @@ import { TOOLS } from '@agon/core'
 import { FIXTURE_NOTE, reportRoute } from '@agon/web'
 import { callAsTool, callTool, isTool } from './index.js'
 import { chainMismatch } from './io.js'
-import { SWAP, SWAP_VAULT as VAULT, swapIo, textOf, withChain } from './test-support.js'
+import {
+  POOL,
+  quoteFor,
+  SWAP,
+  SWAP_VAULT as VAULT,
+  swapIo,
+  textOf,
+  withChain,
+} from './test-support.js'
+
+const WSOL_ = 'So11111111111111111111111111111111111111112'
 
 const WALLET = '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM'
 
@@ -319,6 +329,7 @@ test('a swap that fails simulation is never returned, and the refusal names the 
       transaction: 'AQAB',
       lastValidBlockHeight: 1,
       unitsConsumed: 90000,
+      outputGained: 0n,
       failure: {
         logs: [
           `Program ${jupiter} invoke [2]`,
@@ -331,4 +342,40 @@ test('a swap that fails simulation is never returned, and the refusal names the 
   await expect(callTool('prepare_swap', SWAP, io)).rejects.toThrow(
     `failed simulation at program ${jupiter}: custom program error: 0x1771`,
   )
+})
+
+test('a swap whose output would not reach the vault is never returned', async () => {
+  // What a tampered swap-instructions answer looks like from here: the program is Jupiter, Swig
+  // allows it, the simulation succeeds, and the vault's output account gains nothing.
+  const { io } = swapIo(500000000n, {
+    buildSwap: async () => ({
+      vault: VAULT,
+      transaction: 'AQAB',
+      lastValidBlockHeight: 1,
+      unitsConsumed: 90000,
+      failure: null,
+      outputGained: 0n,
+    }),
+  })
+  await expect(callTool('prepare_swap', SWAP, io)).rejects.toThrow(
+    /vault's output account would gain 0, below the 75620 the quote promises/,
+  )
+})
+
+test('a quote that is not the trade asked for is refused before check_trade judges it', async () => {
+  for (const drift of [{ inAmount: '1600000' }, { slippageBps: 5000 }, { outputMint: WSOL_ }]) {
+    const { io, calls } = swapIo(500000000n, {
+      loadQuote: async (q) => ({ ...quoteFor(q.amount), ...drift }),
+    })
+    await expect(callTool('prepare_swap', SWAP, io)).rejects.toThrow(
+      /does not match what was asked/,
+    )
+    expect(calls).not.toContain('build')
+  }
+})
+
+test('the route is returned as pool addresses, never as text from outside', async () => {
+  const { io } = swapIo(500000000n)
+  const out = (await callTool('prepare_swap', SWAP, io)) as { quote: { route: string[] } }
+  expect(out.quote.route).toEqual([POOL])
 })

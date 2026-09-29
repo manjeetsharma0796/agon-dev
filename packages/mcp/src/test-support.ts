@@ -31,6 +31,8 @@ const WSOL = 'So11111111111111111111111111111111111111112'
 const AGENT = 'DNDYmqxubRKmMtnq88AW4aUHreu88XrrGijAKpUojw1A'
 export const SWAP_VAULT = '5wLUez6exk7owNcQbVDGoVn22NDkDro42HAvZyEZfQBN'
 const MEDIAN = '400000'
+/** A Raydium CLMM SOL/USDC pool, as Jupiter names a leg of its route. */
+export const POOL = '8sLbNZoA1cfnvMJLPfp98ZLAnFSYCFApfJKMbiXNLwxj'
 const RECORDED = 'HLnpSz9h2S4hiLQ43rnSD9XkcUThA7B8hQMKmDaiTLcC'
 const USDC = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
 
@@ -45,14 +47,16 @@ export const SWAP = {
   slippageBps: 50,
 }
 
-const quoteFor = (amount: string, priceImpactPct = '0.0001'): JupiterQuote => ({
+export const quoteFor = (amount: string, priceImpactPct = '0.0001'): JupiterQuote => ({
   inAmount: amount,
   outAmount: '76000',
   otherAmountThreshold: '75620',
   slippageBps: 50,
   priceImpactPct,
   contextSlot: 450115322,
-  routePlan: [{ swapInfo: { label: 'Raydium CLMM' } }],
+  inputMint: WSOL,
+  outputMint: USDC,
+  routePlan: [{ swapInfo: { ammKey: POOL } }],
 })
 
 /** A vault holding 1 agent role on wSOL with `remaining` left, and a record of what was called. */
@@ -64,6 +68,7 @@ export const swapIo = (remaining: bigint, over: Partial<ToolIo> = {}) => {
     lastValidBlockHeight: 430000000,
     unitsConsumed: 112000,
     failure: null,
+    outputGained: 75900n,
   }
   const io: ToolIo = {
     ...liveIo(),

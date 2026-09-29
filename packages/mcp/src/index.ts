@@ -11,7 +11,9 @@ import {
   noAgentRole,
   noHistory,
   noVault,
+  outputNotToVault,
   overRemaining,
+  quoteMismatch,
   Refusal,
   simulationFailed,
   slippageTooHigh,
@@ -20,6 +22,7 @@ import {
   tradeNotPassed,
   mode,
   network,
+  Address,
   type CheckTradeInput,
   type ToolName,
   toolContracts,
@@ -151,6 +154,33 @@ const handlers = {
     }
 
     const quote = await io.loadQuote(a)
+    // The quote is outside data. It must be the trade that was asked for, or the check below would
+    // judge one trade and the transaction would carry another.
+    const drift = (
+      [
+        ['inAmount', a.amount, quote.inAmount],
+        ['inputMint', a.inputMint, quote.inputMint],
+        ['outputMint', a.outputMint, quote.outputMint],
+      ] as const
+    ).find(([, asked, got]) => asked !== got)
+    if (drift !== undefined) {
+      throw new Refusal(quoteMismatch({ field: drift[0], asked: drift[1], got: String(drift[2]) }))
+    }
+    if (quote.slippageBps > a.slippageBps) {
+      throw new Refusal(
+        quoteMismatch({
+          field: 'slippageBps',
+          asked: String(a.slippageBps),
+          got: String(quote.slippageBps),
+        }),
+      )
+    }
+    const route = quote.routePlan.map((leg) => leg.swapInfo.ammKey)
+    if (route.length === 0 || !route.every((key) => Address.safeParse(key).success)) {
+      throw new Refusal(
+        quoteMismatch({ field: 'routePlan', asked: 'pool addresses', got: 'other' }),
+      )
+    }
     const verdict = await judge(
       io,
       {
@@ -186,6 +216,14 @@ const handlers = {
         }),
       )
     }
+    if (built.outputGained < BigInt(quote.otherAmountThreshold)) {
+      throw new Refusal(
+        outputNotToVault({
+          gained: String(built.outputGained),
+          promised: quote.otherAmountThreshold,
+        }),
+      )
+    }
     return {
       transaction: built.transaction,
       vault: built.vault,
@@ -195,7 +233,7 @@ const handlers = {
         outAmount: quote.outAmount,
         minOutAmount: quote.otherAmountThreshold,
         slippageBps: quote.slippageBps,
-        route: quote.routePlan.map((leg) => leg.swapInfo.label ?? 'unnamed venue'),
+        route,
       },
       effectiveRemaining: String(rule.effectiveRemaining),
       lastValidBlockHeight: built.lastValidBlockHeight,

@@ -6,6 +6,7 @@
 
 import {
   agentRulesOf,
+  pocketOf,
   resolveVault,
   swapTransaction,
   vaultAddress,
@@ -26,9 +27,12 @@ import {
   mintCheckEmpty,
   network,
   noChainConfigured,
+  noOutputPocket,
   noVault,
+  quoteNotRead,
   quoteUnavailable,
   Refusal,
+  type PrepareSwapInput,
 } from '@agon/core'
 import { Connection, PublicKey, TransactionInstruction } from '@solana/web3.js'
 import { fetchNullableSwig } from '@swig-wallet/classic/dist/index.js'
@@ -75,12 +79,7 @@ export interface ToolIo {
   }): Promise<BuiltSwap>
 }
 
-interface QuoteAsk {
-  inputMint: string
-  outputMint: string
-  amount: string
-  slippageBps: number
-}
+type QuoteAsk = Pick<PrepareSwapInput, 'inputMint' | 'outputMint' | 'amount' | 'slippageBps'>
 
 /** The fields of Jupiter's quote this server reads. The rest rides along to /swap-instructions. */
 export interface JupiterQuote {
@@ -88,9 +87,12 @@ export interface JupiterQuote {
   outAmount: string
   otherAmountThreshold: string
   slippageBps: number
+  inputMint: string
+  outputMint: string
   priceImpactPct: string
   contextSlot?: number
-  routePlan: { swapInfo: { label?: string } }[]
+  /** Each leg's pool address. Its `label` is outside text and is never passed on. */
+  routePlan: { swapInfo: { ammKey: string } }[]
 }
 
 export interface BuiltSwap {
@@ -101,7 +103,12 @@ export interface BuiltSwap {
   unitsConsumed: number
   /** Null when the simulation succeeded. */
   failure: { logs: string[] } | null
+  /** Base units the vault's output account gains in the simulation. */
+  outputGained: bigint
 }
+
+/** An SPL token account's amount: a little-endian u64 at byte 64. */
+const tokenAmount = (data: Buffer): bigint => data.readBigUInt64LE(64)
 
 export interface VaultRules {
   vault: string | null
@@ -161,6 +168,17 @@ export const liveIo = (): ToolIo => {
     if (res.fromFixture) fromFixture = true
     return res
   }
+  // The wrapper's own errors name fixture paths and env vars, which an agent must not be handed.
+  const jupiter: typeof call = async (req, opts) => {
+    try {
+      return await recorded(req, opts)
+    } catch (error) {
+      const replay = /replay mode|No recorded response/i.test(
+        error instanceof Error ? error.message : String(error),
+      )
+      throw new Refusal(quoteNotRead({ recorded: replay }))
+    }
+  }
 
   return {
     usedFixture: () => fromFixture,
@@ -210,7 +228,7 @@ export const liveIo = (): ToolIo => {
     loadCategories: (mints, slot) => categoriesOf(mints, { net: recorded }, slot),
 
     async loadQuote(q: QuoteAsk): Promise<JupiterQuote> {
-      const res = await recorded(
+      const res = await jupiter(
         jupiterQuote(q.inputMint, q.outputMint, q.amount, q.slippageBps, true),
       )
       if (res.status !== 200) throw new Refusal(quoteUnavailable({ status: res.status }))
@@ -225,7 +243,12 @@ export const liveIo = (): ToolIo => {
       )
       if (resolved.existing === null) throw new Refusal(noVault({ owner }))
       const vault = vaultAddress(resolved.swigId).toBase58()
-      const res = await recorded(jupiterSwapInstructions(quote, vault))
+      // The proceeds must land in the vault's own account for the output mint. Missing, the swap
+      // cannot land; present, the simulation below proves the proceeds arrive there.
+      const pocket = pocketOf(new PublicKey(vault), quote.outputMint)
+      const before = await connection.getAccountInfo(pocket)
+      if (before === null) throw new Refusal(noOutputPocket({ vault, mint: quote.outputMint }))
+      const res = await jupiter(jupiterSwapInstructions(quote, vault))
       if (res.status !== 200) throw new Refusal(quoteUnavailable({ status: res.status }))
       const raw = (res.body as { swapInstruction: JupiterInstruction }).swapInstruction
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash()
@@ -245,13 +268,19 @@ export const liveIo = (): ToolIo => {
         recentBlockhash: blockhash,
       })
       // Unsigned, so the simulation skips signature checks; it still runs every program.
-      const sim = (await connection.simulateTransaction(tx)).value
+      const sim = (await connection.simulateTransaction(tx, undefined, [pocket])).value
+      const after = sim.accounts?.[0]?.data[0]
       return {
         vault,
         transaction: tx.serialize({ requireAllSignatures: false }).toString('base64'),
         lastValidBlockHeight,
         unitsConsumed: sim.unitsConsumed ?? 0,
         failure: sim.err === null ? null : { logs: sim.logs ?? [] },
+        // No post state reads as 0 gained, which refuses: never assumed to have arrived.
+        outputGained:
+          after === undefined
+            ? 0n
+            : tokenAmount(Buffer.from(after, 'base64')) - tokenAmount(before.data),
       }
     },
 

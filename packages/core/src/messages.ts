@@ -421,6 +421,50 @@ export const quoteUnavailable = (a: { status: number }): FailureMessage => ({
   systemDoes: 'Builds nothing without a route, and never builds from an older quote.',
 })
 
+export const quoteMismatch = (a: {
+  field: string
+  asked: string
+  got: string
+}): FailureMessage => ({
+  id: 'quote-mismatch',
+  text:
+    `Jupiter's quote has ${a.field} ${a.got}, which does not match what was asked (${a.asked}), ` +
+    `so no transaction was built. Nothing moved; ask again.`,
+  mode: 'closed',
+  systemDoes:
+    'Builds only the trade that was checked, never the one an outside answer substituted.',
+})
+
+export const quoteNotRead = (a: { recorded: boolean }): FailureMessage => ({
+  id: 'quote-not-read',
+  text: a.recorded
+    ? `0 recorded Jupiter answers match this swap, and this deployment reads recordings only, so ` +
+      `no transaction was built. Use a deployment that reads live prices.`
+    : `0 quotes were read, because Jupiter could not be reached for this swap, so no transaction ` +
+      `was built. Nothing moved; ask again in a minute.`,
+  mode: 'closed',
+  systemDoes: 'Builds nothing without a route, and names no internal path or setting.',
+})
+
+export const noOutputPocket = (a: { vault: string; mint: string }): FailureMessage => ({
+  id: 'no-output-pocket',
+  text:
+    `Vault ${a.vault} has 0 token accounts for ${a.mint}, so a swap into it cannot land and no ` +
+    `transaction was built. The owner creates that account first; asking again will not help.`,
+  mode: 'closed',
+  systemDoes:
+    'Refuses before building, so an agent is never told to retry a swap that cannot land.',
+})
+
+export const outputNotToVault = (a: { gained: string; promised: string }): FailureMessage => ({
+  id: 'output-not-to-vault',
+  text:
+    `In simulation the vault's output account would gain ${a.gained}, below the ${a.promised} the ` +
+    `quote promises, so the swap would pay out elsewhere and no transaction was built.`,
+  mode: 'closed',
+  systemDoes: 'Never returns a swap whose proceeds leave the vault, whatever Jupiter answered.',
+})
+
 export const simulationFailed = (a: { program: string; detail: string }): FailureMessage => ({
   id: 'simulation-failed',
   text:
@@ -503,4 +547,12 @@ export const AGENT_SURFACE_MESSAGES = [
     program: 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4',
     detail: 'custom program error: 0x1771',
   }),
+  quoteMismatch({ field: 'inAmount', asked: '100000000', got: '400000000' }),
+  quoteNotRead({ recorded: true }),
+  quoteNotRead({ recorded: false }),
+  noOutputPocket({
+    vault: 'C7Bz4nps2z1NDftJUBzXQyeR2iDE5j5ztad5q1k4iA8R',
+    mint: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263',
+  }),
+  outputNotToVault({ gained: '0', promised: '11928632' }),
 ] as const

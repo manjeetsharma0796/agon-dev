@@ -61,6 +61,7 @@ test('prepare_swap stays inside the 700 token budget at the largest legal transa
       lastValidBlockHeight: 430000000,
       unitsConsumed: 1400000,
       failure: null,
+      outputGained: 75900n,
     }),
   })
   const result = await callAsTool('prepare_swap', SWAP, io)

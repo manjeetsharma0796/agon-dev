@@ -791,7 +791,7 @@ Lists the caps currently armed for a wallet.
           "type": "array",
           "items": {
             "type": "string",
-            "minLength": 1
+            "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
           }
         }
       },

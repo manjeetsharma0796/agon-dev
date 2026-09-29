@@ -37,8 +37,8 @@ export const PreparedSwap = z.object({
     /** The least the swap may return before it fails, from the slippage asked for. */
     minOutAmount: BaseUnits,
     slippageBps: z.number().int().positive(),
-    /** The venues the route goes through, in order. */
-    route: z.array(z.string().min(1)),
+    /** The pool address of each leg, in order. Addresses, not names: names are outside text. */
+    route: z.array(Address),
   }),
   /** What the agent may still spend in this window, before this trade. */
   effectiveRemaining: BaseUnits,
