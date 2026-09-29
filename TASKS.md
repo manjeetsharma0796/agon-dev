@@ -584,7 +584,7 @@ and latency (a, b).
 - Kill criterion: fallback is an LLM guard in structured-output mode with a stricter threshold, or Kev-0.5B locally. Arithmetic checks are unaffected either way
 - Finding: the metadata cache in the acceptance does not exist. Token category is cached forever and globally as specified, and mint and freeze authority are correctly never cached, but no minutes-scoped metadata cache exists anywhere in the repo: categoryCache is the only cache in the tree. Separately JevTransport takes body: unknown, so the "no numeric question can reach Jev" guarantee holds for the ask() path only; anything holding a transport can call it with a hand-built score payload.
 ### T-F11a, F11 (a) and (b), Jev schema validity and latency
-- Status: in-review | Owner: Jishnu | Branch: feature/t-f11a-jev-schema-latency
+- Status: done 2026-09-29 | Owner: Jishnu | PR: #210
 - Depends-on: T-C05, OP-4
 - Touches: spikes/F11/, FEASIBILITY.md
 - Serves: Novelty (judged) ; CP1 gate
