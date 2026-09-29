@@ -113,7 +113,7 @@ test('the agent-surface rows are never blank or vague, and say their cause first
   for (const m of AGENT_SURFACE_MESSAGES) {
     expect(m.systemDoes.length, `${m.id} does not say what the system does`).toBeGreaterThan(20)
     for (const b of banned) expect(b.test(m.text), `${m.id} says "${m.text}"`).toBe(false)
-    expect(new RegExp('[–—]').test(m.text + m.systemDoes), `${m.id} has a dash`).toBe(false)
+    expect(/[\u2013\u2014]/.test(m.text + m.systemDoes), `${m.id} has a dash`).toBe(false)
     const first = firstSentence(m.text)
     if (!/\d/.test(first) || first.length <= 24) weak.push(`${m.id}: "${first}"`)
   }
