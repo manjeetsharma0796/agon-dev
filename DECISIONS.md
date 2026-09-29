@@ -49,3 +49,25 @@ this file is not misled into thinking everything is settled.
   instruction is harmless is a measurement nobody has taken. Owner Manjeet.
 - **OP-27's follow-up**, whether Swig can cap a second program at all. If it can, the agent
   managing its own Trigger orders inside a cap becomes the better product and OP-29 is revisited.
+| 2026-09-29 | Team trading history | Paused until the fork tests are done | Real history for the report comes from the replacement public wallet in OP-31 meanwhile, so waiting costs nothing | OP-1 |
+| 2026-09-29 | Jupiter API key | Stay on the free tier for now | The fork work fits inside 10 quotes per 10 seconds; the key is asked for when a benchmark needs the throughput | OP-3 |
+| 2026-09-29 | Jev provider | TypeSafe direct, the endpoint already measured | It is the only provider measured, at about 650 ms p50, and the intensive accuracy test needs one provider pinned before it runs | OP-4 |
+| 2026-09-29 | Mainnet test wallets | Funding paused until after the fork tests | No mainnet transaction happens before T-D04 anyway, so funding early only creates a wallet to guard | OP-5 |
+| 2026-09-29 | Database | Neon Postgres, free tier | The report cache, beta metrics and rule feedback need somewhere to persist, and the free tier covers a hackathon-sized cohort | OP-6 |
+| 2026-09-29 | Public repository | Push to the existing public repo once a working version exists | Publishing a half-working build invites judges to judge that build | OP-7 |
+| 2026-09-29 | Beta recruiting | Deferred until onboarding works on the hosted fork | A recruit with nothing to try is a recruit lost | OP-8 |
+| 2026-09-29 | LLM-guard baseline model | MiMo v2.6 Flash via opencode | Free to run, and recording the served version per call keeps a free tier's silent upgrades visible | OP-9 |
+| 2026-09-29 | Team leader | Jishnu | Prizes are paid only to the team leader, rules section 15 | OP-10 |
+| 2026-09-29 | Beta terms reviewer | Deferred until onboarding works on the hosted fork | Terms are needed before a user arms on mainnet, which is behind T-D04 and the fork work | OP-11 |
+| 2026-09-29 | RugCheck token | Dropped | No rate limit was ever hit, and RugCheck is enrichment, never on the deciding path | OP-15 |
+| 2026-09-29 | Second person on the product track | Deferred until onboarding works on the hosted fork | The functional onboarding comes first and is one person's work | OP-16 |
+| 2026-09-29 | Web hosting | Not now; outside testers use the hosted fork | Hosting a waitlist and staging stack before the onboarding works spends time on the wrong layer | OP-17 |
+| 2026-09-29 | Waitlist | Parked | The onboarding flow is the priority, and a waitlist for a product that does not run yet collects nothing useful | OP-18 |
+| 2026-09-29 | Jev's 3-question rule | Scoped to the trading guard; batching measured in T-F11a | T-B08's questions never reach check_trade and never carry a number, so the rule's reason does not apply to them | OP-24 |
+| 2026-09-29 | Contract shapes from the outside agent | Carry severity on each reason; leave arm_rule's shape | An agent must tell the 1 reason that caused a block from the 2 that fire on every call, and the guard already computes it | OP-25 |
+| 2026-09-29 | Rule expiry | Swig's native expiry only; the pre-signed removal is cut | The native expiry measured holding on chain, and one mechanism is less signing code to review before mainnet | OP-30 |
+| 2026-09-29 | F1's replacement wallet | Claude picks it by the written test; a person verifies the rows | Picking against a stated test is checkable, but hand-verifying our own decoder's output is not something the decoder's author can do honestly | OP-31 |
+| 2026-09-29 | Hosted fork reset period | Wipe nightly | Hours of trading drift the fork's pools from live prices, which is what broke F5 case (e), while testers need their vault to last a session | OP-33 |
+| 2026-09-29 | Who builds the trade | Both: MCP tool 5 and the CLI, in parallel | Agents with no CLI get a working path at once, and the daemon still needs a local builder for its re-quote | OP-34 |
+| 2026-09-29 | Issuer stablecoins and live authorities | Pinned issuer allowlist; unsure for every other live authority | The mint account cannot tell Circle from an anonymous deployer, and only the address can | OP-37 |
+| 2026-09-29 | Jev's text screen | Measure intensively before wiring anything | 5 of 5 real tokens were flagged as injections, so the question is where Jev helps, not whether to switch it on | OP-38 |

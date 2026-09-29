@@ -1106,7 +1106,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none. Anything that can move funds fails closed
 
 ### T-D02, Rule expiry without admin rights
-- Status: blocked, see OP-19
+- Status: cut
 - Depends-on: T-D01
 - Touches: packages/chain/src/expiry.ts
 - Serves: UX (judged) ; F7
@@ -1130,6 +1130,8 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   failure. Each of the 4 guards fails its own test when removed.
 - Kill criterion: fallback is no automatic expiry, a short recurring window instead, and the UI says "no end date: revoke from your wallet". Never fall back to giving the agent admin rights
 
+- Cut 2026-09-29 by OP-30: Swig's native expiry measured holding on chain, so the pre-signed
+  removal is not built. `packages/chain/src/expiry.ts` from #72 stays until something replaces it
 ### T-F07, F7 spike, pre-signed expiry
 - Finding 2: **the native expiry holds on chain.** Measured on a fork, which funds itself so this
   no longer waits on OP-19. A session was started with a 20 slot duration, the role read back
@@ -1141,7 +1143,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   needs building at all. Not run, with that as the stated reason rather than a blocker
 - Finding 3, cheap: `createSession` is signed by the role's own authority, not by the payer. Signing
   with the payer alone fails signature verification, which cost a run
-- Status: blocked, see OP-30
+- Status: cut
 - Depends-on: T-D02
 - Touches: spikes/F7/
 - Serves: UX (judged) ; CP2 gate
@@ -1169,6 +1171,8 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   checks as expected against 2.1.0, versions recorded so a future release cannot quietly change the
   answer.
 - Kill criterion: fallback is a short recurring window and no end date in the UI
+- Cut 2026-09-29 by OP-30: clause 1 is answered, Swig has a native expiry and it holds on a fork,
+  so clauses 2 to 4, which test the pre-signed removal, are not needed
 ### T-D03, Kill switch
 - Status: blocked, see OP-19
 - Depends-on: T-D01
@@ -1559,7 +1563,7 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 
 ### T-D04, Pre-mainnet checklist, before team wallets touch mainnet
 - Status: open
-- Depends-on: T-F05c, T-F06a, T-D02, T-D03, T-C08, OP-5
+- Depends-on: T-F05c, T-F06a, T-D03, T-C08, OP-5
 - Touches: docs/plans/pre-mainnet.md
 - Serves: Functionality (judged) ; prize due diligence (rules s.13)
 - Acceptance: all 8 boxes ticked with an evidence link each, and 2 team members sign off,
@@ -2367,6 +2371,20 @@ _(empty)_
   was 650 to 775 ms, so that is not the problem. Wired in, every `check_trade` would block on a
   false injection and impersonation reason. The wiring is built and kept on
   `feature/t-c22-jev-in-check`, unmerged, with the USDC recordings, until OP-38 decides
+
+### T-C23, Issuer stablecoins pass with their authorities noted, from a pinned list
+- Status: open
+- Depends-on: T-C06
+- Touches: packages/guard/src/check-trade.ts, packages/guard/src/check-trade.test.ts,
+  packages/guard/src/issuers.ts
+- Serves: Functionality (judged) ; an agent can buy the most common quote asset
+- Acceptance: a pinned list of issuer-run mints in config, never read from user input, with at
+  least USDC, USDT and PYUSD by address; for a listed mint a live mint or freeze authority is a
+  `note` and the trade can pass; every other mint with a live authority still answers `unsure`;
+  measured on the recorded wallet: a small USDC buy goes from `unsure` to a verdict with 0 authority
+  reasons above `note`, and a memecoin with a live mint authority is unchanged
+- Evidence: <PR link, plus the USDC and memecoin verdicts before and after>
+- Kill criterion: none. OP-37 decided it; a mint is added to the list only by a PR naming its issuer
 ### T-D07, The arming transactions, built once in packages/chain
 - Status: done
 - Depends-on: T-D01
