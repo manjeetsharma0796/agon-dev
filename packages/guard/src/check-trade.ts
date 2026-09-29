@@ -251,13 +251,12 @@ const slippageFinding = (quote: Quote): Finding | null => {
  * out of is the risk going away.
  */
 const styleFinding = (
-  jev: JevVerdict,
+  category: TokenCategory | undefined,
   mix: Partial<Record<TokenCategory, number>> | null,
   rules: readonly MinedRule[],
 ): Finding | null => {
-  // No category at all, which is what `ask()` reports when Jev's answer was not one of the 6.
-  // 'other' is not this case: it is one of the 6 and scores against the mix like any other name.
-  const category = jev.answers.tokenCategory?.category
+  // No category at all: the lookup could not place the token, or Jev's answer was not one of the
+  // 6. 'other' is not this case: it is one of the 6 and scores against the mix like any other.
   if (category === undefined) {
     return unsure(
       'category-unknown',
@@ -357,14 +356,13 @@ export function checkTrade(input: unknown, facts: TradeFacts): CheckTradeOutput 
   }
 
   if (facts.jev === null) {
-    findings.push(
-      unsure(
-        'text-not-screened',
-        `This token's name and description were not screened, so an instruction hidden in them ` +
-          `would have reached your agent unread. Not safe to proceed. Run the check again with ` +
-          `the screen on.`,
-      ),
-    )
+    // No model screen: the category comes from the mint check's lookup, and the token's
+    // name and description never reach this response, so there is no outside text for an
+    // instruction to hide in. That is asserted in check-trade.test.ts.
+    if (trade.side === 'buy') {
+      const style = styleFinding(facts.mint.category ?? undefined, facts.categoryMix, facts.rules)
+      if (style !== null) findings.push(style)
+    }
   } else {
     // The screen is a block and never a warning: nothing fetched can change a rule. Jev's other
     // reasons are `unsure` rather than notes, because the 2 it can raise, an impersonated token
@@ -375,7 +373,11 @@ export function checkTrade(input: unknown, facts: TradeFacts): CheckTradeOutput 
       findings.push({ severity: facts.jev.blocked ? 'block' : 'unsure', reason })
     }
     if (trade.side === 'buy') {
-      const style = styleFinding(facts.jev, facts.categoryMix, facts.rules)
+      const style = styleFinding(
+        facts.jev.answers.tokenCategory?.category,
+        facts.categoryMix,
+        facts.rules,
+      )
       if (style !== null) findings.push(style)
     }
   }

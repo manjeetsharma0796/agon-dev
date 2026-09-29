@@ -1,0 +1,118 @@
+{
+  "slot": null,
+  "provider": "jupiter",
+  "recordedAt": "2026-09-29T07:24:55.283Z",
+  "request": {
+    "method": "GET",
+    "url": "https://lite-api.jup.ag/tokens/v2/search?query=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "headers": {},
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": [
+      {
+        "id": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "icon": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
+        "decimals": 6,
+        "twitter": "https://twitter.com/circle",
+        "discord": "https://discord.com/invite/buildoncircle",
+        "website": "https://www.circle.com/en/usdc",
+        "dev": "5TYZChz7APFopR5QirD5of4rQj1p9AXxeSAg6JndBdGj",
+        "circSupply": 8068537907.168193,
+        "totalSupply": 8068537907.168193,
+        "tokenProgram": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+        "mintAuthority": "BJE5MMbqXjVwjAF7oxwPYXnTXDyspzZyt4vwenNw5ruG",
+        "freezeAuthority": "7dGbd2QZcCKcTndnHcTL8q7SMVXAkp688NTQYwrRCrar",
+        "holderCount": 5248202,
+        "fdv": 8067700576.566744,
+        "mcap": 8067700576.566744,
+        "usdPrice": 0.9998962227591811,
+        "priceBlockId": 451573632,
+        "liquidity": 467020088.8271633,
+        "stats5m": {
+          "priceChange": -0.0028385873934329738,
+          "liquidityChange": -0.724334278729708,
+          "volumeChange": -5.681584017160192,
+          "buyVolume": 2443720.9834698727,
+          "sellVolume": 2815290.4232825474,
+          "buyOrganicVolume": 66223.68786832516,
+          "sellOrganicVolume": 32197.835285202586,
+          "numBuys": 8381,
+          "numSells": 9207,
+          "numTraders": 2334,
+          "numOrganicBuyers": 110,
+          "numNetBuyers": 549
+        },
+        "stats1h": {
+          "priceChange": 0.0005839538109495375,
+          "liquidityChange": -0.6405435718285085,
+          "volumeChange": -13.298730291963146,
+          "buyVolume": 28317394.673072323,
+          "sellVolume": 30832917.82644144,
+          "buyOrganicVolume": 1262313.7258735315,
+          "sellOrganicVolume": 1330344.4148831046,
+          "numBuys": 116767,
+          "numSells": 129093,
+          "numTraders": 15480,
+          "numOrganicBuyers": 349,
+          "numNetBuyers": 2238
+        },
+        "stats6h": {
+          "priceChange": -0.004999723200348173,
+          "liquidityChange": 0.29419842258364903,
+          "volumeChange": -2.470975754360304,
+          "buyVolume": 203480707.27261528,
+          "sellVolume": 212342771.9116261,
+          "buyOrganicVolume": 9750630.26257388,
+          "sellOrganicVolume": 11147994.318822451,
+          "numBuys": 839152,
+          "numSells": 895250,
+          "numTraders": 64420,
+          "numOrganicBuyers": 1893,
+          "numNetBuyers": 9860
+        },
+        "stats24h": {
+          "priceChange": 0.014431699939005869,
+          "liquidityChange": 0.8738450461566165,
+          "volumeChange": 21.671135339696022,
+          "buyVolume": 1011848837.3332505,
+          "sellVolume": 997009185.6466688,
+          "buyOrganicVolume": 48827231.11267492,
+          "sellOrganicVolume": 52953511.86838529,
+          "numBuys": 3935046,
+          "numSells": 4273439,
+          "numTraders": 220796,
+          "numOrganicBuyers": 6887,
+          "numNetBuyers": 30853
+        },
+        "firstPool": {
+          "id": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2",
+          "createdAt": "2021-03-29T10:05:48Z"
+        },
+        "apy": {
+          "jupEarn": 4.937717106456496
+        },
+        "audit": {
+          "topHoldersPercentage": 25.560719708989733,
+          "devBalancePercentage": 2.483698438374612e-7,
+          "devMints": 1
+        },
+        "organicScore": 100,
+        "organicScoreLabel": "high",
+        "isVerified": true,
+        "tags": [
+          "moonshot-verified",
+          "strict",
+          "verified",
+          "stable",
+          "community"
+        ],
+        "createdAt": "2024-06-05T08:55:25.527Z",
+        "updatedAt": "2026-09-29T07:24:55.738585384Z"
+      }
+    ]
+  }
+}

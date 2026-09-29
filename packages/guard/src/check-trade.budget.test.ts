@@ -55,13 +55,18 @@ const facts = (over: Partial<TradeFacts>): TradeFacts => ({
 
 const trade = { mint: MINT, side: 'buy', size: '800000000', wallet: WALLET }
 
-test('a whole check costs 3 network calls, and the guard itself costs 0 of them', async () => {
+test('a whole check costs 3 network calls and 0 model calls, and the guard itself costs 0 of them', async () => {
+  // Since T-F11b measured Jev there is no model on this path: the category and the impostor check are 1 keyless
+  // listing lookup, so a check is the chain, the listing and the quote.
   const seen: string[] = []
   const net = async (req: NetRequest): Promise<NetResult> => {
     seen.push(req.provider)
+    const listing = req.url.includes('tokens/v2/search')
     return {
       status: 200,
-      body: recorded.response.body,
+      body: listing
+        ? [{ id: MINT, symbol: 'MAJ', name: 'A major asset', tags: ['major'] }]
+        : recorded.response.body,
       ms: 1,
       attempts: 1,
       slot: SLOT,
@@ -69,29 +74,17 @@ test('a whole check costs 3 network calls, and the guard itself costs 0 of them'
     }
   }
 
-  // 1, the account batch.
+  // 1 and 2, the account batch and the listing.
   const mint = (await checkMints(MINTS, { net })).get(MINT) as TradeFacts['mint']
-  // 2, the quote. The caller makes it; the guard reads 3 fields off the result.
+  // 3, the quote. The caller makes it; the guard reads 3 fields off the result.
   seen.push('jupiter')
-  // 3, the Jev call, batched: all 3 non-numeric questions in 1 request.
-  const jev = await ask(
-    async () => {
-      seen.push('jev')
-      return { answers: { tokenCategory: { choice: 'blue chip' }, injection: { choice: 'no' } } }
-    },
-    [
-      { kind: 'tokenCategory', mint: MINT, text: 'A major asset.' },
-      { kind: 'injection', text: 'A major asset.' },
-    ],
-    { dataSlot: SLOT, ruleVersion: 'jev/1' },
-  )
-  expect(seen).toEqual(['rpc', 'jupiter', 'jev'])
+  expect(seen).toEqual(['rpc', 'jupiter', 'jupiter'])
 
   const before = seen.length
-  const out = checkTrade(trade, facts({ mint, jev }))
+  const out = checkTrade(trade, facts({ mint, jev: null }))
   expect(out.verdict).toBe('pass')
   expect(seen).toHaveLength(before)
-  expect(seen.length).toBeLessThanOrEqual(3)
+  expect(seen).not.toContain('jev')
 })
 
 test('the guard reaches the network 0 times, even on the path that blocks', () => {
