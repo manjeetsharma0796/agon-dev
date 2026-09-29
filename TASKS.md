@@ -1079,7 +1079,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   confirmed dropped, so 0 double sends; offline time is reported with what did not run ("Offline
   3h 12m. Jupiter orders were unaffected. 2 event rules did not run: [list]") and 0 missed triggers
   fire late at today's prices
-- Evidence, slice 1 of 3 on 2026-09-29, the parts that make signing safe:
+- Evidence: slice 1 of 3 on 2026-09-29, the parts that make signing safe.
   - Key: `agentKey()` makes the keypair on first use in the OS keychain and reads it back after,
     tested against Windows Credential Manager under a test-only service name. A log test watches
     console output while the key is made and read and finds none of its base64, hex or byte forms;
