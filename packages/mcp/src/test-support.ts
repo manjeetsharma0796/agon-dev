@@ -1,3 +1,5 @@
+import { liveIo, type ToolIo, type VaultRules } from './io.js'
+
 // Shared by this package's own tests (token-budget.token.test.ts, third-party-client.test.ts).
 // Not part of the package's public API.
 //
@@ -14,3 +16,12 @@ export const textOf = (result: unknown): string => {
   }
   return block.text
 }
+
+/**
+ * The live io with its chain read replaced, so a test can call list_rules without a chain. Every
+ * other read stays live, which keeps the replay tests exactly as they were.
+ */
+export const withChain = (vaultRules: VaultRules): ToolIo => ({
+  ...liveIo(),
+  loadVaultRules: async () => vaultRules,
+})

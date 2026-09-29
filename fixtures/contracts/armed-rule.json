@@ -20,5 +20,8 @@
       "windowSeconds": 86400
     }
   },
-  "jupiterOrderId": "4Nd1mBQtrMJVYVfKf2PJy9NZUZdTAsp7D4xWLs4gDB4T"
+  "jupiterOrderId": "4Nd1mBQtrMJVYVfKf2PJy9NZUZdTAsp7D4xWLs4gDB4T",
+  "vault": "C7Bz4nps2z1NDftJUBzXQyeR2iDE5j5ztad5q1k4iA8R",
+  "effectiveRemaining": "25000000000",
+  "rollingWorstCase": "50000000000"
 }

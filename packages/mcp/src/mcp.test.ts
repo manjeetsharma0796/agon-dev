@@ -2,13 +2,17 @@ import { expect, test } from 'vitest'
 import { TOOLS } from '@agon/core'
 import { FIXTURE_NOTE, reportRoute } from '@agon/web'
 import { callAsTool, callTool, isTool } from './index.js'
-import { textOf } from './test-support.js'
+import { chainMismatch } from './io.js'
+import { textOf, withChain } from './test-support.js'
 
 const WALLET = '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM'
 
 /** The wallet T-C09 recorded a real page of history for. Replayed, so this needs no key. */
 const RECORDED = 'HLnpSz9h2S4hiLQ43rnSD9XkcUThA7B8hQMKmDaiTLcC'
 const USDC = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
+
+/** A chain that holds no vault for the wallet: list_rules answers [] and reads nothing else. */
+const NO_VAULT = withChain({ vault: null, rules: [] })
 
 const SPEC = {
   mints: ['So11111111111111111111111111111111111111112'],
@@ -79,7 +83,7 @@ test('all 4 tools are reachable, and arm_rule refuses rather than answering', as
   for (const name of TOOLS) expect(isTool(name)).toBe(true)
   expect(isTool('drop_table')).toBe(false)
   await expect(callTool('arm_rule', SPEC)).rejects.toThrow(/F5 and F6/)
-  expect(await callTool('list_rules', { wallet: WALLET })).toEqual([])
+  expect(await callTool('list_rules', { wallet: WALLET }, NO_VAULT)).toEqual([])
 })
 
 test('a replayed check_trade says it was replayed, which is what nobody could see before', async () => {
@@ -107,7 +111,7 @@ test('the marker is per call, so one replayed answer does not brand the next', a
   expect(armed.isError).toBe(true)
   expect(textOf(armed)).not.toContain('recorded fixture')
 
-  const rules = await callAsTool('list_rules', { wallet: WALLET })
+  const rules = await callAsTool('list_rules', { wallet: WALLET }, NO_VAULT)
   expect(textOf(rules)).not.toContain('recorded fixture')
 })
 
@@ -159,7 +163,7 @@ test('the instructions say which data source is actually in use', async () => {
 test('every result names its network first, because an agent sees no banner of ours', async () => {
   // Claude Code, opencode and the rest render our data, not our page. The first key is the one
   // place we can say whether these are real funds, and unset must never read as mainnet.
-  const ok = await callAsTool('list_rules', { wallet: WALLET })
+  const ok = await callAsTool('list_rules', { wallet: WALLET }, NO_VAULT)
   const payload = JSON.parse(textOf(ok)) as Record<string, unknown>
   expect(Object.keys(payload)[0]).toBe('network')
   expect(payload['network']).toBe('not set, treat nothing here as real')
@@ -175,10 +179,65 @@ test('the network follows AGON_NETWORK per call', async () => {
   const before = process.env['AGON_NETWORK']
   process.env['AGON_NETWORK'] = 'fork'
   try {
-    const result = await callAsTool('list_rules', { wallet: WALLET })
+    const result = await callAsTool('list_rules', { wallet: WALLET }, NO_VAULT)
     expect(JSON.parse(textOf(result)).network).toMatch(/^fork, .*no real funds$/)
   } finally {
     if (before === undefined) delete process.env['AGON_NETWORK']
     else process.env['AGON_NETWORK'] = before
   }
+})
+
+// T-C17: list_rules reads the vault from chain.
+test('list_rules reports a vault rule as the chain proves it, with a null spec and a slot window', async () => {
+  const vault = 'C7Bz4nps2z1NDftJUBzXQyeR2iDE5j5ztad5q1k4iA8R'
+  const rules = (await callTool(
+    'list_rules',
+    { wallet: WALLET },
+    withChain({
+      vault,
+      rules: [
+        {
+          roleId: 1,
+          authority: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM',
+          mint: 'So11111111111111111111111111111111111111112',
+          amount: 500_000_000n,
+          windowSlots: 150n,
+          effectiveRemaining: 500_000_000n,
+          rollingWorstCase: 1_000_000_000n,
+        },
+      ],
+    }),
+  )) as Array<Record<string, unknown>>
+  expect(rules).toHaveLength(1)
+  expect(rules[0]).toMatchObject({
+    spec: null,
+    jupiterOrderId: null,
+    vault,
+    effectiveRemaining: '500000000',
+    rollingWorstCase: '1000000000',
+    swigRole: { roleId: '1', tokenRecurringLimit: { windowSlots: 150, amount: '500000000' } },
+  })
+})
+
+test('with no chain configured, list_rules refuses rather than answering an empty list', async () => {
+  const before = process.env['AGON_RPC_URL']
+  delete process.env['AGON_RPC_URL']
+  try {
+    const result = await callAsTool('list_rules', { wallet: WALLET })
+    expect(result.isError).toBe(true)
+    expect(textOf(result)).toContain('No chain is configured')
+    expect(textOf(result), 'an env var name reached the caller').not.toContain('AGON_RPC_URL')
+  } finally {
+    if (before !== undefined) process.env['AGON_RPC_URL'] = before
+  }
+})
+
+test('a chain that is not the named network is refused, whatever its hostname', () => {
+  const fork = { 'surfnet-version': '1.6.0', 'solana-core': '4.2.1' }
+  const mainnet = { 'solana-core': '4.3.0' }
+  expect(chainMismatch('fork', fork)).toBeNull()
+  expect(chainMismatch('mainnet', mainnet)).toBeNull()
+  expect(chainMismatch('fork', mainnet)).toMatch(/not a fork/)
+  expect(chainMismatch('mainnet', fork)).toMatch(/is a fork/)
+  expect(chainMismatch('unset', fork)).toMatch(/names no network/)
 })

@@ -2048,7 +2048,7 @@ _(empty)_
   prevents
 
 ### T-C17, The real allowance, end to end
-- Status: claimed 2026-09-29 | Owner: manjeetsharma0796 | Branch: feature/t-c17-real-allowance
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/163 | Owner: manjeetsharma0796 | Branch: feature/t-c17-real-allowance
 - Depends-on: T-D01, T-C07
 - Touches: packages/chain/src/swig/index.ts, packages/core/src/rule.ts, packages/mcp/src/index.ts, fixtures/contracts/
 - Serves: Novelty (judged) ; the number a user is shown about their own agent
@@ -2058,7 +2058,16 @@ _(empty)_
   `list_rules` returns the role read from chain rather than an unconditional empty list, and 0
   callers are handed the raw field; the 2x rolling worst case is printed beside every remaining
   figure, per OP-32
-- Evidence: <PR link, plus a fork read where the raw field says 0.05 and the reported figure says 0.5>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/163. On a fork, armed with T-D07's
+  `fundVault` and `hireAgent` at the wallet's derived id, read through the MCP server with
+  `AGON_RPC_URL` set: `list_rules` gave 0.5 after arming, 0.05 after the agent spent 0.45 through
+  Jupiter, and 0.5 once the window passed while the raw `spendLimit` still read 0.05; window 150
+  slots, rolling worst case 1.0, `spec` null, the vault equal to `vaultAddress` of the derived id
+- Finding: `ArmedRule` could not be filled from chain as first decided: the chain stores the role
+  but not the trigger type, the expiry or the order id, and counts its window in slots. So `spec`
+  became nullable and `RecurringLimit` takes seconds or slots, decided by both owners. And the
+  endpoint check reads Surfpool's own `surfnet-version` in `getVersion`, which mainnet lacks, so a
+  hosted fork passes at any hostname where a URL rule would have refused it
 - Kill criterion: none. A wrong number about a user's own budget is the defect T-A06 and T-A07
   exist to prevent, reached through a different door, and this one errs toward under-reporting only
   by luck
