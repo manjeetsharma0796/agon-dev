@@ -11,3 +11,6 @@ export * from './expiry.js'
 
 // The 2 arming transactions a wallet signs. T-D07.
 export * from './arm.js'
+
+// The 1 transaction an agent signs to trade. T-C21.
+export * from './swap.js'
