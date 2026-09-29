@@ -2402,7 +2402,7 @@ _(empty)_
 
 
 ### T-C22, check_trade screens tokens deterministically, and token text never reaches the agent
-- Status: in-review | Owner: Jishnu | Branch: feature/t-c22-deterministic-screen
+- Status: done 2026-09-29 | Owner: Jishnu | PR: #223
 - Depends-on: T-C05, T-C12, OP-38
 - Touches: packages/guard/src/mint-check.ts, packages/guard/src/mint-check.test.ts,
   packages/guard/src/check-trade.ts, packages/guard/src/check-trade.test.ts,
