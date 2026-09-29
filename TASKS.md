@@ -395,15 +395,31 @@ and latency (a, b).
   third bucket exists to prevent, and F1 is existential
 
 ### T-A08, Carry the native SOL leg across the enhanced endpoint
-- Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-a08-enhanced-native
+- Status: in-review | Owner: Jishnu | Branch: feature/t-a08-enhanced-native
 - Depends-on: T-A07
-- Touches: packages/decoder/src/enhanced.ts, packages/decoder/src/decoder.test.ts
+- Touches: packages/decoder/src/enhanced.ts, packages/decoder/src/decoder.test.ts,
+  fixtures/recorded/native-leg/, packages/cli/src/commands/report.test.ts
 - Serves: Functionality (judged) ; F1 coverage share
 - Acceptance: fromEnhanced carries nativeBalanceChange and the fee across, so a swap paid in native
   SOL decodes the same whether it arrived from getTransaction or from the enhanced endpoint; 1
   recorded enhanced transaction with a native leg asserted against the getTransaction decode of the
   same signature, field by field
-- Evidence: <PR link, plus the 2 decodes of 1 signature agreeing>
+- Evidence: 1 real mainnet buy recorded in both shapes on 2026-09-29, `p1MyCSqP...` at slot
+  451494158, a pump.fun token bought for 502806022 lamports paid from native SOL, in
+  `fixtures/recorded/native-leg/`, key redacted. Before: the enhanced shape decoded it as
+  not-a-swap while getTransaction decoded a buy. After: the 2 decodes are equal field by field,
+  soldAmount 502806022 on both, which is the lamport change 505434862 net of the 1115000 fee and
+  the 1513840 rent of the token account it opened. The test failed first. The 30 enhanced accounts
+  arrive in the transaction's own order, all 30 checked against the raw keys, which is what lets the
+  rent rule find the account it opened
+- Finding: it changes 0 of the 100 recorded transactions of the wallet `check_trade` serves today:
+  every swap in it already moves through wSOL token accounts. The fix matters for retail wallets
+  paying from native SOL, which is the pump.fun buyer this was found on: 60 recent BONK
+  transactions held 0 swaps that depended on the native leg, and the pump.fun program's did
+- Finding 2: mainnet now carries version 1 transactions. A getTransaction with
+  `maxSupportedTransactionVersion: 0` is refused on them with "Transaction version (1) is not
+  supported". Nothing in the product calls getTransaction for history, but any recorder that does
+  will skip them
 - Kill criterion: none. T-A07 fixed the decoder and the product does not use the shape it fixed, so
   until this lands the coverage number a user sees is the old one
 

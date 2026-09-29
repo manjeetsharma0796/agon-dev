@@ -111,12 +111,11 @@ test('an enhanced transaction is translated into the shape the decoder reads', (
   expect(tx.slot).toBe(450080486)
   expect(tx.meta?.err).toBeNull()
 
-  // The amounts are carried across as the strings that arrived, never re-derived, so the decoder's
-  // post minus pre reproduces exactly the number Helius reported.
-  expect(tx.meta?.postTokenBalances?.map((b) => b.uiTokenAmount.amount)).toEqual([
-    '-1000000000',
-    '5000',
-  ])
+  // The amounts are carried across as the digits that arrived, never re-derived: a gain as a post
+  // balance and a loss as a pre balance against 0, so the decoder's post minus pre reproduces
+  // exactly the number Helius reported.
+  expect(tx.meta?.preTokenBalances?.map((b) => b.uiTokenAmount.amount)).toEqual(['1000000000'])
+  expect(tx.meta?.postTokenBalances?.map((b) => b.uiTokenAmount.amount)).toEqual(['5000'])
 
   // And the decoder can now actually read it, which is the whole point.
   const line = reportLines([tx], 'W').join('\n')

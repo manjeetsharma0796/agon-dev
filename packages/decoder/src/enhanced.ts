@@ -16,7 +16,7 @@
 // caller needs it: the CLI and the MCP server both read a wallet's history from this endpoint, and
 // a second copy of this mapping is a second place for a provider's shape change to hide.
 
-import type { RawTransaction } from './index.js'
+import type { RawTokenBalance, RawTransaction } from './index.js'
 
 /** One entry of `accountData[].tokenBalanceChanges`, which carries a signed change, not a balance. */
 interface EnhancedChange {
@@ -28,40 +28,67 @@ interface EnhancedChange {
 export interface EnhancedTransaction {
   signature?: string
   slot?: number
+  fee?: number
   transactionError?: unknown
   instructions?: { programId?: string }[]
-  accountData?: { tokenBalanceChanges?: EnhancedChange[] }[]
+  /** 1 entry per account of the transaction, in the transaction's own account order. */
+  accountData?: {
+    account?: string
+    nativeBalanceChange?: number
+    tokenBalanceChanges?: EnhancedChange[]
+  }[]
 }
 
 /**
  * Turn one enhanced transaction into the shape the decoder reads.
  *
  * The decoder derives its deltas as post minus pre. The enhanced endpoint has already done that
- * subtraction, so the change is written as the post balance against an absent pre, and the
- * decoder's arithmetic reproduces exactly the number Helius reported. No amount is parsed,
- * rounded or re-derived on the way through: the string is carried across as it arrived.
+ * subtraction, so each change is written as a balance against 0: a gain as post, a loss as pre.
+ * The decoder's arithmetic then reproduces exactly the number Helius reported, and no amount is
+ * parsed, rounded or re-derived on the way through.
+ *
+ * The native SOL leg comes across the same way, from `nativeBalanceChange`, with the fee beside it.
+ * Without it a swap paid from native SOL has no SOL side and reads as not a swap. Writing a gain
+ * against a pre of 0 is also what lets the decoder's rent rule see a token account this wallet
+ * opened, and a loss against a post of 0 one it closed, because on a token account those are the
+ * only moves that change its lamports; a wSOL wrap moves lamports too, and the rule nets that out.
  */
 export function fromEnhanced(tx: EnhancedTransaction): RawTransaction {
-  const post = (tx.accountData ?? [])
-    .flatMap((a) => a.tokenBalanceChanges ?? [])
-    .filter((c) => c.mint !== undefined && c.rawTokenAmount?.tokenAmount !== undefined)
-    .map((c) => ({
-      mint: c.mint as string,
-      owner: c.userAccount,
-      uiTokenAmount: { amount: c.rawTokenAmount?.tokenAmount as string },
-    }))
+  const accounts = tx.accountData ?? []
+  const pre: RawTokenBalance[] = []
+  const post: RawTokenBalance[] = []
+  accounts.forEach((a, accountIndex) => {
+    for (const c of a.tokenBalanceChanges ?? []) {
+      const amount = c.rawTokenAmount?.tokenAmount
+      if (c.mint === undefined || amount === undefined) continue
+      const loss = amount.startsWith('-')
+      ;(loss ? pre : post).push({
+        mint: c.mint,
+        owner: c.userAccount,
+        accountIndex,
+        uiTokenAmount: { amount: loss ? amount.slice(1) : amount },
+      })
+    }
+  })
+  const lamports = accounts.map((a) => a.nativeBalanceChange ?? 0)
 
   return {
     slot: tx.slot ?? 0,
     transaction: {
       signatures: tx.signature === undefined ? [] : [tx.signature],
-      message: { instructions: tx.instructions ?? [] },
+      message: {
+        accountKeys: accounts.map((a) => a.account ?? ''),
+        instructions: tx.instructions ?? [],
+      },
     },
     meta: {
       // Helius reports no error as null here, and the decoder treats anything non-null as a
       // failed transaction, which is the same rule.
       err: tx.transactionError ?? null,
-      preTokenBalances: [],
+      fee: tx.fee ?? 0,
+      preBalances: lamports.map((c) => (c < 0 ? -c : 0)),
+      postBalances: lamports.map((c) => (c > 0 ? c : 0)),
+      preTokenBalances: pre,
       postTokenBalances: post,
     },
   }
