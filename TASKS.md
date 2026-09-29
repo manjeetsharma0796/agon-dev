@@ -1497,7 +1497,8 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Touches: packages/core/src/report.ts, fixtures/contracts/report.json, packages/miner/src/,
   packages/guard/src/assess.ts, packages/guard/src/mint-check.ts, packages/guard/src/index.ts,
   packages/cli/src/commands/check.ts, packages/cli/src/commands/report-io.ts,
-  fixtures/recorded/jupiter/
+  fixtures/recorded/jupiter/, packages/guard/src/tokens.ts, packages/guard/src/check-trade.ts,
+  packages/guard/src/check-trade.test.ts, packages/guard/src/mint-check.test.ts
 - Note: changes frozen contract 2 of 3, so the PR body carries the "Changes a frozen contract in
   `packages/core`" line, the diff carries the fixture, and a second person reviews. It exists
   because `TradeFacts.categoryMix` has no producer anywhere: `packages/cli/src/commands/check.ts`
@@ -1532,6 +1533,12 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   `packages/guard/src/assess.ts`, which serves the MCP `check_trade`, and the CLI's `check` both
   pass `jev: null`, and style fit only runs when a Jev verdict is present. So a mix filled here
   would change 0 answers anyone sees. It waits on T-C22, which puts Jev in that path
+- Decided 2026-09-29 by Jishnu on those 2 findings: Jupiter's `unknown` tag counts as memecoin, and
+  buying a stablecoin is never a new category for style fit (the second left to Claude as "the
+  optimum", taken as the exemption, because a stablecoin buy is stepping out of risk and a fake one
+  is caught as an impostor first). Both with a test written first. After them, a USDC buy through
+  `agon check` on the recorded wallet is `unsure` on `quote-missing` alone, so it is a pass as soon
+  as T-C21 supplies the quote
 ### T-C13, The 8-reason verdict is 452 tokens against a budget of 400
 - Note: the fixture marker adds about 20 tokens to any replayed verdict, so the 8-reason case this
   row is about is now roughly 472 rather than 452. The 5-reason verdict the deployment serves

@@ -264,6 +264,10 @@ const styleFinding = (
         `categories you trade. Check the mint yourself before trading it.`,
     )
   }
+  // Buying a stablecoin is stepping out of risk, not into a new kind of it, so style fit never
+  // stops one. Size, the price band and the mint checks still apply, and a fake stablecoin is
+  // caught as an impostor before this (decided 2026-09-29 on T-A05's first measurement).
+  if (category === 'stablecoin') return null
   if (mix === null) {
     return unsure(
       'category-mix-missing',
