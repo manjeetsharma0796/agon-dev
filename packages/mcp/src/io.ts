@@ -32,6 +32,7 @@ import {
   quoteNotRead,
   quoteUnavailable,
   Refusal,
+  type JupiterQuote,
   type PrepareSwapInput,
 } from '@agon/core'
 import { Connection, PublicKey, TransactionInstruction } from '@solana/web3.js'
@@ -65,8 +66,11 @@ export interface ToolIo {
   loadVaultRules(wallet: string): Promise<VaultRules>
   /** The token category of each mint, for the wallet's category mix. A mint it cannot place is left out. */
   loadCategories(mints: string[], slot?: number): Promise<ReadonlyMap<string, TokenCategory>>
-  /** Jupiter's quote for spending `amount` base units of `inputMint`, for 1 legacy transaction. */
-  loadQuote(q: QuoteAsk): Promise<JupiterQuote>
+  /**
+   * Jupiter's answer for spending `amount` base units of `inputMint`, for 1 legacy transaction.
+   * Unchecked here: the caller parses it with `JupiterQuote`, since it is outside data.
+   */
+  loadQuote(q: QuoteAsk): Promise<unknown>
   /**
    * The quote as 1 unsigned transaction from the owner's vault, signed only by the agent, and what
    * simulating it on the configured chain said. Throws on no chain, a mismatched chain or no vault.
@@ -80,20 +84,6 @@ export interface ToolIo {
 }
 
 type QuoteAsk = Pick<PrepareSwapInput, 'inputMint' | 'outputMint' | 'amount' | 'slippageBps'>
-
-/** The fields of Jupiter's quote this server reads. The rest rides along to /swap-instructions. */
-export interface JupiterQuote {
-  inAmount: string
-  outAmount: string
-  otherAmountThreshold: string
-  slippageBps: number
-  inputMint: string
-  outputMint: string
-  priceImpactPct: string
-  contextSlot?: number
-  /** Each leg's pool address. Its `label` is outside text and is never passed on. */
-  routePlan: { swapInfo: { ammKey: string } }[]
-}
 
 export interface BuiltSwap {
   vault: string
@@ -227,12 +217,12 @@ export const liveIo = (): ToolIo => {
 
     loadCategories: (mints, slot) => categoriesOf(mints, { net: recorded }, slot),
 
-    async loadQuote(q: QuoteAsk): Promise<JupiterQuote> {
+    async loadQuote(q: QuoteAsk): Promise<unknown> {
       const res = await jupiter(
         jupiterQuote(q.inputMint, q.outputMint, q.amount, q.slippageBps, true),
       )
       if (res.status !== 200) throw new Refusal(quoteUnavailable({ status: res.status }))
-      return res.body as JupiterQuote
+      return res.body
     },
 
     async buildSwap({ owner, agent, roleId, quote }): Promise<BuiltSwap> {

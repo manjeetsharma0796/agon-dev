@@ -48,5 +48,23 @@ export const PreparedSwap = z.object({
   unitsConsumed: z.number().int().nonnegative(),
 })
 
+/**
+ * The fields of Jupiter's quote prepare_swap reads, checked where the answer comes in: it is
+ * outside data. Every other field passes through untouched to /swap-instructions. The route is
+ * read as pool addresses only; each leg's label is outside text and is never read.
+ */
+export const JupiterQuote = z.looseObject({
+  inAmount: BaseUnits,
+  outAmount: BaseUnits,
+  otherAmountThreshold: BaseUnits,
+  slippageBps: z.number().int().nonnegative(),
+  inputMint: Address,
+  outputMint: Address,
+  priceImpactPct: z.string().regex(/^-?[0-9]+(\.[0-9]+)?(e-?[0-9]+)?$/),
+  contextSlot: z.number().int().optional(),
+  routePlan: z.array(z.looseObject({ swapInfo: z.looseObject({ ammKey: Address }) })).min(1),
+})
+
+export type JupiterQuote = z.infer<typeof JupiterQuote>
 export type PrepareSwapInput = z.infer<typeof PrepareSwapInput>
 export type PreparedSwap = z.infer<typeof PreparedSwap>

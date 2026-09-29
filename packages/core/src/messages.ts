@@ -421,15 +421,12 @@ export const quoteUnavailable = (a: { status: number }): FailureMessage => ({
   systemDoes: 'Builds nothing without a route, and never builds from an older quote.',
 })
 
-export const quoteMismatch = (a: {
-  field: string
-  asked: string
-  got: string
-}): FailureMessage => ({
+// Names the field only: what Jupiter sent is outside text and never reaches the agent.
+export const quoteMismatch = (a: { field: string }): FailureMessage => ({
   id: 'quote-mismatch',
   text:
-    `Jupiter's quote has ${a.field} ${a.got}, which does not match what was asked (${a.asked}), ` +
-    `so no transaction was built. Nothing moved; ask again.`,
+    `Jupiter's quote failed 1 check, on ${a.field}: it is not the trade that was asked for, so no ` +
+    `transaction was built. Nothing moved; ask again.`,
   mode: 'closed',
   systemDoes:
     'Builds only the trade that was checked, never the one an outside answer substituted.',
@@ -547,7 +544,7 @@ export const AGENT_SURFACE_MESSAGES = [
     program: 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4',
     detail: 'custom program error: 0x1771',
   }),
-  quoteMismatch({ field: 'inAmount', asked: '100000000', got: '400000000' }),
+  quoteMismatch({ field: 'inAmount' }),
   quoteNotRead({ recorded: true }),
   quoteNotRead({ recorded: false }),
   noOutputPocket({

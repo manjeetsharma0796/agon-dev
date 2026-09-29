@@ -22,7 +22,7 @@ import {
   tradeNotPassed,
   mode,
   network,
-  Address,
+  JupiterQuote,
   type CheckTradeInput,
   type ToolName,
   toolContracts,
@@ -153,34 +153,29 @@ const handlers = {
       )
     }
 
-    const quote = await io.loadQuote(a)
-    // The quote is outside data. It must be the trade that was asked for, or the check below would
-    // judge one trade and the transaction would carry another.
+    // The quote is outside data. It must parse, and be the trade that was asked for, or the check
+    // below would judge one trade and the transaction would carry another.
+    const parsed = JupiterQuote.safeParse(await io.loadQuote(a))
+    if (!parsed.success) {
+      throw new Refusal(
+        quoteMismatch({ field: String(parsed.error.issues[0]?.path[0] ?? 'shape') }),
+      )
+    }
+    const quote = parsed.data
+    // The floor the output check holds the swap to is recomputed from what was asked, never taken
+    // on Jupiter's word, so a floor of 0 cannot wave through a swap that pays the vault nothing.
+    const floor = (BigInt(quote.outAmount) * BigInt(10000 - a.slippageBps)) / 10000n
     const drift = (
       [
-        ['inAmount', a.amount, quote.inAmount],
-        ['inputMint', a.inputMint, quote.inputMint],
-        ['outputMint', a.outputMint, quote.outputMint],
+        ['inAmount', quote.inAmount === a.amount],
+        ['inputMint', quote.inputMint === a.inputMint],
+        ['outputMint', quote.outputMint === a.outputMint],
+        ['slippageBps', quote.slippageBps === a.slippageBps],
+        ['otherAmountThreshold', floor > 0n && BigInt(quote.otherAmountThreshold) >= floor],
       ] as const
-    ).find(([, asked, got]) => asked !== got)
-    if (drift !== undefined) {
-      throw new Refusal(quoteMismatch({ field: drift[0], asked: drift[1], got: String(drift[2]) }))
-    }
-    if (quote.slippageBps > a.slippageBps) {
-      throw new Refusal(
-        quoteMismatch({
-          field: 'slippageBps',
-          asked: String(a.slippageBps),
-          got: String(quote.slippageBps),
-        }),
-      )
-    }
+    ).find(([, ok]) => !ok)
+    if (drift !== undefined) throw new Refusal(quoteMismatch({ field: drift[0] }))
     const route = quote.routePlan.map((leg) => leg.swapInfo.ammKey)
-    if (route.length === 0 || !route.every((key) => Address.safeParse(key).success)) {
-      throw new Refusal(
-        quoteMismatch({ field: 'routePlan', asked: 'pool addresses', got: 'other' }),
-      )
-    }
     const verdict = await judge(
       io,
       {

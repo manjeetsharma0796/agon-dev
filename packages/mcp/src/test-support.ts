@@ -1,4 +1,4 @@
-import { liveIo, type BuiltSwap, type JupiterQuote, type ToolIo, type VaultRules } from './io.js'
+import { liveIo, type BuiltSwap, type ToolIo, type VaultRules } from './io.js'
 
 // Shared by this package's own tests (token-budget.token.test.ts, third-party-client.test.ts).
 // Not part of the package's public API.
@@ -47,7 +47,7 @@ export const SWAP = {
   slippageBps: 50,
 }
 
-export const quoteFor = (amount: string, priceImpactPct = '0.0001'): JupiterQuote => ({
+export const quoteFor = (amount: string, priceImpactPct = '0.0001') => ({
   inAmount: amount,
   outAmount: '76000',
   otherAmountThreshold: '75620',
