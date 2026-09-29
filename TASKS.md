@@ -1358,7 +1358,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none, this is the difference between a demo and a product
 
 ### T-C12, Token categories, the 6 names the PRD froze
-- Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-c12-prd-category-names
+- Status: in-review | Owner: Jishnu | Branch: feature/t-c12-prd-category-names
 - Depends-on: T-C05, T-C06
 - Touches: packages/guard/src/jev/index.ts, packages/guard/src/jev/jev.test.ts,
   packages/guard/src/check-trade.ts, packages/guard/src/check-trade.test.ts,
@@ -1376,7 +1376,17 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   name, so `styleFinding` still refuses instead of scoring against a category the model never
   chose; the rename costs 0 tokens, so T-C06's 7-reason worst case is still 395 against its
   400-token budget and a pass is still 26
-- Evidence: <PR link, with the worst-case token count before and after>
+- Evidence: `TOKEN_CATEGORIES` is memecoin, stablecoin, liquid-staking token, blue chip, real-world
+  asset, other, pinned by 1 test written first and failing against the old 6. An unrecognised
+  answer now yields 0 categories, where it used to yield the 6th name `unknown`, and style fit still
+  refuses on it. Measured before and after on the same tests: a pass 26 tokens and 26, the 7-reason
+  worst case 395 and 395, so the rename costs 0 tokens on T-C06's budget
+- Not re-checked here: the names against the PRD PDF itself. It was removed from the tree and this
+  machine has no PDF text tool, so they are checked against this row's acceptance, which quotes it
+- Finding: `unknown` was doing 2 jobs, a category the model could choose and the placeholder for an
+  answer that could not be read, and the cache had to special-case it for the second. The PRD's
+  `other` is only the first job, so all 6 now cache with no exception, and "no answer" is carried
+  by the category's absence, which is what style fit already refused on
 - Kill criterion: none. The PRD froze these names on 2026-09-23 and F11 (c) labels against them
 
 ### T-A05, Category mix in the report, so style fit has something to compare against
