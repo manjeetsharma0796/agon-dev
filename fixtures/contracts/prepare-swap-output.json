@@ -1,0 +1,35 @@
+{
+  "synthetic": true,
+  "transaction": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "vault": "C7Bz4nps2z1NDftJUBzXQyeR2iDE5j5ztad5q1k4iA8R",
+  "verdict": {
+    "verdict": "block",
+    "reasons": [
+      {
+        "rule": "size-vs-median",
+        "message": "4.1x your median size of 0.8 SOL. Stopped.",
+        "observed": 4.1,
+        "limit": 2,
+        "unit": "x-median"
+      },
+      {
+        "rule": "mint-freeze-authority",
+        "message": "This token can freeze your account. Not safe to proceed."
+      }
+    ],
+    "dataSlot": 312904411,
+    "ruleVersion": "profile-2026-09-24-a"
+  },
+  "quote": {
+    "inAmount": "100000000",
+    "outAmount": "12049123",
+    "minOutAmount": "11928632",
+    "slippageBps": 100,
+    "route": [
+      "Raydium CLMM"
+    ]
+  },
+  "effectiveRemaining": "500000000",
+  "lastValidBlockHeight": 430000000,
+  "unitsConsumed": 112000
+}
