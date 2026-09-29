@@ -1399,7 +1399,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 
 ### T-A05, Category mix in the report, so style fit has something to compare against
 - Status: open
-- Depends-on: T-C12, T-A03
+- Depends-on: T-C12, T-A03, T-C22
 - Touches: packages/core/src/report.ts, fixtures/contracts/report.json, packages/miner/src/
 - Note: changes frozen contract 2 of 3, so the PR body carries the "Changes a frozen contract in
   `packages/core`" line, the diff carries the fixture, and a second person reviews. It exists
@@ -1416,6 +1416,11 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: fallback is shipping style fit as the `category-mix-missing` unsure with the
   reason printed, never a silent pass
 
+- Finding 2026-09-29, before any code: the acceptance's premise does not hold. `category-mix-missing`
+  fires on 0% of production calls, not 100%, because neither production path asks Jev:
+  `packages/guard/src/assess.ts`, which serves the MCP `check_trade`, and the CLI's `check` both
+  pass `jev: null`, and style fit only runs when a Jev verdict is present. So a mix filled here
+  would change 0 answers anyone sees. It waits on T-C22, which puts Jev in that path
 ### T-C13, The 8-reason verdict is 452 tokens against a budget of 400
 - Note: the fixture marker adds about 20 tokens to any replayed verdict, so the 8-reason case this
   row is about is now roughly 472 rather than 452. The 5-reason verdict the deployment serves
@@ -2297,6 +2302,26 @@ _(empty)_
 - Kill criterion: if the 5th tool is refused in DECISIONS.md, the builder moves to the `agon` CLI on
   the user's machine with the same acceptance, and the MCP instructions point agents at it
 
+
+### T-C22, check_trade asks Jev in production, so the screen and style fit ever run
+- Status: open
+- Depends-on: T-C05, T-C12
+- Touches: packages/guard/src/assess.ts, packages/mcp/src/io.ts, packages/mcp/src/index.ts,
+  packages/mcp/src/mcp.test.ts, fixtures/recorded/jev/
+- Serves: Functionality (judged) ; F4 ; the injection screen, which is a non-negotiable
+- Acceptance: the MCP `check_trade` path asks Jev its 3 questions for the traded mint, through the
+  record and replay wrapper, with the token's name and description read from chain metadata as the
+  text, so `text-not-screened` stops firing on 100% of calls; the guard stays pure and receives
+  the Jev verdict as data; a Jev failure or timeout still produces `text-not-screened` or `unsure`,
+  never a pass; the category is cached per mint as T-C05 already does; the 8-reason response still
+  fits 400 tokens; measured on the recorded wallet, the share of calls with a screened-text answer
+  before and after
+- Evidence: <PR link, plus the before and after share of screened calls>
+- Why it is its own row: found by T-A05. Nothing in production asks Jev today, so the injection
+  screen, token category and style fit exist only in unit tests, and `check_trade` can never return
+  `pass`. T-A05's category mix is only visible once this lands
+- Kill criterion: if Jev cannot answer inside the latency T-F11a measures, the screen stays off with
+  `text-not-screened` printed, never a silent pass
 ### T-D07, The arming transactions, built once in packages/chain
 - Status: done
 - Depends-on: T-D01
