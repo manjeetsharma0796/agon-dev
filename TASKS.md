@@ -2402,11 +2402,14 @@ _(empty)_
 
 
 ### T-C22, check_trade screens tokens deterministically, and token text never reaches the agent
-- Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-c22-deterministic-screen
+- Status: in-review | Owner: Jishnu | Branch: feature/t-c22-deterministic-screen
 - Depends-on: T-C05, T-C12, OP-38
 - Touches: packages/guard/src/mint-check.ts, packages/guard/src/mint-check.test.ts,
   packages/guard/src/check-trade.ts, packages/guard/src/check-trade.test.ts,
-  packages/guard/src/check-trade.token.test.ts, fixtures/recorded/jupiter/, CLAUDE.md
+  packages/guard/src/check-trade.token.test.ts, fixtures/recorded/jupiter/, CLAUDE.md,
+  packages/guard/src/tokens.ts, packages/guard/src/mint-check.budget.test.ts,
+  packages/guard/src/check-trade.budget.test.ts, packages/core/src/net/record.ts,
+  docs/public/agent-setup.md, packages/mcp/src/io.ts
 - Serves: Functionality (judged) ; F4 ; the first `check_trade` that can return `pass`
 - Acceptance: as OP-38 decided on T-F11b's measurement, the token checks are lookups, not a model:
   the mint check also carries the token's category, from Jupiter's `lst` and `verified` tags and a
@@ -2418,7 +2421,24 @@ _(empty)_
   to match; the guard stays pure and 0 model calls happen per trade; measured on the recorded
   wallet, a USDC buy with a quote and a clean mint goes from `unsure` to `pass`, and the category
   lookup is checked against T-F11b's 40 labelled tokens
-- Evidence: <PR link, plus the category lookup against the 40 labels and a verdict before and after>
+- Evidence: the category lookup against T-F11b's 40 labelled tokens: 40 of 40, of which 26 are
+  independent (stablecoin 7, liquid-staking 7, memecoin 6, real-world asset 6, all from Jupiter's
+  tags) and 14 hold by construction, because the pinned blue-chip list is the labeller's own. A
+  USDC buy through the MCP path, before: `unsure` on quote-missing, text-not-screened and the 2
+  authority notes; after: `unsure` on quote-missing and category-mix-missing only, with the
+  category read as stablecoin from the recorded listing; given a quote and a mix, `pass`, in
+  `check-trade.test.ts`. An impostor listed under USDC's symbol with an instruction as its name is
+  blocked as `token-impersonation`, and the planted name appears nowhere in the check. A check
+  costs 3 calls, the chain, 1 batched listing and the quote, and 0 model calls, down from a Jev
+  call per trade
+- Finding: what now stands between a USDC buy and `pass` in production is not the screen: it is
+  the quote, which T-C21's `prepare_swap` takes, and the wallet's category mix, which is T-A05
+- Finding 2: the MCP server's own instructions (`packages/mcp/src/index.ts`, inside T-C21's claim)
+  still say "runs no text screen, so 2 of its answers are always not read". That is stale after
+  this and belongs to T-C21 to reword
+- Finding 3: the listing is on the deciding path now, and fails closed: a lookup that fails leaves
+  the category null and style fit answers unsure, tested. Money logic, and the tests were written
+  after the code rather than first, which is recorded here rather than hidden
 - Kill criterion: if the tags cannot place most of the 40 labelled tokens, category stays `other`
   and style fit reports it, never a guess
 - Why it changed: T-F11b measured Jev on real token text and found no design that both passed real

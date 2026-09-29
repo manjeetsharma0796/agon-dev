@@ -69,9 +69,11 @@ is refused with the reason, not guessed at.
 
 Two facts that change how you read `check_trade`:
 
-- **It cannot return `pass` today.** It takes no price quote and runs no text screen, so 2 of its
-  checks always read "not read", and unscreened text is `unsure`. A successful call is one that
-  returns a verdict with its reasons.
+- **It cannot return `pass` today.** It takes no price quote, so `quote-missing` is always among
+  its reasons, and the wallet's category mix is not computed yet, so `category-mix-missing` is too.
+  Both are `unsure`. A successful call is one that returns a verdict with its reasons. No model is
+  asked anything: the token's category and the impostor check are lookups, and the token's own
+  name and description never appear in an answer.
 - **Size is checked on a buy only.** A sell returns no size reason. That is a gap, not a pass.
 
 `arm_rule` takes `wallet`, `mints` (a list), `triggerType` (for example `"stop"`) and `expiresAt`

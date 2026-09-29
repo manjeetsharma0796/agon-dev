@@ -170,11 +170,19 @@ test('arithmetic alone can block, so a blocked trade needs 0 model answers', () 
   expect(ruleNames(out)).toContain('size-vs-median')
 })
 
-test('negative control: numbers inside the limits with no screen is unsure, never pass', () => {
-  // unsure is not a soft pass. Text nobody screened cannot be called safe.
+test('negative control: with no screen and no category lookup, numbers inside the limits are unsure', () => {
+  // unsure is not a soft pass. Without Jev the category comes from the mint check's lookup
+  //, and a token it could not place has nothing to compare against the user's mix.
   const out = checkTrade(buy(MEDIAN), facts({ jev: null }))
   expect(out.verdict).toBe('unsure')
-  expect(ruleNames(out)).toContain('text-not-screened')
+  expect(ruleNames(out)).toContain('category-unknown')
+  expect(ruleNames(out)).not.toContain('text-not-screened')
+})
+
+test('with the category from the lookup, a clean trade inside every limit passes, with no model', () => {
+  const mint = { ...facts().mint, category: 'blue chip' as const }
+  const out = checkTrade(buy(MEDIAN), facts({ jev: null, mint }))
+  expect(out.verdict).toBe('pass')
 })
 
 test('no quote is unsure, because what the fill costs was never checked', () => {

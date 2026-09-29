@@ -150,8 +150,8 @@ export const liveIo = (): ToolIo => {
       // recorded, and the two would drift.
       const check = (
         await checkMints([mint], {
-          net: async (req) => {
-            const res = await call(req)
+          net: async (req, opts) => {
+            const res = await call(req, opts)
             if (res.fromFixture) fromFixture = true
             return res
           },

@@ -34,11 +34,12 @@ const spy = () => {
 const rpcMethod = (req: NetRequest): unknown =>
   (req.body as { method?: unknown } | undefined)?.method
 
-test('30 mints cost exactly 1 getMultipleAccounts', async () => {
+test('30 mints cost exactly 1 getMultipleAccounts and 1 listing lookup', async () => {
   const { seen, net } = spy()
   await checkMints(MINTS, { net })
-  expect(seen).toHaveLength(1)
+  expect(seen).toHaveLength(2)
   expect(rpcMethod(seen[0] as NetRequest)).toBe('getMultipleAccounts')
+  expect(seen[1]?.url).toContain('tokens/v2/search')
 })
 
 test('mint and freeze authority are never cached, so a second look really looks', async () => {
@@ -48,18 +49,22 @@ test('mint and freeze authority are never cached, so a second look really looks'
   const { seen, net } = spy()
   await checkMints(MINTS, { net })
   await checkMints(MINTS, { net })
-  expect(seen).toHaveLength(2)
+  expect(seen.filter((r) => r.provider === 'rpc')).toHaveLength(2)
 })
 
-test('nothing but the chain is on the deciding path', async () => {
+test('the chain and 1 keyless listing lookup are the whole deciding path, and RugCheck is not on it', async () => {
   // RugCheck is enrichment. If it ever appears here, an outage at a third party becomes our verdict.
+  // The listing is on the path since T-F11b, and fails closed: no listing, no category, and style
+  // fit answers unsure.
   const { seen, net } = spy()
   await checkMints(MINTS, { net })
-  expect(seen.map((r) => r.provider)).toEqual(['rpc'])
+  expect(seen.map((r) => r.provider)).toEqual(['rpc', 'jupiter'])
 })
 
 test('one mint costs the same 1 call as thirty', async () => {
   const { seen, net } = spy()
   await checkMints([MINTS[0] as string], { net })
+  // 1 here, not 2: this spy answers with the 30-mint batch, so the 1-mint read fails closed, and a
+  // mint the chain could not read is never looked up, which is the order that fails closed.
   expect(seen).toHaveLength(1)
 })

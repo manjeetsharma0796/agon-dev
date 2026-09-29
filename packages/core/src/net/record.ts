@@ -54,6 +54,16 @@ export const jupiterQuote = (
   headers: { 'x-api-key': env('JUPITER_API_KEY') },
 })
 
+/**
+ * Tokens by mint, with their tags, names and symbols: pass 1 mint or several joined by commas, and
+ * 1 call answers all of them. Keyless and cheap, which is why the token category comes from here
+ * rather than from a model.
+ */
+export const jupiterToken = (mints: string): NetRequest => ({
+  provider: 'jupiter',
+  url: `https://lite-api.jup.ag/tokens/v2/search?query=${mints}`,
+})
+
 export const rugcheckReport = (mint: string): NetRequest => ({
   provider: 'rugcheck',
   url: `https://api.rugcheck.xyz/v1/tokens/${mint}/report/summary`,

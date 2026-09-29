@@ -16,7 +16,9 @@
 
 import { call, type NetRequest, type NetResult } from '@agon/core'
 import type { Reason, Verdict } from '@agon/core'
-import { rpcCall } from '@agon/core/dist/net/record.js'
+import { jupiterToken, rpcCall } from '@agon/core/dist/net/record.js'
+import type { TokenCategory } from './jev/index.js'
+import { categoryOf, impersonates, type TokenListing } from './tokens.js'
 
 export const RULE_VERSION = 'mint-check/1'
 
@@ -45,6 +47,12 @@ export interface MintCheck {
   /** Every verdict is stamped, so a verdict read later says which rules produced it. */
   ruleVersion: string
   facts: MintFacts | null
+  /**
+   * What kind of token this is, from Jupiter's tags and a pinned list, never from a model and
+   * never from the token's own text. Null when the lookup could not place it, which style
+   * fit reports rather than guessing.
+   */
+  category?: TokenCategory | null
 }
 
 /** The one message the user sees when we could not read the chain. T-C04 fixes the wording. */
@@ -68,6 +76,7 @@ const blocked = (
   dataSlot,
   ruleVersion: RULE_VERSION,
   facts: null,
+  category: null,
 })
 
 /**
@@ -198,12 +207,48 @@ const readAccount = (mint: string, account: unknown, slot: number): MintCheck =>
   // allowlist, which is T-C06 work with a threshold of its own.
   const blocking = new Set(['mint-permanent-delegate', 'mint-transfer-hook'])
   const verdict: Verdict = reasons.some((r) => blocking.has(r.rule)) ? 'block' : 'pass'
-  return { mint, verdict, reasons, dataSlot: slot, ruleVersion: RULE_VERSION, facts }
+  return {
+    mint,
+    verdict,
+    reasons,
+    dataSlot: slot,
+    ruleVersion: RULE_VERSION,
+    facts,
+    category: null,
+  }
+}
+
+/**
+ * Jupiter's listings for these mints, in 1 call however many there are. A mint with no listing, or
+ * a lookup that failed, is simply absent, and its category stays null.
+ */
+async function listingsOf(
+  mints: readonly string[],
+  net: NonNullable<MintCheckDeps['net']>,
+  slot: number,
+): Promise<Map<string, TokenListing>> {
+  const out = new Map<string, TokenListing>()
+  let res: NetResult
+  try {
+    // Stamped with the slot of the chain read it accompanies, so a recording says when it was true.
+    res = await net(jupiterToken(mints.join(',')), { slotHint: slot })
+  } catch {
+    return out
+  }
+  if (res.status !== 200 || !Array.isArray(res.body)) return out
+  for (const item of res.body) {
+    const hit = asRecord(item)
+    const id = str(hit?.['id'])
+    if (hit === null || id === null || !mints.includes(id)) continue
+    const tags = Array.isArray(hit['tags']) ? hit['tags'].filter((t) => typeof t === 'string') : []
+    out.set(id, { symbol: str(hit['symbol']), name: str(hit['name']), tags })
+  }
+  return out
 }
 
 export interface MintCheckDeps {
   /** Injectable so a budget test can count calls. Defaults to the recorded and replayed wrapper. */
-  net?: (req: NetRequest) => Promise<NetResult>
+  net?: (req: NetRequest, opts?: { slotHint?: number }) => Promise<NetResult>
 }
 
 /**
@@ -253,6 +298,30 @@ export async function checkMints(
 
   for (const [index, mint] of mints.entries()) {
     out.set(mint, readAccount(mint, value[index], slot))
+  }
+
+  // The listing gives the category and the name and symbol an impostor copies. The name and symbol
+  // are compared here and never returned: token text is outside text and does not reach the agent.
+  const listings = await listingsOf(
+    mints.filter((m) => out.get(m)?.facts != null),
+    net,
+    slot,
+  )
+  for (const mint of mints) {
+    const check = out.get(mint)
+    const listing = listings.get(mint)
+    if (check === undefined || listing === undefined) continue
+    check.category = categoryOf(mint, listing)
+    const real = impersonates(mint, listing)
+    if (real !== null) {
+      check.verdict = 'block'
+      check.reasons.push({
+        rule: 'token-impersonation',
+        message:
+          `This token uses the name or symbol of ${real.symbol} but is not its mint, ` +
+          `${real.mint}. Stopped. Trade the real ${real.symbol} by that mint.`,
+      })
+    }
   }
   return out
 }
