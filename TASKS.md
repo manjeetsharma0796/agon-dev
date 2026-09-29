@@ -995,13 +995,25 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 ### T-F04, F4 spike, 20 scripted verdicts
 - Status: open
 - Depends-on: T-C06
-- Touches: spikes/F4/
+- Touches: spikes/F4/, FEASIBILITY.md, packages/guard/src/check-trade.ts,
+  packages/guard/src/check-trade.test.ts
 - Serves: Functionality (judged) ; CP2 gate
 - Acceptance: 20 of 20 verdicts match the answers written down in advance (over usual size, past
   usual stop, new token outside the usual set, normal trade, and edge cases at exact thresholds);
   p95 latency 300 ms or less excluding the RugCheck call; each output names the rule and its
   number
-- Evidence: <spikes/F4/result.json at a commit>
+- Evidence: `spikes/F4/result.json`, 20 of 20 verdicts matched, each by verdict and by the exact
+  set of rules that fired, against `spikes/F4/cases.json`, committed with the thresholds before the
+  runner existed. p95 0.62 ms and p50 0.31 ms over 200 runs of decode to verdict on the 100
+  recorded transactions, network excluded, against 300 ms. Every arithmetic reason carries a
+  numeric observed and limit
+- Finding: the first run was 19 of 20, and the miss was a real money bug. Size and price band both
+  rounded the number before comparing it with the limit, so a trade just past a limit rounded onto
+  it and passed: 2.025x the median passed the 2x limit, anything up to 2.049x did, and a 1.004%
+  impact passed the 1% band. Now compared unrounded, with a failing test first in
+  `check-trade.test.ts`, and shown with as many places as it takes to read as past the limit:
+  "2.03x your median size of 0.8 SOL, past your 2x limit", "Price impact 1.004%, past your 1%
+  band". The stop rule was not affected, it compares the proposed stop itself
 - Kill criterion: none needed, this is arithmetic
 
 ### T-F11b, F11 (c), (d) and (e), accuracy, adversarial and numeric routing

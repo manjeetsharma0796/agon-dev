@@ -121,6 +121,16 @@ const round = (n: number, places: number): number => {
   return Math.round(n * scale) / scale
 }
 
+/**
+ * A number past its limit, rounded for a person to read, with as many places as it takes to still
+ * read as past the limit. 2.025 against a limit of 2 is shown as 2.03, never as 2: a message that
+ * says "2x, past your 2x limit" is a refusal the user cannot make sense of.
+ */
+const shownPast = (value: number, limit: number, places: number): number => {
+  for (let p = places; p < 6; p++) if (round(value, p) > limit) return round(value, p)
+  return value
+}
+
 const ruleOf = (rules: readonly MinedRule[], kind: MinedRule['kind']): MinedRule | undefined =>
   rules.find((r) => r.kind === kind)
 
@@ -146,8 +156,10 @@ const sizeFinding = (
         `history, or set a size cap yourself.`,
     )
   }
-  const multiple = round(size / mined.value, 1)
-  if (multiple <= LIMITS.sizeMultiple) return null
+  // Compared unrounded. Rounding first let 2.025x read as 2x and pass a 2x limit (found by F4).
+  const ratio = size / mined.value
+  if (ratio <= LIMITS.sizeMultiple) return null
+  const multiple = shownPast(ratio, LIMITS.sizeMultiple, 1)
   return block({
     rule: 'size-vs-median',
     message:
@@ -197,15 +209,17 @@ const stopFinding = (proposed: number | undefined, rules: readonly MinedRule[]):
  * tell that it moved.
  */
 const bandFinding = (quote: Quote): Finding | null => {
-  const impact = round(Number(quote.priceImpactPct) * 100, 2)
-  if (!Number.isFinite(impact)) {
+  const raw = Number(quote.priceImpactPct) * 100
+  if (!Number.isFinite(raw)) {
     return unsure(
       'price-band-unreadable',
       `The quote reported its price impact as "${quote.priceImpactPct}", which is not a number, ` +
         `so how far this fill sits from the market is unknown. Ask for a fresh quote.`,
     )
   }
-  if (impact <= LIMITS.priceBandPct) return null
+  // Compared unrounded, for the same reason as size: 1.004% must not read as 1% and pass.
+  if (raw <= LIMITS.priceBandPct) return null
+  const impact = shownPast(raw, LIMITS.priceBandPct, 2)
   return block({
     rule: 'price-band',
     message: `Price impact ${impact}%, past your ${LIMITS.priceBandPct}% band. Trade smaller.`,
