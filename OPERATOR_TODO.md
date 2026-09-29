@@ -109,7 +109,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   amounts exact to base units, with the coverage share recorded per wallet.
 
 ### * OP-1, Everyone trades from their test wallet, daily
-- Status: open
+- Status: decided 2026-09-29 by Jishnu: paused until after the fork tests. Real trading history comes from the OP-31 replacement wallet meanwhile
 - Owner: all, D coordinates
 - Needed by: starts 2026-09-24, 20+ closed trades per wallet by CP2 (2026-10-02)
 - Unblocks: T-F01b, T-F02, T-J01
@@ -154,7 +154,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   with the cost per report calculated.
 
 ### * OP-3, Jupiter Portal API key
-- Status: open
+- Status: decided 2026-09-29 by Jishnu: stay on the free tier (10 requests per 10 seconds) for now, and ask again when F6 or the benchmark needs the throughput
 - Owner: <unassigned>
 - Needed by: 2026-09-26
 - Unblocks: T-F05b, T-F06a, T-C06
@@ -185,7 +185,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   1 per second return 20 x 200 and 0 x 429. Measured already at 50/min: 20 x 200 in 23 s.
 
 ### * OP-4, Decide where Jev comes from, and confirm rate limits
-- Status: open
+- Status: decided 2026-09-29 by Jishnu: TypeSafe direct, `usejev.xyz/v1/systemone`, with the key already in `.env`. The rate limit is recorded by T-F11a's first 200-call run, which is the intensive test OP-38 asks for
 - Owner: <unassigned>
 - Needed by: CP1, 2026-09-27
 - Unblocks: T-C05, T-F11a, T-F11b
@@ -207,7 +207,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   and a 200-call run completes without a 429.
 
 ### * OP-5, Fund the mainnet team test wallets
-- Status: open
+- Status: decided 2026-09-29 by Jishnu: paused until after the fork tests, and mainnet stays gated by T-D04 regardless
 - Owner: <unassigned>
 - Needed by: after T-D04 passes, before F6 on mainnet
 - Unblocks: T-F06b, T-D04, T-J01
@@ -219,7 +219,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Hard rule: do not fund anything until T-D04 has all 8 boxes ticked and 2 sign-offs.
 
 ### * OP-6, Neon Postgres
-- Status: open
+- Status: decided 2026-09-29 by Jishnu: Neon free tier. Jishnu creates the project and puts `DATABASE_URL` in the gitignored `.env`; the schema and migration are code work once it exists
 - Owner: <unassigned>
 - Needed by: 2026-09-29
 - Unblocks: T-A04, T-E04, T-E09
@@ -249,7 +249,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   it would fail at the push rather than at a check, so the first anyone hears of it is a red
   release. Creating it, or setting `PUBLIC_REPO` to whatever it is really called, is the whole
   remainder of this row
-- Status: open
+- Status: decided 2026-09-29 by Jishnu: the public repo already exists, and code is pushed there once there is a working version, not before
 - Owner: B
 - Needed by: 2026-09-24
 - Unblocks: T-B01, T-B02, T-J02
@@ -263,7 +263,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   `board` job, and a `release-*` tag reaches the public repo.
 
 ### * OP-8, Recruit the beta cohort
-- Status: open
+- Status: decided 2026-09-29 by Jishnu: deferred until onboarding works on the hosted fork, because there is nothing for a beta trader to use before then
 - Owner: E
 - Needed by: 10 to 20 users by CP3 (2026-10-08); 50+ by CP6
 - Unblocks: T-E09, T-J03
@@ -275,7 +275,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Why it cannot wait: recruiting is the slowest part of CP3, and CP3 has a 70% gate on it.
 
 ### * OP-9, Pin the LLM-guard baseline model
-- Status: open
+- Status: decided 2026-09-29 by Jishnu: MiMo v2.6 Flash (https://mimo.mi.com/models/en-US/mimo-v2.6-flash) served through opencode, a free model. The benchmark records the model and version string on every call, so a silent version swap by the host shows in the results
 - Owner: B
 - Needed by: CP2, 2026-10-02
 - Unblocks: T-B04, T-B05, T-B07
@@ -287,7 +287,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   `benchmark/arms/README.md` and referenced by the published headline.
 
 ### * OP-10, Name the team leader
-- Status: open
+- Status: decided 2026-09-29: Jishnu is the team leader. Still owed: the name written into `docs/plans/submission-wf.md`, which a board PR cannot edit
 - Owner: <unassigned>
 - Needed by: 2026-10-08
 - Unblocks: T-J03, T-J04
@@ -296,7 +296,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: the name is in `docs/plans/submission-wf.md`.
 
 ### * OP-11, Get the beta terms reviewed
-- Status: open
+- Status: decided 2026-09-29 by Jishnu: deferred until onboarding works on the hosted fork; no mainnet arming happens before then anyway
 - Owner: <unassigned>
 - Needed by: before any mainnet user, so after 2026-10-12
 - Unblocks: T-D05
@@ -347,7 +347,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   pitched.
 
 ### OP-15, RugCheck token, optional
-- Status: open
+- Status: decided 2026-09-29 by Jishnu: dropped. RugCheck's free endpoints never returned 429 in any recorded or live run
 - Owner: <unassigned>
 - Needed by: only if the public report endpoints rate-limit us
 - Unblocks: nothing. RugCheck is enrichment and is never on the deciding path
@@ -356,7 +356,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   hit" and a date.
 
 ### OP-16, Second person on Track E from CP2
-- Status: open
+- Status: decided 2026-09-29 by Jishnu: deferred until onboarding works on the hosted fork
 - Owner: <unassigned>
 - Needed by: CP2, 2026-10-02
 - Unblocks: T-E04 through T-E09, T-J01
@@ -367,7 +367,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   `TASKS.md`.
 
 ### * OP-17, Hosting project and the 3 environments
-- Status: open
+- Status: decided 2026-09-29 by Jishnu: not now. The focus is the functional onboarding (connect Phantom, create the vault, create and fund agent keys, manage them, the startup prompt), and outside testers use the hosted fork in OP-33
 - Owner: <unassigned>
 - Needed by: 2026-09-26, before T-E03 puts anything on staging
 - Done, the agent-facing third: https://agon-dev.onrender.com/mcp is live, deployed from the
@@ -396,7 +396,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   updates production, with 3 separate key sets and 0 shared between environments.
 
 ### * OP-18, Put the waitlist somewhere, and give it an inbox
-- Status: open
+- Status: decided 2026-09-29 by Jishnu: parked. The waitlist is not being worked on; the functional onboarding is
 - Owner: <unassigned>
 - Needed by: 2026-09-24, the same day, because recruiting is the slowest part of CP3
 - Unblocks: T-E02, and through it OP-8
@@ -571,7 +571,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   mainnet-fork wallet, with the output pasted here. Read OP-20 before reaching for devnet.
 
 ### OP-24, Reconcile CLAUDE.md's "3 questions" rule with T-B08's review-escalation questions
-- Status: open
+- Status: decided 2026-09-29 by Jishnu: the rule is scoped to the trading guard, so T-B08's diff-review questions stay, and the most efficient way to batch questions to Jev is measured in T-F11a. The 3 trading questions already go in 1 batched call. Still owed: CLAUDE.md reworded to 'the trading guard asks Jev only 3 questions', which a board PR cannot edit
 - Owner: <unassigned>
 - Needed by: CP2, 2026-10-02, alongside the T-B08 keep or cut decision
 - Unblocks: T-B08 (documentation only, not the code)
@@ -589,7 +589,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: CLAUDE.md's wording and TASKS.md's T-B08 row agree, in either direction.
 
 ### OP-25, Two frozen contracts cannot say "refused" or "not applicable"
-- Status: open
+- Status: decided 2026-09-29 by Jishnu: severity on each reason, carried through the contract (T-C15, with a second reviewer, fixtures in the same commit and the token budget re-measured). The `arm_rule` refusal union is not taken
 - Owner: <unassigned>
 - Needed by: CP2, 2026-10-02
 - Unblocks: T-C07's remaining review findings, and any client that has to act on a verdict
@@ -829,7 +829,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   cannot go green on any platform until the sentence is fixed. This is the same shape as OP-28.
 
 ### OP-30, Is the pre-signed expiry still wanted, now that the native one is measured working
-- Status: open
+- Status: decided 2026-09-29 by Jishnu: Swig's native expiry only. T-D02 is cut and F7's clauses 2 to 4 are closed as not needed
 - Owner: <unassigned>
 - Needed by: CP2, and sooner if T-D02 is about to be built
 - Unblocks: T-F07 clauses 2 and 3, and the whole of T-D02
@@ -855,7 +855,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 ---
 
 ### OP-31, F1's first wallet is an arbitrage bot, so it can never report a swap
-- Status: open
+- Status: decided 2026-09-29 by Jishnu: Claude picks the replacement wallet against the written test (owns the balances that move, opens and closes positions) and records it with the Helius key; a person hand-verifies the 50 rows per wallet, as OP-23 already says
 - Owner: Jishnu
 - Needed by: 2026-10-02
 - Unblocks: T-A07's last clause, T-F01b
@@ -912,7 +912,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 ---
 
 ### OP-33, A hosted fork testers can reach, and the decision about how often it is wiped
-- Status: open
+- Status: decided 2026-09-29 by Jishnu: 1 hosted Surfpool fork, wiped nightly so vaults last a session and prices drift at most a day. Still owed: the instance itself and its auth, which someone has to create
 - Owner: <unassigned>
 - Needed by: 2026-10-02, CP2, because T-E06 and T-E07 are P3 work and both need somewhere to run
 - Unblocks: T-E06, T-E07, T-C20, T-E09's cohort, and 6 of the 8 pre-mainnet boxes
@@ -969,7 +969,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   the switch back
 
 ### OP-34, Grow the MCP tool list from 4 to 5 for prepare_swap, or build the trade in the CLI
-- Status: open
+- Status: decided 2026-09-29 by Jishnu: both, built in parallel. `prepare_swap` becomes MCP tool 5 (T-C21), appended last so the first 4 keep their order, and the CLI builds the same trade on the user's machine (T-C08 slice 2)
 - Owner: <unassigned>
 - Needed by: before T-C21 starts, because its acceptance puts this decision before any code
 - Unblocks: T-C21, and through it the only path from an armed vault to a trade
@@ -1032,7 +1032,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   (a second shape for 1 rule); storing the spec off-chain (needs a database, OP-6, not set up)
 
 ### OP-37, Should a live mint or freeze authority stop a stablecoin like USDC from ever passing?
-- Status: open
+- Status: decided 2026-09-29 by Jishnu: a pinned allowlist of issuer-run mints (USDC, USDT, PYUSD and the like) in config, never from user input. For those, a live mint or freeze authority is a note and the trade can pass; every other token with a live authority stays unsure. Users can trade any token either way; this changes only what check_trade advises. T-C23
 - Owner: Jishnu, for a product call
 - Needed by: before an agent is pointed at any USDC pair, including the fork demo
 - Unblocks: a `check_trade` that can ever answer `pass` on a USDC buy
@@ -1051,7 +1051,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: the decision is in `DECISIONS.md` and a task row carries the change, if any
 
 ### OP-38, Jev's screen flags every real token, so it cannot go into production as written
-- Status: open
+- Status: decided 2026-09-29 by Jishnu: measure first. An intensive Jev test (T-F11a, then T-F11b's labelled cases) finds where its classification actually separates real tokens from attacks, and the most efficient batching; T-C22 then wires only what passed
 - Owner: Jishnu, with whoever owns the Jev question design
 - Needed by: before T-C22 can merge, and so before `check_trade` can ever return `pass`
 - Unblocks: T-C22, and through it T-A05 and style fit in production
