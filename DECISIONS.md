@@ -37,6 +37,7 @@ the OP row, which is what the last column points at.
 | 2026-09-29 | Vault lookup, amended | A Swig at a wallet's derived id is that wallet's vault only if the wallet holds root on it; otherwise the next of 8 ids is tried, through 1 shared `resolveVault` | Swig ids are not access-controlled: an attacker's Swig at a victim's derived id landed on the fork, and trusting the id would have returned it as the victim's vault | OP-35 |
 | 2026-09-29 | How the MCP reaches the chain | 1 setting, `AGON_RPC_URL`; unset means "no chain configured", and a URL that disagrees with `AGON_NETWORK` stops the server | It works locally, in compose and hosted, and the network label can never disagree with the data | OP-35 |
 | 2026-09-29 | Extending ArmedRule | Add `vault`, `effectiveRemaining` and `rollingWorstCase`; change nothing existing; fixtures in the same commit | The smallest change to a frozen contract that lets `list_rules` show the real allowance, agreed by both owners | OP-35 |
+| 2026-09-29 | ArmedRule read back from chain | `spec` becomes nullable and `RecurringLimit` takes `windowSeconds` or `windowSlots`, at least 1 | The chain stores the role but not the trigger type, expiry or order id, and counts windows in slots; converting would guess a slot time | OP-35 |
 
 ## Still open, and dated
 
