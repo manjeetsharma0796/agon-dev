@@ -1651,7 +1651,7 @@ CP3 evidence required: the loop works end to end on a team wallet; 10+ beta repo
 A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ reports.
 
 ### T-B19, compose connects the MCP to the fork, and reads live prices when the keys are set
-- Status: claimed 2026-09-29 | Owner: manjeetsharma0796 | Branch: feature/t-b19-compose-live
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/233 | Owner: manjeetsharma0796 | Branch: feature/t-b19-compose-live
 - Depends-on: T-B16, T-C21
 - Touches: compose.yaml, .dockerignore
 - Serves: Functionality (judged) ; the local Docker setup can build a trade, not only read
@@ -1663,7 +1663,11 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
   keys reach the container, passed by name: measured as 0 other names from the `.env` (it also
   holds database and cloud keys) in the running container's environment. The image holds 0
   secrets: `.dockerignore` excludes `.env.*` as well as `.env`, measured by listing the image
-- Evidence: <PR link, the 2 runs and both counts>
+- Evidence: #233. No `.env`: replay, `list_rules` read the fork vault. With the keys and live
+  mode: a real trader's history (`4Qgv5YxE...`, median 0.0272 SOL) blocked 0.1 wSOL at 3.7x; 0.05
+  wSOL passed on the 3rd route (2 refused by stale fork pools, each naming the program), the agent
+  signed, it landed (`4MjLjGLe...`), vault USDC 0 to 6,053,565, 0.35 of 0.4 left. 0 names from
+  the `.env` beyond the 2 keys reached the container; 0 `.env` files in the image
 - Why it is its own row: found testing T-C21 in Docker on 2026-09-29. The MCP container got no
   `AGON_RPC_URL`, so `prepare_swap` and `list_rules` always refused, which T-E15 had already
   written down as outside its Touches; and replay mode cannot hold a live price, so no trade can
