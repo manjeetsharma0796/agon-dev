@@ -2127,7 +2127,7 @@ _(empty)_
   shape; it bites the moment T-E06 exists, and it is a frozen contract, so it is cheaper now
 
 ### T-C19, MCP errors come from the catalogue, and name who refused
-- Status: in-review | Owner: Jishnu | Branch: feature/t-c19-catalogue-errors
+- Status: done 2026-09-29 | Owner: Jishnu | PR: #176
 - Depends-on: T-E10, T-C07
 - Touches: packages/mcp/src/index.ts, packages/mcp/src/io.ts, packages/mcp/src/catalogue.test.ts,
   packages/mcp/src/mcp.test.ts, packages/core/src/messages.ts, packages/core/src/messages.test.ts,
