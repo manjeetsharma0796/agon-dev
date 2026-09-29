@@ -838,7 +838,7 @@ and latency (a, b).
 - Kill criterion: fallback is publishing only the deterministic half (guardrail verdicts on fixed trades) and dropping the live-agent comparison
 
 ### T-B10, Clear the parked operator ids out of published source
-- Status: in-review | Owner: Jishnu | Branch: feature/t-b10-parked-markers
+- Status: done 2026-09-29 | Owner: Jishnu | PR: #191
 - Depends-on: T-B02
 - Touches: packages/core/src/net/index.ts, packages/core/src/net/record.ts, scripts/release.test.mjs
 - Note: these 3 files sit inside T-C02's and T-B02's `Touches:`, and both rows are blocked on a
