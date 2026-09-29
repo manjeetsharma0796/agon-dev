@@ -2417,7 +2417,19 @@ _(empty)_
   refuse every fork trade. On mainnet the 2 are usually the same address
 - Depends-on: T-C07, T-C17, T-C22
 - Touches: packages/core/src/index.ts, packages/core/src/trade.ts, packages/mcp/src/index.ts,
-  packages/mcp/src/mcp.test.ts, fixtures/contracts/, docs/public/mcp-tools.md, DECISIONS.md
+  packages/mcp/src/mcp.test.ts, fixtures/contracts/, docs/public/mcp-tools.md, DECISIONS.md,
+  packages/guard/src/assess.ts, packages/mcp/src/io.ts, packages/mcp/src/test-support.ts,
+  packages/mcp/src/third-party-client.test.ts, packages/core/src/net/record.ts,
+  packages/chain/src/swap.ts, packages/chain/src/swap.test.ts, packages/chain/src/index.ts,
+  docs/public/quickstart.md, docs/public/agent-setup.md
+- Touches widened 2026-09-29, before the handler: T-C22 is done, so what stands between a buy and
+  `pass` is the quote, and `assessTrade` passes `quote: null`. It gains 1 optional `quote` input
+  (`assess.ts` is in T-A05's list too; agreed with its owner, Jishnu, who reviews). `ToolIo` must
+  hand over the Swig account, which `loadVaultRules` drops; `record.ts` has no Jupiter
+  `/swap-instructions` request and hardcodes 100 bps; nothing wraps a swap in Swig's sign
+  instruction yet, so `packages/chain/src/swap.ts` builds it, pure, test first. The tool count of 4
+  is asserted in `third-party-client.test.ts` and `quickstart.md`, and the MCP instructions still
+  say every call is a read
 - Serves: Functionality (judged) ; Novelty (judged) ; the only path from an armed vault to a trade
 - Acceptance: a `DECISIONS.md` entry grows the tool list from 4 to 5 before any code, because the
   list is frozen on purpose ("adding or reordering a tool costs every user a cache miss",
