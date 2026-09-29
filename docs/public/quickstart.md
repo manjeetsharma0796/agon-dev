@@ -11,9 +11,10 @@ There are two ways in. Both start read only.
 1. Open the site.
 2. Paste a Solana address and press **Read my history**.
 
-That is it. The report opens on its own and shows what the wallet actually does: how it sizes
-trades, how long it holds, whether it cuts losses at a consistent point, and what breaking its own
-rules has cost.
+The report page shows the shape of the answer: how a wallet sizes trades, how long it holds,
+whether it cuts losses at a consistent point, and what breaking its own rules has cost. **Today it
+shows a recorded example, not the wallet you pasted,** and says so at the top. The rule engine
+behind `check_trade` below is real; the report page is not wired to it yet.
 
 **No account, no login, nothing to sign.** An address is public information, and pasting one tells
 Agon nothing the chain does not already say. No signature is requested and no wallet connection is
@@ -29,10 +30,12 @@ The server exposes exactly four tools, documented with their full schemas in
 
 | Tool | What it does |
 |---|---|
-| `get_report` | the trading profile for a wallet |
-| `check_trade` | whether one proposed trade fits that profile |
-| `arm_rule` | a link to the arming screen, where the user sets the cap and signs |
-| `list_rules` | the caps currently armed |
+| `get_report` | the trading profile, from a recorded example today, labelled as one |
+| `check_trade` | whether one proposed trade fits the wallet's own rules, from its real history |
+| `arm_rule` | a link to the arming screen, where the user sets the cap and signs; practice fork only |
+| `list_rules` | the agent roles armed on the wallet's vault, read from the chain |
+
+To connect an agent, start with [`agent-setup.md`](./agent-setup.md).
 
 The list is stable on purpose: an agent's prompt cache is keyed on it, so adding or reordering a
 tool costs every user a cache miss.
@@ -45,10 +48,12 @@ request that carries one is refused.
 
 - **It never holds your key.** The agent gets a Swig role scoped to one program and one capped
   recurring limit. It never holds `manageAuthority`, so it cannot widen its own permissions.
-- **It fails closed on anything that can move funds.** If a token cannot be verified, the trade does
-  not go out. The message says which check failed and what you can do about it.
-- **It never invents a number.** A rule needs 20 closed trades before Agon claims you follow it.
-  Below that it says how many you have and shows the statistics it can stand behind instead.
+- **It fails closed on anything that can move funds.** If a token cannot be verified,
+  `check_trade` answers `unsure`, which means the trade does not go out, and says which check
+  failed. That answer binds an agent that follows it; what the chain itself enforces is the cap.
+- **It never invents a number.** A stop rule needs 20 closed trades and 5 losses before Agon claims
+  you follow it. Below that it says how many you have and shows the statistics it can stand behind
+  instead.
 
 ## Rerunning the numbers
 

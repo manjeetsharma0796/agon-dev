@@ -2155,7 +2155,7 @@ _(empty)_
   first sentence has to carry the answer
 
 ### T-E15, A startup prompt a fresh agent can paste, and the docs it reads
-- Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-e15-agent-setup
+- Status: in-review | Owner: Jishnu | Branch: feature/t-e15-agent-setup
 - Depends-on: T-C17, T-C18, T-C19, T-E06
 - Touches: docs/public/
 - Serves: Open source (judged) ; Potential impact (judged)
@@ -2165,7 +2165,27 @@ _(empty)_
   is never the user's, how to find the vault and cap through `list_rules`, the swap recipe that
   makes a trade land, and how to read a refusal; a fresh agent following it reaches a passing
   `check_trade` with 0 questions asked of a human
-- Evidence: <PR link, plus a transcript of an agent that had not seen this conversation>
+- Evidence: `docs/public/agent-setup.md`, and 2 fresh agents given only that page and a running
+  server in replay mode. Agent 1 got a verdict but asked 1 question: its `check_trade` carried
+  `mint-rpc-unreachable`, because the page had a typo in the USDC mint, 1 wrong character, so no
+  recording matched. Fixed, and the `arm_rule` fields it had to look up were added. Agent 2, fresh:
+  `check_trade` returned `block` with 5 named reasons (size 4996.6x the median, quote missing, text
+  not screened, freeze authority live, mint authority live), `list_rules` and `arm_rule` refused
+  with the reasons the page predicts, and it asked **0 questions**. The 5 rule ids were checked
+  against a call of my own. The PR body carries both transcripts
+- Not evidenced: a `pass`. `check_trade` cannot return one today (no quote, no text screen), so
+  "a passing check_trade" is measured as a call that returns a verdict, and the page says so
+- Finding: quickstart made 4 claims the handlers do not back. The report page shows a recorded
+  example, not the pasted wallet; `get_report` is a fixture; the "20 closed trades" is the stop
+  rule only, which also needs 5 losses; "the trade does not go out" is `check_trade` answering
+  `unsure`, which binds only an agent that obeys it, while the chain enforces only the cap. All 4
+  corrected
+- Finding 2: `compose.yaml` sets neither `AGON_RPC_URL` nor `AGON_PUBLIC_URL` for the server, so in
+  the documented local setup `list_rules` and `arm_rule` always refuse. The page says so; setting
+  them is outside this row's Touches
+- Finding 3: USDC carries both a live freeze authority and a live mint authority, so `check_trade`
+  blocks every USDC buy on 2 authority reasons whatever the size. That is the rule as written, and
+  worth a decision before an agent is pointed at a USDC pair
 - Kill criterion: none, but the docs correction is the gate on the rest: a paste-and-go prompt
   built on a false promise ships that promise to every agent that reads it
 
