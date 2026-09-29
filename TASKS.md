@@ -2304,7 +2304,7 @@ _(empty)_
 
 
 ### T-C22, check_trade asks Jev in production, so the screen and style fit ever run
-- Status: open
+- Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-c22-jev-in-check
 - Depends-on: T-C05, T-C12
 - Touches: packages/guard/src/assess.ts, packages/mcp/src/io.ts, packages/mcp/src/index.ts,
   packages/mcp/src/mcp.test.ts, fixtures/recorded/jev/
