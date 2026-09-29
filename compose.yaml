@@ -4,9 +4,12 @@
 #                                    (AGON_MCP_PORT=8788 docker compose up ... if 8787 is taken)
 #   docker compose down              stops and removes both
 #
-# It connects nothing: the MCP server reads committed recordings (replay mode, no keys), never the
-# fork, until T-C17 gives it a vault to read. The same 2 images are what OP-33's hosted target runs;
-# only the port bindings below are local.
+# With no .env it needs no keys: the MCP server reads vaults from the fork and everything else from
+# committed recordings (replay mode), which hold no live price, so it cannot build a trade. To
+# trade on the fork (T-B19), put these 3 lines in a .env beside this file; compose reads them, and
+# passes only these names into the container, never the rest of the file:
+#   HELIUS_API_KEY=...   JUPITER_API_KEY=...   AGON_NET_MODE=live
+# The same 2 images are what OP-33's hosted target runs; only the port bindings below are local.
 name: agon
 
 services:
@@ -37,9 +40,18 @@ services:
 
   mcp:
     build: .
+    depends_on:
+      fork:
+        condition: service_healthy
     environment:
       # Every result names the fork first, so an agent cannot mistake it for mainnet.
       AGON_NETWORK: fork
+      # Vaults are read from, and trades simulated on, the fork service, by its name on this network.
+      AGON_RPC_URL: http://fork:8899
+      # Named 1 by 1 on purpose, never env_file: a .env usually holds other keys too.
+      AGON_NET_MODE: ${AGON_NET_MODE:-replay}
+      HELIUS_API_KEY: ${HELIUS_API_KEY:-}
+      JUPITER_API_KEY: ${JUPITER_API_KEY:-}
     ports:
       # 8787 is also Cloudflare wrangler's default dev port. If it is taken, set AGON_MCP_PORT.
       - '127.0.0.1:${AGON_MCP_PORT:-8787}:8787'
