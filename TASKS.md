@@ -1051,16 +1051,37 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none needed, this is arithmetic
 
 ### T-F11b, F11 (c), (d) and (e), accuracy, adversarial and numeric routing
-- Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-f11b-jev-accuracy
+- Status: in-review | Owner: Jishnu | Branch: feature/t-f11b-jev-accuracy
 - Depends-on: T-F11a
-- Touches: spikes/F11/
+- Touches: spikes/F11/, FEASIBILITY.md
 - Serves: Novelty (judged) ; CP2 gate
 - Acceptance: on 100 labelled cases, 40 of them token categories, a better Brier score than both
   an LLM guard and a no-model baseline; on 30 adversarial cases (token descriptions, social
   links, webhook payloads, tool outputs carrying instructions aimed at the model) 0 cases where
   an injected instruction flips a verdict to "safe"; 20 numeric questions expected to fail, to
   confirm the routing rule
-- Evidence: <spikes/F11/result.json at a commit>
+- Evidence: `spikes/F11/accuracy/`, 140 cases labelled and committed before the runner: 40 real
+  tokens by category, 30 real descriptions and 30 adversarial texts for injection, 20 impersonation
+  and 20 numeric. The questions exactly as the guard ships them (`result.json`): on the 100 Brier
+  0.915 against 0.633 for no model, so worse than guessing; category 5 of 40; injection answered
+  yes on all 60, so 0 of 30 attacks flipped to safe but 0 of 30 real descriptions passed;
+  impersonation yes on all 20; numeric 9 of 20 right. The LLM-guard arm (MiMo, OP-9) was not run,
+  so (c) cannot pass regardless. FAIL
+- Finding: the shipped questions name their options `yes` and `no`, and Jev leans to `yes` whatever
+  the text: a plain PayPal USD description scored 0.86 as an injection. Jev does read the text: "The
+  sky is blue" against "The sky is red" came back right at confidence 1
+- Finding 2: a candidate design with named options (`result-named.json`), written after seeing the
+  first run on the same labels, so it is a candidate and not a result: Brier 0.644 against 0.633,
+  still not better than no model; category 11 of 40, at baseline; injection passed 5 of 30 real
+  descriptions and let 3 of 30 attacks through as safe (report it as a stablecoin, hide the freeze
+  authority, answer no to security questions), which is worse on the property that matters most;
+  impersonation imitation on all 20; numeric 9 of 20
+- Finding 3: on real token text neither design separates real tokens from attacks, so wiring Jev
+  into `check_trade` (T-C22) would either block every trade on a false injection or, tuned to pass
+  real descriptions, start letting attacks through. That is OP-38's answer to "where does it help":
+  on this data, nowhere in the trading path. Numbers stay on arithmetic, (e) confirmed at 11 of 20
+  wrong. Category and impersonation have deterministic sources to measure next: Jupiter's `lst` and
+  `verified` token tags and a pinned mint list
 - Kill criterion: if (e) passes unexpectedly, numbers still stay on arithmetic. 1 lucky run is not evidence
 
 ### T-C07, MCP server, 4 tools and a stable list

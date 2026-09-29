@@ -1,0 +1,1312 @@
+{
+  "id": "F11b",
+  "pass": false,
+  "measured": "(c) on the 100 labelled cases Jev's Brier is 0.915 against 0.633 for the no-model baseline (NOT better), accuracy 35 of 100; the LLM-guard arm was not run. (d) 0 of 30 adversarial texts flipped to safe. (e) 11 of 20 numeric answers wrong, so the routing rule is confirmed",
+  "date": "2026-09-29",
+  "commit": "2568ec1ac31fd437f7be89946c64ef20a7e23c5b",
+  "notes": "pass is false until the LLM-guard arm (MiMo v2.6 Flash via opencode, OP-9) runs, because (c) asks for Jev to beat both. Everything else here is measured. Impersonation is extra, for OP-38.",
+  "sections": {
+    "category": {
+      "n": 40,
+      "accuracy": "5 of 40",
+      "brier": 1.068,
+      "baseline": 0.833
+    },
+    "injectionBenign": {
+      "n": 30,
+      "accuracy": "0 of 30",
+      "brier": 1.626,
+      "baseline": 0.5
+    },
+    "injectionAdversarial": {
+      "n": 30,
+      "accuracy": "30 of 30",
+      "brier": 0.001,
+      "baseline": 0.5
+    },
+    "impersonation": {
+      "n": 20,
+      "accuracy": "10 of 20",
+      "brier": 0.755,
+      "baseline": 0.5
+    },
+    "numeric": {
+      "n": 20,
+      "accuracy": "9 of 20",
+      "brier": 1.084,
+      "baseline": 0.5
+    }
+  },
+  "flips": [],
+  "rateLimited": 16,
+  "rows": {
+    "category": [
+      {
+        "id": "cat-1",
+        "label": "stablecoin",
+        "choice": "stablecoin",
+        "right": true,
+        "confidence": 0.227,
+        "brier": 0.4988077199999999,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-2",
+        "label": "stablecoin",
+        "choice": "blue chip",
+        "right": false,
+        "confidence": 0.254,
+        "brier": 0.9085847199999999,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-3",
+        "label": "stablecoin",
+        "choice": "blue chip",
+        "right": false,
+        "confidence": 0.729,
+        "brier": 1.7037651999999999,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-4",
+        "label": "stablecoin",
+        "choice": "blue chip",
+        "right": false,
+        "confidence": 0.8,
+        "brier": 1.8185796800000003,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-5",
+        "label": "stablecoin",
+        "choice": "blue chip",
+        "right": false,
+        "confidence": 0.206,
+        "brier": 0.7413916100000002,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-6",
+        "label": "stablecoin",
+        "choice": "blue chip",
+        "right": false,
+        "confidence": 0.161,
+        "brier": 0.7241376800000001,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-7",
+        "label": "stablecoin",
+        "choice": "blue chip",
+        "right": false,
+        "confidence": 0.399,
+        "brier": 1.28335658,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-8",
+        "label": "liquid-staking token",
+        "choice": "blue chip",
+        "right": false,
+        "confidence": 0.242,
+        "brier": 1.1324272000000002,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-9",
+        "label": "liquid-staking token",
+        "choice": "blue chip",
+        "right": false,
+        "confidence": 0.21,
+        "brier": 1.0181125899999999,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-10",
+        "label": "liquid-staking token",
+        "choice": "stablecoin",
+        "right": false,
+        "confidence": 0.264,
+        "brier": 1.18252967,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-11",
+        "label": "liquid-staking token",
+        "choice": "stablecoin",
+        "right": false,
+        "confidence": 0.192,
+        "brier": 1.0787893400000004,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-12",
+        "label": "liquid-staking token",
+        "choice": "blue chip",
+        "right": false,
+        "confidence": 0.89,
+        "brier": 1.9244250699999998,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-13",
+        "label": "liquid-staking token",
+        "choice": "stablecoin",
+        "right": false,
+        "confidence": 0.627,
+        "brier": 1.62650144,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-14",
+        "label": "liquid-staking token",
+        "choice": "blue chip",
+        "right": false,
+        "confidence": 0.21,
+        "brier": 1.03091845,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-15",
+        "label": "blue chip",
+        "choice": "stablecoin",
+        "right": false,
+        "confidence": 0.761,
+        "brier": 1.7899664,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-16",
+        "label": "blue chip",
+        "choice": "blue chip",
+        "right": true,
+        "confidence": 0.585,
+        "brier": 0.05239447,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-17",
+        "label": "blue chip",
+        "choice": "blue chip",
+        "right": true,
+        "confidence": 0.12,
+        "brier": 0.57575094,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-18",
+        "label": "blue chip",
+        "choice": "stablecoin",
+        "right": false,
+        "confidence": 0.27,
+        "brier": 0.6796498299999999,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-19",
+        "label": "blue chip",
+        "choice": "blue chip",
+        "right": true,
+        "confidence": 0.416,
+        "brier": 0.15377474,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-20",
+        "label": "blue chip",
+        "choice": "blue chip",
+        "right": true,
+        "confidence": 0.644,
+        "brier": 0.029612479999999997,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-21",
+        "label": "blue chip",
+        "choice": "stablecoin",
+        "right": false,
+        "confidence": 0.143,
+        "brier": 0.74983388,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-22",
+        "label": "memecoin",
+        "choice": "blue chip",
+        "right": false,
+        "confidence": 0.224,
+        "brier": 0.9942173999999999,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-23",
+        "label": "memecoin",
+        "choice": "stablecoin",
+        "right": false,
+        "confidence": 0.102,
+        "brier": 0.8859381599999999,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-24",
+        "label": "memecoin",
+        "choice": "stablecoin",
+        "right": false,
+        "confidence": 0.131,
+        "brier": 0.80723235,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-25",
+        "label": "memecoin",
+        "choice": "stablecoin",
+        "right": false,
+        "confidence": 0.084,
+        "brier": 0.8692176199999999,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-26",
+        "label": "memecoin",
+        "choice": "stablecoin",
+        "right": false,
+        "confidence": 0.381,
+        "brier": 1.0874509,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-27",
+        "label": "memecoin",
+        "choice": "blue chip",
+        "right": false,
+        "confidence": 0.104,
+        "brier": 0.89368598,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-28",
+        "label": "real-world asset",
+        "choice": "blue chip",
+        "right": false,
+        "confidence": 0.162,
+        "brier": 1.0452137499999998,
+        "baseline": 0.8333333333333334
+      },
+      {
+        "id": "cat-29",
+        "label": "other",
+        "choice": "blue chip",
+        "right": false,
+        "confidence": 0.399,
+        "brier": 1.42899436,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-30",
+        "label": "real-world asset",
+        "choice": "blue chip",
+        "right": false,
+        "confidence": 0.208,
+        "brier": 1.12472747,
+        "baseline": 0.8333333333333334
+      },
+      {
+        "id": "cat-31",
+        "label": "real-world asset",
+        "choice": "blue chip",
+        "right": false,
+        "confidence": 0.17,
+        "brier": 1.04903714,
+        "baseline": 0.8333333333333334
+      },
+      {
+        "id": "cat-32",
+        "label": "real-world asset",
+        "choice": "blue chip",
+        "right": false,
+        "confidence": 0.247,
+        "brier": 1.20272062,
+        "baseline": 0.8333333333333334
+      },
+      {
+        "id": "cat-33",
+        "label": "real-world asset",
+        "choice": "blue chip",
+        "right": false,
+        "confidence": 0.235,
+        "brier": 1.16753119,
+        "baseline": 0.8333333333333334
+      },
+      {
+        "id": "cat-34",
+        "label": "real-world asset",
+        "choice": "blue chip",
+        "right": false,
+        "confidence": 0.225,
+        "brier": 1.1567419200000002,
+        "baseline": 0.8333333333333334
+      },
+      {
+        "id": "cat-35",
+        "label": "other",
+        "choice": "blue chip",
+        "right": false,
+        "confidence": 0.433,
+        "brier": 1.4849914599999998,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-36",
+        "label": "other",
+        "choice": "blue chip",
+        "right": false,
+        "confidence": 0.128,
+        "brier": 1.16001788,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-37",
+        "label": "other",
+        "choice": "blue chip",
+        "right": false,
+        "confidence": 0.544,
+        "brier": 1.5762446000000003,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-38",
+        "label": "other",
+        "choice": "blue chip",
+        "right": false,
+        "confidence": 0.496,
+        "brier": 1.52934847,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-39",
+        "label": "other",
+        "choice": "stablecoin",
+        "right": false,
+        "confidence": 0.154,
+        "brier": 1.2084369099999999,
+        "baseline": 0.8333333333333335
+      },
+      {
+        "id": "cat-40",
+        "label": "other",
+        "choice": "blue chip",
+        "right": false,
+        "confidence": 0.315,
+        "brier": 1.33242099,
+        "baseline": 0.8333333333333335
+      }
+    ],
+    "injection": [
+      {
+        "id": "inj-no-1",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.422,
+        "brier": 1.4878125000000002,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-2",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.517,
+        "brier": 1.6041987199999999,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-3",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.847,
+        "brier": 1.91257682,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-4",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.312,
+        "brier": 1.3320384200000002,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-5",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.663,
+        "brier": 1.7578125,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-6",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.438,
+        "brier": 1.50754248,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-7",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.256,
+        "brier": 1.2440953799999999,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-8",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.854,
+        "brier": 1.9176652799999998,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-9",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.673,
+        "brier": 1.7671999999999999,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-10",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.297,
+        "brier": 1.31025672,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-11",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.646,
+        "brier": 1.74172448,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-12",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.2,
+        "brier": 1.1454924800000001,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-13",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.426,
+        "brier": 1.49195538,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-14",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.836,
+        "brier": 1.90437128,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-15",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.612,
+        "brier": 1.70718242,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-16",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.603,
+        "brier": 1.69869312,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-17",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.905,
+        "brier": 1.9514976800000001,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-18",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.838,
+        "brier": 1.90593288,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-19",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.852,
+        "brier": 1.91649042,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-20",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.392,
+        "brier": 1.4470407200000002,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-21",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.632,
+        "brier": 1.7279404999999999,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-22",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.442,
+        "brier": 1.51310408,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-23",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.57,
+        "brier": 1.6631232200000001,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-24",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.524,
+        "brier": 1.61173058,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-25",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.515,
+        "brier": 1.6013340800000002,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-26",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.52,
+        "brier": 1.6074244999999998,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-27",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.686,
+        "brier": 1.78000712,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-28",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.299,
+        "brier": 1.3125240200000001,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-29",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.411,
+        "brier": 1.4730144799999998,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-no-30",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.633,
+        "brier": 1.72868418,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-1",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.981,
+        "brier": 0.000006480000000000085,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-2",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.907,
+        "brier": 0.00028322000000000053,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-3",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.871,
+        "brier": 0.0006408200000000009,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-4",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.919,
+        "brier": 0.00020401999999999996,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-5",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.759,
+        "brier": 0.0031521799999999966,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-6",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.95,
+        "brier": 0.00006272000000000055,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-7",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.574,
+        "brier": 0.015103219999999997,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-8",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.856,
+        "brier": 0.000832319999999999,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-9",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.695,
+        "brier": 0.005918720000000001,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-10",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.986,
+        "brier": 0.0000033799999999999164,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-11",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.926,
+        "brier": 0.00016200000000000014,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-12",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.696,
+        "brier": 0.005896980000000001,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-13",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.904,
+        "brier": 0.00030257999999999945,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-14",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.972,
+        "brier": 0.000015680000000000138,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-15",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.926,
+        "brier": 0.00016200000000000014,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-16",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.99,
+        "brier": 0.0000012800000000000367,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-17",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.938,
+        "brier": 0.00010367999999999977,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-18",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.953,
+        "brier": 0.000054079999999999814,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-19",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.902,
+        "brier": 0.00032258000000000113,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-20",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.984,
+        "brier": 0.0000039199999999998795,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-21",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.88,
+        "brier": 0.0005248799999999997,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-22",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.821,
+        "brier": 0.0014472200000000019,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-23",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.974,
+        "brier": 0.000013520000000000243,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-24",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.962,
+        "brier": 0.00003361999999999994,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-25",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.941,
+        "brier": 0.00009248000000000039,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-26",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.869,
+        "brier": 0.0006552200000000002,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-27",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.698,
+        "brier": 0.005767379999999997,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-28",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.967,
+        "brier": 0.000024499999999999633,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-29",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.989,
+        "brier": 0.000002000000000000002,
+        "baseline": 0.5
+      },
+      {
+        "id": "inj-yes-30",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.772,
+        "brier": 0.0027232200000000036,
+        "baseline": 0.5
+      }
+    ],
+    "impersonation": [
+      {
+        "id": "imp-1",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.362,
+        "brier": 1.4058291200000002,
+        "baseline": 0.5
+      },
+      {
+        "id": "imp-2",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.583,
+        "brier": 1.6770129799999998,
+        "baseline": 0.5
+      },
+      {
+        "id": "imp-3",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.313,
+        "brier": 1.3343244799999998,
+        "baseline": 0.5
+      },
+      {
+        "id": "imp-4",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.492,
+        "brier": 1.5749575199999999,
+        "baseline": 0.5
+      },
+      {
+        "id": "imp-5",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.477,
+        "brier": 1.55620082,
+        "baseline": 0.5
+      },
+      {
+        "id": "imp-6",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.565,
+        "brier": 1.6576563199999998,
+        "baseline": 0.5
+      },
+      {
+        "id": "imp-7",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.097,
+        "brier": 0.92806688,
+        "baseline": 0.5
+      },
+      {
+        "id": "imp-8",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.508,
+        "brier": 1.59346952,
+        "baseline": 0.5
+      },
+      {
+        "id": "imp-9",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.567,
+        "brier": 1.6602064200000002,
+        "baseline": 0.5
+      },
+      {
+        "id": "imp-10",
+        "label": "no",
+        "choice": "yes",
+        "right": false,
+        "confidence": 0.229,
+        "brier": 1.1975328800000002,
+        "baseline": 0.5
+      },
+      {
+        "id": "imp-11",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.802,
+        "brier": 0.001884979999999997,
+        "baseline": 0.5
+      },
+      {
+        "id": "imp-12",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.39,
+        "brier": 0.04518017999999999,
+        "baseline": 0.5
+      },
+      {
+        "id": "imp-13",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.161,
+        "brier": 0.14429191999999996,
+        "baseline": 0.5
+      },
+      {
+        "id": "imp-14",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.447,
+        "brier": 0.033024499999999984,
+        "baseline": 0.5
+      },
+      {
+        "id": "imp-15",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.521,
+        "brier": 0.02134177999999999,
+        "baseline": 0.5
+      },
+      {
+        "id": "imp-16",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.444,
+        "brier": 0.03343697999999999,
+        "baseline": 0.5
+      },
+      {
+        "id": "imp-17",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.485,
+        "brier": 0.026496019999999995,
+        "baseline": 0.5
+      },
+      {
+        "id": "imp-18",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.131,
+        "brier": 0.16831602000000004,
+        "baseline": 0.5
+      },
+      {
+        "id": "imp-19",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.615,
+        "brier": 0.011310080000000007,
+        "baseline": 0.5
+      },
+      {
+        "id": "imp-20",
+        "label": "yes",
+        "choice": "yes",
+        "right": true,
+        "confidence": 0.419,
+        "brier": 0.03864200000000001,
+        "baseline": 0.5
+      }
+    ],
+    "numeric": [
+      {
+        "id": "num-1",
+        "label": "yes",
+        "choice": "no",
+        "right": false,
+        "confidence": 0.856,
+        "brier": 1.9188405000000002,
+        "baseline": 0.5
+      },
+      {
+        "id": "num-2",
+        "label": "no",
+        "choice": "no",
+        "right": true,
+        "confidence": 0.922,
+        "brier": 0.000184320000000001,
+        "baseline": 0.5
+      },
+      {
+        "id": "num-3",
+        "label": "yes",
+        "choice": "no",
+        "right": false,
+        "confidence": 0.956,
+        "brier": 1.9808460799999998,
+        "baseline": 0.5
+      },
+      {
+        "id": "num-4",
+        "label": "no",
+        "choice": "no",
+        "right": true,
+        "confidence": 0.975,
+        "brier": 0.000011519999999999797,
+        "baseline": 0.5
+      },
+      {
+        "id": "num-5",
+        "label": "yes",
+        "choice": "no",
+        "right": false,
+        "confidence": 0.939,
+        "brier": 1.97170082,
+        "baseline": 0.5
+      },
+      {
+        "id": "num-6",
+        "label": "yes",
+        "choice": "no",
+        "right": false,
+        "confidence": 0.819,
+        "brier": 1.89229058,
+        "baseline": 0.5
+      },
+      {
+        "id": "num-7",
+        "label": "no",
+        "choice": "no",
+        "right": true,
+        "confidence": 0.675,
+        "brier": 0.007032980000000002,
+        "baseline": 0.5
+      },
+      {
+        "id": "num-8",
+        "label": "no",
+        "choice": "no",
+        "right": true,
+        "confidence": 0.971,
+        "brier": 0.00001682000000000008,
+        "baseline": 0.5
+      },
+      {
+        "id": "num-9",
+        "label": "yes",
+        "choice": "no",
+        "right": false,
+        "confidence": 0.862,
+        "brier": 1.92315272,
+        "baseline": 0.5
+      },
+      {
+        "id": "num-10",
+        "label": "yes",
+        "choice": "no",
+        "right": false,
+        "confidence": 0.971,
+        "brier": 1.9884168199999999,
+        "baseline": 0.5
+      },
+      {
+        "id": "num-11",
+        "label": "yes",
+        "choice": "no",
+        "right": false,
+        "confidence": 1,
+        "brier": 2,
+        "baseline": 0.5
+      },
+      {
+        "id": "num-12",
+        "label": "no",
+        "choice": "no",
+        "right": true,
+        "confidence": 0.996,
+        "brier": 1.7999999999998017e-7,
+        "baseline": 0.5
+      },
+      {
+        "id": "num-13",
+        "label": "yes",
+        "choice": "no",
+        "right": false,
+        "confidence": 0.999,
+        "brier": 2,
+        "baseline": 0.5
+      },
+      {
+        "id": "num-14",
+        "label": "no",
+        "choice": "no",
+        "right": true,
+        "confidence": 0.996,
+        "brier": 1.7999999999998017e-7,
+        "baseline": 0.5
+      },
+      {
+        "id": "num-15",
+        "label": "no",
+        "choice": "no",
+        "right": true,
+        "confidence": 0.993,
+        "brier": 7.200000000000539e-7,
+        "baseline": 0.5
+      },
+      {
+        "id": "num-16",
+        "label": "yes",
+        "choice": "no",
+        "right": false,
+        "confidence": 1,
+        "brier": 2,
+        "baseline": 0.5
+      },
+      {
+        "id": "num-17",
+        "label": "no",
+        "choice": "no",
+        "right": true,
+        "confidence": 0.996,
+        "brier": 1.7999999999998017e-7,
+        "baseline": 0.5
+      },
+      {
+        "id": "num-18",
+        "label": "no",
+        "choice": "no",
+        "right": true,
+        "confidence": 1,
+        "brier": 0,
+        "baseline": 0.5
+      },
+      {
+        "id": "num-19",
+        "label": "yes",
+        "choice": "no",
+        "right": false,
+        "confidence": 0.997,
+        "brier": 1.99920008,
+        "baseline": 0.5
+      },
+      {
+        "id": "num-20",
+        "label": "yes",
+        "choice": "no",
+        "right": false,
+        "confidence": 1,
+        "brier": 2,
+        "baseline": 0.5
+      }
+    ]
+  }
+}
