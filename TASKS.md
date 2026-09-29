@@ -1492,7 +1492,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none. The PRD froze these names on 2026-09-23 and F11 (c) labels against them
 
 ### T-A05, Category mix in the report, so style fit has something to compare against
-- Status: open
+- Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-a05-category-mix
 - Depends-on: T-C12, T-A03, T-C22
 - Touches: packages/core/src/report.ts, fixtures/contracts/report.json, packages/miner/src/,
   packages/guard/src/assess.ts, packages/guard/src/mint-check.ts, packages/guard/src/index.ts,
