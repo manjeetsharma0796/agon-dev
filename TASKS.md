@@ -2405,12 +2405,8 @@ _(empty)_
   decides whether this blocks the cohort or only part of it
 
 ### T-C21, prepare_swap: the MCP builds the trade, the agent signs it on its own machine
-- Status: claimed 2026-09-29 | Owner: manjeetsharma0796 | Branch: feature/t-c21-prepare-swap
-- Waiting on T-C22, 2026-09-29: `check_trade` in the MCP cannot answer `pass` until T-C22's
-  deterministic token screen lands, and this row builds only on a pass. Paused by
-  manjeetsharma0796 until then. Pushed so far on the branch: the `prepare_swap` contract appended as
-  tool 5, its fixtures and its tests. No file overlap with T-C22, which touches only
-  `packages/guard` and CLAUDE.md
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/231 | Owner: manjeetsharma0796 | Branch: feature/t-c21-prepare-swap
+- Paused 2026-09-29 until T-C22's deterministic screen landed (#223), then resumed the same day
 - Decided 2026-09-29 by manjeetsharma0796: `check_trade` judges the trade against a separate
   `historyWallet`, the user's real address, read only, while the vault belongs to `owner`. A fresh
   fork test key has no history and `check_trade` fails closed on none, so 1 address for both would
@@ -2436,7 +2432,18 @@ _(empty)_
   builds only on a pass, so 1 call replaces check then build. Measured with a fresh agent given
   only `docs/public/agent-setup.md`, before and after: model turns and tokens from "buy 0.1 SOL of
   X" to a signed transaction, against the about 11 retries an agent took writing its own script
-- Evidence: <PR link, plus the landed signature and the refusal text from the fork>
+- Evidence: #231. On the fork, through the real handler and io: a buy at the history wallet's
+  median (0.0004 SOL, USDC) got `check_trade` **pass** with the real quote, the agent alone signed,
+  and it landed (`3LAti5Mr...`), vault USDC 0 to 47,763 against a floor of 47,286. Then 0.45 wSOL
+  with 0.3996 left was refused before any quote, citing 0.3996. The builder alone landed a 0.1 wSOL
+  swap (0.1 to 11.91 USDC; `list_rules` then 0.3 of 0.4). Response ~660 tokens at the largest legal
+  legacy transaction, budget 700. Not yet measured: a 0.1 wSOL trade judged against a real
+  wallet's own history (needs a Helius key), and the fresh-agent before and after
+- Finding 2026-09-29: the quote is outside data, and 2 holes came from trusting it. A tampered
+  swap could pay out elsewhere, so the simulation now reads the vault's own output account and
+  refuses below the floor; and a floor of 0 would have waved that through, so the floor is
+  recomputed from the asked slippage. Jupiter's `outAmount` is still its word: a price from outside
+  Jupiter is the remaining gap, bounded per window by the chain's cap
 - Why it is its own row: nothing on the board builds a trade. Without it an armed vault has no
   path to a swap through Agon, and an agent writes its own script, which on the fork took about 11
   retries on a truncated "Simulation failed." before it read the full logs
