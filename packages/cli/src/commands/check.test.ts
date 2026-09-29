@@ -80,7 +80,7 @@ test('an oversized trade is refused against the median mined from its own histor
   const size = /size-vs-median: ([\d.]+)x your median size of ([\d.]+) SOL/.exec(all)
   expect(size).not.toBeNull()
   expect(Number(size?.[1])).toBeGreaterThan(2)
-  expect(all).toMatch(/Send [\d.]+ SOL or less, or raise the limit/)
+  expect(all).toMatch(/Send [\d.]+ SOL or less\./)
 
   // Every verdict is stamped with its data slot and rule version.
   expect(all).toContain('check-trade/1+mint-check/1')
