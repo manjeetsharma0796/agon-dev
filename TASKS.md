@@ -2385,6 +2385,17 @@ _(empty)_
   reasons above `note`, and a memecoin with a live mint authority is unchanged
 - Evidence: <PR link, plus the USDC and memecoin verdicts before and after>
 - Kill criterion: none. OP-37 decided it; a mint is added to the list only by a PR naming its issuer
+
+### T-B18, CLAUDE.md scopes the Jev rule to the trading guard
+- Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-b18-jev-rule-wording
+- Depends-on: OP-24
+- Touches: CLAUDE.md
+- Serves: Open source (judged) ; one rule an agent can follow without guessing its scope
+- Acceptance: CLAUDE.md's non-negotiable reads that the trading guard asks Jev only 3 non-numeric
+  questions, so it and T-B08's 4 diff-review questions agree, as OP-24 decided; 1 sentence changed,
+  0 other rules touched
+- Evidence: <PR link>
+- Kill criterion: none
 ### T-D07, The arming transactions, built once in packages/chain
 - Status: done
 - Depends-on: T-D01
