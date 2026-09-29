@@ -639,6 +639,199 @@ Lists the caps currently armed for a wallet.
 }
 ```
 
+## `prepare_swap`
+
+
+
+**Input**
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "owner": {
+      "type": "string",
+      "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+    },
+    "historyWallet": {
+      "type": "string",
+      "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+    },
+    "agent": {
+      "type": "string",
+      "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+    },
+    "inputMint": {
+      "type": "string",
+      "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+    },
+    "outputMint": {
+      "type": "string",
+      "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+    },
+    "amount": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$"
+    },
+    "slippageBps": {
+      "type": "integer",
+      "exclusiveMinimum": 0,
+      "maximum": 9007199254740991
+    }
+  },
+  "required": [
+    "owner",
+    "historyWallet",
+    "agent",
+    "inputMint",
+    "outputMint",
+    "amount",
+    "slippageBps"
+  ]
+}
+```
+
+**Output**
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "transaction": {
+      "type": "string",
+      "minLength": 1
+    },
+    "vault": {
+      "type": "string",
+      "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+    },
+    "verdict": {
+      "type": "object",
+      "properties": {
+        "verdict": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "block",
+            "unsure"
+          ]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "rule": {
+                "type": "string",
+                "minLength": 1
+              },
+              "message": {
+                "type": "string",
+                "minLength": 1
+              },
+              "observed": {
+                "type": "number"
+              },
+              "limit": {
+                "type": "number"
+              },
+              "unit": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "rule",
+              "message"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "dataSlot": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "ruleVersion": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "verdict",
+        "reasons",
+        "dataSlot",
+        "ruleVersion"
+      ],
+      "additionalProperties": false
+    },
+    "quote": {
+      "type": "object",
+      "properties": {
+        "inAmount": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$"
+        },
+        "outAmount": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$"
+        },
+        "minOutAmount": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$"
+        },
+        "slippageBps": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        },
+        "route": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+          }
+        }
+      },
+      "required": [
+        "inAmount",
+        "outAmount",
+        "minOutAmount",
+        "slippageBps",
+        "route"
+      ],
+      "additionalProperties": false
+    },
+    "effectiveRemaining": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$"
+    },
+    "lastValidBlockHeight": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "unitsConsumed": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    }
+  },
+  "required": [
+    "transaction",
+    "vault",
+    "verdict",
+    "quote",
+    "effectiveRemaining",
+    "lastValidBlockHeight",
+    "unitsConsumed"
+  ],
+  "additionalProperties": false
+}
+```
+
 ## What the schemas do not say
 
 Some rules are cross-field and JSON Schema cannot express them, so they are enforced when the

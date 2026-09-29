@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   ArmedRule,
+  PrepareSwapInput,
+  PreparedSwap,
   ArmingLink,
   CheckTradeInput,
   CheckTradeOutput,
@@ -74,7 +76,14 @@ describe('examples parse against their contract', () => {
 
 describe('the tool list is the stable four', () => {
   it('names exactly the four tools, in order', () => {
-    expect([...TOOLS]).toEqual(['get_report', 'check_trade', 'arm_rule', 'list_rules'])
+    // prepare_swap is appended last, as DECISIONS.md records, so the first 4 keep their order.
+    expect([...TOOLS]).toEqual([
+      'get_report',
+      'check_trade',
+      'arm_rule',
+      'list_rules',
+      'prepare_swap',
+    ])
   })
 
   // Consumers 1 and 3: the MCP JSON schemas and the zod validators are the same definition, so a
@@ -192,5 +201,26 @@ describe('an ArmedRule read back from chain', () => {
     const { effectiveRemaining: _e, ...noRemaining } = fromChain
     expect(ArmedRule.safeParse(noVault).success).toBe(false)
     expect(ArmedRule.safeParse(noRemaining).success).toBe(false)
+  })
+})
+
+// T-C21: prepare_swap. The owner holds the vault, the history wallet is whose habits the guard
+// judges (read only), and the agent is the only signer.
+describe('prepare_swap', () => {
+  it('accepts the example request and the example prepared transaction', () => {
+    expect(() => PrepareSwapInput.parse(example('prepare-swap-input'))).not.toThrow()
+    expect(() => PreparedSwap.parse(example('prepare-swap-output'))).not.toThrow()
+  })
+
+  it('refuses a request with no amount or no slippage, rather than defaulting either', () => {
+    const { amount: _a, ...noAmount } = example('prepare-swap-input')
+    const { slippageBps: _s, ...noSlippage } = example('prepare-swap-input')
+    expect(PrepareSwapInput.safeParse(noAmount).success).toBe(false)
+    expect(PrepareSwapInput.safeParse(noSlippage).success).toBe(false)
+  })
+
+  it('never carries a private key in either direction', () => {
+    const keys = [...Object.keys(PrepareSwapInput.shape), ...Object.keys(PreparedSwap.shape)]
+    expect(keys.filter((k) => /secret|private|keypair|seed/i.test(k))).toEqual([])
   })
 })

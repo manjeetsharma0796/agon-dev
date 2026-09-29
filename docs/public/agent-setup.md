@@ -12,8 +12,9 @@ field: tell the user which network before you quote any number. Treat "unsure" a
 "the trade does not go out", and tell the user the reason word for word. Never propose a spending
 limit yourself: arm_rule returns a link, and the user sets the limit on that page with their own
 wallet. To see what you are allowed to spend, call list_rules and quote effectiveRemaining, with
-rollingWorstCase beside it. If a call returns an error, read its first sentence to the user and do
-not retry the same call.
+rollingWorstCase beside it. To trade, call prepare_swap and sign the transaction it returns with
+your own key, locally; never build a swap another way. If a call returns an error, read its first
+sentence to the user and do not retry the same call.
 ```
 
 ## 1. Run the server
@@ -58,7 +59,7 @@ and never reaches the network. It has 1 recorded wallet,
 `HLnpSz9h2S4hiLQ43rnSD9XkcUThA7B8hQMKmDaiTLcC`, with USDC as the recorded mint. Any other wallet
 is refused with the reason, not guessed at.
 
-## 4. The four tools, as they behave today
+## 4. The five tools, as they behave today
 
 | Tool | What it really does now |
 |---|---|
@@ -66,14 +67,15 @@ is refused with the reason, not guessed at.
 | `get_report` | Answers from a recorded example, the same figures for any wallet, with a `note` saying so. Repeat the note if you quote it. |
 | `arm_rule` | Arms nothing. Returns a link to the arming screen, on the practice fork only. A request that carries a cap is refused. |
 | `list_rules` | Reads the wallet's vault from the chain this deployment names. Needs `AGON_RPC_URL`; without it the call refuses, which is not the same as "no rules". |
+| `prepare_swap` | Builds 1 unsigned swap from the vault, signed by nobody. Runs `check_trade` itself with the real quote, checks the amount against `effectiveRemaining` and simulates on the configured chain; returns the transaction only past all 3. Needs `AGON_RPC_URL`, and live mode for any wallet but the recorded one. |
 
 Two facts that change how you read `check_trade`:
 
-- **It cannot return `pass` today.** It takes no price quote, so `quote-missing` is always among
-  its reasons, and the wallet's category mix is not computed yet, so `category-mix-missing` is too.
-  Both are `unsure`. A successful call is one that returns a verdict with its reasons. No model is
-  asked anything: the token's category and the impostor check are lookups, and the token's own
-  name and description never appear in an answer.
+- **On its own it cannot return `pass`.** It takes no price quote, so `quote-missing` is always
+  among its reasons, and that is `unsure`. `prepare_swap` runs the same check with the quote it
+  routes, and that is the only path to `pass`. A successful `check_trade` call is one that returns a
+  verdict with its reasons. No model is asked anything: the token's category and the impostor check
+  are lookups, and the token's own name and description never appear in an answer.
 - **Size is checked on a buy only.** A sell returns no size reason. That is a gap, not a pass.
 
 `arm_rule` takes `wallet`, `mints` (a list), `triggerType` (for example `"stop"`) and `expiresAt`
@@ -109,18 +111,24 @@ An empty list means no agent role is armed. An error means no chain was read.
 
 ## 7. The swap that lands
 
-There is no tool that builds this yet. This is the recipe measured on the fork, where it landed
-and a 0.1 wSOL swap left the allowance 100000000 lower.
+Call `prepare_swap` with:
 
-1. Ask Jupiter for a quote, then for `swap-instructions`, with `userPublicKey` set to the **vault**
-   address from `list_rules`, `wrapAndUnwrapSol: false` and `asLegacyTransaction: true`.
-2. Take only `swapInstruction`. Drop the setup and cleanup instructions: the vault's token accounts
-   already exist, and the role allows neither the associated token program nor the token program.
-3. Wrap it in Swig's sign instruction for your role id (`getSignInstructions` in
-   `@swig-wallet/classic`).
-4. Put the compute budget instruction **outside** the wrap, first in the transaction. Wrapping it
-   is refused.
-5. Sign with the agent key alone and send.
+| Field | Value |
+|---|---|
+| `owner` | the user's wallet, which owns the vault |
+| `historyWallet` | the wallet whose history judges the trade: on mainnet the owner; on the practice fork the user's real address, because a fresh test key has no history |
+| `agent` | your **public** key |
+| `inputMint`, `outputMint` | 1 of them must be wrapped SOL, `So11111111111111111111111111111111111111112` |
+| `amount` | base units of `inputMint` |
+| `slippageBps` | at most 100 |
+
+It returns `transaction`, base64 and unsigned, with you as the fee payer and the only signer. Sign
+it with your key, locally, and send it before `lastValidBlockHeight`. It holds Jupiter's swap alone,
+wrapped in Swig's sign instruction for your role, so the chain's cap applies to it. Measured on the
+fork on 2026-09-29: a 0.1 wSOL swap built this way landed and left the allowance 100000000 lower,
+and a 0.45 request with 0.4 left was refused before anything was built.
+
+Any refusal means no transaction exists. Do not build one by hand instead.
 
 ## 8. Reading a refusal
 

@@ -1,0 +1,10 @@
+{
+  "synthetic": true,
+  "owner": "4xtEA6tRSVddmC5TWENPpXy3JgYAmxCuJqB2KM8K6Xeu",
+  "historyWallet": "HLnpSz9h2S4hiLQ43rnSD9XkcUThA7B8hQMKmDaiTLcC",
+  "agent": "AuDJytumq5eYrJ57DYGNLT6RaAhNRwsxtPwHy2P1yZys",
+  "inputMint": "So11111111111111111111111111111111111111112",
+  "outputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  "amount": "100000000",
+  "slippageBps": 100
+}

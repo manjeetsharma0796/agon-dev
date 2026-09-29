@@ -1,0 +1,21 @@
+{
+  "synthetic": true,
+  "transaction": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "vault": "C7Bz4nps2z1NDftJUBzXQyeR2iDE5j5ztad5q1k4iA8R",
+  "verdict": {
+    "verdict": "pass",
+    "reasons": [],
+    "dataSlot": 312904411,
+    "ruleVersion": "check-trade/1+mint-check/1"
+  },
+  "quote": {
+    "inAmount": "100000000",
+    "outAmount": "12049123",
+    "minOutAmount": "11928632",
+    "slippageBps": 100,
+    "route": ["8sLbNZoA1cfnvMJLPfp98ZLAnFSYCFApfJKMbiXNLwxj"]
+  },
+  "effectiveRemaining": "500000000",
+  "lastValidBlockHeight": 430000000,
+  "unitsConsumed": 112000
+}

@@ -6,7 +6,9 @@
 
 import {
   agentRulesOf,
+  pocketOf,
   resolveVault,
+  swapTransaction,
   vaultAddress,
   USDC_MINT,
   WSOL_MINT,
@@ -20,15 +22,23 @@ import {
   historyProviderShape,
   historyProviderStatus,
   historyUnavailable,
+  jupiterQuote,
+  jupiterSwapInstructions,
   mintCheckEmpty,
   network,
   noChainConfigured,
+  noOutputPocket,
+  noVault,
+  quoteNotRead,
+  quoteUnavailable,
   Refusal,
+  type JupiterQuote,
+  type PrepareSwapInput,
 } from '@agon/core'
-import { Connection, PublicKey } from '@solana/web3.js'
+import { Connection, PublicKey, TransactionInstruction } from '@solana/web3.js'
 import { fetchNullableSwig } from '@swig-wallet/classic/dist/index.js'
 import { fromEnhanced, type EnhancedTransaction, type RawTransaction } from '@agon/decoder'
-import { checkMints, type MintCheck } from '@agon/guard'
+import { categoriesOf, checkMints, type MintCheck, type TokenCategory } from '@agon/guard'
 
 /** Helius returns newest first and one page is 100, which is enough to mine a habit from. */
 const PAGE = 100
@@ -54,11 +64,51 @@ export interface ToolIo {
    * network this deployment names, rather than answering with an empty list.
    */
   loadVaultRules(wallet: string): Promise<VaultRules>
+  /** The token category of each mint, for the wallet's category mix. A mint it cannot place is left out. */
+  loadCategories(mints: string[], slot?: number): Promise<ReadonlyMap<string, TokenCategory>>
+  /**
+   * Jupiter's answer for spending `amount` base units of `inputMint`, for 1 legacy transaction.
+   * Unchecked here: the caller parses it with `JupiterQuote`, since it is outside data.
+   */
+  loadQuote(q: QuoteAsk): Promise<unknown>
+  /**
+   * The quote as 1 unsigned transaction from the owner's vault, signed only by the agent, and what
+   * simulating it on the configured chain said. Throws on no chain, a mismatched chain or no vault.
+   */
+  buildSwap(b: {
+    owner: string
+    agent: string
+    roleId: number
+    quote: JupiterQuote
+  }): Promise<BuiltSwap>
 }
+
+type QuoteAsk = Pick<PrepareSwapInput, 'inputMint' | 'outputMint' | 'amount' | 'slippageBps'>
+
+export interface BuiltSwap {
+  vault: string
+  /** Base64, unsigned. */
+  transaction: string
+  lastValidBlockHeight: number
+  unitsConsumed: number
+  /** Null when the simulation succeeded. */
+  failure: { logs: string[] } | null
+  /** Base units the vault's output account gains in the simulation. */
+  outputGained: bigint
+}
+
+/** An SPL token account's amount: a little-endian u64 at byte 64. */
+const tokenAmount = (data: Buffer): bigint => data.readBigUInt64LE(64)
 
 export interface VaultRules {
   vault: string | null
   rules: ChainAgentRule[]
+}
+
+interface JupiterInstruction {
+  programId: string
+  data: string
+  accounts: { pubkey: string; isSigner: boolean; isWritable: boolean }[]
 }
 
 /** The mints Agon arms, so these are the ones a vault is read for. */
@@ -79,31 +129,52 @@ export function chainMismatch(networkId: string, version: Record<string, unknown
   return null
 }
 
+/** The configured chain, checked to be the network this deployment names before anything is read. */
+async function chainFor(wallet: string): Promise<Connection> {
+  const url = process.env['AGON_RPC_URL']
+  if (!url) {
+    throw new Refusal(noChainConfigured({ wallet }))
+  }
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getVersion' }),
+  })
+  const version = ((await res.json()) as { result?: Record<string, unknown> }).result ?? {}
+  const mismatch = chainMismatch(network(process.env['AGON_NETWORK']).id, version)
+  if (mismatch) {
+    throw new Refusal(chainMismatchRow({ wallet, mismatch }))
+  }
+  return new Connection(url, 'confirmed')
+}
+
 export const liveIo = (): ToolIo => {
   // Per instance, and `callAsTool` builds one per call, so two concurrent requests cannot see each
   // other's flag. A single flag shared across a server's lifetime would mark every later answer
   // the moment one early read hit a recording.
   let fromFixture = false
+  const recorded: typeof call = async (req, opts) => {
+    const res = await call(req, opts)
+    if (res.fromFixture) fromFixture = true
+    return res
+  }
+  // The wrapper's own errors name fixture paths and env vars, which an agent must not be handed.
+  const jupiter: typeof call = async (req, opts) => {
+    try {
+      return await recorded(req, opts)
+    } catch (error) {
+      const replay = /replay mode|No recorded response/i.test(
+        error instanceof Error ? error.message : String(error),
+      )
+      throw new Refusal(quoteNotRead({ recorded: replay }))
+    }
+  }
 
   return {
     usedFixture: () => fromFixture,
 
     async loadVaultRules(wallet: string): Promise<VaultRules> {
-      const url = process.env['AGON_RPC_URL']
-      if (!url) {
-        throw new Refusal(noChainConfigured({ wallet }))
-      }
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getVersion' }),
-      })
-      const version = ((await res.json()) as { result?: Record<string, unknown> }).result ?? {}
-      const mismatch = chainMismatch(network(process.env['AGON_NETWORK']).id, version)
-      if (mismatch) {
-        throw new Refusal(chainMismatchRow({ wallet, mismatch }))
-      }
-      const connection = new Connection(url, 'confirmed')
+      const connection = await chainFor(wallet)
       const owner = new PublicKey(wallet)
       const resolved = await resolveVault(
         (address) => fetchNullableSwig(connection, address),
@@ -144,19 +215,70 @@ export const liveIo = (): ToolIo => {
       return (res.body as EnhancedTransaction[]).map(fromEnhanced)
     },
 
+    loadCategories: (mints, slot) => categoriesOf(mints, { net: recorded }, slot),
+
+    async loadQuote(q: QuoteAsk): Promise<unknown> {
+      const res = await jupiter(
+        jupiterQuote(q.inputMint, q.outputMint, q.amount, q.slippageBps, true),
+      )
+      if (res.status !== 200) throw new Refusal(quoteUnavailable({ status: res.status }))
+      return res.body
+    },
+
+    async buildSwap({ owner, agent, roleId, quote }): Promise<BuiltSwap> {
+      const connection = await chainFor(owner)
+      const resolved = await resolveVault(
+        (address) => fetchNullableSwig(connection, address),
+        new PublicKey(owner),
+      )
+      if (resolved.existing === null) throw new Refusal(noVault({ owner }))
+      const vault = vaultAddress(resolved.swigId).toBase58()
+      // The proceeds must land in the vault's own account for the output mint. Missing, the swap
+      // cannot land; present, the simulation below proves the proceeds arrive there.
+      const pocket = pocketOf(new PublicKey(vault), quote.outputMint)
+      const before = await connection.getAccountInfo(pocket)
+      if (before === null) throw new Refusal(noOutputPocket({ vault, mint: quote.outputMint }))
+      const res = await jupiter(jupiterSwapInstructions(quote, vault))
+      if (res.status !== 200) throw new Refusal(quoteUnavailable({ status: res.status }))
+      const raw = (res.body as { swapInstruction: JupiterInstruction }).swapInstruction
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash()
+      const tx = await swapTransaction({
+        swig: resolved.existing,
+        roleId,
+        agent: new PublicKey(agent),
+        swap: new TransactionInstruction({
+          programId: new PublicKey(raw.programId),
+          data: Buffer.from(raw.data, 'base64'),
+          keys: raw.accounts.map((k) => ({
+            pubkey: new PublicKey(k.pubkey),
+            isSigner: k.isSigner,
+            isWritable: k.isWritable,
+          })),
+        }),
+        recentBlockhash: blockhash,
+      })
+      // Unsigned, so the simulation skips signature checks; it still runs every program.
+      const sim = (await connection.simulateTransaction(tx, undefined, [pocket])).value
+      const after = sim.accounts?.[0]?.data[0]
+      return {
+        vault,
+        transaction: tx.serialize({ requireAllSignatures: false }).toString('base64'),
+        lastValidBlockHeight,
+        unitsConsumed: sim.unitsConsumed ?? 0,
+        failure: sim.err === null ? null : { logs: sim.logs ?? [] },
+        // No post state reads as 0 gained, which refuses: never assumed to have arrived.
+        outputGained:
+          after === undefined
+            ? 0n
+            : tokenAmount(Buffer.from(after, 'base64')) - tokenAmount(before.data),
+      }
+    },
+
     async loadMintCheck(mint: string): Promise<MintCheck> {
       // checkMints makes its own net call, so the wrapper is handed in rather than guessed at.
       // Inferring it from the verdict instead would be a second rule about what counts as
       // recorded, and the two would drift.
-      const check = (
-        await checkMints([mint], {
-          net: async (req, opts) => {
-            const res = await call(req, opts)
-            if (res.fromFixture) fromFixture = true
-            return res
-          },
-        })
-      ).get(mint)
+      const check = (await checkMints([mint], { net: recorded })).get(mint)
       if (check === undefined) {
         throw new Refusal(mintCheckEmpty({ mint }))
       }
