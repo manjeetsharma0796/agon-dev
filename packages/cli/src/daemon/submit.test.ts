@@ -1,6 +1,7 @@
 import {
   Connection,
   Keypair,
+  type SignatureStatusConfig,
   SystemProgram,
   TransactionMessage,
   VersionedTransaction,
@@ -65,7 +66,7 @@ test.skipIf(!isLocal)(
     let hidden = 5
     const lossy = {
       sendRawTransaction: c.sendRawTransaction.bind(c),
-      getSignatureStatuses: async (sigs: string[], o?: object) =>
+      getSignatureStatuses: async (sigs: string[], o?: SignatureStatusConfig) =>
         hidden-- > 0 ? { context: { slot: 0 }, value: [null] } : c.getSignatureStatuses(sigs, o),
       getBlockHeight: c.getBlockHeight.bind(c),
     } as unknown as Connection

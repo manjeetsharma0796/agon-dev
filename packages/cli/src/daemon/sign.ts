@@ -12,7 +12,7 @@ import type { Keypair, VersionedMessage, VersionedTransaction } from '@solana/we
 /** How long a pass stays good for. Past it the price the check read may no longer be the price. */
 export const APPROVAL_TTL_MS = 30_000
 
-export interface Approval {
+interface Approval {
   /** sha256 of the serialized message, hex. */
   messageHash: string
   /** When check_trade answered, in ms since the epoch. */

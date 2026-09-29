@@ -10,7 +10,7 @@
 import type { Connection, VersionedTransaction } from '@solana/web3.js'
 import bs58 from 'bs58'
 
-export type Submitted =
+type Submitted =
   | { status: 'landed'; signature: string; sends: number }
   | { status: 'failed'; signature: string; sends: number; error: string }
   | { status: 'dropped'; signature: string; sends: number; message: string }

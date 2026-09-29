@@ -94,8 +94,8 @@ importers:
         version: 4.0.1
     devDependencies:
       '@types/bs58':
-        specifier: ^5.0.0
-        version: 5.0.0
+        specifier: 4.0.4
+        version: 4.0.4
 
   packages/core:
     dependencies:
@@ -1084,9 +1084,8 @@ packages:
   '@swig-wallet/lib@2.1.0':
     resolution: {integrity: sha512-C3bM+4rjPt4/sY4Nr9TkGoReq5iLCsu3rdk0/wJq2ttXxArzRLj5vaGliIdSGzRfkqxA/c+vhel9huzm/psogg==}
 
-  '@types/bs58@5.0.0':
-    resolution: {integrity: sha512-cAw/jKBzo98m6Xz1X5ETqymWfIMbXbu6nK15W4LQYjeHJkVqSmM5PO8Bd9KVHQJ/F4rHcSso9LcjtgCW6TGu2w==}
-    deprecated: This is a stub types definition. bs58 provides its own type definitions, so you do not need this installed.
+  '@types/bs58@4.0.4':
+    resolution: {integrity: sha512-0IEpMFXXQi2zXaXl9GJ3sRwQo0uEkD+yFOv+FnAU5lkPtcu6h61xb7jc2CFPEZ5BUOaiP13ThuGc9HD4R8lR5g==}
 
   '@types/chai@5.2.3':
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
@@ -3002,9 +3001,10 @@ snapshots:
       - typescript
       - ws
 
-  '@types/bs58@5.0.0':
+  '@types/bs58@4.0.4':
     dependencies:
-      bs58: 4.0.1
+      '@types/node': 22.10.5
+      base-x: 3.0.11
 
   '@types/chai@5.2.3':
     dependencies:
