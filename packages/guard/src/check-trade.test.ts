@@ -326,3 +326,11 @@ test('a trade just past a limit is not rounded back under it', () => {
   expect(band.verdict, 'a 1.004% impact passed a 1% band').toBe('block')
   expect(band.reasons.map((r) => r.rule)).toContain('price-band')
 })
+
+// Decided 2026-09-29 by Jishnu on T-A05's first measurement: buying a stablecoin is stepping out
+// of risk, so it is never "a category you have never traded". Every other check still applies.
+test('buying a stablecoin is never a new category for style fit', () => {
+  const mint = { ...facts().mint, category: 'stablecoin' as const }
+  const out = checkTrade(buy(MEDIAN), facts({ jev: null, mint, categoryMix: { memecoin: 1 } }))
+  expect(ruleNames(out)).not.toContain('style-fit')
+})

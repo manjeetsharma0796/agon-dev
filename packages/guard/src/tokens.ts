@@ -54,7 +54,10 @@ export function categoryOf(mint: string, listing: TokenListing): TokenCategory {
   if (tags.has('stable')) return 'stablecoin'
   if (tags.has('lst')) return 'liquid-staking token'
   if (tags.has('rwa') || tags.has('yb')) return 'real-world asset'
-  if (tags.has('meme')) return 'memecoin'
+  // `unknown` is Jupiter's tag for an unverified, low-activity token, which in practice is a
+  // launchpad memecoin. Counted as one, so a trader of such tokens is not told a tagged memecoin is
+  // new to them (decided 2026-09-29 on T-A05's first measurement).
+  if (tags.has('meme') || tags.has('unknown')) return 'memecoin'
   if (tags.has('major') || BLUE_CHIPS.has(mint)) return 'blue chip'
   return 'other'
 }

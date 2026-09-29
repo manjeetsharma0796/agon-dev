@@ -242,3 +242,12 @@ test('a lookup that fails leaves the category unknown rather than guessing it', 
   })
   expect(checks.get(USDC)?.category).toBeNull()
 })
+
+// Decided 2026-09-29: Jupiter's `unknown` tag (unverified, low-activity launchpad tokens) counts as
+// memecoin, so a trader of such tokens is not told a tagged memecoin is a new category for them.
+test('an unverified token Jupiter tags unknown is a memecoin', async () => {
+  const checks = await checkMints(MINTS, {
+    net: listed({ id: USDC, symbol: 'ZOP', name: 'Zop', tags: ['unknown', 'token-2022'] }),
+  })
+  expect(checks.get(USDC)?.category).toBe('memecoin')
+})
