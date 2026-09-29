@@ -1031,17 +1031,19 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   `windowSeconds` or `windowSlots`, at least 1, in the same type. Rejected: a chain-only output type
   (a second shape for 1 rule); storing the spec off-chain (needs a database, OP-6, not set up)
 
-### OP-37, Should a live mint or freeze authority block a stablecoin like USDC?
+### OP-37, Should a live mint or freeze authority stop a stablecoin like USDC from ever passing?
 - Status: open
 - Owner: Jishnu, for a product call
 - Needed by: before an agent is pointed at any USDC pair, including the fork demo
-- Unblocks: a `check_trade` that can ever answer anything but block on a USDC buy
+- Unblocks: a `check_trade` that can ever answer `pass` on a USDC buy
 - What exactly: USDC has a live freeze authority and a live mint authority, as every issuer-run
-  stablecoin does. `check_trade` blocks on each, so every USDC buy is blocked on 2 authority reasons
-  whatever its size. Measured 2026-09-29 by a fresh agent following `docs/public/agent-setup.md`:
-  `block` with `mint-freeze-authority` and `mint-authority-live` beside the size reason. The rule
-  is doing what it says, and for a random new token it is right. For USDC it means the most common
-  quote asset can never pass.
+  stablecoin does. `check_trade` reports each as a reason at the mint check's own severity,
+  `unsure`, so every USDC buy is at best `unsure` whatever its size. Corrected 2026-09-29: this item
+  first said "blocked". A fresh agent saw `block`, but that came from its size reason, 4996.6x the
+  median; at 1000 and 200000 base units the same wallet and mint answer `unsure` with the 2
+  authority reasons, and F3's threshold says a freeze authority never blocks on its own. `unsure`
+  still means the trade does not go out, so the conclusion stands: the most common quote asset can
+  never pass.
 - Options: (1) keep blocking, and say in the docs that stablecoins always block; (2) a pinned
   allowlist of issuer mints in config, never from user input, where these 2 reasons become a named
   note instead of a block; (3) downgrade the 2 reasons to `unsure` for every mint. Recommendation:

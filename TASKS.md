@@ -2253,8 +2253,9 @@ _(empty)_
   the documented local setup `list_rules` and `arm_rule` always refuse. The page says so; setting
   them is outside this row's Touches
 - Finding 3: USDC carries both a live freeze authority and a live mint authority, so `check_trade`
-  blocks every USDC buy on 2 authority reasons whatever the size. That is the rule as written, and
-  worth a decision before an agent is pointed at a USDC pair
+  answers every USDC buy at best `unsure` on those 2 reasons, whatever the size. Corrected: this
+  first said "blocks"; the block the agent saw came from its size reason, and at small sizes the
+  answer is `unsure`. Either way the trade does not go out, which is OP-37
 - Kill criterion: none, but the docs correction is the gate on the rest: a paste-and-go prompt
   built on a false promise ships that promise to every agent that reads it
 
