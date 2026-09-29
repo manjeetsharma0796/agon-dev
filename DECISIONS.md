@@ -71,3 +71,5 @@ this file is not misled into thinking everything is settled.
 | 2026-09-29 | Who builds the trade | Both: MCP tool 5 and the CLI, in parallel | Agents with no CLI get a working path at once, and the daemon still needs a local builder for its re-quote | OP-34 |
 | 2026-09-29 | Issuer stablecoins and live authorities | Pinned issuer allowlist; unsure for every other live authority | The mint account cannot tell Circle from an anonymous deployer, and only the address can | OP-37 |
 | 2026-09-29 | Jev's text screen | Measure intensively before wiring anything | 5 of 5 real tokens were flagged as injections, so the question is where Jev helps, not whether to switch it on | OP-38 |
+| 2026-09-29 | Two hackathons | The same project enters both the World's Fair and the fall hackathon | Confirmed with Colosseum, per Jishnu | OP-12 |
+| 2026-09-29 | Filming the end-to-end slice | The team films it outside this board | It is a team activity, not a task an agent can advance | OP-22 |

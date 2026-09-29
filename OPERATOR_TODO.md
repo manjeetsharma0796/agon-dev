@@ -307,7 +307,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: a named reviewer has signed off and `docs/public/beta-terms.md` is published.
 
 ### * OP-12, Confirm the two-hackathon extension and the fall criteria
-- Status: open
+- Status: decided 2026-09-29 by Jishnu: confirmed, the same project may enter both the World's Fair and the fall hackathon. The person and channel of Colosseum's answer were not given here
 - Owner: <unassigned>
 - Needed by: 2026-10-12
 - Unblocks: T-J04
@@ -522,7 +522,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 ### OP-22, Film a thin working slice before building more
 - Retitled 2026-09-25: it said "on devnet", which OP-20 overruled. Devnet cannot run the arming
   half at all, because the pinned Jupiter id is not a program there
-- Status: open
+- Status: decided 2026-09-29 by Jishnu: the team films the end-to-end slice itself, outside this board, so it is no longer tracked here
 - Owner: <unassigned>
 - Needed by: 2026-09-27, CP1
 - Unblocks: nothing on paper, and the confidence of everyone reading the board
