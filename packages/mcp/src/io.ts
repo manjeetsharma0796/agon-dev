@@ -4,7 +4,18 @@
 // committed recording with 0 keys set. That is what makes a demo reproducible: the agent talking to
 // this server gets the same numbers whether or not anyone's key is live.
 
-import { call, heliusTransactions } from '@agon/core'
+import {
+  agentRulesOf,
+  resolveVault,
+  vaultAddress,
+  USDC_MINT,
+  WSOL_MINT,
+  type ChainAgentRule,
+  type ChainRole,
+} from '@agon/chain'
+import { call, heliusTransactions, network } from '@agon/core'
+import { Connection, PublicKey } from '@solana/web3.js'
+import { fetchNullableSwig } from '@swig-wallet/classic/dist/index.js'
 import { fromEnhanced, type EnhancedTransaction, type RawTransaction } from '@agon/decoder'
 import { checkMints, type MintCheck } from '@agon/guard'
 
@@ -26,6 +37,35 @@ export interface ToolIo {
    * the tests ever read it. This is the first consumer.
    */
   usedFixture(): boolean
+  /**
+   * The wallet's vault and the agent rules on it, read from the chain `AGON_RPC_URL` names. `vault`
+   * is null when the wallet has none yet. Throws when no chain is configured or the chain is not the
+   * network this deployment names, rather than answering with an empty list.
+   */
+  loadVaultRules(wallet: string): Promise<VaultRules>
+}
+
+export interface VaultRules {
+  vault: string | null
+  rules: ChainAgentRule[]
+}
+
+/** The mints Agon arms, so these are the ones a vault is read for. */
+const ARMED_MINTS = [WSOL_MINT, USDC_MINT] as const
+
+/**
+ * Whether an RPC endpoint is the network this deployment names. A Surfpool fork says so in
+ * `getVersion` (`surfnet-version`) and mainnet does not, so the check holds for a hosted fork at
+ * any hostname, which a check on the URL could not. Returns the reason it does not match, or null.
+ */
+export function chainMismatch(networkId: string, version: Record<string, unknown>): string | null {
+  const isFork = typeof version['surfnet-version'] === 'string'
+  if (networkId === 'unset') return 'this deployment names no network, so no chain is read'
+  if (networkId === 'fork' && !isFork)
+    return 'this deployment says fork, but the chain is not a fork'
+  if (networkId !== 'fork' && isFork)
+    return `this deployment says ${networkId}, but the chain is a fork`
+  return null
 }
 
 export const liveIo = (): ToolIo => {
@@ -36,6 +76,38 @@ export const liveIo = (): ToolIo => {
 
   return {
     usedFixture: () => fromFixture,
+
+    async loadVaultRules(wallet: string): Promise<VaultRules> {
+      const url = process.env['AGON_RPC_URL']
+      if (!url) {
+        throw new Error(
+          `No chain is configured on this deployment, so no vault was read for ${wallet} and no rules ` +
+            `are listed. This is not the same as having none: ask the operator to point it at a chain.`,
+        )
+      }
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getVersion' }),
+      })
+      const version = ((await res.json()) as { result?: Record<string, unknown> }).result ?? {}
+      const mismatch = chainMismatch(network(process.env['AGON_NETWORK']).id, version)
+      if (mismatch) {
+        throw new Error(`No rules are listed for ${wallet}: ${mismatch}. Nothing was read from it.`)
+      }
+      const connection = new Connection(url, 'confirmed')
+      const owner = new PublicKey(wallet)
+      const resolved = await resolveVault(
+        (address) => fetchNullableSwig(connection, address),
+        owner,
+      )
+      if (resolved.existing === null) return { vault: null, rules: [] }
+      const slot = BigInt(await connection.getSlot())
+      return {
+        vault: vaultAddress(resolved.swigId).toBase58(),
+        rules: agentRulesOf(resolved.existing.roles as unknown as ChainRole[], ARMED_MINTS, slot),
+      }
+    },
 
     async loadTransactions(wallet: string): Promise<RawTransaction[]> {
       let res

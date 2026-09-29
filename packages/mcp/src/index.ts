@@ -7,6 +7,7 @@
 
 import { FIXTURE_NOTE, armRule, report } from '@agon/web'
 import { TOOLS, mode, network, type ToolName, toolContracts } from '@agon/core'
+import { JUPITER_PROGRAM_ID } from '@agon/chain'
 import { assessTrade } from '@agon/guard'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
@@ -58,9 +59,32 @@ const handlers = {
   },
 
   arm_rule: (input: unknown) => armRule(input),
-  // list_rules returns what is armed. Nothing can be armed yet, so the honest answer is the empty
-  // list, and it is empty because arming is off and not because this wallet has no rules.
-  list_rules: (_input: unknown) => [],
+  // list_rules reads the wallet's vault from chain (T-C17). The chain stores the role, not
+  // the spec, the order id or a window in seconds, so those are null or slots rather than guesses.
+  // An empty list now means the chain holds no agent role for this wallet.
+  list_rules: async (input: unknown, io: ToolIo) => {
+    const { wallet } = input as { wallet: string }
+    const { vault, rules } = await io.loadVaultRules(wallet)
+    if (vault === null) return []
+    return rules.map((r) => ({
+      spec: null,
+      swigRole: {
+        roleId: String(r.roleId),
+        authority: r.authority,
+        // agentRulesOf lists only roles that passed assertAgentRoleShape, which requires Jupiter.
+        program: JUPITER_PROGRAM_ID,
+        tokenRecurringLimit: {
+          mint: r.mint,
+          amount: String(r.amount),
+          windowSlots: Number(r.windowSlots),
+        },
+      },
+      jupiterOrderId: null,
+      vault,
+      effectiveRemaining: String(r.effectiveRemaining),
+      rollingWorstCase: String(r.rollingWorstCase),
+    }))
+  },
 } satisfies Record<ToolName, Handler>
 
 /**
@@ -127,8 +151,11 @@ What works right now, with nothing to set up:
 - The size rule is checked on a BUY only. A sell is not sized against the median, because the
   median is a cost basis counted in the quote asset and a sell's size is counted in the mint. So a
   large sell returns no size reason. That is a gap, not a pass.
-- list_rules is real and currently returns an empty "rules" list for every wallet, because arming
-  is off. Empty means nothing is armed, not that the wallet has no history.
+- list_rules reads the wallet's vault from the chain this deployment names. Each rule gives the
+  vault, the agent key, the cap per window in slots, effectiveRemaining (what can be spent now) and
+  rollingWorstCase (up to 2 windows across a window edge). Quote effectiveRemaining, never a raw
+  figure, and give rollingWorstCase beside it. spec is null because the chain does not store it. An
+  empty list means no agent role is armed; an error means no chain was read, which is different.
 
 What is not real yet, so do not present it as a measurement:
 
@@ -167,7 +194,9 @@ const DESCRIPTIONS: Record<ToolName, string> = {
     'Arm a capped, revocable spending rule as a Swig role plus a Jupiter trigger order. Every ' +
     'call refuses today: arming turns on only once F5 and F6 pass and the pre-mainnet checklist ' +
     'is ticked.',
-  list_rules: 'List the rules armed for a wallet. Empty until arm_rule turns on.',
+  list_rules:
+    "List the agent rules armed on a wallet's vault, read from chain: the cap per window in slots, " +
+    'what the agent can spend now, and the most it can spend across a window edge.',
 }
 
 /**

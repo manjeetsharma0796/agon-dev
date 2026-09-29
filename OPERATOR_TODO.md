@@ -1024,3 +1024,9 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
      same commit. Rejected: a second type beside ArmedRule (2 shapes for 1 rule that can drift);
      postponing (T-C17 and T-C21 stay blocked).
 - Done when: the 3 rows naming OP-35 are in `DECISIONS.md`, which this PR adds
+- Amended 2026-09-29, while building T-C17, by manjeetsharma0796 and Jishnu: the chain cannot fill
+  `ArmedRule` as decided in 3. It stores the role, not the trigger type, the expiry or the order id,
+  and Swig counts its window in slots, while `RecurringLimit` said seconds. Converting would mean
+  guessing a slot time. So `spec` is nullable (null when read from chain) and `RecurringLimit` takes
+  `windowSeconds` or `windowSlots`, at least 1, in the same type. Rejected: a chain-only output type
+  (a second shape for 1 rule); storing the spec off-chain (needs a database, OP-6, not set up)
