@@ -73,3 +73,4 @@ this file is not misled into thinking everything is settled.
 | 2026-09-29 | Jev's text screen | Measure intensively before wiring anything | 5 of 5 real tokens were flagged as injections, so the question is where Jev helps, not whether to switch it on | OP-38 |
 | 2026-09-29 | Two hackathons | The same project enters both the World's Fair and the fall hackathon | Confirmed with Colosseum, per Jishnu | OP-12 |
 | 2026-09-29 | Filming the end-to-end slice | The team films it outside this board | It is a team activity, not a task an agent can advance | OP-22 |
+| 2026-09-29 | Issuer allowlist for authorities | Not built: USDC already passes with a quote and a clean screen | Its authorities were notes all along; the gates are the quote and the text screen, so an allowlist would change nothing for authorities and belongs to impersonation instead | OP-37 |
