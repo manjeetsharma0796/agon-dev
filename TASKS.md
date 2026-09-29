@@ -1051,7 +1051,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none needed, this is arithmetic
 
 ### T-F11b, F11 (c), (d) and (e), accuracy, adversarial and numeric routing
-- Status: open
+- Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-f11b-jev-accuracy
 - Depends-on: T-F11a
 - Touches: spikes/F11/, FEASIBILITY.md
 - Serves: Novelty (judged) ; CP2 gate
