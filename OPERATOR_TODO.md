@@ -1051,7 +1051,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Done when: the decision is in `DECISIONS.md` and a task row carries the change, if any
 
 ### OP-38, Jev's screen flags every real token, so it cannot go into production as written
-- Status: decided 2026-09-29 by Jishnu: measure first. An intensive Jev test (T-F11a, then T-F11b's labelled cases) finds where its classification actually separates real tokens from attacks, and the most efficient batching; T-C22 then wires only what passed
+- Status: decided 2026-09-29 by Jishnu, twice: first measure (T-F11b), then on its result keep Jev out of the trading path. Category and impersonation become deterministic lookups (Jupiter's `lst` and `verified` tags, a pinned stablecoin list, a pinned mint list), and the injection risk is removed by never returning token text to the agent. T-C22
 - Owner: Jishnu, with whoever owns the Jev question design
 - Needed by: before T-C22 can merge, and so before `check_trade` can ever return `pass`
 - Unblocks: T-C22, and through it T-A05 and style fit in production

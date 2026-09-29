@@ -74,3 +74,4 @@ this file is not misled into thinking everything is settled.
 | 2026-09-29 | Two hackathons | The same project enters both the World's Fair and the fall hackathon | Confirmed with Colosseum, per Jishnu | OP-12 |
 | 2026-09-29 | Filming the end-to-end slice | The team films it outside this board | It is a team activity, not a task an agent can advance | OP-22 |
 | 2026-09-29 | Issuer allowlist for authorities | Not built: USDC already passes with a quote and a clean screen | Its authorities were notes all along; the gates are the quote and the text screen, so an allowlist would change nothing for authorities and belongs to impersonation instead | OP-37 |
+| 2026-09-29 | Jev in the trading path | Out. Category and impersonation are lookups; token text never reaches the agent | On 140 labelled cases no question design both passed real tokens and stopped attacks, and lookups are deterministic, fast and cost no model call per trade | OP-38 |
