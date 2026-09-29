@@ -869,7 +869,7 @@ async function runAuthorisationCases() {
               `${boundary}. A 0.1 wSOL swap with 0.05 left was refused by Swig ${refusals.length} ` +
               `times, the last seen at slot ${refusals[refusals.length - 1]?.slotAfter}, and the ` +
               `first one to land did so at slot ${landing.slot}, ${landing.slot - boundary} slots ` +
-              `after the boundary. So the allowance returns at slot lastReset + window`
+              `after the boundary. Swig's source resets when slot - lastReset > window, so the first slot the allowance can return is lastReset + window + 1`
             : `not restored as expected: boundary ${boundary}, ${beforeBoundary.length} refusals ` +
               `before it, ${refusals.length} in all, first landing ` +
               `${landing === null ? 'never, within 90 probes' : `at slot ${landing.slot}`}` +

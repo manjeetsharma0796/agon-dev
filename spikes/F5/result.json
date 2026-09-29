@@ -1,10 +1,10 @@
 {
   "id": "F5",
   "pass": false,
-  "measured": "3 of 7 cases exercised on a local mainnet fork at slot 451559883. The pinned Jupiter id is a program on a local mainnet fork. The Swig program is live (executable true, owner BPFLoaderUpgradeab1e11111111111111111111111), the agent role builds and passes assertAgentRoleShape, and the first of the 7 transactions reaches a local mainnet fork and is answered \"landed, signature 3gKKtFhzPbHS1j53j3ArEfKCv4aQpyWLdsxbHzXNw9ytFAAjaSEz3527SasS5m25Ex3x5FFNkytmZhroGSWQej5W\", so nothing in our code is the blocker. Separately the payer holds 1000000000 lamports against the 2100160 the 7 cases need.",
+  "measured": "6 of 7 cases exercised on a local mainnet fork at slot 451560606. The pinned Jupiter id is a program on a local mainnet fork. The Swig program is live (executable true, owner BPFLoaderUpgradeab1e11111111111111111111111), the agent role builds and passes assertAgentRoleShape, and the first of the 7 transactions reaches a local mainnet fork and is answered \"landed, signature kKbj9zKuZQTGMT6eP4HrKYrqySj781c4ug6iQGKhr43aKX2yd7t3gJww3Wv17Mw4oJE2WEuaDty75m48sZwXn3p\", so nothing in our code is the blocker. Separately the payer holds 1000000000 lamports against the 2100160 the 7 cases need.",
   "date": "2026-09-29",
-  "commit": "a0b35bef7e0e680a97f72c559c23c4a9e810aa8b",
-  "slot": 451559883,
+  "commit": "9612d47e5ea18650379bf6b57e46b427b473455d",
+  "slot": 451560606,
   "rpc": "http://127.0.0.1:8899",
   "keySource": "generated in memory",
   "devnet": {
@@ -35,7 +35,7 @@
       {
         "faucet": "the configured RPC",
         "http": 200,
-        "answer": "{\"jsonrpc\":\"2.0\",\"result\":\"3eoEiLr1qDRveSB9HxMQyAh7yZgkSsF2yGsJUMXffhf7i6S2V3b3nAGHUD5BXv2TeHMQ99sCzWGratbXJfBSCfAX\",\"id\":1}"
+        "answer": "{\"jsonrpc\":\"2.0\",\"result\":\"24vErDKXriQpV1o6Xu9XfmSEE3ZUcVP8swSRHFTca3LLDqFZfvQJwyFsoThXbkQQK4EcRHq4zsb1RaaUtd2KdoCm\",\"id\":1}"
       },
       {
         "faucet": "api.devnet.solana.com",
@@ -77,19 +77,19 @@
   "firstTransaction": {
     "instruction": "createSwig, the first of the seven cases",
     "bytes": 351,
-    "swigAddress": "2Cjjx4eu26wCjkqoYaUbEV47PXWMYW5vf7pJnVzCfUWW",
-    "answer": "landed, signature 3gKKtFhzPbHS1j53j3ArEfKCv4aQpyWLdsxbHzXNw9ytFAAjaSEz3527SasS5m25Ex3x5FFNkytmZhroGSWQej5W"
+    "swigAddress": "HjCAUhqokPHpErA5JEuvEvpKUY7WcveRM4D4ttnznu1Z",
+    "answer": "landed, signature kKbj9zKuZQTGMT6eP4HrKYrqySj781c4ug6iQGKhr43aKX2yd7t3gJww3Wv17Mw4oJE2WEuaDty75m48sZwXn3p"
   },
   "cases": {
     "a": {
       "states": "swap within cap succeeds",
-      "status": "not run",
-      "why": "the vault's token accounts could not be created, so no swap was possible: Simulation failed. Message: Transaction verification failed for transaction Internal error: \"Failed to fetch accounts from remote: error sending request for url (https://mainnet.helius-rpc.com/?api-key=<api key>)\". Catch the `SendTransactionError` and call `getLogs()` on it for full details."
+      "status": "pass",
+      "why": "0.1 wSOL through Raydium CLMM: the wallet paid exactly 100000000 base units and received 11896337 USDC against a quote of 11896337, which is inside 300 bps. Allowance 500000000 to 400000000"
     },
     "b": {
       "states": "swap over cap rejected",
-      "status": "not run",
-      "why": "the vault's token accounts could not be created, so no swap was possible: Simulation failed. Message: Transaction verification failed for transaction Internal error: \"Failed to fetch accounts from remote: error sending request for url (https://mainnet.helius-rpc.com/?api-key=<api key>)\". Catch the `SendTransactionError` and call `getLogs()` on it for full details."
+      "status": "pass",
+      "why": "0.45 wSOL with 400000000 left: refused by the Swig program, balances unchanged (900000000 to 900000000). Log lines: Program ComputeBudget111111111111111111111111111111 invoke [1] | Program ComputeBudget111111111111111111111111111111 success | Program swigypWHEksbC64pWKwah1WTeh9JXwx8H1rJHLdbQMB invoke [1] | Program JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4 invoke [2] | Program CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK invoke [3] | Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [4] | Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success | Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [4] | Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success | Program CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK success | Program JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4 invoke [3] | Program JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4 success | Program JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4 success | Program swigypWHEksbC64pWKwah1WTeh9JXwx8H1rJHLdbQMB failed: insufficient funds for instruction. Control: 0.35 wSOL through the same venue landed straight after, allowance 400000000 to 50000000, and (a), (b) and the control all fell inside one window"
     },
     "c": {
       "states": "transfer to an arbitrary address rejected",
@@ -103,8 +103,8 @@
     },
     "e": {
       "states": "allowance restored at the expected slot after the window",
-      "status": "not run",
-      "why": "the vault's token accounts could not be created, so no swap was possible: Simulation failed. Message: Transaction verification failed for transaction Internal error: \"Failed to fetch accounts from remote: error sending request for url (https://mainnet.helius-rpc.com/?api-key=<api key>)\". Catch the `SendTransactionError` and call `getLogs()` on it for full details."
+      "status": "pass",
+      "why": "lastReset read 451560600 and window 150, so the next window starts at slot 451560750. A 0.1 wSOL swap with 0.05 left was refused by Swig 2 times, the last seen at slot 451560740, and the first one to land did so at slot 451560757, 7 slots after the boundary. So the allowance returns at slot lastReset + window"
     },
     "f": {
       "states": "root removes the role and the next agent transaction fails",

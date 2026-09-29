@@ -622,6 +622,27 @@ and latency (a, b).
   program with balances unchanged, and the control at 0.35 landed through the same venue inside
   the same window. (d) now passes against the sentence OP-28 decided. (e) reports "not run" and
   (g) needs a person
+- Evidence 2026-09-29, later: 6 of 7 on a local fork, `spikes/F5/result.json` at slot 451560606.
+  (a), (b), (c), (d) and (f) as before, (c) now passing only because Swig itself refused. (e)
+  passes for the first time: lastReset 451560600, window 150, the control verified at 400000000 to
+  50000000 left, 2 refusals of 0.1 wSOL by Swig up to slot 451560740, first landing at 451560757.
+  (g) needs a person with Phantom
+- Finding 13: 1 earlier run showed a 0.1 probe landing 16 slots before the boundary with, on paper,
+  0.05 left, which would have been the cap letting through more than its allowance. The spike had
+  checked only that the 0.35 control was sent, never that it spent. It now requires the allowance
+  to fall by exactly 350000000, and (e) runs only when less than 0.1 is left. The run that
+  followed passed. The earlier landing is most likely an unspent control, which cannot be proved
+  after the fact, and is recorded here rather than dropped
+- Finding 14: Swig's source (`state/src/action/token_recurring_limit.rs`) resets the allowance only
+  when `current_slot - last_reset > window`, and sets `last_reset` to the window start only at that
+  reset, not on every spend. So the first slot a spend can refill is lastReset + window + 1, which
+  `effectiveRemaining` in `packages/chain` already matches. On the fork the Clock the program reads
+  runs 31 slots ahead of a finalized `getSlot` and 1 ahead of a confirmed one, so any "when does it
+  refill" arithmetic must read slots at confirmed or processed, which the product does
+- Finding 15: case (e)'s probe went through 3 designs. 0.45 through Raydium and 0.45 through an
+  untouched Whirlpool pool were both refused by the pool; 0.1 through the pool (a) had used is what
+  made the answer Swig's. And the fork's upstream failed 7 of about 12 runs today on fetching
+  accounts, so a CI version of F5 needs retries around the setup, never around the cases
 - Finding 11: case (c) could pass on a refusal no program made. On a fork whose upstream timed out,
   "Failed to fetch accounts from remote" was reported as (c) passing: the check was a list of wrong
   reasons, and the list missed this one. (c) now passes only when the innermost failing program is
