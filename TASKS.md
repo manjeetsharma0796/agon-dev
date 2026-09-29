@@ -838,7 +838,7 @@ and latency (a, b).
 - Kill criterion: fallback is publishing only the deterministic half (guardrail verdicts on fixed trades) and dropping the live-agent comparison
 
 ### T-B10, Clear the parked operator ids out of published source
-- Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-b10-parked-markers
+- Status: in-review | Owner: Jishnu | Branch: feature/t-b10-parked-markers
 - Depends-on: T-B02
 - Touches: packages/core/src/net/index.ts, packages/core/src/net/record.ts, scripts/release.test.mjs
 - Note: these 3 files sit inside T-C02's and T-B02's `Touches:`, and both rows are blocked on a
@@ -850,7 +850,15 @@ and latency (a, b).
   checker reports the first hit per file; the 2 `KNOWN` entries in `scripts/release.test.mjs` go in
   the same commit, leaving 0 parked markers in the ratchet; `pnpm gates` exits 0; 0 numbers, 0
   thresholds and 0 behaviour change, so the whole diff is comments plus 1 printed line
-- Evidence: <PR link, with the --check output before and after>
+- Evidence: `node scripts/release.mjs --out` then `--check`, before: "2 internal marker(s) survived",
+  `packages/core/src/net/index.ts:137` and `packages/core/src/net/record.ts:22`, standing for 5
+  references. After: "0 of 6 internal markers survived". `KNOWN` in `scripts/release.test.mjs` is
+  empty, so the ratchet now refuses any marker in any file. 1 printed line changed, the recorder's
+  "set AGON_GOLDEN_WALLET" hint, which now says what the wallet needs rather than naming an operator
+  item. 0 numbers, thresholds or behaviour changed
+- Finding: the obstacle the ratchet's comment gave for why these could not land, a fixtures change
+  required alongside any `packages/core` diff, no longer exists. The workflow's rule covers only the
+  4 contract files, and `net/` is not one of them
 - Kill criterion: none. Every release is refused until this lands, so there is nothing to fall back
   to
 
