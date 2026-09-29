@@ -2247,7 +2247,9 @@ _(empty)_
   Status, whether `claimed` or `in-review`; the failure names every row and the branch; a control
   reproduces what reached `dev` on 2026-09-29, 27 rows `in-review` on 1 branch, and it fails;
   today's board passes
-- Evidence: <the lint run on the reproduced board and on today's board>
+- Evidence: today's board, lint ok on 91 rows. The control reproduces the mistake by rewriting
+  every done row to "in-review ... | Branch: feature/t-d07-arm-builder", and the lint fails with
+  "branch feature/t-d07-arm-builder is named by 26 rows" and names all 26
 - Kill criterion: none. Measured: a `sed` meant for 1 row rewrote 26 done rows to "in-review on
   #166", it passed the lint and merged, and it sat on `dev` for about 5 minutes until the next PR
   reversed it. The lint checked branch uniqueness for `claimed` rows only
