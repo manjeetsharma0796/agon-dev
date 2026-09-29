@@ -1066,7 +1066,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none. monad T6.8: a 2.1M-token tool result broke every question
 
 ### T-C08, Local daemon
-- Status: open
+- Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-c08-daemon-signer
 - Depends-on: T-D01, T-C06
 - Touches: packages/cli/src/daemon/
 - Serves: Novelty (judged) ; custody story
