@@ -2155,7 +2155,7 @@ _(empty)_
   first sentence has to carry the answer
 
 ### T-E15, A startup prompt a fresh agent can paste, and the docs it reads
-- Status: open
+- Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-e15-agent-setup
 - Depends-on: T-C17, T-C18, T-C19, T-E06
 - Touches: docs/public/
 - Serves: Open source (judged) ; Potential impact (judged)
