@@ -7,7 +7,12 @@
 // approved, because the only input that produces an approval is a `pass` for those bytes.
 
 import { createHash } from 'node:crypto'
-import type { Keypair, VersionedMessage, VersionedTransaction } from '@solana/web3.js'
+import {
+  SystemProgram,
+  type Keypair,
+  type VersionedMessage,
+  type VersionedTransaction,
+} from '@solana/web3.js'
 
 /** How long a pass stays good for. Past it the price the check read may no longer be the price. */
 export const APPROVAL_TTL_MS = 30_000
@@ -41,6 +46,22 @@ export function signApproved(
   approvals: readonly Approval[],
   now: number,
 ): VersionedTransaction {
+  // A durable nonce makes the bytes valid past their blockhash, which breaks the one guarantee
+  // submitOnce gives: that an expired, statusless transaction can never land. The agent has no use
+  // for one, so the first instruction advancing a nonce is refused before anything else is read.
+  const [firstIx] = tx.message.compiledInstructions
+  const program = firstIx && tx.message.staticAccountKeys[firstIx.programIdIndex]
+  if (
+    firstIx !== undefined &&
+    program?.equals(SystemProgram.programId) === true &&
+    firstIx.data.length >= 4 &&
+    Buffer.from(firstIx.data).readUInt32LE(0) === 4
+  ) {
+    throw new Error(
+      'This transaction advances a durable nonce, so it stays valid after 1 blockhash expires and ' +
+        'a retry could land it twice. It was not signed. Build it with a recent blockhash.',
+    )
+  }
   const hash = hashOf(tx.message)
   const matching = approvals.filter((a) => a.messageHash === hash)
   if (matching.length === 0) {

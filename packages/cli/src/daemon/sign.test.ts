@@ -47,3 +47,22 @@ test('only a pass is an approval: block and unsure sign nothing', () => {
   expect(approve(t.message, 'unsure', NOW)).toBeNull()
   expect(() => signApproved(t, agent, [], NOW)).toThrow(/0 of 0 approvals match/)
 })
+
+// From the /security-review of this slice: a durable-nonce transaction does not expire with a
+// blockhash, so "dropped, nothing moved" would be a false promise for it and a re-check could land
+// the trade twice. The agent never needs one, so it signs none.
+test('a durable-nonce transaction is never signed, even with a matching approval', () => {
+  const nonce = Keypair.generate().publicKey
+  const t = new VersionedTransaction(
+    new TransactionMessage({
+      payerKey: agent.publicKey,
+      recentBlockhash: '11111111111111111111111111111111',
+      instructions: [
+        SystemProgram.nonceAdvance({ noncePubkey: nonce, authorizedPubkey: agent.publicKey }),
+        SystemProgram.transfer({ fromPubkey: agent.publicKey, toPubkey: to, lamports: 1000 }),
+      ],
+    }).compileToV0Message(),
+  )
+  const approvals = [approve(t.message, 'pass', NOW)].filter((a) => a !== null)
+  expect(() => signApproved(t, agent, approvals, NOW)).toThrow(/durable nonce/)
+})
