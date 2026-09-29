@@ -2424,7 +2424,7 @@ _(empty)_
   docs/public/quickstart.md, docs/public/agent-setup.md
 - Touches widened 2026-09-29, before the handler: T-C22 is done, so what stands between a buy and
   `pass` is the quote, and `assessTrade` passes `quote: null`. It gains 1 optional `quote` input
-  (`assess.ts` is in T-A05's list too; agreed with its owner, Jishnu, who reviews). `ToolIo` must
+  (`assess.ts` is in T-A05's list too; its owner, Jishnu, is asked to review). `ToolIo` must
   hand over the Swig account, which `loadVaultRules` drops; `record.ts` has no Jupiter
   `/swap-instructions` request and hardcodes 100 bps; nothing wraps a swap in Swig's sign
   instruction yet, so `packages/chain/src/swap.ts` builds it, pure, test first. The tool count of 4
