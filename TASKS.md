@@ -2373,7 +2373,7 @@ _(empty)_
   `feature/t-c22-jev-in-check`, unmerged, with the USDC recordings, until OP-38 decides
 
 ### T-C23, Issuer stablecoins pass with their authorities noted, from a pinned list
-- Status: open
+- Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-c23-issuer-allowlist
 - Depends-on: T-C06
 - Touches: packages/guard/src/check-trade.ts, packages/guard/src/check-trade.test.ts,
   packages/guard/src/issuers.ts
