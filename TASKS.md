@@ -993,7 +993,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none, a failure here is a bug and not a feasibility problem
 
 ### T-F04, F4 spike, 20 scripted verdicts
-- Status: in-review | Owner: Jishnu | Branch: feature/t-f04-scripted-verdicts
+- Status: done 2026-09-29 | Owner: Jishnu | PR: #198
 - Depends-on: T-C06
 - Touches: spikes/F4/, FEASIBILITY.md, packages/guard/src/check-trade.ts,
   packages/guard/src/check-trade.test.ts
