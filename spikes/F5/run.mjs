@@ -788,11 +788,21 @@ async function runAuthorisationCases() {
       const sameWindow =
         a.before.spend?.lastReset !== undefined &&
         String(a.after.spend?.lastReset) === String(control.before.spend?.lastReset)
+      // Sent is not spent. Read the allowance after the control too: a control that was accepted
+      // and then did not execute leaves 0.4 in the window, which makes (e)'s probe land for the
+      // right reason and look like the cap failing.
+      const controlSpent =
+        control.before.spend?.spendLimit !== undefined &&
+        control.after.spend?.spendLimit !== undefined &&
+        BigInt(control.before.spend.spendLimit) - BigInt(control.after.spend.spendLimit) ===
+          350_000_000n
       cases.b.why +=
         `. Control: 0.35 wSOL through the same venue ` +
         `${control.landed ? 'landed straight after' : `did NOT land (${control.answer}), so (b) is not attributable to the cap`}` +
+        `, allowance ${control.before.spend?.spendLimit} to ${control.after.spend?.spendLimit}` +
+        `${controlSpent ? '' : ', which is NOT 350000000 spent, so the control proves nothing'}` +
         `, and (a), (b) and the control ${sameWindow ? 'all fell inside one window' : 'DID NOT all fall inside one window, so the control drew on a fresh allowance and proves less than it appears to'}`
-      if (!control.landed || !sameWindow) cases.b.status = 'not run'
+      if (!control.landed || !sameWindow || !controlSpent) cases.b.status = 'not run'
 
       // (e) The allowance comes back, and the acceptance asks at which slot. Windows are aligned to
       // the slot clock rather than to the role: lastReset is floor(slot / window) * window, and it
@@ -806,61 +816,70 @@ async function runAuthorisationCases() {
       // refused by Whirlpool with 0x1786. Both were the pool, not the cap.
       const spend = await spendNow()
       const lastReset = BigInt(spend?.lastReset ?? 0)
-      const boundary = lastReset + BigInt(WINDOW)
-      // Probe once a second from about 20 slots before the boundary until 1 lands, recording the
-      // slot of every refusal and of the landing, rather than predicting which slot the reset is
-      // on. An earlier version predicted "refused at the boundary, lands 1 slot after" and was
-      // wrong: the first Swig-decided run landed at the boundary itself.
-      while (BigInt(await connection.getSlot()) < boundary - 20n)
-        await new Promise((r) => setTimeout(r, 400))
-      const refusals = []
-      let landing = null
-      for (let i = 0; i < 90 && landing === null; i++) {
-        const r = await agentSwap(100_000_000n)
-        const slotAfter = BigInt(await connection.getSlot())
-        if (r.landed) {
-          await connection.confirmTransaction(r.answer, 'confirmed')
-          const [status] = (await connection.getSignatureStatuses([r.answer])).value
-          landing = {
-            slot: BigInt(status?.slot ?? slotAfter),
-            signature: r.answer,
-            err: status?.err ?? null,
-            before: r.before.spend,
-            after: await spendNow(),
-            vault: [r.before.wsol, r.after.wsol],
+      // With 0.1 or more still in the window there is nothing for a reset to restore, so a landing
+      // says nothing about the reset. That is what an unspent control produces.
+      if (BigInt(spend?.spendLimit ?? 0) >= 100_000_000n) {
+        cases.e.status = 'not run'
+        cases.e.why =
+          `${spend?.spendLimit} was still left in the window before the probe, so a 0.1 wSOL probe ` +
+          `could land without any reset and the case cannot tell a reset from the cap holding`
+      } else {
+        const boundary = lastReset + BigInt(WINDOW)
+        // Probe once a second from about 20 slots before the boundary until 1 lands, recording the
+        // slot of every refusal and of the landing, rather than predicting which slot the reset is
+        // on. An earlier version predicted "refused at the boundary, lands 1 slot after" and was
+        // wrong: the first Swig-decided run landed at the boundary itself.
+        while (BigInt(await connection.getSlot()) < boundary - 20n)
+          await new Promise((r) => setTimeout(r, 400))
+        const refusals = []
+        let landing = null
+        for (let i = 0; i < 90 && landing === null; i++) {
+          const r = await agentSwap(100_000_000n)
+          const slotAfter = BigInt(await connection.getSlot())
+          if (r.landed) {
+            await connection.confirmTransaction(r.answer, 'confirmed')
+            const [status] = (await connection.getSignatureStatuses([r.answer])).value
+            landing = {
+              slot: BigInt(status?.slot ?? slotAfter),
+              signature: r.answer,
+              err: status?.err ?? null,
+              before: r.before.spend,
+              after: await spendNow(),
+              vault: [r.before.wsol, r.after.wsol],
+            }
+          } else {
+            refusals.push({ slotAfter, by: r.by, answer: r.answer })
+            await new Promise((res) => setTimeout(res, 1000))
           }
-        } else {
-          refusals.push({ slotAfter, by: r.by, answer: r.answer })
-          await new Promise((res) => setTimeout(res, 1000))
         }
+        // A refusal by anything but Swig is the pool, not the window: the same rule as (b) and (c).
+        const wrong = refusals.find((r) => !(r.by ?? '').startsWith('swig'))
+        const beforeBoundary = refusals.filter((r) => r.slotAfter < boundary)
+        const restored =
+          landing !== null &&
+          landing.slot >= boundary &&
+          beforeBoundary.length > 0 &&
+          refusals.every((r) => r.slotAfter <= landing.slot)
+        cases.e.status = wrong ? 'not run' : restored ? 'pass' : 'fail'
+        cases.e.why = wrong
+          ? `a probe was refused by ${wrong.by ?? 'an unnamed program'} rather than by Swig ` +
+            `(${wrong.answer}), so it says nothing about the window`
+          : restored
+            ? `lastReset read ${lastReset} and window ${WINDOW}, so the next window starts at slot ` +
+              `${boundary}. A 0.1 wSOL swap with 0.05 left was refused by Swig ${refusals.length} ` +
+              `times, the last seen at slot ${refusals[refusals.length - 1]?.slotAfter}, and the ` +
+              `first one to land did so at slot ${landing.slot}, ${landing.slot - boundary} slots ` +
+              `after the boundary. So the allowance returns at slot lastReset + window`
+            : `not restored as expected: boundary ${boundary}, ${beforeBoundary.length} refusals ` +
+              `before it, ${refusals.length} in all, first landing ` +
+              `${landing === null ? 'never, within 90 probes' : `at slot ${landing.slot}`}` +
+              (landing === null
+                ? ''
+                : `. At that landing: err ${JSON.stringify(landing.err)}, allowance before ` +
+                  `${landing.before?.spendLimit} with lastReset ${landing.before?.lastReset}, after ` +
+                  `${landing.after?.spendLimit} with lastReset ${landing.after?.lastReset}, vault wSOL ` +
+                  `${landing.vault[0]} to ${landing.vault[1]}, signature ${landing.signature}`)
       }
-      // A refusal by anything but Swig is the pool, not the window: the same rule as (b) and (c).
-      const wrong = refusals.find((r) => !(r.by ?? '').startsWith('swig'))
-      const beforeBoundary = refusals.filter((r) => r.slotAfter < boundary)
-      const restored =
-        landing !== null &&
-        landing.slot >= boundary &&
-        beforeBoundary.length > 0 &&
-        refusals.every((r) => r.slotAfter <= landing.slot)
-      cases.e.status = wrong ? 'not run' : restored ? 'pass' : 'fail'
-      cases.e.why = wrong
-        ? `a probe was refused by ${wrong.by ?? 'an unnamed program'} rather than by Swig ` +
-          `(${wrong.answer}), so it says nothing about the window`
-        : restored
-          ? `lastReset read ${lastReset} and window ${WINDOW}, so the next window starts at slot ` +
-            `${boundary}. A 0.1 wSOL swap with 0.05 left was refused by Swig ${refusals.length} ` +
-            `times, the last seen at slot ${refusals[refusals.length - 1]?.slotAfter}, and the ` +
-            `first one to land did so at slot ${landing.slot}, ${landing.slot - boundary} slots ` +
-            `after the boundary. So the allowance returns at slot lastReset + window`
-          : `not restored as expected: boundary ${boundary}, ${beforeBoundary.length} refusals ` +
-            `before it, ${refusals.length} in all, first landing ` +
-            `${landing === null ? 'never, within 90 probes' : `at slot ${landing.slot}`}` +
-            (landing === null
-              ? ''
-              : `. At that landing: err ${JSON.stringify(landing.err)}, allowance before ` +
-                `${landing.before?.spendLimit} with lastReset ${landing.before?.lastReset}, after ` +
-                `${landing.after?.spendLimit} with lastReset ${landing.after?.lastReset}, vault wSOL ` +
-                `${landing.vault[0]} to ${landing.vault[1]}, signature ${landing.signature}`)
     }
   }
 

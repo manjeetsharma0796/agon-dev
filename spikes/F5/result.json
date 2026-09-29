@@ -1,10 +1,10 @@
 {
   "id": "F5",
   "pass": false,
-  "measured": "0 of 7 cases exercised on a local mainnet fork at slot 451559441. The pinned Jupiter id is a program on a local mainnet fork. The Swig program is live (executable true, owner BPFLoaderUpgradeab1e11111111111111111111111), the agent role builds and passes assertAgentRoleShape, and the first of the 7 transactions reaches a local mainnet fork and is answered \"Simulation failed. Message: Transaction verification failed for transaction Internal error: \"Failed to fetch accounts from remote: error sending request for url (https://mainnet.helius-rpc.com/?api-key=<api key>)\". Catch the `SendTransactionError` and call `getLogs()` on it for full details.\", so nothing in our code is the blocker. Separately the payer holds 1000000000 lamports against the 2100160 the 7 cases need.",
+  "measured": "3 of 7 cases exercised on a local mainnet fork at slot 451559883. The pinned Jupiter id is a program on a local mainnet fork. The Swig program is live (executable true, owner BPFLoaderUpgradeab1e11111111111111111111111), the agent role builds and passes assertAgentRoleShape, and the first of the 7 transactions reaches a local mainnet fork and is answered \"landed, signature 3gKKtFhzPbHS1j53j3ArEfKCv4aQpyWLdsxbHzXNw9ytFAAjaSEz3527SasS5m25Ex3x5FFNkytmZhroGSWQej5W\", so nothing in our code is the blocker. Separately the payer holds 1000000000 lamports against the 2100160 the 7 cases need.",
   "date": "2026-09-29",
-  "commit": "f6c6c5a2907cefe818476ad4c99516fb1298b55f",
-  "slot": 451559441,
+  "commit": "a0b35bef7e0e680a97f72c559c23c4a9e810aa8b",
+  "slot": 451559883,
   "rpc": "http://127.0.0.1:8899",
   "keySource": "generated in memory",
   "devnet": {
@@ -35,7 +35,7 @@
       {
         "faucet": "the configured RPC",
         "http": 200,
-        "answer": "{\"jsonrpc\":\"2.0\",\"result\":\"5De5PAGt2vpx4ToqBiYYXC4xEUhwFd8xXQtQYTJmZwGKVW1PGgW9KnGxSVqU4ZaGkwmbPgr6XE94dGgahb5sW6fA\",\"id\":1}"
+        "answer": "{\"jsonrpc\":\"2.0\",\"result\":\"3eoEiLr1qDRveSB9HxMQyAh7yZgkSsF2yGsJUMXffhf7i6S2V3b3nAGHUD5BXv2TeHMQ99sCzWGratbXJfBSCfAX\",\"id\":1}"
       },
       {
         "faucet": "api.devnet.solana.com",
@@ -77,39 +77,39 @@
   "firstTransaction": {
     "instruction": "createSwig, the first of the seven cases",
     "bytes": 351,
-    "swigAddress": "FJqKEd34iZDRRWBadA1CYyuZGAkbudoxVnXYBM181P6k",
-    "answer": "Simulation failed. Message: Transaction verification failed for transaction Internal error: \"Failed to fetch accounts from remote: error sending request for url (https://mainnet.helius-rpc.com/?api-key=<api key>)\". Catch the `SendTransactionError` and call `getLogs()` on it for full details."
+    "swigAddress": "2Cjjx4eu26wCjkqoYaUbEV47PXWMYW5vf7pJnVzCfUWW",
+    "answer": "landed, signature 3gKKtFhzPbHS1j53j3ArEfKCv4aQpyWLdsxbHzXNw9ytFAAjaSEz3527SasS5m25Ex3x5FFNkytmZhroGSWQej5W"
   },
   "cases": {
     "a": {
       "states": "swap within cap succeeds",
       "status": "not run",
-      "why": ""
+      "why": "the vault's token accounts could not be created, so no swap was possible: Simulation failed. Message: Transaction verification failed for transaction Internal error: \"Failed to fetch accounts from remote: error sending request for url (https://mainnet.helius-rpc.com/?api-key=<api key>)\". Catch the `SendTransactionError` and call `getLogs()` on it for full details."
     },
     "b": {
       "states": "swap over cap rejected",
       "status": "not run",
-      "why": ""
+      "why": "the vault's token accounts could not be created, so no swap was possible: Simulation failed. Message: Transaction verification failed for transaction Internal error: \"Failed to fetch accounts from remote: error sending request for url (https://mainnet.helius-rpc.com/?api-key=<api key>)\". Catch the `SendTransactionError` and call `getLogs()` on it for full details."
     },
     "c": {
       "states": "transfer to an arbitrary address rejected",
-      "status": "not run",
-      "why": "the Swig account could not be read back after creation: Unable to fetch Swig account"
+      "status": "pass",
+      "why": "refused: Simulation failed. Message: Transaction simulation failed: Error processing Instruction 0: custom program error: 0xbbe: 3 log messages: Program swigypWHEksbC64pWKwah1WTeh9JXwx8H1rJHLdbQMB invoke [1] Program swigypWHEksbC64pWKwah1WTeh9JXwx8H1rJHLdbQMB consumed 2513 of 200000 compute units Program swi"
     },
     "d": {
       "states": "call to a non-Jupiter program rejected",
-      "status": "not run",
-      "why": "the Swig account could not be read back after creation: Unable to fetch Swig account"
+      "status": "pass",
+      "why": "refused by Swig: Simulation failed. Message: Transaction simulation failed: Error processing Instruction 0: custom program error: 0xbbe: 3 log messages: Program swigypWHEksbC64pWKwah1WTeh9JXwx8H1rJHLdbQMB invoke [1] Program swigypWHEksbC64pWKwah1WTeh9JXwx8H1rJHLdbQMB consumed 2741 of 200000 compute units Program swi. The memo control, 0 accounts and no signer, was authorised as expected, which is the pair that produced the sentence: the limit gates what uses the vault's authority"
     },
     "e": {
       "states": "allowance restored at the expected slot after the window",
       "status": "not run",
-      "why": ""
+      "why": "the vault's token accounts could not be created, so no swap was possible: Simulation failed. Message: Transaction verification failed for transaction Internal error: \"Failed to fetch accounts from remote: error sending request for url (https://mainnet.helius-rpc.com/?api-key=<api key>)\". Catch the `SendTransactionError` and call `getLogs()` on it for full details."
     },
     "f": {
       "states": "root removes the role and the next agent transaction fails",
-      "status": "not run",
-      "why": "the Swig account could not be read back after creation: Unable to fetch Swig account"
+      "status": "pass",
+      "why": "the role is gone from the account and the next agent transaction was refused: Simulation failed. Message: Transaction simulation failed: Error processing Instruction 0: custom program error: 0xc: 3 log messages: Program swigypWHEksbC64pWKwah1WTeh9JXwx8H1rJHLdbQMB invoke [1] Program swigypWHEksbC64pWKwah1WTeh9JXwx8H1rJHLdbQMB consumed 888 of 200000 compute units Program swigyp"
     },
     "g": {
       "states": "removal done from Phantom and not only our CLI",
