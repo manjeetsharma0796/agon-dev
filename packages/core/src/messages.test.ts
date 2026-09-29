@@ -127,7 +127,7 @@ test('a refusal by the spending limit is named as the limit, not as a lack of fu
   // Verbatim, F5 case (b) on the fork on 2026-09-29, spikes/F5/result.json: 0.45 wSOL with 0.4 left.
   // Raydium and Jupiter both succeed; the only failed line is Swig's, and Swig says only
   // "insufficient funds for instruction", which is not what happened.
-  const TOKEN = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'
+  const SPL = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'
   const JUP = 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4'
   const RAY = 'CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK'
   const logs = [
@@ -136,10 +136,10 @@ test('a refusal by the spending limit is named as the limit, not as a lack of fu
     `Program ${SWIG} invoke [1]`,
     `Program ${JUP} invoke [2]`,
     `Program ${RAY} invoke [3]`,
-    `Program ${TOKEN} invoke [4]`,
-    `Program ${TOKEN} success`,
-    `Program ${TOKEN} invoke [4]`,
-    `Program ${TOKEN} success`,
+    `Program ${SPL} invoke [4]`,
+    `Program ${SPL} success`,
+    `Program ${SPL} invoke [4]`,
+    `Program ${SPL} success`,
     `Program ${RAY} success`,
     `Program ${JUP} invoke [3]`,
     `Program ${JUP} success`,
