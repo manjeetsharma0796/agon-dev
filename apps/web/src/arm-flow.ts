@@ -15,7 +15,9 @@ import {
   revokeAgents,
   USDC_MINT,
   vaultAddress,
+  verifyRoleOnChain,
   WSOL_MINT,
+  type RoleActions,
   type SwigReader,
 } from '@agon/chain'
 import {
@@ -68,6 +70,34 @@ async function send(
     )
   }
   return signature
+}
+
+/**
+ * Read the agent's role back from the chain and check it against what the user typed.
+ *
+ * This is the check that can catch a cap sent higher than the user typed. The one before signing
+ * cannot, because the role is built from the typed numbers and comparing it with them always
+ * passes. A mismatch throws, and the screen says so with the revoke button beside it, rather than
+ * reporting an agent as armed at a limit the chain does not hold.
+ */
+export async function verifyHired(
+  connection: Connection,
+  swigId: Uint8Array,
+  agent: PublicKey,
+  approved: { amount: bigint; window: bigint },
+): Promise<void> {
+  const address = findSwigPda(swigId)
+  const read = swigReader(connection)
+  const swig = await read(address)
+  const role = swig?.findRolesByEd25519SignerPk(agent.toBase58()).find((r) => !r.actions.isRoot())
+  if (!role) {
+    throw new Error(
+      `The agent ${agent.toBase58()} has no role on the vault after the transaction landed. Nothing is armed.`,
+    )
+  }
+  const fetchRole = async (_address: string, id: number) =>
+    ((await read(address))?.roles.find((r) => r.id === id)?.actions ?? null) as RoleActions | null
+  await verifyRoleOnChain(fetchRole, address.toBase58(), role.id, WSOL_MINT, approved)
 }
 
 /** One agent role as the screen shows it. Amounts in base units. */
@@ -197,6 +227,10 @@ export async function arm(
     }),
     sign,
   )
+  await verifyHired(connection, found.swigId, request.agent, {
+    amount: request.cap,
+    window: request.window,
+  })
   return { fundSignature, hireSignature }
 }
 
@@ -208,7 +242,7 @@ export async function hire(
 ): Promise<string> {
   const found = await resolveVault(swigReader(connection), request.owner)
   if (found.existing === null) throw new Error('This wallet has no vault yet. Create one first.')
-  return send(
+  const signature = await send(
     connection,
     request.owner,
     await hireAgent({
@@ -220,6 +254,11 @@ export async function hire(
     }),
     sign,
   )
+  await verifyHired(connection, found.swigId, request.agent, {
+    amount: request.cap,
+    window: request.window,
+  })
+  return signature
 }
 
 /** Remove every agent Agon armed on this wallet's vault. 1 wallet approval, 0 help from us. */

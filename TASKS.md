@@ -1494,7 +1494,14 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
   arm on the same wallet is refused; revoke removes 1 agent role and leaves the 1000000000 in the
   vault; re-hire adds 1 back. Passes in 2.9 s against the fork and skips in CI, which has no chain.
   In a browser: `/arm` renders with 0 console errors, `Buffer` exists at runtime; served as
-  mainnet the same page refuses and has 0 Connect buttons. 3 tests on SOL parsing
+  mainnet the same page refuses and has 0 Connect buttons. 3 tests on SOL parsing. After every
+  arm or re-hire the role is read back from the chain and checked against what was typed, and the
+  control holds: the same role checked against a cap 1 lamport higher is refused
+- Finding 3, from this PR's own security review: the first version never ran that post-landing
+  check, although the builder's comment names it as the only check that can catch a cap sent
+  higher than the user typed. It also reported "the agent can no longer trade" after a revoke
+  that the kill switch had declined to finish, because it ignored the roles it kept. Both fixed
+  here: arming fails loudly on a mismatch, and every kept role is named with its reason
 - Not evidenced here, on purpose: a real Phantom clicking through this screen. That is T-E07's
   outside tester and T-E16's person, because a click-through by an agent in a browser with no
   wallet extension would be a demonstration of nothing

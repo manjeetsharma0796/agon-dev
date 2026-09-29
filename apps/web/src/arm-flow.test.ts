@@ -1,6 +1,7 @@
 import { Connection, Keypair, type VersionedTransaction } from '@solana/web3.js'
 import { expect, test } from 'vitest'
-import { arm, hire, loadVault, revoke, type Sign } from './arm-flow.js'
+import { fetchSwig, resolveVault } from '@agon/chain'
+import { arm, hire, loadVault, revoke, verifyHired, type Sign } from './arm-flow.js'
 
 // Against a real fork only, and only when one is named. CI has no chain, and a flow test that
 // fakes the chain would measure the fake. Locally: docker compose up, then
@@ -40,6 +41,20 @@ test.skipIf(!isLocal)(
     expect(armed.agents[0]?.cap, 'the cap on chain is not the cap the user typed').toBe(typed.cap)
     expect(armed.agents[0]?.window).toBe(typed.window)
     expect(armed.agents[0]?.rollingWorstCase).toBe(2n * typed.cap)
+
+    // The control for the check arm() just ran: the same role, checked against a cap the user did
+    // NOT type, must be refused. A verification nobody has seen fail proves nothing.
+    const found = await resolveVault(
+      async (at) => ((await c.getAccountInfo(at)) === null ? null : fetchSwig(c, at)),
+      owner.publicKey,
+    )
+    await expect(
+      verifyHired(c, found.swigId, agent, { amount: typed.cap + 1n, window: typed.window }),
+      'a cap 1 lamport off what is on chain was accepted',
+    ).rejects.toThrow()
+    await expect(
+      verifyHired(c, found.swigId, agent, { amount: typed.cap, window: typed.window }),
+    ).resolves.toBeUndefined()
 
     // A second arm on the same wallet is refused, not turned into a vault no screen would find.
     await expect(

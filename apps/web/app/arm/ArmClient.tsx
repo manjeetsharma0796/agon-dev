@@ -339,8 +339,20 @@ export default function ArmClient({ rpcUrl }: { rpcUrl: string }) {
                 onClick={() =>
                   void run('Revoking', async () => {
                     const r = await revoke(conn, owner, sign)
-                    if (r.signature === null) return 'There was no agent to revoke.'
-                    return `Revoked in ${r.signature}. The agent can no longer trade. Your funds stayed in the vault.`
+                    // A role the kill switch keeps is one it could not confirm is Agon's. Saying
+                    // "the agent can no longer trade" while one remains would be a claim the chain
+                    // does not back, so every kept role is named with its reason.
+                    const kept = r.kept
+                      .map((k) => `role ${k.id} was left in place because it is ${k.reason}`)
+                      .join(' ')
+                    if (r.signature === null) {
+                      return kept === ''
+                        ? 'There was no agent to revoke.'
+                        : `Nothing was revoked: ${kept}`
+                    }
+                    return kept === ''
+                      ? `Revoked in ${r.signature}. The agent can no longer trade. Your funds stayed in the vault.`
+                      : `Revoked ${r.removed.length} agent role(s) in ${r.signature}. Your funds stayed in the vault. But ${kept}`
                   })
                 }
               >
