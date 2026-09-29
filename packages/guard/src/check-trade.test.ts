@@ -301,3 +301,20 @@ test('the no-model share, measured over F4 own 4 scripted trade kinds', () => {
   // questions, and never for a number.
   expect(checkTrade(buy(MEDIAN), facts({ jev: null })).verdict).toBe('unsure')
 })
+
+// Found by F4's edge cases. Both rules rounded the number before comparing it with the limit, so a
+// trade just past the limit rounded down onto it and passed: 2.025x the median read as 2x, and a
+// 1.004% price impact read as 1%. The comparison has to use the number itself; only the message
+// rounds it.
+test('a trade just past a limit is not rounded back under it', () => {
+  const size = checkTrade(buy(1_620_000_000), facts())
+  expect(size.verdict, '2.025x the median passed a 2x limit').toBe('block')
+  expect(size.reasons.map((r) => r.rule)).toContain('size-vs-median')
+
+  const band = checkTrade(
+    buy(MEDIAN),
+    facts({ quote: { priceImpactPct: '0.01004', slippageBps: 50, contextSlot: SLOT } }),
+  )
+  expect(band.verdict, 'a 1.004% impact passed a 1% band').toBe('block')
+  expect(band.reasons.map((r) => r.rule)).toContain('price-band')
+})

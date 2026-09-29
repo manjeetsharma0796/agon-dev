@@ -1,0 +1,151 @@
+{
+  "id": "F4",
+  "pass": true,
+  "measured": "20 of 20 verdicts matched the answers written in advance; p95 0.62 ms and p50 0.28 ms over 200 runs of decode to verdict on 100 recorded transactions, network excluded",
+  "date": "2026-09-29",
+  "commit": "617c4bfda498f8131613143b8dfa23b26da1eabf",
+  "dataSlot": 312904411,
+  "notes": "Answers in cases.json, committed before this runner existed. Latency is measured on this machine, not the deployment region.",
+  "perCase": [
+    {
+      "id": 1,
+      "what": "normal trade at the median",
+      "ok": true,
+      "expected": "pass []",
+      "got": "pass []"
+    },
+    {
+      "id": 2,
+      "what": "normal small trade",
+      "ok": true,
+      "expected": "pass []",
+      "got": "pass []"
+    },
+    {
+      "id": 3,
+      "what": "over usual size, 3x",
+      "ok": true,
+      "expected": "block [size-vs-median]",
+      "got": "block [size-vs-median]"
+    },
+    {
+      "id": 4,
+      "what": "over usual size, 10x",
+      "ok": true,
+      "expected": "block [size-vs-median]",
+      "got": "block [size-vs-median]"
+    },
+    {
+      "id": 5,
+      "what": "edge: exactly 2x, the limit itself",
+      "ok": true,
+      "expected": "pass []",
+      "got": "pass []"
+    },
+    {
+      "id": 6,
+      "what": "edge: 2.025x, just over the limit",
+      "ok": true,
+      "expected": "block [size-vs-median]",
+      "got": "block [size-vs-median]"
+    },
+    {
+      "id": 7,
+      "what": "stop at the usual 8%",
+      "ok": true,
+      "expected": "pass []",
+      "got": "pass []"
+    },
+    {
+      "id": 8,
+      "what": "edge: stop exactly at the 10% limit",
+      "ok": true,
+      "expected": "pass []",
+      "got": "pass []"
+    },
+    {
+      "id": 9,
+      "what": "edge: stop 10.5%, just past",
+      "ok": true,
+      "expected": "block [stop-vs-usual]",
+      "got": "block [stop-vs-usual]"
+    },
+    {
+      "id": 10,
+      "what": "past usual stop, 25%",
+      "ok": true,
+      "expected": "block [stop-vs-usual]",
+      "got": "block [stop-vs-usual]"
+    },
+    {
+      "id": 11,
+      "what": "new token outside the usual set: a memecoin, never bought",
+      "ok": true,
+      "expected": "block [style-fit]",
+      "got": "block [style-fit]"
+    },
+    {
+      "id": 12,
+      "what": "selling a category never bought is the risk leaving, not arriving",
+      "ok": true,
+      "expected": "pass []",
+      "got": "pass []"
+    },
+    {
+      "id": 13,
+      "what": "a sell 10x the median is not sized against a buy median",
+      "ok": true,
+      "expected": "pass []",
+      "got": "pass []"
+    },
+    {
+      "id": 14,
+      "what": "edge: price impact exactly 1%",
+      "ok": true,
+      "expected": "pass []",
+      "got": "pass []"
+    },
+    {
+      "id": 15,
+      "what": "edge: price impact 1.01%, just past",
+      "ok": true,
+      "expected": "block [price-band]",
+      "got": "block [price-band]"
+    },
+    {
+      "id": 16,
+      "what": "edge: slippage exactly 100 bps",
+      "ok": true,
+      "expected": "pass []",
+      "got": "pass []"
+    },
+    {
+      "id": 17,
+      "what": "edge: slippage 101 bps, just past",
+      "ok": true,
+      "expected": "block [slippage-tolerance]",
+      "got": "block [slippage-tolerance]"
+    },
+    {
+      "id": 18,
+      "what": "the injection screen fired",
+      "ok": true,
+      "expected": "block [injection-screen]",
+      "got": "block [injection-screen]"
+    },
+    {
+      "id": 19,
+      "what": "the token has a permanent delegate",
+      "ok": true,
+      "expected": "block [mint-permanent-delegate]",
+      "got": "block [mint-permanent-delegate]"
+    },
+    {
+      "id": 20,
+      "what": "no quote was taken",
+      "ok": true,
+      "expected": "unsure [quote-missing]",
+      "got": "unsure [quote-missing]"
+    }
+  ]
+}
