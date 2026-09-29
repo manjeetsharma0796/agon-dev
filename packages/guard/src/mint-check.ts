@@ -224,12 +224,14 @@ const readAccount = (mint: string, account: unknown, slot: number): MintCheck =>
  */
 async function listingsOf(
   mints: readonly string[],
-  net: (req: NetRequest) => Promise<NetResult>,
+  net: NonNullable<MintCheckDeps['net']>,
+  slot: number,
 ): Promise<Map<string, TokenListing>> {
   const out = new Map<string, TokenListing>()
   let res: NetResult
   try {
-    res = await net(jupiterToken(mints.join(',')))
+    // Stamped with the slot of the chain read it accompanies, so a recording says when it was true.
+    res = await net(jupiterToken(mints.join(',')), { slotHint: slot })
   } catch {
     return out
   }
@@ -246,7 +248,7 @@ async function listingsOf(
 
 export interface MintCheckDeps {
   /** Injectable so a budget test can count calls. Defaults to the recorded and replayed wrapper. */
-  net?: (req: NetRequest) => Promise<NetResult>
+  net?: (req: NetRequest, opts?: { slotHint?: number }) => Promise<NetResult>
 }
 
 /**
@@ -303,6 +305,7 @@ export async function checkMints(
   const listings = await listingsOf(
     mints.filter((m) => out.get(m)?.facts != null),
     net,
+    slot,
   )
   for (const mint of mints) {
     const check = out.get(mint)

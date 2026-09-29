@@ -2409,7 +2409,7 @@ _(empty)_
   packages/guard/src/check-trade.token.test.ts, fixtures/recorded/jupiter/, CLAUDE.md,
   packages/guard/src/tokens.ts, packages/guard/src/mint-check.budget.test.ts,
   packages/guard/src/check-trade.budget.test.ts, packages/core/src/net/record.ts,
-  docs/public/agent-setup.md
+  docs/public/agent-setup.md, packages/mcp/src/io.ts
 - Serves: Functionality (judged) ; F4 ; the first `check_trade` that can return `pass`
 - Acceptance: as OP-38 decided on T-F11b's measurement, the token checks are lookups, not a model:
   the mint check also carries the token's category, from Jupiter's `lst` and `verified` tags and a
