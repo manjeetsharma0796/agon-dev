@@ -622,6 +622,20 @@ and latency (a, b).
   program with balances unchanged, and the control at 0.35 landed through the same venue inside
   the same window. (d) now passes against the sentence OP-28 decided. (e) reports "not run" and
   (g) needs a person
+- Finding 11: case (c) could pass on a refusal no program made. On a fork whose upstream timed out,
+  "Failed to fetch accounts from remote" was reported as (c) passing: the check was a list of wrong
+  reasons, and the list missed this one. (c) now passes only when the innermost failing program is
+  Swig, the same rule (b) and (e) use. On the 3 runs since, (c) was refused by Swig with `0xbbe`
+- Finding 12: (e) now probes through Orca Whirlpool, a pool nothing earlier in the run touches,
+  because a refused probe changes no state and so cannot move that pool between the 2 probes. Not
+  yet measured: on 4 runs on 2026-09-29, 2 forks upstreamed to Helius and 2 to the public mainnet
+  RPC, the transaction creating the vault's token accounts failed with "Failed to fetch accounts
+  from remote" exactly 30 seconds after the previous step, so (a), (b) and (e) never started. The
+  same step had passed earlier that day. Both providers fail the same way and answer directly, so
+  it is the fork's fetch on that transaction, not a provider. The committed `result.json` stays the
+  5 of 7 run rather than being replaced by a run that measured the fork instead of the cap. A 5th
+  run on the public-RPC fork first failed on my own setup, the websocket port left unmapped, and
+  is not counted
 - Finding 7: the control nearly proved nothing and the fix is a window check, not more care. A
   recurring limit resets on the slot clock, `lastReset = floor(slot / window) * window`, so 3
   swaps sent back to back can straddle a boundary and the control then draws on a fresh allowance

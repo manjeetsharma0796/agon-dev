@@ -101,6 +101,8 @@ const USDC = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
 // every swap at 50 bps failed that way, (b) included, and that run proved nothing.
 const VENUE = 'Raydium CLMM'
 const SLIPPAGE_BPS = 300
+/** Case (e) only, so its probes meet a pool this run has not moved. */
+const PROBE_VENUE = 'Whirlpool'
 
 /**
  * A wallet cannot hold an SPL token directly: each mint needs its own account owned by the wallet.
@@ -530,10 +532,11 @@ async function runAuthorisationCases() {
   })
   const cSigned = await swig.getSignInstructions(swigAccount, agentRole.id, [transferIx])
   const c = await send(cSigned, [payer, agent])
-  // A refusal only counts when it is the refusal this case is about. "missing required signature"
-  // is the system program objecting to the transfer itself, and reading that as the program limit
-  // holding is how a spike reports a pass it did not earn.
-  const wrongReason = /missing required signature|insufficient (lamports|funds)/i.test(c.answer)
+  // A refusal only counts when it is the refusal this case is about, so only a refusal by the Swig
+  // program passes. This was a list of wrong reasons, and a list misses the next one: on a fork
+  // whose upstream timed out, "Failed to fetch accounts from remote" passed (c) with no program
+  // ever having run.
+  const wrongReason = !(c.by ?? '').startsWith('swig')
   cases.c.status = c.landed ? 'fail' : wrongReason ? 'not run' : 'pass'
   cases.c.why = c.landed
     ? `the transfer to ${stranger.toBase58()} was authorised, signature ${c.answer}. The role is not holding`
@@ -684,10 +687,10 @@ async function runAuthorisationCases() {
    * token program. `ComputeBudget` sits outside the wrap: the runtime reads it, it is not a
    * program call, and wrapping it is refused.
    */
-  const agentSwap = async (amount) => {
+  const agentSwap = async (amount, venue = VENUE) => {
     const quote = await jupiter(
       `quote?inputMint=${MINT}&outputMint=${USDC}&amount=${amount}` +
-        `&slippageBps=${SLIPPAGE_BPS}&asLegacyTransaction=true&dexes=${encodeURIComponent(VENUE)}`,
+        `&slippageBps=${SLIPPAGE_BPS}&asLegacyTransaction=true&dexes=${encodeURIComponent(venue)}`,
     )
     const built = await jupiter('swap-instructions', {
       method: 'POST',
@@ -794,14 +797,19 @@ async function runAuthorisationCases() {
       // (e) The allowance comes back, and the acceptance asks at which slot. Windows are aligned to
       // the slot clock rather than to the role: lastReset is floor(slot / window) * window, and it
       // is only rewritten when a spend lands, so reading the remaining field between windows shows
-      // a stale number. The boundary is probed by simulation, which consumes no allowance.
+      // a stale number.
+      //
+      // Through a second pool that nothing earlier in this run touched. The fork copies a pool on
+      // first touch and every swap above moved Raydium's copy away from the live quote, so a probe
+      // there came back refused by Raydium, which says nothing about the window. A refused probe
+      // changes no state, so the first probe cannot move this pool for the second.
       const spend = await spendNow()
       const lastReset = BigInt(spend?.lastReset ?? 0)
       const boundary = lastReset + BigInt(WINDOW)
       const probe = async (atSlot) => {
         while (BigInt(await connection.getSlot()) < atSlot)
           await new Promise((r) => setTimeout(r, 400))
-        const sim = await agentSwap(450_000_000n)
+        const sim = await agentSwap(450_000_000n, PROBE_VENUE)
         return sim
       }
       const before = await probe(boundary)
@@ -815,7 +823,8 @@ async function runAuthorisationCases() {
       const restored = !before.landed && after.landed
       cases.e.status = eWrongReason ? 'not run' : restored ? 'pass' : 'fail'
       cases.e.why = eWrongReason
-        ? `the boundary probe was answered by ${[before, after].find((r) => !r.landed && !(r.by ?? '').startsWith('swig'))?.by ?? 'an unnamed program'} rather than by Swig, ` +
+        ? `the boundary probe was answered by ${[before, after].find((r) => !r.landed && !(r.by ?? '').startsWith('swig'))?.by ?? 'an unnamed program'} rather than by Swig ` +
+          `(${[before, after].find((r) => !r.landed && !(r.by ?? '').startsWith('swig'))?.answer}), ` +
           `so it says nothing about the window. The fork copies a pool on first touch and our own ` +
           `swaps move that copy, which Jupiter's live quote never sees, so a probe late in a run ` +
           `drifts out of tolerance. A spike that asserts this clause needs a fresh pool per probe`
