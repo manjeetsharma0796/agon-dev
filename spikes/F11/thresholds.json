@@ -1,0 +1,9 @@
+{
+  "test": "F11",
+  "name": "Jev schema validity and latency, parts (a) and (b)",
+  "threshold": "500 of 500 responses valid against our question schema; latency at 1, 5 and 20 questions per call, 200 calls each, with p95 at 20 questions 500 ms or less and 20-question p95 within 1.5x of 1-question p95",
+  "checkpoint": "CP1",
+  "written": "2026-09-29",
+  "existential": false,
+  "notes": "Copied from T-F11a's Acceptance line before the spike ran, provider pinned by OP-4 (TypeSafe direct, usejev.xyz/v1/systemone). Parts (c) to (e), accuracy, adversarial and numeric routing, are T-F11b and are not measured here. 'Valid' means: HTTP 200, an answer for every question asked, type choice, the choice one of the criteria keys, one probability per criterion each in [0, 1] summing to 1 within 0.01, and a confidence in [0, 1]. Batching N questions means 1 state holding N numbered token texts and N choice questions, question k about item k, which is the batching OP-24 asked to measure. Latency is the round trip from this machine, so the region is T-C03's to measure. A 429 is retried after a pause and counted, and the count is the rate limit OP-4 asks for."
+}

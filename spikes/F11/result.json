@@ -1,0 +1,29 @@
+{
+  "id": "F11",
+  "pass": true,
+  "measured": "600 of 600 responses valid; p95 324 ms at 1 question, 294 ms at 5, 341 ms at 20, so 20-question p95 is 1.05x the 1-question p95; 167 rate-limited responses (429) retried; 155865 input tokens across all calls",
+  "date": "2026-09-29",
+  "commit": "2d50164e8872715f3772e5d39512b0f478969f5e",
+  "notes": "Parts (a) and (b) only. Round trip from the machine that ran it, not the deployment region. Texts are real token names, so this says nothing about accuracy, which is T-F11b.",
+  "perSize": {
+    "1": {
+      "calls": 200,
+      "valid": 200,
+      "p50": 262,
+      "p95": 324
+    },
+    "5": {
+      "calls": 200,
+      "valid": 200,
+      "p50": 262,
+      "p95": 294
+    },
+    "20": {
+      "calls": 200,
+      "valid": 200,
+      "p50": 262,
+      "p95": 341
+    }
+  },
+  "failures": []
+}

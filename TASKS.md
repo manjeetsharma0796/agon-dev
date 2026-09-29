@@ -584,14 +584,27 @@ and latency (a, b).
 - Kill criterion: fallback is an LLM guard in structured-output mode with a stricter threshold, or Kev-0.5B locally. Arithmetic checks are unaffected either way
 - Finding: the metadata cache in the acceptance does not exist. Token category is cached forever and globally as specified, and mint and freeze authority are correctly never cached, but no minutes-scoped metadata cache exists anywhere in the repo: categoryCache is the only cache in the tree. Separately JevTransport takes body: unknown, so the "no numeric question can reach Jev" guarantee holds for the ask() path only; anything holding a transport can call it with a hand-built score payload.
 ### T-F11a, F11 (a) and (b), Jev schema validity and latency
-- Status: open
+- Status: done 2026-09-29 | Owner: Jishnu | PR: #210
 - Depends-on: T-C05, OP-4
-- Touches: spikes/F11/
+- Touches: spikes/F11/, FEASIBILITY.md
 - Serves: Novelty (judged) ; CP1 gate
 - Acceptance: 500 of 500 responses valid against our question schema; latency at 1, 5 and 20
   questions per call, 200 calls each, with p95 at 20 questions 500 ms or less and 20-question p95
   within 1.5x of 1-question p95
-- Evidence: <spikes/F11/result.json at a commit>
+- Evidence: `spikes/F11/result.json`, live against TypeSafe direct (OP-4) on 2026-09-29: 600 of
+  600 responses valid against the schema in `thresholds.json`, 200 calls at each of 1, 5 and 20
+  questions per call. p50 262 ms at every size; p95 324 ms at 1, 294 ms at 5, 341 ms at 20, so
+  20-question p95 is 1.05x the 1-question p95 against a 1.5x limit and 341 ms against 500 ms. The
+  run's `commit` field names the working tree it ran from, whose runner is the one committed here
+- Finding: batching is close to free. 20 questions in 1 call cost 1.05x the latency of 1, so every
+  text a check needs screened should ride in 1 call, and OP-24's "most efficient batching" answer is
+  as many questions per call as the trade needs, at least up to 20
+- Finding 2, the rate limit OP-4 asked for: sending 1 call at a time, about 4 a second at 262 ms
+  each, drew 167 answers of 429 across the 600 calls, all retried after a pause. So the limit sits
+  below about 4 requests a second on this key, and a production check must not fire per-token calls
+  in parallel. Cost: 155865 input tokens for the 600 calls, which T-F11c prices
+- Not measured here: accuracy. These texts are real token names only; T-F11b's labelled and
+  adversarial cases are what OP-38 waits on
 - Kill criterion: fallback is an LLM guard with a stricter threshold, or Kev-0.5B locally
 
 ### T-D01, Swig role creation and removal in packages/chain
@@ -2355,7 +2368,10 @@ _(empty)_
   refused with the innermost failing program named, never returned for the agent to try. Measured
   on the fork: a 0.1 wSOL swap it builds lands when the agent signs it locally, and a 0.45 request
   with 0.4 left is refused by the tool before building, citing 0.4. The response fits a token
-  budget set in the same PR from a measured legacy transaction
+  budget set in the same PR from a measured legacy transaction. It runs `check_trade` itself and
+  builds only on a pass, so 1 call replaces check then build. Measured with a fresh agent given
+  only `docs/public/agent-setup.md`, before and after: model turns and tokens from "buy 0.1 SOL of
+  X" to a signed transaction, against the about 11 retries an agent took writing its own script
 - Evidence: <PR link, plus the landed signature and the refusal text from the fork>
 - Why it is its own row: nothing on the board builds a trade. Without it an armed vault has no
   path to a swap through Agon, and an agent writes its own script, which on the fork took about 11
