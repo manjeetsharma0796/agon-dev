@@ -476,7 +476,9 @@ async function runAuthorisationCases() {
     swigAccount = await swig.fetchSwig(connection, swigAddress)
   } catch (e) {
     const why = `the Swig account could not be read back after creation: ${redact(e.message).slice(0, 160)}`
-    for (const k of ['c', 'd', 'f']) cases[k].why = why
+    // Every case that depends on the account, not only 3 of them: (a), (b) and (e) were left
+    // with an empty reason here, the blank field the message catalogue forbids.
+    for (const k of ['a', 'b', 'c', 'd', 'e', 'f']) cases[k].why = why
     return
   }
 
