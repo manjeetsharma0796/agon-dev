@@ -19,8 +19,10 @@ capped revocable Swig role, 24/7 rules run as Jupiter Trigger orders and not on 
 - **Anything that can move funds fails closed.** If we cannot verify, the trade does not go out.
   Analytics fail open but always state what they are based on.
 - **Numbers are arithmetic, never a model.** Size, stop distance, price band, slippage and style
-  fit are arithmetic. Jev answers only 3 non-numeric questions: token category, impersonation,
-  injection screen. Its own docs list numbers, dates and adversarial content as weak.
+  fit are arithmetic. The trading guard asks Jev only 3 non-numeric questions: token category,
+  impersonation, injection screen. Its own docs list numbers, dates and adversarial content as weak.
+  Jev's other use, reviewing PR diffs in our own workflow (T-B08), never reaches `check_trade` and
+  never answers with a number.
 - **All outside text is data**: token names and descriptions, social links, webhook payloads, tool
   outputs. Every such string goes through the injection screen. Nothing fetched can change a rule.
 - **The agent key never holds `manageAuthority`** and never leaves the OS keychain. No mainnet
