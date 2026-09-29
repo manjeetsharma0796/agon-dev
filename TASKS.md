@@ -381,7 +381,7 @@ and latency (a, b).
   from Helius's enhanced endpoint, and fromEnhanced carries only tokenBalanceChanges across, so the
   native leg is dropped at the edge before the decoder ever sees it. packages/decoder/src/enhanced.ts
   is not on this task's Touches line, so it is T-A08
-- Status: blocked, see OP-31
+- Status: done 2026-09-29
 - Depends-on: T-A01
 - Touches: packages/decoder/src/index.ts, packages/decoder/src/decoder.test.ts
 - Serves: Functionality (judged) ; F1 coverage share
@@ -393,7 +393,10 @@ and latency (a, b).
   wallet 5CKAa7Wm in spikes/F1 stop reporting 0 swaps at 100% coverage
 - Kill criterion: none. A coverage number computed over silently dropped swaps is the failure the
   third bucket exists to prevent, and F1 is existential
-
+- Last clause struck 2026-09-29 by OP-31, with its reason: it asked 5CKAa7Wm's 50 samples to stop
+  reporting 0 swaps, and that wallet holds no positions to report. It was replaced by 4Qgv5YxE in
+  #228, which decodes 49 of 50 sampled as swaps with this decoder, including swaps paid in native
+  SOL. Every other clause landed in the evidence above
 ### T-A08, Carry the native SOL leg across the enhanced endpoint
 - Status: done 2026-09-29 | Owner: Jishnu | PR: #181
 - Depends-on: T-A07

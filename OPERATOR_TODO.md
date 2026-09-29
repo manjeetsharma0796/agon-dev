@@ -855,7 +855,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 ---
 
 ### OP-31, F1's first wallet is an arbitrage bot, so it can never report a swap
-- Status: decided 2026-09-29 by Jishnu: Claude picks the replacement wallet against the written test (owns the balances that move, opens and closes positions) and records it with the Helius key; a person hand-verifies the 50 rows per wallet, as OP-23 already says
+- Status: decided 2026-09-29 by Jishnu, and done the same day in #228: `spikes/F1/wallets.json` names 4Qgv5YxE in place of 5CKAa7Wm, re-recorded with the Helius key, 49 of 50 sampled decoded; T-A07's last clause struck with its reason. The 50-row hand verification stays with OP-23
 - Owner: Jishnu
 - Needed by: 2026-10-02
 - Unblocks: T-A07's last clause, T-F01b
