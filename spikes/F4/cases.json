@@ -1,0 +1,26 @@
+{
+  "written": "2026-09-29, before run.mjs existed",
+  "profile": "median size 800000000 lamports (0.8 SOL) over 214 closed trades, usual stop 8% so the stop limit is 10%, price band 1%, slippage 100 bps, category mix 100% blue chip, token category blue chip, text screened clean, mint check pass, quote 0.27% impact at 50 bps, unless a case says otherwise",
+  "cases": [
+    { "id": 1, "what": "normal trade at the median", "side": "buy", "size": 800000000, "expect": "pass", "rules": [] },
+    { "id": 2, "what": "normal small trade", "side": "buy", "size": 100000000, "expect": "pass", "rules": [] },
+    { "id": 3, "what": "over usual size, 3x", "side": "buy", "size": 2400000000, "expect": "block", "rules": ["size-vs-median"] },
+    { "id": 4, "what": "over usual size, 10x", "side": "buy", "size": 8000000000, "expect": "block", "rules": ["size-vs-median"] },
+    { "id": 5, "what": "edge: exactly 2x, the limit itself", "side": "buy", "size": 1600000000, "expect": "pass", "rules": [] },
+    { "id": 6, "what": "edge: 2.025x, just over the limit", "side": "buy", "size": 1620000000, "expect": "block", "rules": ["size-vs-median"] },
+    { "id": 7, "what": "stop at the usual 8%", "side": "buy", "size": 800000000, "stopPct": 8, "expect": "pass", "rules": [] },
+    { "id": 8, "what": "edge: stop exactly at the 10% limit", "side": "buy", "size": 800000000, "stopPct": 10, "expect": "pass", "rules": [] },
+    { "id": 9, "what": "edge: stop 10.5%, just past", "side": "buy", "size": 800000000, "stopPct": 10.5, "expect": "block", "rules": ["stop-vs-usual"] },
+    { "id": 10, "what": "past usual stop, 25%", "side": "buy", "size": 800000000, "stopPct": 25, "expect": "block", "rules": ["stop-vs-usual"] },
+    { "id": 11, "what": "new token outside the usual set: a memecoin, never bought", "side": "buy", "size": 800000000, "category": "memecoin", "expect": "block", "rules": ["style-fit"] },
+    { "id": 12, "what": "selling a category never bought is the risk leaving, not arriving", "side": "sell", "size": 800000000, "category": "memecoin", "expect": "pass", "rules": [] },
+    { "id": 13, "what": "a sell 10x the median is not sized against a buy median", "side": "sell", "size": 8000000000, "expect": "pass", "rules": [] },
+    { "id": 14, "what": "edge: price impact exactly 1%", "side": "buy", "size": 800000000, "priceImpactPct": "0.01", "expect": "pass", "rules": [] },
+    { "id": 15, "what": "edge: price impact 1.01%, just past", "side": "buy", "size": 800000000, "priceImpactPct": "0.0101", "expect": "block", "rules": ["price-band"] },
+    { "id": 16, "what": "edge: slippage exactly 100 bps", "side": "buy", "size": 800000000, "slippageBps": 100, "expect": "pass", "rules": [] },
+    { "id": 17, "what": "edge: slippage 101 bps, just past", "side": "buy", "size": 800000000, "slippageBps": 101, "expect": "block", "rules": ["slippage-tolerance"] },
+    { "id": 18, "what": "the injection screen fired", "side": "buy", "size": 800000000, "injected": true, "expect": "block", "rules": ["injection-screen"] },
+    { "id": 19, "what": "the token has a permanent delegate", "side": "buy", "size": 800000000, "mintBlock": "mint-permanent-delegate", "expect": "block", "rules": ["mint-permanent-delegate"] },
+    { "id": 20, "what": "no quote was taken", "side": "buy", "size": 800000000, "noQuote": true, "expect": "unsure", "rules": ["quote-missing"] }
+  ]
+}

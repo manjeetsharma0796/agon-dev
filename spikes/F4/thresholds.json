@@ -1,0 +1,9 @@
+{
+  "test": "F4",
+  "name": "20 scripted verdicts",
+  "threshold": "20 of 20 verdicts match the answers written down in advance (over usual size, past usual stop, new token outside the usual set, normal trade, and edge cases at exact thresholds); p95 latency 300 ms or less excluding the RugCheck call; each output names the rule and its number",
+  "checkpoint": "CP2",
+  "written": "2026-09-29",
+  "existential": false,
+  "notes": "Copied from T-F04's Acceptance line before the spike ran. The 20 answers are in cases.json, committed with this file and before run.mjs existed. Each case gives a verdict and the exact set of rules that must fire, so a right verdict for the wrong reason fails. 'Names its number' is read as: every arithmetic reason (size, stop, price band, slippage, style fit) carries a numeric observed and limit. Latency is the whole product path minus the network: decode, ledger, mine and check over the recorded 100-transaction history, with the mint check passed in as data, which is what excludes RugCheck."
+}
