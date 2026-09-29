@@ -1412,7 +1412,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Note: the fixture marker adds about 20 tokens to any replayed verdict, so the 8-reason case this
   row is about is now roughly 472 rather than 452. The 5-reason verdict the deployment serves
   measures 319 with the note attached. Counted here so this row's target is the real number
-- Status: open
+- Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-c13-eight-reason-budget
 - Depends-on: T-C06, T-C12
 - Touches: packages/guard/src/check-trade.ts, packages/guard/src/check-trade.token.test.ts
 - Note: overlaps T-C06's `Touches:`, which is merged. T-C06 measured 395 on 7 reasons and wrote
