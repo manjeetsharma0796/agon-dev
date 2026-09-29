@@ -1,12 +1,8 @@
 {
   "synthetic": true,
   "spec": {
+    "wallet": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
     "mints": ["So11111111111111111111111111111111111111112"],
-    "cap": {
-      "mint": "So11111111111111111111111111111111111111112",
-      "amount": "25000000000",
-      "windowSeconds": 86400
-    },
     "triggerType": "stop",
     "expiresAt": "2026-10-08T00:00:00.000Z"
   },

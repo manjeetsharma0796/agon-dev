@@ -35,17 +35,13 @@ test('leg 2 over HTTP: check_trade comes back as a contract-valid verdict', asyn
   expect(() => CheckTradeOutput.parse(verdict)).not.toThrow()
 })
 
-test('leg 3 over HTTP: arming refuses with 503, and says what turns it on', async () => {
-  // 503 and not 400: the request is fine and nothing is broken, the capability is off. Anything
-  // that can move funds fails closed.
+test('leg 3 over HTTP: off the fork, arming refuses with 503 and says why', async () => {
+  // 503 and not 400: the request is fine and nothing is broken, arming is off on this network.
+  // Anything that can move funds fails closed. No AGON_NETWORK is set here, so it is not the fork.
   const res = await armRoute(
     post('https://agon.test/api/arm', {
+      wallet: '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
       mints: ['So11111111111111111111111111111111111111112'],
-      cap: {
-        mint: 'So11111111111111111111111111111111111111112',
-        amount: '25000000000',
-        windowSeconds: 86400,
-      },
       triggerType: 'stop',
       expiresAt: null,
     }),
@@ -53,7 +49,20 @@ test('leg 3 over HTTP: arming refuses with 503, and says what turns it on', asyn
   expect(res.status).toBe(503)
   const body = await jsonOf(res)
   expect(body.code).toBe('not-armable')
-  expect(body.error).toContain('F5 and F6')
+  expect(body.error).toContain('practice fork only')
+})
+
+test('leg 3 over HTTP: a request that carries a cap is a 400, never an armed limit', async () => {
+  const res = await armRoute(
+    post('https://agon.test/api/arm', {
+      wallet: '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
+      mints: ['So11111111111111111111111111111111111111112'],
+      cap: { mint: 'So11111111111111111111111111111111111111112', amount: '1', windowSeconds: 60 },
+      triggerType: 'stop',
+      expiresAt: null,
+    }),
+  )
+  expect(res.status).toBe(400)
 })
 
 test('a bad address is a 400 that names the cause, not a 500', async () => {

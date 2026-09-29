@@ -2102,13 +2102,27 @@ _(empty)_
 ### T-C18, arm_rule hands back a link, and cannot carry a cap
 - Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-c18-arm-link
 - Depends-on: T-C07, T-C17
-- Touches: packages/core/src/rule.ts, apps/web/src/legs.ts, fixtures/contracts/
+- Touches: packages/core/src/rule.ts, packages/core/src/index.ts, apps/web/src/legs.ts,
+  apps/web/src/routes.ts, apps/web/app/arm/ArmClient.tsx, packages/mcp/src/, scripts/mcp-docs.mjs,
+  docs/public/, fixtures/contracts/
 - Serves: Novelty (judged) ; the honesty of the core claim
 - Acceptance: the 3 changes OP-27 names, `RuleSpec` gains the wallet the rule is for, loses `cap`
   as a caller-supplied field, and `arm_rule` returns an arming request rather than an armed rule;
   a test asserts no caller can submit a cap; the frozen tool list is still exactly 4 in the same
   order; `docs/public/mcp-tools.md` regenerates from the contracts with no hand edit
-- Evidence: <PR link, plus the refused call carrying a cap>
+- Evidence: `arm_rule` returns a link and arms nothing. With the fork named and a public address
+  set it answers `https://<host>/arm#wallet=<wallet>`, with 0 role or order ids in it and the
+  wallet in the fragment, so a browser never sends it to a server. Off the fork it is a 503
+  "practice fork only"; with no public address it refuses by name. A cap sent anyway is refused,
+  not stripped: in `RuleSpec` directly, in the handler, as a 400 over HTTP, and through a real
+  out-of-process MCP client. The tool list is still exactly 4 in the same order, and
+  `docs/public/mcp-tools.md` is regenerated from the contracts
+- Finding: zod drops unknown keys by default, so removing `cap` from the schema alone would have
+  let an agent send one, have it silently discarded, and believe it had set a limit. `strict()` is
+  what turns "cannot carry a cap" from a type-level claim into a refusal an agent actually sees
+- Finding 2: `docs/public/quickstart.md` told agents `arm_rule` asks for a signature; it now says it
+  returns a link and signs nothing. And the arming screen warns when the wallet that connects is not
+  the one the link was made for, because arming always acts on the connected wallet
 - Kill criterion: none. Today `armRule` refuses 100% of calls, so nothing can exploit the current
   shape; it bites the moment T-E06 exists, and it is a frozen contract, so it is cheaper now
 

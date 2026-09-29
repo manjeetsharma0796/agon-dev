@@ -14,9 +14,10 @@ const USDC = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
 /** A chain that holds no vault for the wallet: list_rules answers [] and reads nothing else. */
 const NO_VAULT = withChain({ vault: null, rules: [] })
 
+// What an agent may send arm_rule: whose vault, and no cap.
 const SPEC = {
+  wallet: '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
   mints: ['So11111111111111111111111111111111111111112'],
-  cap: { mint: 'So11111111111111111111111111111111111111112', amount: '1', windowSeconds: 60 },
   triggerType: 'stop',
   expiresAt: null,
 }
@@ -78,11 +79,11 @@ test('the HTTP route has not caught up, and the test says so rather than hiding 
   expect(fromLeg.reasons).not.toEqual(fromTool.reasons)
 })
 
-test('all 4 tools are reachable, and arm_rule refuses rather than answering', async () => {
+test('all 4 tools are reachable, and arm_rule refuses off the fork rather than answering', async () => {
   expect(TOOLS).toHaveLength(4)
   for (const name of TOOLS) expect(isTool(name)).toBe(true)
   expect(isTool('drop_table')).toBe(false)
-  await expect(callTool('arm_rule', SPEC)).rejects.toThrow(/F5 and F6/)
+  await expect(callTool('arm_rule', SPEC)).rejects.toThrow(/practice fork only/)
   expect(await callTool('list_rules', { wallet: WALLET }, NO_VAULT)).toEqual([])
 })
 
@@ -240,4 +241,23 @@ test('a chain that is not the named network is refused, whatever its hostname', 
   expect(chainMismatch('fork', mainnet)).toMatch(/not a fork/)
   expect(chainMismatch('mainnet', fork)).toMatch(/is a fork/)
   expect(chainMismatch('unset', fork)).toMatch(/names no network/)
+})
+
+test('on the fork, arm_rule answers with a link to the arming screen and nothing armed', async () => {
+  const before = { net: process.env['AGON_NETWORK'], url: process.env['AGON_PUBLIC_URL'] }
+  process.env['AGON_NETWORK'] = 'fork'
+  process.env['AGON_PUBLIC_URL'] = 'https://agon.example'
+  try {
+    const link = (await callTool('arm_rule', SPEC)) as { url: string; wallet: string }
+    expect(link.url).toBe(`https://agon.example/arm#wallet=${SPEC.wallet}`)
+    expect(link.wallet).toBe(SPEC.wallet)
+  } finally {
+    for (const [k, v] of [
+      ['AGON_NETWORK', before.net],
+      ['AGON_PUBLIC_URL', before.url],
+    ] as const) {
+      if (v === undefined) delete process.env[k]
+      else process.env[k] = v
+    }
+  }
 })

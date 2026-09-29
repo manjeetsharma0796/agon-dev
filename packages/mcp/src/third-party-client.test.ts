@@ -58,27 +58,22 @@ test('a plain MCP client calls get_report and gets a contract-valid report back'
   expect(() => Report.parse(parsed)).not.toThrow()
 })
 
-test('arm_rule hands back the reason and the numbers over MCP, not a silent failure', async () => {
+test('arm_rule refuses a cap over MCP, so a real client can never set one', async () => {
+  // Through an out-of-process client rather than the in-process call: a model never names
+  // the cap. A spec carrying one is refused with the field named, not stripped and answered.
   const client = await connectThirdPartyClient()
   const result = await client.callTool({
     name: 'arm_rule',
     arguments: {
+      wallet: '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
       mints: ['So11111111111111111111111111111111111111112'],
-      cap: {
-        mint: 'So11111111111111111111111111111111111111112',
-        amount: '1',
-        windowSeconds: 60,
-      },
+      cap: { mint: 'So11111111111111111111111111111111111111112', amount: '1', windowSeconds: 60 },
       triggerType: 'stop',
       expiresAt: null,
     },
   })
-  // Anything that can move funds fails closed: the client sees isError, plus the cause, the
-  // numbers and what turns it on, never a bare protocol error and never a fabricated role.
   expect(result.isError).toBe(true)
-  const text = textOf(result)
-  expect(text).toContain('F5 and F6')
-  expect(text).toContain('1 mint(s)')
+  expect(textOf(result)).toContain('cap')
 })
 
 test('an unknown tool name is refused, not silently ignored', async () => {

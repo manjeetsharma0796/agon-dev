@@ -86,7 +86,8 @@ export const armRoute = async (request: Request): Promise<Response> => {
     return badRequest(error, 'rule spec')
   }
   try {
-    armRule(spec)
+    const env = { publicUrl: process.env['AGON_PUBLIC_URL'], network: process.env['AGON_NETWORK'] }
+    return json(armRule(spec, env), 200)
   } catch (error) {
     // 503, not 400 and not 500. The request was fine and nothing is broken; the capability is off,
     // and anything that can move funds fails closed until it is on.
