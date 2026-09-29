@@ -1671,6 +1671,30 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
   `COPY . .` would have put in the image
 - Kill criterion: none. Without it the documented local setup cannot trade at all
 
+### T-B20, PRD.md matches DECISIONS.md again, and a decision cannot land without it
+- Status: open
+- Depends-on: T-B14
+- Touches: PRD.md, scripts/board.mjs, .github/pull_request_template.md
+- Serves: Functionality (judged) ; the 1 document an outsider or a judge reads to learn the product
+- Acceptance: every `DECISIONS.md` row that changes what the product does is applied to `PRD.md`
+  in place, not appended as a log, counted against the 43 rows on `dev` on 2026-09-29, and each
+  one not applied is listed with why (process only, no product effect); at minimum the guard
+  (OP-38: category and impersonation are lookups, Jev is out of trading, token text never reaches
+  the agent), trading (OP-34: `prepare_swap` is tool 5, the agent signs locally), the vault and
+  chain (OP-35), and the local Docker setup with keys (T-B19). A second person reads the result
+  against `DECISIONS.md` and finds 0 contradictions. Then `scripts/board.mjs pr` fails any PR
+  that adds a `DECISIONS.md` row without changing `PRD.md` or carrying a `**PRD:**` line saying
+  why the PRD is unaffected, the way `**Dependency:**` and `**Diff-size:**` already work; checked
+  by running it on 1 diff of each kind, and the template gains the line
+- Evidence: <PR link, the count of rows applied and not applied, and the 2 check runs>
+- Why it is its own row: found 2026-09-29. `PRD.md` says it "is kept current", but its last change
+  was #148 on 2026-09-28, which applied 9 decisions; `DECISIONS.md` has 43, so 34 are not in it,
+  90 commits later. It still says Jev judges the token category and screens every outside string
+  inside `check_trade`, which OP-38 reversed, and it has no `prepare_swap`. T-B14 found the PDF
+  drifted because nothing made anyone edit it; the markdown file has drifted the same way for the
+  same reason, so this row adds the check, not only the edit
+- Kill criterion: none. A PRD that contradicts the code misleads the reader it exists for
+
 ### T-D04, Pre-mainnet checklist, before team wallets touch mainnet
 - Status: open
 - Depends-on: T-F05c, T-F06a, T-D03, T-C08, OP-5
