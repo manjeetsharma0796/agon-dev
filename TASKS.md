@@ -808,7 +808,7 @@ and latency (a, b).
 - Kill criterion: fallback is publishing only the deterministic half (guardrail verdicts on fixed trades) and dropping the live-agent comparison
 
 ### T-B10, Clear the parked operator ids out of published source
-- Status: claimed 2026-09-25 | Owner: jishnu-baruah | Branch: feature/t-b10-parked-markers
+- Status: open
 - Depends-on: T-B02
 - Touches: packages/core/src/net/index.ts, packages/core/src/net/record.ts, scripts/release.test.mjs
 - Note: these 3 files sit inside T-C02's and T-B02's `Touches:`, and both rows are blocked on a
@@ -1328,7 +1328,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Kill criterion: none, this is the difference between a demo and a product
 
 ### T-C12, Token categories, the 6 names the PRD froze
-- Status: claimed 2026-09-25 | Owner: Jishnu | Branch: feature/t-c12-prd-category-names
+- Status: open
 - Depends-on: T-C05, T-C06
 - Touches: packages/guard/src/jev/index.ts, packages/guard/src/jev/jev.test.ts,
   packages/guard/src/check-trade.ts, packages/guard/src/check-trade.test.ts,
@@ -2127,7 +2127,7 @@ _(empty)_
   shape; it bites the moment T-E06 exists, and it is a frozen contract, so it is cheaper now
 
 ### T-C19, MCP errors come from the catalogue, and name who refused
-- Status: open
+- Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-c19-catalogue-errors
 - Depends-on: T-E10, T-C07
 - Touches: packages/mcp/src/index.ts, packages/core/src/messages.ts
 - Serves: UX (judged) ; the agent surface
