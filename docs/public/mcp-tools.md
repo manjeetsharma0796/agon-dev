@@ -383,7 +383,7 @@ Response budget: **400 tokens**, enforced in CI.
 
 ## `arm_rule`
 
-Turns a rule into an on-chain cap the agent has to trade inside. The user signs; the key never leaves their wallet.
+Returns a link to the arming screen. The user connects their own wallet there and sets the limit from what their history suggests; this tool never names one.
 
 **Input**
 
@@ -392,6 +392,10 @@ Turns a rule into an on-chain cap the agent has to trade inside. The user signs;
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
+    "wallet": {
+      "type": "string",
+      "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+    },
     "mints": {
       "minItems": 1,
       "type": "array",
@@ -399,33 +403,6 @@ Turns a rule into an on-chain cap the agent has to trade inside. The user signs;
         "type": "string",
         "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
       }
-    },
-    "cap": {
-      "type": "object",
-      "properties": {
-        "mint": {
-          "type": "string",
-          "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
-        },
-        "amount": {
-          "type": "string",
-          "pattern": "^(0|[1-9][0-9]*)$"
-        },
-        "windowSeconds": {
-          "type": "integer",
-          "exclusiveMinimum": 0,
-          "maximum": 9007199254740991
-        },
-        "windowSlots": {
-          "type": "integer",
-          "exclusiveMinimum": 0,
-          "maximum": 9007199254740991
-        }
-      },
-      "required": [
-        "mint",
-        "amount"
-      ]
     },
     "triggerType": {
       "type": "string",
@@ -451,11 +428,12 @@ Turns a rule into an on-chain cap the agent has to trade inside. The user signs;
     }
   },
   "required": [
+    "wallet",
     "mints",
-    "cap",
     "triggerType",
     "expiresAt"
-  ]
+  ],
+  "additionalProperties": false
 }
 ```
 
@@ -466,166 +444,23 @@ Turns a rule into an on-chain cap the agent has to trade inside. The user signs;
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
-    "spec": {
-      "anyOf": [
-        {
-          "type": "object",
-          "properties": {
-            "mints": {
-              "minItems": 1,
-              "type": "array",
-              "items": {
-                "type": "string",
-                "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
-              }
-            },
-            "cap": {
-              "type": "object",
-              "properties": {
-                "mint": {
-                  "type": "string",
-                  "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
-                },
-                "amount": {
-                  "type": "string",
-                  "pattern": "^(0|[1-9][0-9]*)$"
-                },
-                "windowSeconds": {
-                  "type": "integer",
-                  "exclusiveMinimum": 0,
-                  "maximum": 9007199254740991
-                },
-                "windowSlots": {
-                  "type": "integer",
-                  "exclusiveMinimum": 0,
-                  "maximum": 9007199254740991
-                }
-              },
-              "required": [
-                "mint",
-                "amount"
-              ],
-              "additionalProperties": false
-            },
-            "triggerType": {
-              "type": "string",
-              "enum": [
-                "stop",
-                "trailing-stop",
-                "take-profit",
-                "balance",
-                "event"
-              ]
-            },
-            "expiresAt": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "date-time",
-                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            }
-          },
-          "required": [
-            "mints",
-            "cap",
-            "triggerType",
-            "expiresAt"
-          ],
-          "additionalProperties": false
-        },
-        {
-          "type": "null"
-        }
-      ]
+    "url": {
+      "type": "string",
+      "format": "uri"
     },
-    "swigRole": {
-      "type": "object",
-      "properties": {
-        "roleId": {
-          "type": "string",
-          "minLength": 1
-        },
-        "authority": {
-          "type": "string",
-          "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
-        },
-        "program": {
-          "type": "string",
-          "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
-        },
-        "tokenRecurringLimit": {
-          "type": "object",
-          "properties": {
-            "mint": {
-              "type": "string",
-              "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
-            },
-            "amount": {
-              "type": "string",
-              "pattern": "^(0|[1-9][0-9]*)$"
-            },
-            "windowSeconds": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "maximum": 9007199254740991
-            },
-            "windowSlots": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "maximum": 9007199254740991
-            }
-          },
-          "required": [
-            "mint",
-            "amount"
-          ],
-          "additionalProperties": false
-        }
-      },
-      "required": [
-        "roleId",
-        "authority",
-        "program",
-        "tokenRecurringLimit"
-      ],
-      "additionalProperties": false
-    },
-    "jupiterOrderId": {
-      "anyOf": [
-        {
-          "type": "string",
-          "minLength": 1
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
-    "vault": {
+    "wallet": {
       "type": "string",
       "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
     },
-    "effectiveRemaining": {
+    "note": {
       "type": "string",
-      "pattern": "^(0|[1-9][0-9]*)$"
-    },
-    "rollingWorstCase": {
-      "type": "string",
-      "pattern": "^(0|[1-9][0-9]*)$"
+      "minLength": 1
     }
   },
   "required": [
-    "spec",
-    "swigRole",
-    "jupiterOrderId",
-    "vault",
-    "effectiveRemaining",
-    "rollingWorstCase"
+    "url",
+    "wallet",
+    "note"
   ],
   "additionalProperties": false
 }
@@ -667,6 +502,10 @@ Lists the caps currently armed for a wallet.
           {
             "type": "object",
             "properties": {
+              "wallet": {
+                "type": "string",
+                "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+              },
               "mints": {
                 "minItems": 1,
                 "type": "array",
@@ -674,34 +513,6 @@ Lists the caps currently armed for a wallet.
                   "type": "string",
                   "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
                 }
-              },
-              "cap": {
-                "type": "object",
-                "properties": {
-                  "mint": {
-                    "type": "string",
-                    "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
-                  },
-                  "amount": {
-                    "type": "string",
-                    "pattern": "^(0|[1-9][0-9]*)$"
-                  },
-                  "windowSeconds": {
-                    "type": "integer",
-                    "exclusiveMinimum": 0,
-                    "maximum": 9007199254740991
-                  },
-                  "windowSlots": {
-                    "type": "integer",
-                    "exclusiveMinimum": 0,
-                    "maximum": 9007199254740991
-                  }
-                },
-                "required": [
-                  "mint",
-                  "amount"
-                ],
-                "additionalProperties": false
               },
               "triggerType": {
                 "type": "string",
@@ -727,8 +538,8 @@ Lists the caps currently armed for a wallet.
               }
             },
             "required": [
+              "wallet",
               "mints",
-              "cap",
               "triggerType",
               "expiresAt"
             ],

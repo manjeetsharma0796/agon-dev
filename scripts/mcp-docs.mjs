@@ -29,7 +29,7 @@ const WHAT = {
   check_trade:
     'Answers whether one proposed trade fits that profile. Arithmetic first, and every reason carries the rule that produced it.',
   arm_rule:
-    'Turns a rule into an on-chain cap the agent has to trade inside. The user signs; the key never leaves their wallet.',
+    'Returns a link to the arming screen. The user connects their own wallet there and sets the limit from what their history suggests; this tool never names one.',
   list_rules: 'Lists the caps currently armed for a wallet.',
 }
 

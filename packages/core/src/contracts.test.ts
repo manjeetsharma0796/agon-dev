@@ -2,12 +2,14 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   ArmedRule,
+  ArmingLink,
   CheckTradeInput,
   CheckTradeOutput,
   Coverage,
   MinedRule,
   Report,
   ReportRange,
+  RuleSpec,
   Reason,
   TOOLS,
   toolContracts,
@@ -43,6 +45,20 @@ describe('examples parse against their contract', () => {
 
   it('armed rule', () => {
     expect(() => ArmedRule.parse(example('armed-rule'))).not.toThrow()
+  })
+
+  it('arming link, which is what arm_rule returns', () => {
+    expect(() => ArmingLink.parse(example('arming-link'))).not.toThrow()
+  })
+
+  // A model never names the cap. zod drops unknown keys by default, so without `strict` a cap
+  // an agent sent would vanish silently and the agent would believe it had set one.
+  it('a rule spec carrying a cap is refused, not silently stripped', () => {
+    const spec = { ...example('armed-rule').spec }
+    expect(() => RuleSpec.parse(spec)).not.toThrow()
+    expect(() =>
+      RuleSpec.parse({ ...spec, cap: { mint: spec.mints[0], amount: '1', windowSeconds: 60 } }),
+    ).toThrow(/cap/)
   })
 
   // A wallet we read nothing for. It is a separate file because the interesting part is a value
@@ -127,7 +143,8 @@ describe('a contract refuses a dishonest value', () => {
     const big = '18446744073709551615'
     expect(Number(big).toString()).not.toBe(big)
     const parsed = ArmedRule.parse(example('armed-rule'))
-    expect(typeof parsed.spec?.cap.amount).toBe('string')
+    // The cap lives on the role, not the spec, since it was taken off what an agent may send.
+    expect(typeof parsed.swigRole.tokenRecurringLimit.amount).toBe('string')
     expect(typeof parsed.effectiveRemaining).toBe('string')
   })
 })

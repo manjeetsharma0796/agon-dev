@@ -36,17 +36,41 @@ export const TriggerType = z.enum([
   'event',
 ])
 
-/** What the user asks for. */
-export const RuleSpec = z.object({
-  /** The mints the agent may trade under this rule. Empty would mean "anything", so at least one. */
-  mints: z.array(Address).min(1),
-  cap: RecurringLimit,
-  triggerType: TriggerType,
-  /**
-   * Null means no end date, and the UI must then say "revoke from your wallet". That is F7's stated
-   * fallback. It is never a reason to give the agent `manageAuthority`.
-   */
-  expiresAt: z.iso.datetime().nullable(),
+/**
+ * What an agent may ask for when it asks to be armed. Deliberately without a cap: the cap is
+ * suggested by the miner from the wallet's own history and set by the user on the arming screen, and
+ * a model never names it. People approve pre-filled numbers, so a cap a model proposed and a tired
+ * user signed would still be a cap a model chose.
+ *
+ * Strict, so a `cap` sent anyway is refused rather than silently dropped. Dropping it would let an
+ * agent believe it had set a limit the user never saw.
+ */
+export const RuleSpec = z
+  .object({
+    /** Whose vault. The arming screen warns when the wallet that connects is a different one. */
+    wallet: Address,
+    /** The mints the agent may trade under this rule. Empty would mean "anything", so at least one. */
+    mints: z.array(Address).min(1),
+    triggerType: TriggerType,
+    /**
+     * Null means no end date, and the UI must then say "revoke from your wallet". That is F7's stated
+     * fallback. It is never a reason to give the agent `manageAuthority`.
+     */
+    expiresAt: z.iso.datetime().nullable(),
+  })
+  .strict()
+
+/**
+ * What `arm_rule` returns: where the user goes to arm, not a claim that anything is armed. Nothing
+ * exists on chain until the user's wallet signs on that screen, so the tool reports a place, never a
+ * role id or an order id it did not create.
+ */
+export const ArmingLink = z.object({
+  /** The arming screen. The wallet rides in the fragment, which a browser never sends to a server. */
+  url: z.url(),
+  wallet: Address,
+  /** What the agent should tell the user, in 1 or 2 sentences. */
+  note: z.string().min(1),
 })
 
 /** What exists on-chain once the user's wallet has signed. */
@@ -84,3 +108,4 @@ export type RecurringLimit = z.infer<typeof RecurringLimit>
 export type TriggerType = z.infer<typeof TriggerType>
 export type RuleSpec = z.infer<typeof RuleSpec>
 export type ArmedRule = z.infer<typeof ArmedRule>
+export type ArmingLink = z.infer<typeof ArmingLink>

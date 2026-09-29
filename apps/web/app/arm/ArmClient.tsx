@@ -55,6 +55,14 @@ export default function ArmClient({ rpcUrl }: { rpcUrl: string }) {
 
   const owner = who ? new PublicKey(who.account.address) : null
 
+  // arm_rule links here with the wallet in the fragment. Arming always acts on the wallet that
+  // connects, so a different one is said out loud rather than silently armed in its place.
+  const [linkedFor, setLinkedFor] = useState<string | null>(null)
+  useEffect(() => {
+    const m = /wallet=([1-9A-HJ-NP-Za-km-z]{32,44})/.exec(globalThis.location?.hash ?? '')
+    setLinkedFor(m?.[1] ?? null)
+  }, [])
+
   /** The wallet signs; we only hand it bytes and take bytes back. */
   const sign: Sign | null = who
     ? async (tx) => {
@@ -180,6 +188,14 @@ export default function ArmClient({ rpcUrl }: { rpcUrl: string }) {
           <button type="button" onClick={() => reload()} disabled={busy !== null}>
             Refresh
           </button>
+        </p>
+      )}
+
+      {who && linkedFor !== null && linkedFor !== who.account.address && (
+        <p role="alert">
+          This link was made for {linkedFor}, and the wallet you connected is {who.account.address}.
+          Anything you do here acts on the connected wallet. Switch wallets in {who.wallet.name} if
+          that is not the one you meant.
         </p>
       )}
 

@@ -58,7 +58,11 @@ const handlers = {
     return assessTrade(txs, { wallet, mint, side, size }, mintCheck).verdict
   },
 
-  arm_rule: (input: unknown) => armRule(input),
+  arm_rule: (input: unknown) =>
+    armRule(input, {
+      publicUrl: process.env['AGON_PUBLIC_URL'],
+      network: process.env['AGON_NETWORK'],
+    }),
   // list_rules reads the wallet's vault from chain (T-C17). The chain stores the role, not
   // the spec, the order id or a window in seconds, so those are null or slots rather than guesses.
   // An empty list now means the chain holds no agent role for this wallet.
@@ -163,9 +167,10 @@ What is not real yet, so do not present it as a measurement:
   same figures whatever wallet you pass. Its result carries a "note" field saying so. Repeat that
   note if you quote any of its numbers. It does not agree with check_trade about the same wallet,
   because the two read different recordings.
-- arm_rule refuses every call. It validates the rule and then declines, because no Swig role and no
-  Jupiter order are ever created: arming turns on only once the on-chain feasibility tests pass and
-  the pre-mainnet checklist is signed off. The refusal is the correct answer, not an error to retry.
+- arm_rule arms nothing itself. It returns a link to the arming screen, where the user connects
+  their own wallet and sets the spending limit from what their history suggests; you never name the
+  limit, and a request that carries one is refused. It works on the practice fork only, and refuses
+  elsewhere with the reason: that refusal is the correct answer, not an error to retry.
 
 Setup: none. No wallet connection, no private key, no signing, and nothing here can move funds or
 write to a chain. Every call is a read. You need a mainnet wallet address to ask about, and that is
@@ -191,9 +196,9 @@ const DESCRIPTIONS: Record<ToolName, string> = {
     'pass, block or unsure; a non-pass verdict always names the rule and the number. Anything ' +
     'that can move funds fails closed: unsure is not a soft pass.',
   arm_rule:
-    'Arm a capped, revocable spending rule as a Swig role plus a Jupiter trigger order. Every ' +
-    'call refuses today: arming turns on only once F5 and F6 pass and the pre-mainnet checklist ' +
-    'is ticked.',
+    'Get a link to the arming screen for a wallet. The user opens it, connects their own wallet ' +
+    'and sets the spending limit there; this tool never takes a limit and refuses a request that ' +
+    'carries one. Practice fork only until the pre-mainnet checklist is ticked.',
   list_rules:
     "List the agent rules armed on a wallet's vault, read from chain: the cap per window in slots, " +
     'what the agent can spend now, and the most it can spend across a window edge.',

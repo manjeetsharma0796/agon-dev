@@ -9,8 +9,10 @@
 import { readFileSync } from 'node:fs'
 import {
   ArmedRule,
+  ArmingLink,
   CheckTradeInput,
   CheckTradeOutput,
+  network,
   Report,
   RuleSpec,
   WalletQuery,
@@ -57,23 +59,42 @@ export class NotArmable extends Error {
 }
 
 /**
- * Leg 3. Arming is a no-op, and a no-op that refuses rather than one that answers.
+ * Leg 3. `arm_rule` hands back a link to the arming screen, and arms nothing itself.
  *
- * `arm_rule` returns an `ArmedRule`, which names a Swig role id and a Jupiter order id. Those are
- * claims that something exists on chain. Nothing does: F5 and F6 have not passed and T-D04 has not
- * been ticked, so no transaction has been built, let alone signed. Returning the fixture here would
- * be a fabricated verification, and this is the path that grants spend authority, so it fails
- * closed. The spec is still validated, because that is the part that is real today.
+ * Nothing exists on chain until the user's wallet signs on that screen, where the cap is set by the
+ * user from the miner's suggestion. So this returns a place, never a role id or an order id it did
+ * not create. It still fails closed: off the fork, or with no screen to send anyone to, it refuses
+ * with the reason rather than returning a link to a page that would refuse anyway.
  */
-export const armRule = (input: unknown): never => {
+export const armRule = (
+  input: unknown,
+  env: { publicUrl: string | undefined; network: string | undefined },
+): ArmingLink => {
   const spec = RuleSpec.parse(input)
-  throw new NotArmable(
-    `Arming is off. The rule is valid, covering ${spec.mints.length} mint(s) with a cap of ` +
-      `${spec.cap.amount} base units per ${spec.cap.windowSeconds}s, but nothing was created: ` +
-      `no Swig role and no Jupiter order exist for it. Arming turns on when F5 and F6 pass and ` +
-      `the pre-mainnet checklist is ticked. Until then this endpoint refuses rather than reporting ` +
-      `a role that is not there.`,
-  )
+  const net = network(env.network)
+  if (net.id !== 'fork') {
+    throw new NotArmable(
+      `Arming runs on the practice fork only until the mainnet checklist is complete, and this ` +
+        `deployment is on ${net.short}. No link was made for ${spec.wallet}.`,
+    )
+  }
+  if (!env.publicUrl) {
+    throw new NotArmable(
+      `This deployment has no public address set, so there is no arming screen to send ` +
+        `${spec.wallet} to. The operator sets AGON_PUBLIC_URL. No link was made.`,
+    )
+  }
+  const url = new URL('/arm', env.publicUrl)
+  // The fragment, not the query: a browser never sends it to a server, so the wallet does not
+  // land in anyone's request log.
+  url.hash = `wallet=${spec.wallet}`
+  return ArmingLink.parse({
+    url: url.toString(),
+    wallet: spec.wallet,
+    note:
+      `Open this link and connect ${spec.wallet}. You set the spending limit there yourself, ` +
+      `starting from what your own trading history suggests; this tool never names one.`,
+  })
 }
 
 /** Exported so a caller can show what arming will return once it is on. Never served as a result. */

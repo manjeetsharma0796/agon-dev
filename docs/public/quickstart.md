@@ -31,14 +31,15 @@ The server exposes exactly four tools, documented with their full schemas in
 |---|---|
 | `get_report` | the trading profile for a wallet |
 | `check_trade` | whether one proposed trade fits that profile |
-| `arm_rule` | turn a rule into an on-chain cap the user signs for |
+| `arm_rule` | a link to the arming screen, where the user sets the cap and signs |
 | `list_rules` | the caps currently armed |
 
 The list is stable on purpose: an agent's prompt cache is keyed on it, so adding or reordering a
 tool costs every user a cache miss.
 
-`get_report` and `check_trade` are read only and sign nothing. `arm_rule` is the only one that ever
-asks for a signature, and it is the user who gives it.
+`get_report` and `check_trade` are read only and sign nothing. `arm_rule` signs nothing either: it
+returns a link, and the user's own wallet signs on that page. An agent never names the cap, and a
+request that carries one is refused.
 
 ## What Agon will not do
 
