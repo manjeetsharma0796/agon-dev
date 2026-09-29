@@ -15,13 +15,28 @@
 // the arithmetic still says so as `unsure`, and names what was not read.
 
 import type { RawTransaction } from '@agon/decoder'
-import { assessTrade, DEFAULT_QUOTE, type MintCheck, type ProposedTrade } from '@agon/guard'
+import {
+  assessTrade,
+  DEFAULT_QUOTE,
+  tradedMints,
+  type MintCheck,
+  type ProposedTrade,
+  type TokenCategory,
+} from '@agon/guard'
 
 import type { ReportIo } from './report.js'
 
 export interface CheckIo extends ReportIo {
   /** Reads the mint's authorities off the chain. Fails closed, and the guard treats it that way. */
   loadMintCheck(mint: string): Promise<MintCheck>
+  /**
+   * The category of each mint the wallet has traded, for its category mix. Optional, and a lookup
+   * that fails or is absent leaves the mix absent, which style fit reports as unsure.
+   */
+  loadCategories?(
+    mints: readonly string[],
+    slot?: number,
+  ): Promise<ReadonlyMap<string, TokenCategory>>
 }
 
 /**
@@ -36,8 +51,13 @@ export function checkLines(
   trade: ProposedTrade,
   mintCheck: MintCheck,
   quoteMint: string = DEFAULT_QUOTE,
+  categories?: ReadonlyMap<string, TokenCategory>,
 ): { verdict: 'pass' | 'block' | 'unsure'; lines: string[] } {
-  const { verdict: out, closedTrades, rules } = assessTrade(txs, trade, mintCheck, quoteMint)
+  const {
+    verdict: out,
+    closedTrades,
+    rules,
+  } = assessTrade(txs, trade, mintCheck, quoteMint, categories)
 
   const lines = [
     `Wallet ${trade.wallet}`,
@@ -104,7 +124,18 @@ export async function runCheck(argv: readonly string[], io: CheckIo): Promise<nu
     return 1
   }
 
-  const { verdict, lines } = checkLines(txs, { wallet, mint, side, size }, mintCheck)
+  // Enrichment for style fit, so a lookup that fails is not a refusal: it leaves the mix absent,
+  // and the guard answers unsure on style fit, which still keeps the trade from going out.
+  const categories = await io
+    .loadCategories?.(tradedMints(txs, wallet), mintCheck.dataSlot ?? undefined)
+    .catch(() => undefined)
+  const { verdict, lines } = checkLines(
+    txs,
+    { wallet, mint, side, size },
+    mintCheck,
+    DEFAULT_QUOTE,
+    categories,
+  )
   for (const line of lines) console.log(line)
   // Non-zero on anything that is not a pass, so a script wiring this in cannot read a refusal as
   // success. `unsure` exits non-zero with `block`, because `unsure` is not a soft pass: the two

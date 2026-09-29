@@ -1,0 +1,219 @@
+{
+  "slot": 450115322,
+  "provider": "jupiter",
+  "recordedAt": "2026-09-29T07:37:48.587Z",
+  "request": {
+    "method": "GET",
+    "url": "https://lite-api.jup.ag/tokens/v2/search?query=GMPu8NEYEsAWARLWrRuh7ugcienKRSNUZ4Qy3bopoAsP,eK4ajGnYAKsE34yTzaRE9ctgRVUZupzvXQiaDaafNLg,27GBuQtsoWACu846Y72ovNtyrwFwo5wNMydeVoow3Tsa,BUSkgqMMaeSzNfHXbxNJfTaYrcUFJwRZfKZNSB5JVHG6",
+    "headers": {},
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": [
+      {
+        "id": "GMPu8NEYEsAWARLWrRuh7ugcienKRSNUZ4Qy3bopoAsP",
+        "name": "Zop",
+        "symbol": "ZOP",
+        "icon": "https://gmgn.ai/external-res/9833937e774c86401a090168f71dc352_v2l.webp",
+        "decimals": 6,
+        "dev": "EhcQRCysw4SZA1bYCwGj79rvH4h5duD39dfTaW3y9W5W",
+        "circSupply": 844899395.781008,
+        "totalSupply": 844899395.781008,
+        "tokenProgram": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+        "holderCount": 6,
+        "priceBlockId": 450115502,
+        "liquidity": 0.000034464826814219935,
+        "stats1h": {
+          "priceChange": -100
+        },
+        "stats6h": {
+          "priceChange": -100
+        },
+        "stats24h": {
+          "priceChange": -100,
+          "liquidityChange": -99.99999970041912,
+          "buyVolume": 36694.87121791609,
+          "sellVolume": 34859.374469915594,
+          "numBuys": 614,
+          "numSells": 371,
+          "numTraders": 448,
+          "numNetBuyers": 444
+        },
+        "firstPool": {
+          "id": "ERTsEZQGXiqZBMp9zxo5nX3xuqgqchpF4jtvm8t2KwCP",
+          "createdAt": "2026-09-24T18:50:16Z"
+        },
+        "audit": {
+          "isSus": true,
+          "mintAuthorityDisabled": true,
+          "freezeAuthorityDisabled": true,
+          "topHoldersPercentage": 13.674296126116722,
+          "devBalancePercentage": 99.98686911211571,
+          "devMints": 5
+        },
+        "organicScore": 0,
+        "organicScoreLabel": "low",
+        "tags": [
+          "unknown",
+          "token-2022"
+        ],
+        "createdAt": "2026-09-24T18:50:13Z",
+        "updatedAt": "2026-09-25T07:32:28Z"
+      },
+      {
+        "id": "eK4ajGnYAKsE34yTzaRE9ctgRVUZupzvXQiaDaafNLg",
+        "name": "fooms",
+        "symbol": "FOOMS",
+        "icon": "https://pbs.twimg.com/profile_images/2103145272394010624/NBRiq0yn_400x400.jpg",
+        "decimals": 6,
+        "dev": "HjsS6jtP5zq7EY8VHGASkGDUeQW8nreEPCxvypCoBqpc",
+        "circSupply": 736988035.004176,
+        "totalSupply": 736988035.004176,
+        "tokenProgram": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+        "holderCount": 8,
+        "priceBlockId": 450116397,
+        "liquidity": 0.0000957610294280165,
+        "stats1h": {
+          "priceChange": -100
+        },
+        "stats6h": {
+          "priceChange": -100
+        },
+        "stats24h": {
+          "priceChange": -100,
+          "holderChange": -38.46153846153847,
+          "liquidityChange": -99.99999916947762,
+          "buyVolume": 103472.87832412691,
+          "sellVolume": 99895.32671366648,
+          "numBuys": 1624,
+          "numSells": 990,
+          "numTraders": 751,
+          "numNetBuyers": 745
+        },
+        "firstPool": {
+          "id": "q8E24VK8MVethC8cvj28AneV7iQDdSaciuMHvykppj1",
+          "createdAt": "2026-09-24T18:50:09Z"
+        },
+        "audit": {
+          "isSus": true,
+          "mintAuthorityDisabled": true,
+          "freezeAuthorityDisabled": true,
+          "topHoldersPercentage": 11.209748297987346,
+          "devBalancePercentage": 99.9643504081605,
+          "devMints": 1
+        },
+        "organicScore": 0,
+        "organicScoreLabel": "low",
+        "tags": [
+          "unknown",
+          "token-2022"
+        ],
+        "createdAt": "2026-09-24T18:50:06Z",
+        "updatedAt": "2026-09-25T08:32:07Z"
+      },
+      {
+        "id": "27GBuQtsoWACu846Y72ovNtyrwFwo5wNMydeVoow3Tsa",
+        "name": "Metsumi404",
+        "symbol": "METSUMI",
+        "icon": "https://images.pump.fun/coin-image/27URRBgxnYSCajQFipn6HP1r86coJuE81Q2qCKjZpump?variant=80x80&ipfs=bafybeihc4eih4jjut23h7yvdiyk3uscmn7ozzhw5njehepdazgfs3icghe&src=https%3A%2F%2Fipfs.io%2Fipfs%2Fbafybeihc4eih4jjut23h7yvdiyk3uscmn7ozzhw5njehepdazgfs3icghe",
+        "decimals": 6,
+        "dev": "Ahptr26uoasYpt7xRyYWdKc4KKjmFX3cSHBR3d1sdjrC",
+        "circSupply": 91086555695.67604,
+        "totalSupply": 91086555695.67604,
+        "tokenProgram": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+        "launchpad": "met-dbc",
+        "metaLaunchpad": "met-dbc",
+        "partnerConfig": "AgTxPohAwnobVt6k5mpPQcXfXRDXE5gRef1hrXvJooiM",
+        "graduatedPool": "FhhbxBoKGFfaNuAvkkt9vqcVGpjRgghFL9jkcLihpYzh",
+        "graduatedAt": "2026-09-24T18:43:15Z",
+        "holderCount": 28,
+        "priceBlockId": 450116586,
+        "liquidity": 0.018632892440662047,
+        "stats1h": {
+          "priceChange": -100
+        },
+        "stats6h": {
+          "priceChange": -100,
+          "holderChange": -3.4482758620689653
+        },
+        "stats24h": {
+          "priceChange": -100,
+          "holderChange": -6.666666666666667,
+          "volumeChange": -100
+        },
+        "firstPool": {
+          "id": "27GBuQtsoWACu846Y72ovNtyrwFwo5wNMydeVoow3Tsa",
+          "createdAt": "2026-09-24T18:43:15Z"
+        },
+        "audit": {
+          "isSus": true,
+          "mintAuthorityDisabled": true,
+          "freezeAuthorityDisabled": true,
+          "topHoldersPercentage": 12.11441002859875,
+          "devBalancePercentage": 11.806770337078985,
+          "devMigrations": 1,
+          "devMints": 2
+        },
+        "organicScore": 0,
+        "organicScoreLabel": "low",
+        "tags": [
+          "unknown",
+          "token-2022"
+        ],
+        "createdAt": "2026-09-24T18:43:15Z",
+        "updatedAt": "2026-09-29T05:03:01Z"
+      },
+      {
+        "id": "BUSkgqMMaeSzNfHXbxNJfTaYrcUFJwRZfKZNSB5JVHG6",
+        "name": "fooms",
+        "symbol": "FOOMS",
+        "icon": "https://gmgn.ai/external-res/e8064d537efc066127cabe625e657755_v2l.webp",
+        "decimals": 6,
+        "dev": "Q5cV1YPePvacXLrcvQZoqCBekmD9vSyqEuKxVMbbWNg",
+        "circSupply": 758941934.563028,
+        "totalSupply": 758941934.563028,
+        "tokenProgram": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+        "holderCount": 5,
+        "priceBlockId": 450115719,
+        "liquidity": 0.00004900101227327869,
+        "stats1h": {
+          "priceChange": -100
+        },
+        "stats6h": {
+          "priceChange": -100
+        },
+        "stats24h": {
+          "priceChange": -100,
+          "liquidityChange": -99.99999960513051,
+          "buyVolume": 78320.50433069374,
+          "sellVolume": 75139.9912721503,
+          "numBuys": 868,
+          "numSells": 534,
+          "numTraders": 347,
+          "numNetBuyers": 343
+        },
+        "firstPool": {
+          "id": "Fuetn35UhsnhWUhVmEJuaaKgVHnihpmQXVyCsfFtZ4US",
+          "createdAt": "2026-09-24T18:50:21Z"
+        },
+        "audit": {
+          "isSus": true,
+          "mintAuthorityDisabled": true,
+          "freezeAuthorityDisabled": true,
+          "topHoldersPercentage": 14.633163699103388,
+          "devBalancePercentage": 99.97385945281016,
+          "devMints": 1
+        },
+        "organicScore": 0,
+        "organicScoreLabel": "low",
+        "tags": [
+          "unknown",
+          "token-2022"
+        ],
+        "createdAt": "2026-09-24T18:50:18Z",
+        "updatedAt": "2026-09-25T07:31:15Z"
+      }
+    ]
+  }
+}

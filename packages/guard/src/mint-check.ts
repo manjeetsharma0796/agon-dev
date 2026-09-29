@@ -225,13 +225,14 @@ const readAccount = (mint: string, account: unknown, slot: number): MintCheck =>
 async function listingsOf(
   mints: readonly string[],
   net: NonNullable<MintCheckDeps['net']>,
-  slot: number,
+  slot?: number,
 ): Promise<Map<string, TokenListing>> {
   const out = new Map<string, TokenListing>()
+  if (mints.length === 0) return out
   let res: NetResult
   try {
     // Stamped with the slot of the chain read it accompanies, so a recording says when it was true.
-    res = await net(jupiterToken(mints.join(',')), { slotHint: slot })
+    res = await net(jupiterToken(mints.join(',')), slot === undefined ? {} : { slotHint: slot })
   } catch {
     return out
   }
@@ -324,4 +325,18 @@ export async function checkMints(
     }
   }
   return out
+}
+
+/**
+ * The category of each mint that has a listing, in 1 call however many. For the mints a wallet has
+ * traded, which is what its category mix is computed from. A mint absent from the map could not be
+ * placed, and the mix is then absent too.
+ */
+export async function categoriesOf(
+  mints: readonly string[],
+  deps: MintCheckDeps = {},
+  slot?: number,
+): Promise<Map<string, TokenCategory>> {
+  const listings = await listingsOf(mints, deps.net ?? call, slot)
+  return new Map([...listings].map(([mint, listing]) => [mint, categoryOf(mint, listing)]))
 }
