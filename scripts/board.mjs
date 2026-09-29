@@ -217,6 +217,23 @@ function lint() {
       )
     }
   }
+
+  // 1 branch, 1 row, whatever the status. The claim check above only sees `claimed`, and on
+  // 2026-09-29 a `sed` meant for 1 row rewrote 26 done rows to "in-review ... | Branch:" on the
+  // same branch. It passed, merged, and stood on dev until the next PR reversed it. A branch named
+  // by 2 rows means one of them is wrong, and the board cannot say which is the real one.
+  const byBranch = new Map()
+  for (const t of tasks) {
+    const named = /\|\s*Branch:\s*(\S+)/.exec(t.fields.Status ?? '')
+    if (named) byBranch.set(named[1], [...(byBranch.get(named[1]) ?? []), t.id])
+  }
+  for (const [branch, ids] of byBranch) {
+    if (ids.length > 1) {
+      fail(
+        `branch "${branch}" is named by ${ids.length} rows, ${ids.join(', ')}. A branch belongs to 1 task.`,
+      )
+    }
+  }
   return tasks
 }
 
