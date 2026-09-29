@@ -1651,7 +1651,9 @@ CP3 evidence required: the loop works end to end on a team wallet; 10+ beta repo
 A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ reports.
 
 ### T-B19, compose connects the MCP to the fork, and reads live prices when the keys are set
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/233 | Owner: manjeetsharma0796 | Branch: feature/t-b19-compose-live
+- Status: done 2026-09-29 | Owner: manjeetsharma0796 | PR: #233
+- Merged 2026-09-29 without a second review, on the owner's call, because Copilot's review failed on
+  quota and the reviewer was not yet available; Jishnu is asked to review it after merge
 - Depends-on: T-B16, T-C21
 - Touches: compose.yaml, .dockerignore
 - Serves: Functionality (judged) ; the local Docker setup can build a trade, not only read
@@ -2454,7 +2456,12 @@ _(empty)_
   decides whether this blocks the cohort or only part of it
 
 ### T-C21, prepare_swap: the MCP builds the trade, the agent signs it on its own machine
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/231 | Owner: manjeetsharma0796 | Branch: feature/t-c21-prepare-swap
+- Status: claimed 2026-09-29 | Owner: manjeetsharma0796 | Branch: feature/t-c21-prepare-swap
+- Code merged 2026-09-29 in #231, without the second review this money path needs, on the owner's
+  call; Jishnu is asked to review it after merge. Not done: the acceptance's fresh-agent before
+  and after is not measured yet. The real-history trade is: through Docker in live mode (#233), a
+  real trader's history blocked 0.1 wSOL at 3.7x their 0.0272 SOL median and passed 0.05 wSOL,
+  which landed when the agent signed it
 - Paused 2026-09-29 until T-C22's deterministic screen landed (#223), then resumed the same day
 - Decided 2026-09-29 by manjeetsharma0796: `check_trade` judges the trade against a separate
   `historyWallet`, the user's real address, read only, while the vault belongs to `owner`. A fresh
