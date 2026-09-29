@@ -152,8 +152,7 @@ const sizeFinding = (
     rule: 'size-vs-median',
     message:
       `${multiple}x your median size of ${human(mined.value, asset)}, past your ` +
-      `${LIMITS.sizeMultiple}x limit. Stopped. Send ` +
-      `${human(mined.value * LIMITS.sizeMultiple, asset)} or less, or raise the limit.`,
+      `${LIMITS.sizeMultiple}x limit. Send ${human(mined.value * LIMITS.sizeMultiple, asset)} or less.`,
     observed: multiple,
     limit: LIMITS.sizeMultiple,
     unit: 'x-median',
@@ -180,8 +179,8 @@ const stopFinding = (proposed: number | undefined, rules: readonly MinedRule[]):
   return block({
     rule: 'stop-vs-usual',
     message:
-      `A ${proposed}% stop. You usually cut at ${mined.value}%; past ${limit}% is a bigger loss ` +
-      `than you take. Stopped. Move it to ${limit}% or closer.`,
+      `A ${proposed}% stop, past your ${limit}% limit; you cut at ${mined.value}%. ` +
+      `Set ${limit}% or closer.`,
     observed: proposed,
     limit,
     unit: '%',
@@ -209,9 +208,7 @@ const bandFinding = (quote: Quote): Finding | null => {
   if (impact <= LIMITS.priceBandPct) return null
   return block({
     rule: 'price-band',
-    message:
-      `This route moves the price ${impact}%, past your ${LIMITS.priceBandPct}% band. ` +
-      `Stopped. Trade smaller or widen the band.`,
+    message: `Price impact ${impact}%, past your ${LIMITS.priceBandPct}% band. Trade smaller.`,
     observed: impact,
     limit: LIMITS.priceBandPct,
     unit: '%',
@@ -223,9 +220,8 @@ const slippageFinding = (quote: Quote): Finding | null => {
   return block({
     rule: 'slippage-tolerance',
     message:
-      `This route takes a fill ${round(quote.slippageBps / 100, 2)}% worse than quoted, past ` +
-      `your ${LIMITS.slippageBps / 100}% band. Stopped. Re-quote at ${LIMITS.slippageBps} bps ` +
-      `or less.`,
+      `Slippage allowed ${round(quote.slippageBps / 100, 2)}%, past your ` +
+      `${LIMITS.slippageBps / 100}% band. Quote at ${LIMITS.slippageBps} bps or less.`,
     observed: quote.slippageBps,
     limit: LIMITS.slippageBps,
     unit: 'bps',
@@ -268,8 +264,8 @@ const styleFinding = (
   return block({
     rule: 'style-fit',
     message:
-      `0 of your ${closedTrades} closed trades are in the ${category} category; this would be ` +
-      `your first. Stopped. Trade a category you already trade, or add this one.`,
+      `0 of your ${closedTrades} closed trades are in the ${category} category. ` +
+      `Trade one you already trade.`,
     observed: traded,
     limit: 1,
     unit: 'trades',

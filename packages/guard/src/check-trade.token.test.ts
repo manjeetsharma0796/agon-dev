@@ -90,8 +90,8 @@ test('a pass and an ordinary block both fit the 400 token budget', () => {
 
 test('the worst case, every check firing at once, still fits', () => {
   // 7 reasons in 1 response: 3 blocking mint findings, both quote bands, the size break and the
-  // stop break. Measured at 395 tokens, and it was 417 before this file's own 4 messages lost 88
-  // characters between them. Nothing is dropped to make the budget: if this ever goes over, the
+  // stop break. Measured at 357 tokens: 417, then 395 once this file's own 4 messages lost 88
+  // characters between them, then 357 when the 8-reason case below forced a second cut. Nothing is dropped to make the budget: if this ever goes over, the
   // messages get shorter and the count of them stays.
   const worst = checkTrade(
     trade(MEDIAN * 9),
@@ -133,4 +133,65 @@ test('the worst case, every check firing at once, still fits', () => {
   expect(worst.verdict).toBe('block')
   expect(worst.reasons.length).toBeGreaterThanOrEqual(6)
   expect(tokens(worst)).toBeLessThanOrEqual(BUDGET)
+})
+
+test('all 8 reasons at once, style fit included, still fit', () => {
+  // The 7 above plus style fit. Every other fixture here trades a category the wallet already
+  // holds, so the 8th could not fire and this case went unmeasured. 450 tokens when measured,
+  // 397 after the guard's 5 messages went from 554 characters to 344.
+  // Nothing is dropped to make the budget: each reason keeps its cause, its number and its next
+  // step, and the messages get shorter instead.
+  const eight = checkTrade(
+    trade(MEDIAN * 9),
+    facts({
+      mint: {
+        mint: MINT,
+        verdict: 'block',
+        reasons: [
+          {
+            rule: 'mint-freeze-authority',
+            message:
+              'Freeze authority is live on this token, held by 3sNBr7kMccME5D55xNgsmYpZnzPg' +
+              'P2g12CvJ81Q9EqY. That key can freeze your balance in place at any time, including ' +
+              'while you are trying to sell. Trade a token whose freeze authority is revoked.',
+          },
+          {
+            rule: 'mint-permanent-delegate',
+            message:
+              'This token has a permanent delegate, 3sNBr7kMccME5D55xNgsmYpZnzPgP2g12CvJ81Q9EqY, ' +
+              'which can move your balance without your signature. There is no setting that ' +
+              'protects you from it. Trade a token without one.',
+          },
+          {
+            rule: 'mint-transfer-hook',
+            message:
+              'Every transfer of this token runs program 3sNBr7kMccME5D55xNgsmYpZnzPgP2g12Cv' +
+              'J81Q9EqY first, which can make a sale fail at a time it chooses. Trade a token ' +
+              'with no transfer hook.',
+          },
+        ],
+        dataSlot: SLOT,
+        ruleVersion: 'mint-check/1',
+        facts: null,
+      },
+      quote: { priceImpactPct: '0.087', slippageBps: 5000, contextSlot: SLOT },
+      proposedStopPct: 42,
+      // Blue chip is the token's category and this wallet has only ever bought memecoins.
+      categoryMix: { memecoin: 1 },
+    }),
+  )
+  expect(eight.verdict).toBe('block')
+  expect(eight.reasons.map((r) => r.rule).sort()).toEqual(
+    [
+      'mint-freeze-authority',
+      'mint-permanent-delegate',
+      'mint-transfer-hook',
+      'price-band',
+      'size-vs-median',
+      'slippage-tolerance',
+      'stop-vs-usual',
+      'style-fit',
+    ].sort(),
+  )
+  expect(tokens(eight)).toBeLessThanOrEqual(BUDGET)
 })

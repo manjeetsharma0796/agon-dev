@@ -1412,9 +1412,10 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Note: the fixture marker adds about 20 tokens to any replayed verdict, so the 8-reason case this
   row is about is now roughly 472 rather than 452. The 5-reason verdict the deployment serves
   measures 319 with the note attached. Counted here so this row's target is the real number
-- Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-c13-eight-reason-budget
+- Status: in-review | Owner: Jishnu | Branch: feature/t-c13-eight-reason-budget
 - Depends-on: T-C06, T-C12
-- Touches: packages/guard/src/check-trade.ts, packages/guard/src/check-trade.token.test.ts
+- Touches: packages/guard/src/check-trade.ts, packages/guard/src/check-trade.token.test.ts,
+  packages/cli/src/commands/check.test.ts
 - Note: overlaps T-C06's `Touches:`, which is merged. T-C06 measured 395 on 7 reasons and wrote
   "if this ever goes over, the messages get shorter and the count of them stays". It went over.
   Style fit is the 8th reason and every budget fixture in that PR traded a category the wallet
@@ -1428,7 +1429,22 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   reasons dropped to make the budget. The arithmetic to beat: the response is 1,806 characters, of
   which 621, 34%, are the 3 mint-check messages this row does not own, so 208 characters have to
   come out of the 562 the guard writes itself, a 37% cut, and T-C06 already took 88 out of them
-- Evidence: <PR link, with the 8-reason count before and after>
+- Evidence: a test of all 8 at once, written first, failed at 450 tokens, 1797 characters. After:
+  397 tokens, 1587 characters, with all 8 rule ids asserted present. The guard's 5 messages went
+  from 554 characters to 344; the 3 mint-check messages, 621 characters, were not touched. Each
+  keeps its cause, its number and 1 next step: size "9x your median size of 0.8 SOL, past your 2x
+  limit. Send 1.6 SOL or less."; stop "A 42% stop, past your 10% limit; you cut at 8%. Set 10% or
+  closer."; band "Price impact 8.7%, past your 1% band. Trade smaller."; slippage "Slippage allowed
+  50%, past your 1% band. Quote at 100 bps or less."; style "0 of your 214 closed trades are in the
+  blue chip category. Trade one you already trade." The 7-reason case went 395 to 357, a pass
+  stays 26
+- Finding: what came out was "Stopped.", 5 times, which repeats the verdict field beside it, and
+  second next steps such as "or raise the limit". The size message kept its opening words because
+  4 places quote them, the MCP server's own instructions and a contract example among them; only its
+  tail changed, and the 1 test that quoted the tail now quotes the new one
+- Finding 2: the margin is 3 tokens. A 9th reason, or a longer address in a mint-check message,
+  goes over again, and the next cut is not in the guard: 621 of the 1587 characters are the 3
+  mint-check messages, 39%, and each repeats a 44-character address
 - Kill criterion: if 8 full reasons cannot fit 400 without dropping a cause, a number or a next
   step, the choice between raising the budget and capping the reason count is not the guard's to
   take alone. Write the measurement into an OP and stop, rather than quietly shipping a truncated
