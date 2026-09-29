@@ -1070,3 +1070,14 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   then (1), because a name is not text an attacker controls in a way a lookup cannot check, and a
   description is where an injection would live
 - Done when: the decision is in `DECISIONS.md`, and T-C22's row names the question set it wires
+- Measured 2026-09-29 (T-F11b, #216), and it needs a second decision: on 140 labelled cases of real
+  token text, Jev as shipped scored Brier 0.915 against 0.633 for no model, flagged all 30 real
+  descriptions as injections and got 5 of 40 categories. A design with named options, written after
+  seeing that, reached 0.644, still not better than no model, and let 3 of 30 attacks through as
+  safe. So there is no setting found in which the screen both passes real tokens and stops attacks.
+  The options for the next decision: (1) keep Jev out of the trading path, and make impersonation
+  and category deterministic (a pinned mint list plus Jupiter's `lst` and `verified` tags), with the
+  injection screen replaced by never returning token text to the agent at all; (2) try Jev again on
+  a new held-out set with further question redesign; (3) run the LLM-guard arm (MiMo, OP-9) and
+  compare before deciding. Recommendation: (1), because it is arithmetic and lookups, deterministic,
+  fast, and costs no model call per trade
