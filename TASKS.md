@@ -2100,7 +2100,7 @@ _(empty)_
   by luck
 
 ### T-C18, arm_rule hands back a link, and cannot carry a cap
-- Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-c18-arm-link
+- Status: done
 - Depends-on: T-C07, T-C17
 - Touches: packages/core/src/rule.ts, packages/core/src/index.ts, apps/web/src/legs.ts,
   apps/web/src/routes.ts, apps/web/app/arm/ArmClient.tsx, packages/mcp/src/, scripts/mcp-docs.mjs,
@@ -2253,7 +2253,7 @@ _(empty)_
   at it and cannot quietly change the behaviour T-E06 measured
 
 ### T-B17, The board lint refuses 2 rows on 1 branch, whatever their status
-- Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-b17-branch-once
+- Status: done
 - Depends-on: T-B01
 - Touches: scripts/board.mjs
 - Serves: Functionality (judged) ; the board's only job, which is answering what is left
