@@ -2401,25 +2401,28 @@ _(empty)_
   the user's machine with the same acceptance, and the MCP instructions point agents at it
 
 
-### T-C22, check_trade asks Jev in production, so the screen and style fit ever run
-- Status: blocked, see OP-38
-- Depends-on: T-C05, T-C12
-- Touches: packages/guard/src/assess.ts, packages/mcp/src/io.ts, packages/mcp/src/index.ts,
-  packages/mcp/src/mcp.test.ts, fixtures/recorded/jev/
-- Serves: Functionality (judged) ; F4 ; the injection screen, which is a non-negotiable
-- Acceptance: the MCP `check_trade` path asks Jev its 3 questions for the traded mint, through the
-  record and replay wrapper, with the token's name and description read from chain metadata as the
-  text, so `text-not-screened` stops firing on 100% of calls; the guard stays pure and receives
-  the Jev verdict as data; a Jev failure or timeout still produces `text-not-screened` or `unsure`,
-  never a pass; the category is cached per mint as T-C05 already does; the 8-reason response still
-  fits 400 tokens; measured on the recorded wallet, the share of calls with a screened-text answer
-  before and after
-- Evidence: <PR link, plus the before and after share of screened calls>
-- Why it is its own row: found by T-A05. Nothing in production asks Jev today, so the injection
-  screen, token category and style fit exist only in unit tests, and `check_trade` can never return
-  `pass`. T-A05's category mix is only visible once this lands
-- Kill criterion: if Jev cannot answer inside the latency T-F11a measures, the screen stays off with
-  `text-not-screened` printed, never a silent pass
+### T-C22, check_trade screens tokens deterministically, and token text never reaches the agent
+- Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-c22-deterministic-screen
+- Depends-on: T-C05, T-C12, OP-38
+- Touches: packages/guard/src/mint-check.ts, packages/guard/src/mint-check.test.ts,
+  packages/guard/src/check-trade.ts, packages/guard/src/check-trade.test.ts,
+  packages/guard/src/check-trade.token.test.ts, fixtures/recorded/jupiter/, CLAUDE.md
+- Serves: Functionality (judged) ; F4 ; the first `check_trade` that can return `pass`
+- Acceptance: as OP-38 decided on T-F11b's measurement, the token checks are lookups, not a model:
+  the mint check also carries the token's category, from Jupiter's `lst` and `verified` tags and a
+  pinned stablecoin list, read through the record and replay wrapper and never from user input,
+  and `other` when none applies; impersonation is refused when a mint uses the name or symbol of a
+  pinned major token without being that mint; `text-not-screened` no longer fires, because a test
+  asserts 0 token names or descriptions in any `check_trade` response, so outside text never
+  reaches the agent; CLAUDE.md's "Every such string goes through the injection screen" is reworded
+  to match; the guard stays pure and 0 model calls happen per trade; measured on the recorded
+  wallet, a USDC buy with a quote and a clean mint goes from `unsure` to `pass`, and the category
+  lookup is checked against T-F11b's 40 labelled tokens
+- Evidence: <PR link, plus the category lookup against the 40 labels and a verdict before and after>
+- Kill criterion: if the tags cannot place most of the 40 labelled tokens, category stays `other`
+  and style fit reports it, never a guess
+- Why it changed: T-F11b measured Jev on real token text and found no design that both passed real
+  tokens and stopped attacks. The original row wired Jev in; this one replaces it
 - Finding 2026-09-29, measured live before merging anything: the screen cannot be switched on as
   written, because it does not tell a real token from an attack. 5 of 5 well-known mints (USDC,
   wSOL, BONK, JUP, USDT) came back `injection: yes` from their own chain names, and 4 of 5
