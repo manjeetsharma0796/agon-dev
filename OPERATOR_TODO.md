@@ -571,7 +571,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   mainnet-fork wallet, with the output pasted here. Read OP-20 before reaching for devnet.
 
 ### OP-24, Reconcile CLAUDE.md's "3 questions" rule with T-B08's review-escalation questions
-- Status: decided 2026-09-29 by Jishnu: the rule is scoped to the trading guard, so T-B08's diff-review questions stay, and the most efficient way to batch questions to Jev is measured in T-F11a. The 3 trading questions already go in 1 batched call. Still owed: CLAUDE.md reworded to 'the trading guard asks Jev only 3 questions', which a board PR cannot edit
+- Status: decided 2026-09-29 by Jishnu: the rule is scoped to the trading guard, so T-B08's diff-review questions stay, and the most efficient way to batch questions to Jev is measured in T-F11a. The 3 trading questions already go in 1 batched call. CLAUDE.md reworded in #205
 - Owner: <unassigned>
 - Needed by: CP2, 2026-10-02, alongside the T-B08 keep or cut decision
 - Unblocks: T-B08 (documentation only, not the code)
