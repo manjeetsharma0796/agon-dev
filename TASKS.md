@@ -514,7 +514,14 @@ and latency (a, b).
   decoded recorded per wallet, below 95% is a checkpoint finding and not a pass
 - Evidence: <spikes/F1/result.json at a commit>
 - Kill criterion: fallback is Jupiter-routed swaps only, with the covered share printed on the report ("based on 83% of your swaps")
-
+- Wallet replaced 2026-09-29 (OP-31, picked by Claude against the written test): `4Qgv5YxE` for the
+  arbitrage wallet `5CKAa7Wm`. Chosen from 20 recent pump.fun and Jupiter fee payers scored on 100
+  transactions each with the production decoder: 61 swaps into 24 closed positions over 25 mints,
+  median hold about 3 hours, a 3.6-day window, 7 sources. The higher scorers held for seconds inside
+  2 hours, which is a sniper bot rather than the trader F1 measures. Recorded with the Helius key,
+  and in replay it decodes 49 of 50 sampled over 5 venues, 1 left undecoded as ambiguous, 0 silent
+  drops. `5Q544fKr`'s recordings are unchanged, so its 29 of 50 stands. Still owed, and why F1
+  stays FAIL: the 50 rows per wallet verified by a person, OP-23
 ### T-C04, Our own mint check
 - Status: done
 - Depends-on: T-C01, T-C02
