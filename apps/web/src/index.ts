@@ -6,3 +6,4 @@ export { FIXTURE_NOTE, NotArmable, armRule, armedRuleExample, checkTrade, report
 export { armRoute, cardRoute, checkTradeRoute, reportRoute, ruleFeedbackRoute } from './routes.js'
 export * from './card.js'
 export * from './present.js'
+export { formatUnits } from './sol.js'

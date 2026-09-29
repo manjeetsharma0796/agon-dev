@@ -342,6 +342,95 @@ export const tradeRefusedElsewhere = (a: { program: string; detail: string }): F
     'Reports the program that refused, so a slippage failure is never read as the cap holding.',
 })
 
+// ---- prepare_swap. T-C21. ----
+//
+// Every one of these is a transaction that was not built. Each says so with its number, because the
+// agent reading it must not go looking for a transaction to sign.
+
+export const slippageTooHigh = (a: { asked: number; max: number }): FailureMessage => ({
+  id: 'slippage-too-high',
+  text:
+    `A slippage of ${a.asked} bps is over the ${a.max} bps this tool builds with, so 0 ` +
+    `transactions were built. Ask again with ${a.max} or less.`,
+  mode: 'closed',
+  systemDoes: 'Builds nothing. A wide slippage is how a swap loses its value to a moved price.',
+})
+
+export const swapNotAgainstSol = (a: {
+  inputMint: string
+  outputMint: string
+}): FailureMessage => ({
+  id: 'swap-not-against-sol',
+  text:
+    `0 transactions were built for ${a.inputMint} to ${a.outputMint}, because neither side is ` +
+    `wrapped SOL and the rules this trade is checked against are measured in SOL. Swap through SOL.`,
+  mode: 'closed',
+  systemDoes: 'Builds nothing rather than checking a size in one asset against rules in another.',
+})
+
+export const noVault = (a: { owner: string }): FailureMessage => ({
+  id: 'no-vault',
+  text:
+    `0 vaults were found for ${a.owner} on this chain, so there is nothing to trade from and no ` +
+    `transaction was built. Arm one first: arm_rule returns the link.`,
+  mode: 'closed',
+  systemDoes: 'Builds nothing. A swap from the wallet itself would spend with no limit at all.',
+})
+
+export const noAgentRole = (a: { agent: string; vault: string; mint: string }): FailureMessage => ({
+  id: 'no-agent-role',
+  text:
+    `Agent ${a.agent} holds 0 roles that spend ${a.mint} from vault ${a.vault}, so no transaction ` +
+    `was built. The owner hires this agent for that token on the arming screen.`,
+  mode: 'closed',
+  systemDoes: 'Builds nothing that the chain would refuse, and never builds one outside a limit.',
+})
+
+export const overRemaining = (a: {
+  amount: string
+  remaining: string
+  unit: string
+}): FailureMessage => ({
+  id: 'over-remaining',
+  text:
+    `This swap spends ${a.amount} ${a.unit} and ${a.remaining} ${a.unit} is left in this window, ` +
+    `so no transaction was built. Ask for ${a.remaining} ${a.unit} or less, or wait for the window.`,
+  mode: 'closed',
+  systemDoes: 'Refuses before building, citing what the chain says is left, never a guess.',
+})
+
+export const tradeNotPassed = (a: {
+  verdict: string
+  reasons: number
+  first: string
+}): FailureMessage => ({
+  id: 'trade-not-passed',
+  text:
+    `check_trade answered ${a.verdict} for this swap with ${a.reasons} ` +
+    `${a.reasons === 1 ? 'reason' : 'reasons'}, so no transaction was built. The first: ${a.first}`,
+  mode: 'closed',
+  systemDoes: 'Builds only on a pass. Unsure is not a soft pass.',
+})
+
+export const quoteUnavailable = (a: { status: number }): FailureMessage => ({
+  id: 'quote-unavailable',
+  text:
+    `Jupiter answered ${a.status} for this swap, so no transaction was built. Nothing moved; ask ` +
+    `again in a minute.`,
+  mode: 'closed',
+  systemDoes: 'Builds nothing without a route, and never builds from an older quote.',
+})
+
+export const simulationFailed = (a: { program: string; detail: string }): FailureMessage => ({
+  id: 'simulation-failed',
+  text:
+    `The swap failed simulation at program ${a.program}: ${a.detail}. It was not returned to ` +
+    `sign and nothing moved; if that program is Jupiter, a price or pool moved, so prepare again.`,
+  mode: 'closed',
+  systemDoes:
+    'Returns no transaction that the chain has already refused, so an agent never retries one.',
+})
+
 /**
  * Which program refused, from a transaction's logs. The first `failed` line is the innermost one, and
  * it is the one that decides. Measured on the fork: when the cap refuses, the only `failed` line is
@@ -395,5 +484,23 @@ export const AGENT_SURFACE_MESSAGES = [
   tradeRefusedElsewhere({
     program: 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4',
     detail: 'custom program error: 0x1788',
+  }),
+  slippageTooHigh({ asked: 500, max: 100 }),
+  swapNotAgainstSol({
+    inputMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+    outputMint: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263',
+  }),
+  noVault({ owner: SAMPLE_WALLET }),
+  noAgentRole({
+    agent: SAMPLE_WALLET,
+    vault: 'C7Bz4nps2z1NDftJUBzXQyeR2iDE5j5ztad5q1k4iA8R',
+    mint: 'So11111111111111111111111111111111111111112',
+  }),
+  overRemaining({ amount: '0.45', remaining: '0.4', unit: 'wSOL' }),
+  tradeNotPassed({ verdict: 'unsure', reasons: 1, first: 'No price quote was read.' }),
+  quoteUnavailable({ status: 429 }),
+  simulationFailed({
+    program: 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4',
+    detail: 'custom program error: 0x1771',
   }),
 ] as const

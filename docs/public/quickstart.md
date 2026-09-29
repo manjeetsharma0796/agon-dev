@@ -23,9 +23,9 @@ made, because reading a history needs neither.
 Every number on the report says what it is based on. If only part of a history could be read, the
 report says so and says why, rather than presenting a partial answer as a complete one.
 
-## As an agent: the four MCP tools
+## As an agent: the five MCP tools
 
-The server exposes exactly four tools, documented with their full schemas in
+The server exposes exactly five tools, documented with their full schemas in
 [`mcp-tools.md`](./mcp-tools.md):
 
 | Tool | What it does |
@@ -34,6 +34,7 @@ The server exposes exactly four tools, documented with their full schemas in
 | `check_trade` | whether one proposed trade fits the wallet's own rules, from its real history |
 | `arm_rule` | a link to the arming screen, where the user sets the cap and signs; practice fork only |
 | `list_rules` | the agent roles armed on the wallet's vault, read from the chain |
+| `prepare_swap` | 1 unsigned swap from the vault for the agent to sign, built only when `check_trade` passes with the real quote |
 
 To connect an agent, start with [`agent-setup.md`](./agent-setup.md).
 

@@ -32,7 +32,7 @@ const connectThirdPartyClient = async (): Promise<Client> => {
   return client
 }
 
-test('a third-party client sees exactly the stable 4 tools, in order, each with a description', async () => {
+test('a third-party client sees exactly the stable 5 tools, in order, each with a description', async () => {
   const client = await connectThirdPartyClient()
   const { tools } = await client.listTools()
   expect(tools.map((t) => t.name)).toEqual([...TOOLS])

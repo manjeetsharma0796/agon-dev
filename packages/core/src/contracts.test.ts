@@ -77,7 +77,13 @@ describe('examples parse against their contract', () => {
 describe('the tool list is the stable four', () => {
   it('names exactly the four tools, in order', () => {
     // prepare_swap is appended last, as DECISIONS.md records, so the first 4 keep their order.
-    expect([...TOOLS]).toEqual(['get_report', 'check_trade', 'arm_rule', 'list_rules', 'prepare_swap'])
+    expect([...TOOLS]).toEqual([
+      'get_report',
+      'check_trade',
+      'arm_rule',
+      'list_rules',
+      'prepare_swap',
+    ])
   })
 
   // Consumers 1 and 3: the MCP JSON schemas and the zod validators are the same definition, so a

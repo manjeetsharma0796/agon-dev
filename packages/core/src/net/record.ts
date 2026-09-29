@@ -42,16 +42,32 @@ export const jupiterTokens = (limit = 30): NetRequest => ({
   url: `https://lite-api.jup.ag/tokens/v2/toporganicscore/24h?limit=${limit}`,
 })
 
+// The defaults keep the URL, and so every recorded quote's fixture key, as it was.
 export const jupiterQuote = (
   inputMint: string,
   outputMint: string,
   amount: string,
+  slippageBps = 100,
+  legacy = false,
 ): NetRequest => ({
   provider: 'jupiter',
   url:
     `https://api.jup.ag/swap/v1/quote?inputMint=${inputMint}&outputMint=${outputMint}` +
-    `&amount=${amount}&slippageBps=100`,
+    `&amount=${amount}&slippageBps=${slippageBps}` +
+    (legacy ? '&asLegacyTransaction=true' : ''),
   headers: { 'x-api-key': env('JUPITER_API_KEY') },
+})
+
+/**
+ * The instructions for a quote, with `user` as the wallet that trades. Only `swapInstruction` is
+ * used: wrapping is off and no lookup table is asked for, so 1 legacy transaction holds it all.
+ */
+export const jupiterSwapInstructions = (quoteResponse: unknown, user: string): NetRequest => ({
+  provider: 'jupiter',
+  url: 'https://api.jup.ag/swap/v1/swap-instructions',
+  method: 'POST',
+  headers: { 'x-api-key': env('JUPITER_API_KEY') },
+  body: { quoteResponse, userPublicKey: user, wrapAndUnwrapSol: false, asLegacyTransaction: true },
 })
 
 /**

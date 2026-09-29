@@ -1,23 +1,32 @@
-// The MCP server and its 4 tools. Owned by T-C07.
+// The MCP server and its 5 tools. Owned by T-C07; prepare_swap by T-C21.
 //
 // T-E03 puts the dispatch here and nothing else: name in, contract-validated result out, over the
 // same functions the API routes serve. The transport, the budgets and the tool descriptions are
 // T-C07's. What this buys on day 2 is that the agent side and the web side cannot answer
 // differently, because there is only one answer to give.
 
-import { FIXTURE_NOTE, armRule, report } from '@agon/web'
+import { FIXTURE_NOTE, armRule, formatUnits, report } from '@agon/web'
 import {
+  innermostFailure,
+  noAgentRole,
   noHistory,
+  noVault,
+  overRemaining,
   Refusal,
+  simulationFailed,
+  slippageTooHigh,
+  swapNotAgainstSol,
   TOOLS,
+  tradeNotPassed,
   mode,
   network,
+  type CheckTradeInput,
   type ToolName,
   toolContracts,
   zeroSizeTrade,
 } from '@agon/core'
-import { JUPITER_PROGRAM_ID } from '@agon/chain'
-import { assessTrade } from '@agon/guard'
+import { JUPITER_PROGRAM_ID, USDC_MINT, WSOL_MINT } from '@agon/chain'
+import { assessTrade, DEFAULT_QUOTE, tradedMints, type Quote } from '@agon/guard'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import { liveIo, type ToolIo } from './io.js'
@@ -33,6 +42,41 @@ export interface ToolRefusal {
 
 type Handler = (input: unknown, io: ToolIo) => unknown | Promise<unknown>
 
+/** The widest slippage prepare_swap builds with, in bps. */
+const MAX_SLIPPAGE_BPS = 100
+
+/** The mints an agent role can spend, with what a refusal calls them. */
+const ARMED: Record<string, { unit: string; decimals: number }> = {
+  [WSOL_MINT]: { unit: 'wSOL', decimals: 9 },
+  [USDC_MINT]: { unit: 'USDC', decimals: 6 },
+}
+
+/**
+ * check_trade's whole read path, for both tools that answer it. The category lookup is enrichment:
+ * if it fails the mix is absent and style fit answers unsure, which still keeps the trade in.
+ */
+async function judge(io: ToolIo, trade: CheckTradeInput, quote: Quote | null) {
+  // A size of 0 parses, because the contract's BaseUnits is a non-negative integer, and then
+  // sails through every check: 0 is under any median, so the size rule does not fire and the
+  // answer reads like a trade that was examined. Nothing is being traded, so there is nothing to
+  // approve, and an approval-shaped answer about a non-trade is the wrong thing to hand an agent.
+  if (/^0+$/.test(trade.size)) {
+    throw new Refusal(zeroSizeTrade())
+  }
+  const [txs, mintCheck] = await Promise.all([
+    io.loadTransactions(trade.wallet),
+    io.loadMintCheck(trade.mint),
+  ])
+  if (txs.length === 0) {
+    // Anything that can move funds fails closed, and an empty history is not a clean bill.
+    throw new Refusal(noHistory({ wallet: trade.wallet }))
+  }
+  const categories = await io
+    .loadCategories(tradedMints(txs, trade.wallet), mintCheck.dataSlot ?? undefined)
+    .catch(() => undefined)
+  return assessTrade(txs, trade, mintCheck, DEFAULT_QUOTE, categories, quote).verdict
+}
+
 const handlers = {
   // Still the recorded example, because a real Report needs the cost of breaking your own rule and
   // nothing computes that yet. It is labelled rather than quietly served: see `callAsTool`, which
@@ -41,25 +85,8 @@ const handlers = {
 
   // Real. Reads this wallet's own history and this mint's own authorities, then runs the same
   // `assessTrade` the CLI runs, so the agent and the terminal cannot answer differently.
-  check_trade: async (input: unknown, io: ToolIo) => {
-    const { wallet, mint, side, size } = toolContracts.check_trade.input.parse(input)
-    // A size of 0 parses, because the contract's BaseUnits is a non-negative integer, and then
-    // sails through every check: 0 is under any median, so the size rule does not fire and the
-    // answer reads like a trade that was examined. Nothing is being traded, so there is nothing to
-    // approve, and an approval-shaped answer about a non-trade is the wrong thing to hand an agent.
-    if (/^0+$/.test(size)) {
-      throw new Refusal(zeroSizeTrade())
-    }
-    const [txs, mintCheck] = await Promise.all([
-      io.loadTransactions(wallet),
-      io.loadMintCheck(mint),
-    ])
-    if (txs.length === 0) {
-      // Anything that can move funds fails closed, and an empty history is not a clean bill.
-      throw new Refusal(noHistory({ wallet }))
-    }
-    return assessTrade(txs, { wallet, mint, side, size }, mintCheck).verdict
-  },
+  check_trade: (input: unknown, io: ToolIo) =>
+    judge(io, toolContracts.check_trade.input.parse(input), null),
 
   arm_rule: (input: unknown) =>
     armRule(input, {
@@ -91,6 +118,89 @@ const handlers = {
       effectiveRemaining: String(r.effectiveRemaining),
       rollingWorstCase: String(r.rollingWorstCase),
     }))
+  },
+
+  // Builds the trade, never signs it. Every refusal comes before anything is built, in the order
+  // that costs least: the arithmetic, then the chain's cap, then check_trade with the real quote,
+  // then a simulation on the configured chain. A transaction is returned only past all 4.
+  prepare_swap: async (input: unknown, io: ToolIo) => {
+    const a = toolContracts.prepare_swap.input.parse(input)
+    if (a.slippageBps > MAX_SLIPPAGE_BPS) {
+      throw new Refusal(slippageTooHigh({ asked: a.slippageBps, max: MAX_SLIPPAGE_BPS }))
+    }
+    if (/^0+$/.test(a.amount)) throw new Refusal(zeroSizeTrade())
+    // check_trade measures sizes in SOL, so 1 side must be SOL for its rules to mean anything.
+    const side = a.inputMint === WSOL_MINT ? 'buy' : a.outputMint === WSOL_MINT ? 'sell' : null
+    if (side === null) throw new Refusal(swapNotAgainstSol(a))
+
+    const { vault, rules } = await io.loadVaultRules(a.owner)
+    if (vault === null) throw new Refusal(noVault({ owner: a.owner }))
+    const rule = rules.find((r) => r.authority === a.agent && r.mint === a.inputMint)
+    const armed = ARMED[a.inputMint]
+    if (rule === undefined || armed === undefined) {
+      throw new Refusal(noAgentRole({ agent: a.agent, vault, mint: a.inputMint }))
+    }
+    if (BigInt(a.amount) > rule.effectiveRemaining) {
+      throw new Refusal(
+        overRemaining({
+          amount: formatUnits(BigInt(a.amount), armed.decimals),
+          remaining: formatUnits(rule.effectiveRemaining, armed.decimals),
+          unit: armed.unit,
+        }),
+      )
+    }
+
+    const quote = await io.loadQuote(a)
+    const verdict = await judge(
+      io,
+      {
+        wallet: a.historyWallet,
+        mint: side === 'buy' ? a.outputMint : a.inputMint,
+        side,
+        size: a.amount,
+      },
+      {
+        priceImpactPct: quote.priceImpactPct,
+        slippageBps: quote.slippageBps,
+        contextSlot: quote.contextSlot ?? null,
+      },
+    )
+    if (verdict.verdict !== 'pass') {
+      throw new Refusal(
+        tradeNotPassed({
+          verdict: verdict.verdict,
+          reasons: verdict.reasons.length,
+          first: verdict.reasons[0]?.message ?? 'none was given.',
+        }),
+      )
+    }
+
+    const built = await io.buildSwap({ owner: a.owner, agent: a.agent, roleId: rule.roleId, quote })
+    if (built.failure !== null) {
+      const program = innermostFailure(built.failure.logs) ?? 'unknown'
+      const line = built.failure.logs.find((l) => l.startsWith(`Program ${program} failed`))
+      throw new Refusal(
+        simulationFailed({
+          program,
+          detail: line?.replace(/^Program \S+ failed: /, '') ?? 'the logs named no failing program',
+        }),
+      )
+    }
+    return {
+      transaction: built.transaction,
+      vault: built.vault,
+      verdict,
+      quote: {
+        inAmount: quote.inAmount,
+        outAmount: quote.outAmount,
+        minOutAmount: quote.otherAmountThreshold,
+        slippageBps: quote.slippageBps,
+        route: quote.routePlan.map((leg) => leg.swapInfo.label ?? 'unnamed venue'),
+      },
+      effectiveRemaining: String(rule.effectiveRemaining),
+      lastValidBlockHeight: built.lastValidBlockHeight,
+      unitsConsumed: built.unitsConsumed,
+    }
   },
 } satisfies Record<ToolName, Handler>
 
@@ -163,6 +273,13 @@ What works right now, with nothing to set up:
   rollingWorstCase (up to 2 windows across a window edge). Quote effectiveRemaining, never a raw
   figure, and give rollingWorstCase beside it. spec is null because the chain does not store it. An
   empty list means no agent role is armed; an error means no chain was read, which is different.
+- prepare_swap builds 1 trade for an armed vault and never signs it. Give it the vault owner, the
+  wallet whose history judges the trade (on the practice fork, the user's real address; on mainnet,
+  the owner), the agent's public key, the 2 mints (1 must be wrapped SOL, So11111111111111111111111111111111111111112),
+  the amount in base units and a slippage of at most 100 bps. It runs check_trade itself with a
+  real quote and returns an unsigned base64 transaction only on a pass, after it passed simulation.
+  The agent signs it with its own key, locally, and sends it before lastValidBlockHeight. A refusal
+  means no transaction exists: never build one another way.
 
 What is not real yet, so do not present it as a measurement:
 
@@ -175,15 +292,16 @@ What is not real yet, so do not present it as a measurement:
   limit, and a request that carries one is refused. It works on the practice fork only, and refuses
   elsewhere with the reason: that refusal is the correct answer, not an error to retry.
 
-Setup: none. No wallet connection, no private key, no signing, and nothing here can move funds or
-write to a chain. Every call is a read. You need a mainnet wallet address to ask about, and that is
-all; a wallet with no trading history is refused rather than approved, because there is nothing to
-judge a trade against.
+Setup: none. No wallet connection and no private key: this server never takes, returns or logs
+one, and signs nothing. Every call but prepare_swap is a read, and prepare_swap only returns a
+transaction for the agent to sign. You need a mainnet wallet address to ask about; a wallet with no
+trading history is refused rather than approved, because there is nothing to judge a trade against.
 
-Two things worth knowing before you interpret an answer. check_trade cannot currently return pass:
-it takes no price quote and runs no text screen, so 2 of its answers are always "not read", and
-unscreened text is unsure. Unsure is not a soft pass, it means the trade does not go out. And sizes
-are base units, never decimals: 1 SOL is 1000000000.`
+Two things worth knowing before you interpret an answer. check_trade on its own takes no price
+quote, so its slippage and price impact answers are "not read" and it answers unsure; prepare_swap
+runs the same check with the quote it routes, and only that can reach pass. Unsure is not a soft
+pass, it means the trade does not go out. Token names and descriptions never appear in any answer.
+And sizes are base units, never decimals: 1 SOL is 1000000000.`
 
 /**
  * What each tool does, shown to any agent that lists our tools before it decides whether to call
@@ -205,6 +323,10 @@ const DESCRIPTIONS: Record<ToolName, string> = {
   list_rules:
     "List the agent rules armed on a wallet's vault, read from chain: the cap per window in slots, " +
     'what the agent can spend now, and the most it can spend across a window edge.',
+  prepare_swap:
+    'Build 1 unsigned swap from an armed vault for the agent to sign locally. Runs check_trade ' +
+    'with a real quote and simulates first; returns a transaction only on a pass, and refuses ' +
+    'with the cause and number otherwise. Never takes or returns a private key.',
 }
 
 /**

@@ -12,7 +12,7 @@
 import { decodeAll, fifoLedger, type RawTransaction } from '@agon/decoder'
 import { categoryMix, mine } from '@agon/miner'
 import type { CheckTradeOutput } from '@agon/core'
-import { checkTrade } from './check-trade.js'
+import { checkTrade, type Quote } from './check-trade.js'
 import type { TokenCategory } from './jev/index.js'
 import type { MintCheck } from './mint-check.js'
 
@@ -55,6 +55,9 @@ export function assessTrade(
   mintCheck: MintCheck,
   quoteMint: string = DEFAULT_QUOTE,
   categories?: ReadonlyMap<string, TokenCategory>,
+  // Only prepare_swap has a quote, because only it has the exact amount routed. Without 1, the
+  // slippage and price impact checks answer "not read", which is never a pass.
+  quote: Quote | null = null,
 ): Assessment {
   const decoded = decodeAll([...txs], trade.wallet)
   const closed = fifoLedger(decoded.swaps).closedTrades
@@ -73,7 +76,7 @@ export function assessTrade(
     {
       mint: mintCheck,
       rules: mined.rules,
-      quote: null,
+      quote,
       jev: null,
       spendAsset: SOL,
       categoryMix: mix,

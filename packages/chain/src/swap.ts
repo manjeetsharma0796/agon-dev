@@ -6,7 +6,12 @@
 // instruction for the agent's role, with the agent paying. The vault signs nothing itself: Swig
 // signs for it, and only inside what the role allows.
 
-import { ComputeBudgetProgram, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js'
+import {
+  ComputeBudgetProgram,
+  PublicKey,
+  Transaction,
+  TransactionInstruction,
+} from '@solana/web3.js'
 import { getSignInstructions, type Swig } from '@swig-wallet/classic/dist/index.js'
 import { JUPITER_PROGRAM_ID } from './swig/index.js'
 
