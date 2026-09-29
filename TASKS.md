@@ -2371,7 +2371,7 @@ _(empty)_
   decides whether this blocks the cohort or only part of it
 
 ### T-C21, prepare_swap: the MCP builds the trade, the agent signs it on its own machine
-- Status: open
+- Status: claimed 2026-09-29 | Owner: manjeetsharma0796 | Branch: feature/t-c21-prepare-swap
 - Depends-on: T-C07, T-C17
 - Touches: packages/core/src/index.ts, packages/core/src/trade.ts, packages/mcp/src/index.ts,
   packages/mcp/src/mcp.test.ts, fixtures/contracts/, docs/public/mcp-tools.md, DECISIONS.md
