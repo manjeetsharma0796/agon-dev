@@ -2334,7 +2334,10 @@ _(empty)_
   refused with the innermost failing program named, never returned for the agent to try. Measured
   on the fork: a 0.1 wSOL swap it builds lands when the agent signs it locally, and a 0.45 request
   with 0.4 left is refused by the tool before building, citing 0.4. The response fits a token
-  budget set in the same PR from a measured legacy transaction
+  budget set in the same PR from a measured legacy transaction. It runs `check_trade` itself and
+  builds only on a pass, so 1 call replaces check then build. Measured with a fresh agent given
+  only `docs/public/agent-setup.md`, before and after: model turns and tokens from "buy 0.1 SOL of
+  X" to a signed transaction, against the about 11 retries an agent took writing its own script
 - Evidence: <PR link, plus the landed signature and the refusal text from the fork>
 - Why it is its own row: nothing on the board builds a trade. Without it an armed vault has no
   path to a swap through Agon, and an agent writes its own script, which on the fork took about 11
