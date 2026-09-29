@@ -91,14 +91,7 @@ test('no build output is published, so the public build actually builds', () => 
 // `release.mjs --check` is not softened by any of this. A real release still refuses on all 6
 // markers, and it refuses before the push, so nothing reaches the public repo either way. What
 // this buys is catching a new leak at PR time instead of at release time.
-const KNOWN = [
-  // T-C02. 5 references to operator items across these 2 files, 1 of them inside a string that is
-  // printed to whoever runs the recorder. Comment-only fixes to packages/core currently cannot
-  // land: the board job requires a fixtures change alongside any packages/core diff, which a
-  // reworded comment has no honest way to produce. Raised on the T-B02 PR.
-  'OP-|packages/core/src/net/index.ts',
-  'OP-|packages/core/src/net/record.ts',
-]
+const KNOWN = []
 
 test('no new internal marker reaches published source, and fixed ones leave the list', () => {
   // Through the CLI, like every other case here. release.mjs runs its argument parsing at import

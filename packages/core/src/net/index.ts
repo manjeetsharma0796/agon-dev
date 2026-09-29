@@ -134,7 +134,7 @@ class OfflineError extends Error {
  * Make one external call, or replay one.
  *
  * `retries` exists because a 429 is normal on the Jupiter tier we are on (10 requests per 10
- * seconds, measured in OP-3). The clock starts before the first attempt, so a caller that waited
+ * seconds, as measured against that tier). The clock starts before the first attempt, so a caller that waited
  * through two backoffs sees the time it actually waited.
  */
 export async function call(

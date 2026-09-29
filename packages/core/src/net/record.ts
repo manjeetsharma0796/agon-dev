@@ -19,7 +19,7 @@ const env = (name: string): string => {
   throw new Error(`${name} is not set. Recording and live mode need real keys; replay does not.`)
 }
 
-/** Jupiter is 10 requests per 10 seconds on the tier measured in OP-3, so quotes are paced. */
+/** Jupiter is 10 requests per 10 seconds on the tier we measured, so quotes are paced. */
 const JUPITER_MIN_INTERVAL_MS = 1100
 
 export const rpcCall = (method: string, params: unknown[]): NetRequest => ({
@@ -72,7 +72,7 @@ export const jevAsk = (state: string, questions: unknown): NetRequest => ({
  * than whatever the pool did most recently. Two buys, two sells, and one SOL to USDC rotation,
  * which is the case that has no direction at all and is the most common shape on the chain.
  *
- * Chosen from AMM pool activity because the team wallets from OP-1 have no history yet. These are
+ * Chosen from AMM pool activity because the team's own wallets have no history yet. These are
  * individual public swaps, not anyone's trading history.
  */
 const PINNED_SWAPS = [
@@ -147,13 +147,13 @@ async function recordAll(): Promise<void> {
     await sleep(JUPITER_MIN_INTERVAL_MS)
   }
 
-  // The 5th provider. Helius enhanced transactions need a wallet with real history, and OP-1 is
-  // still producing one, so this records only when a wallet is named. Recording a stranger's
+  // The 5th provider. Helius enhanced transactions need a wallet with real history, and the team's
+  // own does not have one yet, so this records only when a wallet is named. Recording a stranger's
   // trading history into our repo to fill the gap is not a substitute, and it is not ours to take.
   const wallet = process.env['AGON_GOLDEN_WALLET']
   if (wallet === undefined) {
     console.log(
-      '  helius transactions                            skipped, set AGON_GOLDEN_WALLET (OP-1)',
+      '  helius transactions                            skipped, set AGON_GOLDEN_WALLET to a wallet with history',
     )
   } else {
     log('helius transactions', await call(heliusTransactions(wallet), at))
