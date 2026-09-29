@@ -1560,7 +1560,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   sign
 
 ### T-B16, One compose file: the fork and the MCP server, side by side, locally
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/159 | Owner: manjeetsharma0796 | Branch: feature/t-b16-compose
+- Status: done 2026-09-29 | Owner: manjeetsharma0796 | PR: #159
 - Depends-on: T-C07, T-C16
 - Touches: compose.yaml, .dockerignore
 - Serves: Functionality (judged) ; unblocks T-E15's setup page and a local run of T-E06
@@ -2217,7 +2217,7 @@ _(empty)_
   prevents
 
 ### T-C17, The real allowance, end to end
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/163 | Owner: manjeetsharma0796 | Branch: feature/t-c17-real-allowance
+- Status: done 2026-09-29 | Owner: manjeetsharma0796 | PR: #163
 - Depends-on: T-D01, T-C07
 - Touches: packages/chain/src/swig/index.ts, packages/core/src/rule.ts, packages/mcp/src/index.ts, fixtures/contracts/
 - Serves: Novelty (judged) ; the number a user is shown about their own agent
