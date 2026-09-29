@@ -219,7 +219,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Hard rule: do not fund anything until T-D04 has all 8 boxes ticked and 2 sign-offs.
 
 ### * OP-6, Neon Postgres
-- Status: decided 2026-09-29 by Jishnu: Neon free tier. Jishnu creates the project and puts `DATABASE_URL` in the gitignored `.env`; the schema and migration are code work once it exists
+- Status: decided 2026-09-29 by Jishnu: Neon free tier. Created the same day: `DATABASE_URL` and `DATABASE_URL_POOLED` are in the gitignored `.env`, and a connection from this machine answered in 3.4 s, PostgreSQL 18.6, 0 tables. Still owed: the schema, and the hosted app reading and writing 1 row, which is T-A04's first job. The same project also provisioned S3-compatible storage (`AWS_*`, `S3_BUCKET` in `.env`); nothing on the board uses it yet, so nothing is wired to it. The credentials were pasted in chat, so they are due for rotation with the other keys
 - Owner: <unassigned>
 - Needed by: 2026-09-29
 - Unblocks: T-A04, T-E04, T-E09
