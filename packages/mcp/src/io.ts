@@ -16,6 +16,7 @@ import {
 import {
   call,
   chainMismatch as chainMismatchRow,
+  jevAsk,
   heliusTransactions,
   historyProviderShape,
   historyProviderStatus,
@@ -24,11 +25,12 @@ import {
   network,
   noChainConfigured,
   Refusal,
+  rpcCall,
 } from '@agon/core'
 import { Connection, PublicKey } from '@solana/web3.js'
 import { fetchNullableSwig } from '@swig-wallet/classic/dist/index.js'
 import { fromEnhanced, type EnhancedTransaction, type RawTransaction } from '@agon/decoder'
-import { checkMints, type MintCheck } from '@agon/guard'
+import { ask, checkMints, rememberCategory, type JevVerdict, type MintCheck } from '@agon/guard'
 
 /** Helius returns newest first and one page is 100, which is enough to mine a habit from. */
 const PAGE = 100
@@ -36,6 +38,12 @@ const PAGE = 100
 export interface ToolIo {
   loadTransactions(wallet: string): Promise<RawTransaction[]>
   loadMintCheck(mint: string): Promise<MintCheck>
+  /**
+   * Jev's 3 answers about this mint, with the token's own name, symbol and description as the text.
+   * Never throws for a Jev failure: `ask` turns an unreachable or unreadable answer into a verdict
+   * that blocks on the injection screen, which is the fail-closed answer the guard needs.
+   */
+  loadJev(mint: string, dataSlot: number): Promise<JevVerdict>
   /**
    * True once any read behind this call came out of a recording rather than the network.
    *
@@ -161,6 +169,44 @@ export const liveIo = (): ToolIo => {
         throw new Refusal(mintCheckEmpty({ mint }))
       }
       return check
+    },
+
+    async loadJev(mint: string, dataSlot: number): Promise<JevVerdict> {
+      // The text is the token's own, from chain metadata. It is outside text, which is exactly
+      // what the screen exists for, so it goes to Jev as data and never into anything that acts.
+      let text = ''
+      try {
+        const res = await call(rpcCall('getAsset', [mint]))
+        if (res.fromFixture) fromFixture = true
+        const m = (
+          res.body as {
+            result?: { content?: { metadata?: Record<string, unknown> } }
+          }
+        ).result?.content?.metadata
+        text = [m?.['name'], m?.['symbol'], m?.['description']]
+          .filter((v): v is string => typeof v === 'string' && v !== '')
+          .join('. ')
+      } catch {
+        // No metadata is not a clean token. `ask` is still called, and Jev is told there is none.
+      }
+      const verdict = await ask(
+        async (body) => {
+          const { state, questions } = body as { state: string; questions: unknown }
+          const res = await call(jevAsk(state, questions))
+          if (res.fromFixture) fromFixture = true
+          if (res.status !== 200) throw new Error(`Jev answered ${res.status}`)
+          return res.body
+        },
+        [
+          { kind: 'tokenCategory', mint, text: text || 'No name or description on chain.' },
+          { kind: 'impersonation', mint, text: text || 'No name or description on chain.' },
+          { kind: 'injection', text: text || 'No name or description on chain.' },
+        ],
+        { dataSlot, ruleVersion: 'jev/1' },
+      )
+      const category = verdict.answers.tokenCategory?.category
+      if (category !== undefined) rememberCategory(mint, category)
+      return verdict
     },
   }
 }

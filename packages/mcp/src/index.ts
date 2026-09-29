@@ -58,7 +58,11 @@ const handlers = {
       // Anything that can move funds fails closed, and an empty history is not a clean bill.
       throw new Refusal(noHistory({ wallet }))
     }
-    return assessTrade(txs, { wallet, mint, side, size }, mintCheck).verdict
+    // After the history check, so a refused wallet costs no Jev call. A mint check with no slot
+    // could not reach the chain, so there is no slot to stamp Jev's answer with and the text stays
+    // unscreened, which the guard reports as unsure.
+    const jev = mintCheck.dataSlot === null ? null : await io.loadJev(mint, mintCheck.dataSlot)
+    return assessTrade(txs, { wallet, mint, side, size }, mintCheck, undefined, jev).verdict
   },
 
   arm_rule: (input: unknown) =>

@@ -13,6 +13,7 @@ import { decodeAll, fifoLedger, type RawTransaction } from '@agon/decoder'
 import { mine } from '@agon/miner'
 import type { CheckTradeOutput } from '@agon/core'
 import { checkTrade } from './check-trade.js'
+import type { JevVerdict } from './jev/index.js'
 import type { MintCheck } from './mint-check.js'
 
 /** SOL. The quote a wallet's sizing is counted in, and what a size cap is expressed against. */
@@ -39,20 +40,19 @@ export interface Assessment {
 /**
  * Assess a proposed trade against the wallet's own mined history.
  *
- * Deliberately arithmetic only: the quote and the Jev screen are both passed to the guard as null,
- * which is its documented fast path. A `block` that comes back this way was reached by comparing
- * numbers to this wallet's own history and nothing else, so it asks a model nothing.
+ * Pure: the Jev screen, when there is one, arrives as data the caller already fetched, the same
+ * way the mint check does, so this asks a model nothing and makes 0 network calls. The quote is
+ * still null.
  *
- * The consequence, stated rather than left to be discovered: with no quote and no screen this can
- * never return `pass`. Unscreened text is `unsure`, and `unsure` is not a soft pass. A caller that
- * wants a pass has to supply both, and until it does every answer here is a refusal that names
- * what was not read.
+ * The consequence, stated rather than left to be discovered: with no quote this can never return
+ * `pass`, and with no screen unscreened text is `unsure`, which is not a soft pass either.
  */
 export function assessTrade(
   txs: readonly RawTransaction[],
   trade: ProposedTrade,
   mintCheck: MintCheck,
   quoteMint: string = DEFAULT_QUOTE,
+  jev: JevVerdict | null = null,
 ): Assessment {
   const decoded = decodeAll([...txs], trade.wallet)
   const mined = mine(fifoLedger(decoded.swaps).closedTrades, quoteMint)
@@ -63,7 +63,7 @@ export function assessTrade(
       mint: mintCheck,
       rules: mined.rules,
       quote: null,
-      jev: null,
+      jev,
       spendAsset: SOL,
       categoryMix: null,
       ruleVersion: mintCheck.ruleVersion,

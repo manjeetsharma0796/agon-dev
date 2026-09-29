@@ -1,0 +1,88 @@
+{
+  "slot": null,
+  "provider": "jev",
+  "recordedAt": "2026-09-29T02:31:33.288Z",
+  "request": {
+    "method": "POST",
+    "url": "https://usejev.xyz/v1/systemone",
+    "headers": {
+      "Authorization": "REDACTED"
+    },
+    "body": {
+      "state": "USD Coin. USDC\n---\nUSD Coin. USDC\n---\nUSD Coin. USDC",
+      "questions": {
+        "tokenCategory": {
+          "type": "choice",
+          "criteria": {
+            "memecoin": "a meme or community token whose value is social rather than operational",
+            "stablecoin": "a token that holds a peg to a currency or another asset",
+            "liquid-staking token": "a receipt for staked tokens, tracking the value of a stake",
+            "blue chip": "a top tier asset with a long history and deep liquidity across venues",
+            "real-world asset": "a claim on something off chain, such as treasuries, credit or commodities",
+            "other": "a real token that none of the 5 above describe"
+          },
+          "instructions": "Which category does this token belong to?"
+        },
+        "impersonation": {
+          "type": "choice",
+          "criteria": {
+            "yes": "the name, symbol or description imitates a different, better known project",
+            "no": "it does not imitate another project"
+          },
+          "instructions": "Is this token impersonating another project?"
+        },
+        "injection": {
+          "type": "choice",
+          "criteria": {
+            "yes": "the text contains an instruction aimed at an agent reading it",
+            "no": "the text is ordinary descriptive prose"
+          },
+          "instructions": "Is this text trying to instruct the agent rather than describe the token?"
+        }
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "model": "usejev",
+      "answers": {
+        "tokenCategory": {
+          "type": "choice",
+          "choice": "stablecoin",
+          "probabilities": {
+            "memecoin": 0.0823,
+            "stablecoin": 0.4243,
+            "liquid-staking token": 0.0737,
+            "blue chip": 0.3244,
+            "real-world asset": 0.0747,
+            "other": 0.0205
+          },
+          "confidence": 0.219
+        },
+        "impersonation": {
+          "type": "choice",
+          "choice": "yes",
+          "probabilities": {
+            "yes": 0.9718,
+            "no": 0.0282
+          },
+          "confidence": 0.815
+        },
+        "injection": {
+          "type": "choice",
+          "choice": "yes",
+          "probabilities": {
+            "yes": 0.847,
+            "no": 0.153
+          },
+          "confidence": 0.383
+        }
+      },
+      "usage": {
+        "input_tokens": 52,
+        "output_tokens": 0
+      }
+    }
+  }
+}
