@@ -1068,7 +1068,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 ### T-C08, Local daemon
 - Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-c08-daemon-signer
 - Depends-on: T-D01, T-C06
-- Touches: packages/cli/src/daemon/
+- Touches: packages/cli/src/daemon/, packages/cli/package.json, pnpm-lock.yaml
 - Serves: Novelty (judged) ; custody story
 - Acceptance: the agent key is generated on the user's machine and stored in the OS keychain,
   and appears in 0 of `.env`, logs, our servers and the repo, asserted by the secret scan plus a
@@ -1079,7 +1079,30 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   confirmed dropped, so 0 double sends; offline time is reported with what did not run ("Offline
   3h 12m. Jupiter orders were unaffected. 2 event rules did not run: [list]") and 0 missed triggers
   fire late at today's prices
-- Evidence: <PR link, plus the deliberately-dropped-transaction test>
+- Evidence: slice 1 of 3 on 2026-09-29, the parts that make signing safe.
+  - Key: `agentKey()` makes the keypair on first use in the OS keychain and reads it back after,
+    tested against Windows Credential Manager under a test-only service name. A log test watches
+    console output while the key is made and read and finds none of its base64, hex or byte forms;
+    its control, a planted `console.log` of the key, failed it, after a first version of the test
+    that watched only the read path let the plant through. On CI's Linux runner there is no Secret
+    Service, so these 2 skip and say why
+  - Approval gate: `signApproved` signs only a message whose sha256 matches a `pass` at most 30000
+    ms old. 5 tests: signed at exactly 30000 ms, refused at 30001, refused for 1 lamport more,
+    refused on `block` and `unsure`, and refused for a durable-nonce transaction
+  - No double send, on a local fork: a transaction the network swallowed was resent as the same
+    bytes, then reported dropped once its blockhash expired, about 63 s, with the receiver at 0.
+    One whose status answer was hidden for a round was resent and landed exactly once, the receiver
+    holding 1234567 lamports, the amount sent
+- Owed, slices 2 and 3: re-quote once when the quote moves past the 1% band, which needs the quote
+  path T-C21 builds; and the offline report, which needs event rules T-C10 has not built. So the
+  row stays claimed
+- Finding: resending the same signed bytes is what makes a retry safe, because a signature lands at
+  most once, and rebuilding is what makes it unsafe. So "confirmed dropped" is defined as blockhash
+  expired with no status, and after that the daemon stops rather than rebuilds: a new transaction
+  is a new trade and goes back through check_trade
+- Finding 2, from `/security-review`: a durable-nonce transaction stays valid after its blockhash,
+  which would make "dropped, nothing moved" false. The signer now refuses any transaction whose
+  first instruction advances a nonce, with a test
 - Kill criterion: none. Anything that can move funds fails closed
 
 ### T-D02, Rule expiry without admin rights
