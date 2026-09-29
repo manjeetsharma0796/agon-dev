@@ -9,10 +9,13 @@
 import { readFileSync } from 'node:fs'
 import {
   ArmedRule,
+  armingOffFork,
   ArmingLink,
   CheckTradeInput,
   CheckTradeOutput,
   network,
+  noPublicAddress,
+  Refusal,
   Report,
   RuleSpec,
   WalletQuery,
@@ -54,7 +57,7 @@ export const checkTrade = (input: unknown): CheckTradeOutput => {
 }
 
 /** Thrown by arming, which is the one leg that must refuse rather than pretend. */
-export class NotArmable extends Error {
+export class NotArmable extends Refusal {
   readonly code = 'not-armable'
 }
 
@@ -73,16 +76,10 @@ export const armRule = (
   const spec = RuleSpec.parse(input)
   const net = network(env.network)
   if (net.id !== 'fork') {
-    throw new NotArmable(
-      `Arming runs on the practice fork only until the mainnet checklist is complete, and this ` +
-        `deployment is on ${net.short}. No link was made for ${spec.wallet}.`,
-    )
+    throw new NotArmable(armingOffFork({ wallet: spec.wallet, network: net.short }))
   }
   if (!env.publicUrl) {
-    throw new NotArmable(
-      `This deployment has no public address set, so there is no arming screen to send ` +
-        `${spec.wallet} to. The operator sets AGON_PUBLIC_URL. No link was made.`,
-    )
+    throw new NotArmable(noPublicAddress({ wallet: spec.wallet }))
   }
   const url = new URL('/arm', env.publicUrl)
   // The fragment, not the query: a browser never sends it to a server, so the wallet does not

@@ -2127,16 +2127,29 @@ _(empty)_
   shape; it bites the moment T-E06 exists, and it is a frozen contract, so it is cheaper now
 
 ### T-C19, MCP errors come from the catalogue, and name who refused
-- Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-c19-catalogue-errors
+- Status: in-review | Owner: Jishnu | Branch: feature/t-c19-catalogue-errors
 - Depends-on: T-E10, T-C07
-- Touches: packages/mcp/src/index.ts, packages/core/src/messages.ts
+- Touches: packages/mcp/src/index.ts, packages/mcp/src/io.ts, packages/mcp/src/catalogue.test.ts,
+  packages/mcp/src/mcp.test.ts, packages/core/src/messages.ts, packages/core/src/messages.test.ts,
+  apps/web/src/legs.ts
 - Serves: UX (judged) ; the agent surface
 - Acceptance: `packages/mcp` answers failures from the message catalogue rather than ad-hoc Error
   strings, with a test asserting 0 ad-hoc messages on the tool paths; 2 new rows, the Swig cap
   refusal translated out of `insufficient funds for instruction` into cause, number and reset slot,
   and the rule that the innermost failing program decides who refused so a Jupiter slippage error
   is never reported as the cap; every message's first sentence stands alone, asserted by a test
-- Evidence: <PR link, plus the 2 raw refusals from the fork that the rows translate>
+- Evidence: 8 ad hoc throws on the MCP tool paths replaced by 11 catalogue rows, and
+  `packages/mcp/src/catalogue.test.ts` counts 0 left (it failed on a real one while being written).
+  Every row, PRD's 11 and the 13 agent-surface samples, is asserted to carry a digit in a first
+  sentence over 24 characters; 6 PRD rows were reworded to pass. The Swig row is tested on the 16
+  log lines of F5 case (b) verbatim from `spikes/F5/result.json`: 0.45 wSOL asked, 0.4 left, and
+  Swig's only words are "insufficient funds for instruction"; the row says both numbers and never
+  "insufficient funds". The Jupiter case is a hand-built log around the one code the fork recorded,
+  `0x1788` (T-D07 row), and is reported as "not the spending limit"
+- Not evidenced: a full captured log of a Jupiter refusal. The fork recorded only its code
+- Finding: 1 duplicate survives outside this row's Touches. `packages/chain/src/kill-switch.ts`
+  writes its own "Rule revoked. X is still inside an open Jupiter order" for the CLI, with the weak
+  first sentence this PR fixed in the catalogue's copy. Left for its owner rather than widened here
 - Kill criterion: none. Measured on the fork: an agent given a truncated "Simulation failed." with
   no reason retried about 11 times. Our server does not truncate, the client did, which is why the
   first sentence has to carry the answer

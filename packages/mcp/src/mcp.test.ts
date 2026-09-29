@@ -132,7 +132,7 @@ test('an unknown wallet is refused without handing out internal paths', async ()
   expect(text, 'the fixture path reached the caller').not.toContain('fixtures/recorded')
   expect(text, 'an env var name reached the caller').not.toContain('AGON_NET_MODE')
   // Still says the cause and what to do, because a refusal with no reason is the other failure.
-  expect(text).toContain('No history is available')
+  expect(text).toContain('No recording exists for')
 })
 
 test('a size of 0 is refused, because nothing is being traded', async () => {

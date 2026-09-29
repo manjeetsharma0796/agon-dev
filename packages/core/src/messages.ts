@@ -68,8 +68,9 @@ export const tooLittleHistory = (a: {
 }): FailureMessage => ({
   id: 'too-little-history',
   text:
-    `${a.closedTrades} closed trade${a.closedTrades === 1 ? '' : 's'}. A stop rule needs ` +
-    `${a.needed}; ${a.shown.join(' and ')} are shown.`,
+    `${a.closedTrades} closed trade${a.closedTrades === 1 ? '' : 's'}, and a stop rule needs ` +
+    `${a.needed}, so no stop rule is mined. ${a.shown.join(' and ')} ` +
+    `${a.shown.length === 1 ? 'is' : 'are'} shown.`,
   mode: 'open',
   systemDoes:
     'Shows the metrics that have enough data behind them, and mines no rule that does not.',
@@ -99,7 +100,7 @@ export const rugcheckUnavailable = (a: {
 /** The one that can lose money if it fails open. It does not. */
 export const mintCheckUnreachable = (a: { mint: string }): FailureMessage => ({
   id: 'mint-check-unreachable',
-  text: `Could not verify this token. Not safe to proceed. Token: ${a.mint}.`,
+  text: `Could not verify token ${a.mint}, so it is not safe to proceed.`,
   mode: 'closed',
   systemDoes:
     'check_trade returns block and the agent hands back to the user. The trade never goes out unverified.',
@@ -134,7 +135,7 @@ export const overCap = (a: {
 /** Uncertain landing is the one place a retry can cost twice. */
 export const mayNotHaveLanded = (a: { signature: string; status: string }): FailureMessage => ({
   id: 'may-not-have-landed',
-  text: `Checking whether it landed. Signature ${a.signature}, currently ${a.status}.`,
+  text: `Transaction ${a.signature} is ${a.status}, so it is being checked before anything is resent.`,
   mode: 'closed',
   systemDoes:
     'Checks the signature status before any resubmit, and resubmits only once it is confirmed dropped. Never sends twice.',
@@ -149,7 +150,7 @@ export const triggerNotFilled = (a: {
 }): FailureMessage => ({
   id: 'trigger-not-filled',
   text:
-    `Jupiter reports this order as ${a.status}. Trigger ${a.triggerPrice} ${a.unit}, current ` +
+    `Jupiter reports this order as ${a.status}: trigger ${a.triggerPrice} ${a.unit}, current ` +
     `${a.currentPrice} ${a.unit}.`,
   mode: 'open',
   systemDoes: 'Reads the status from Jupiter. Never says executed before it is.',
@@ -162,9 +163,9 @@ export const daemonWasOffline = (a: {
 }): FailureMessage => ({
   id: 'daemon-was-offline',
   text:
-    `Offline ${hours(a.offlineMs)}. Jupiter orders were unaffected. ` +
-    `${a.missedRules.length} event rule${a.missedRules.length === 1 ? '' : 's'} did not run: ` +
-    `${a.missedRules.join(', ')}.`,
+    `Offline ${hours(a.offlineMs)}, and ${a.missedRules.length} event ` +
+    `rule${a.missedRules.length === 1 ? '' : 's'} did not run: ${a.missedRules.join(', ')}. ` +
+    `Jupiter orders were unaffected.`,
   mode: 'open',
   systemDoes:
     'Jupiter orders keep running because they are on chain. Missed event triggers are listed, never fired late at the prices of the day they are noticed.',
@@ -178,7 +179,7 @@ export const revokedWithOpenOrder = (a: {
 }): FailureMessage => ({
   id: 'revoked-with-open-order',
   text:
-    `Rule revoked. ${a.amount} ${a.unit} is still inside ${a.orderCount} open Jupiter ` +
+    `Rule revoked, but ${a.amount} ${a.unit} is still inside ${a.orderCount} open Jupiter ` +
     `order${a.orderCount === 1 ? '' : 's'}. Cancel ${a.orderCount === 1 ? 'it' : 'them'}?`,
   mode: 'open',
   systemDoes:
@@ -206,4 +207,193 @@ export const ALL_FAILURE_MESSAGES = [
   }),
   daemonWasOffline({ offlineMs: 11_520_000, missedRules: ['stop-8pct', 'trim-at-target'] }),
   revokedWithOpenOrder({ amount: '2.0', unit: 'SOL', orderCount: 1 }),
+] as const
+
+// ---- The agent surface. T-C19. ----
+//
+// Rows for the failures an agent meets through the MCP server and the arming screen, which the PRD
+// table predates. Same contract as the 11 above: cause, number, what to do next, and the cause and
+// number in the FIRST sentence, because an agent client measured on the fork kept only its first
+// line and retried about 11 times on a truncated "Simulation failed.".
+
+/** Thrown with a catalogue row, so a tool path never answers with an ad hoc string. */
+export class Refusal extends Error {
+  constructor(readonly failure: FailureMessage) {
+    super(failure.text)
+    this.name = 'Refusal'
+  }
+}
+
+export const zeroSizeTrade = (): FailureMessage => ({
+  id: 'zero-size-trade',
+  text:
+    'A size of 0 is not a trade, so there is nothing to check. Send the amount in base units of ' +
+    'the asset being spent: the quote asset on a buy, the mint on a sell.',
+  mode: 'closed',
+  systemDoes:
+    'Returns no verdict. An approval-shaped answer about a non-trade would read as checked.',
+})
+
+export const noHistory = (a: { wallet: string }): FailureMessage => ({
+  id: 'no-history',
+  text:
+    `0 transactions were read for ${a.wallet}, so there are no rules of its own to check this ` +
+    `trade against. Nothing is approved on the basis of no history.`,
+  mode: 'closed',
+  systemDoes: 'Returns no verdict. An empty history is not a clean bill.',
+})
+
+export const historyUnavailable = (a: { wallet: string; recorded: boolean }): FailureMessage => ({
+  id: 'history-unavailable',
+  text: a.recorded
+    ? `No recording exists for ${a.wallet} on this deployment, so 0 transactions were read and no ` +
+      `verdict is given. Ask about a wallet this deployment has, or run against live mainnet.`
+    : `0 transactions could be read for ${a.wallet}, so no verdict is given rather than one based ` +
+      `on a partial read. Try again, and if it persists the history provider is down.`,
+  mode: 'closed',
+  systemDoes: 'Returns no verdict, and never names the internal path or setting that failed.',
+})
+
+export const historyProviderStatus = (a: { wallet: string; status: number }): FailureMessage => ({
+  id: 'history-provider-status',
+  text:
+    `Helius answered ${a.status} for ${a.wallet}, so 0 transactions were read and no verdict is ` +
+    `given. Try again; a 429 means the rate limit, and it clears within a minute.`,
+  mode: 'closed',
+  systemDoes: 'Returns no verdict rather than one based on part of the history without saying so.',
+})
+
+export const historyProviderShape = (a: { wallet: string; got: string }): FailureMessage => ({
+  id: 'history-provider-shape',
+  text:
+    `Helius returned ${a.got} where a list of transactions was expected for ${a.wallet}, so 0 were ` +
+    `read. This is a change in its response, not an empty wallet, and it needs a code fix.`,
+  mode: 'closed',
+  systemDoes: 'Returns no verdict. Guessing at a changed shape is how a wallet reads as 0 swaps.',
+})
+
+export const mintCheckEmpty = (a: { mint: string }): FailureMessage => ({
+  id: 'mint-check-empty',
+  text:
+    `The mint check returned 0 verdicts for ${a.mint} where 1 was asked for, so nothing is known ` +
+    `about this token. The trade does not go out.`,
+  mode: 'closed',
+  systemDoes: 'check_trade returns no verdict, and the agent hands back to the user.',
+})
+
+export const noChainConfigured = (a: { wallet: string }): FailureMessage => ({
+  id: 'no-chain-configured',
+  text:
+    `No chain is configured on this deployment, so 0 vaults were read for ${a.wallet} and no rules ` +
+    `are listed. That is not the same as having none: ask the operator to set a chain.`,
+  mode: 'open',
+  systemDoes: 'Lists nothing and says why, rather than an empty list that reads as none armed.',
+})
+
+export const chainMismatch = (a: { wallet: string; mismatch: string }): FailureMessage => ({
+  id: 'chain-mismatch',
+  text: `0 rules are listed for ${a.wallet}, because ${a.mismatch}. Nothing was read from that chain.`,
+  mode: 'open',
+  systemDoes: 'Reads nothing, so an agent is never told one network while reading another.',
+})
+
+export const armingOffFork = (a: { wallet: string; network: string }): FailureMessage => ({
+  id: 'arming-off-fork',
+  text:
+    `0 arming links were made for ${a.wallet}, because this deployment is on ${a.network} and ` +
+    `arming runs on the practice fork only until the mainnet checklist is complete.`,
+  mode: 'closed',
+  systemDoes: 'Refuses rather than linking to a screen that would refuse anyway.',
+})
+
+export const noPublicAddress = (a: { wallet: string }): FailureMessage => ({
+  id: 'no-public-address',
+  text:
+    `0 arming links were made for ${a.wallet}, because this deployment has no public address, so ` +
+    `there is no arming screen to send it to. The operator sets AGON_PUBLIC_URL.`,
+  mode: 'closed',
+  systemDoes: 'Refuses rather than inventing an address.',
+})
+
+/** The Swig cap refused a trade. Swig itself says only "insufficient funds for instruction". */
+export const swigCapRefused = (a: {
+  needed: string
+  remaining: string
+  unit: string
+  resetSlot: string
+}): FailureMessage => ({
+  id: 'swig-cap-refused',
+  text:
+    `This needs ${a.needed} ${a.unit} and ${a.remaining} ${a.unit} is left in this window, so the ` +
+    `spending limit refused it; the window resets after slot ${a.resetSlot}. Nothing moved.`,
+  mode: 'closed',
+  systemDoes:
+    'Nothing is sent again. Never retried automatically with a smaller amount, and never reported as a lack of funds.',
+})
+
+/** A trade refused by something other than the spending limit. */
+export const tradeRefusedElsewhere = (a: { program: string; detail: string }): FailureMessage => ({
+  id: 'trade-refused-elsewhere',
+  text:
+    `Program ${a.program} refused this trade, not the spending limit: ${a.detail}. Nothing moved; ` +
+    `if it is Jupiter, the price moved past the slippage allowed, so quote again.`,
+  mode: 'closed',
+  systemDoes:
+    'Reports the program that refused, so a slippage failure is never read as the cap holding.',
+})
+
+/**
+ * Which program refused, from a transaction's logs. The first `failed` line is the innermost one, and
+ * it is the one that decides. Measured on the fork: when the cap refuses, the only `failed` line is
+ * Swig's at depth 1; when a drifted pool refuses, Jupiter's `failed` line comes first, at depth 2.
+ */
+export const innermostFailure = (logs: readonly string[]): string | null => {
+  for (const line of logs) {
+    const m = /^Program (\S+) failed/.exec(line)
+    if (m) return m[1] ?? null
+  }
+  return null
+}
+
+/**
+ * Turn a refused trade's logs into the message that names who refused. `swigProgram` is passed in
+ * from chain config rather than written here, because program ids are pinned in 1 place.
+ */
+export const explainRefusal = (a: {
+  logs: readonly string[]
+  swigProgram: string
+  cap: { needed: string; remaining: string; unit: string; resetSlot: string }
+}): FailureMessage => {
+  const program = innermostFailure(a.logs)
+  if (program === a.swigProgram) return swigCapRefused(a.cap)
+  const line = a.logs.find((l) => program !== null && l.startsWith(`Program ${program} failed`))
+  return tradeRefusedElsewhere({
+    program: program ?? 'unknown',
+    detail: line?.replace(/^Program \S+ failed: /, '') ?? 'the logs named no failing program',
+  })
+}
+
+const SAMPLE_WALLET = '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM'
+
+/** Every agent-surface row, so the same tests walk them as walk the PRD's 11. */
+export const AGENT_SURFACE_MESSAGES = [
+  zeroSizeTrade(),
+  noHistory({ wallet: SAMPLE_WALLET }),
+  historyUnavailable({ wallet: SAMPLE_WALLET, recorded: true }),
+  historyUnavailable({ wallet: SAMPLE_WALLET, recorded: false }),
+  historyProviderStatus({ wallet: SAMPLE_WALLET, status: 429 }),
+  historyProviderShape({ wallet: SAMPLE_WALLET, got: 'object' }),
+  mintCheckEmpty({ mint: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263' }),
+  noChainConfigured({ wallet: SAMPLE_WALLET }),
+  chainMismatch({
+    wallet: SAMPLE_WALLET,
+    mismatch: 'this deployment says fork, but the chain is not a fork',
+  }),
+  armingOffFork({ wallet: SAMPLE_WALLET, network: 'mainnet, real funds' }),
+  noPublicAddress({ wallet: SAMPLE_WALLET }),
+  swigCapRefused({ needed: '0.45', remaining: '0.4', unit: 'wSOL', resetSlot: '451431300' }),
+  tradeRefusedElsewhere({
+    program: 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4',
+    detail: 'custom program error: 0x1788',
+  }),
 ] as const

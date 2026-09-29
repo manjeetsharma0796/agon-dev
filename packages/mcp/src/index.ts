@@ -6,7 +6,16 @@
 // differently, because there is only one answer to give.
 
 import { FIXTURE_NOTE, armRule, report } from '@agon/web'
-import { TOOLS, mode, network, type ToolName, toolContracts } from '@agon/core'
+import {
+  noHistory,
+  Refusal,
+  TOOLS,
+  mode,
+  network,
+  type ToolName,
+  toolContracts,
+  zeroSizeTrade,
+} from '@agon/core'
 import { JUPITER_PROGRAM_ID } from '@agon/chain'
 import { assessTrade } from '@agon/guard'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
@@ -39,10 +48,7 @@ const handlers = {
     // answer reads like a trade that was examined. Nothing is being traded, so there is nothing to
     // approve, and an approval-shaped answer about a non-trade is the wrong thing to hand an agent.
     if (/^0+$/.test(size)) {
-      throw new Error(
-        `A size of 0 is not a trade, so there is nothing to check. Send the amount in base ` +
-          `units of the asset being spent: the quote asset on a buy, the mint on a sell.`,
-      )
+      throw new Refusal(zeroSizeTrade())
     }
     const [txs, mintCheck] = await Promise.all([
       io.loadTransactions(wallet),
@@ -50,10 +56,7 @@ const handlers = {
     ])
     if (txs.length === 0) {
       // Anything that can move funds fails closed, and an empty history is not a clean bill.
-      throw new Error(
-        `0 transactions read for ${wallet}, so there are no rules of its own to check this trade ` +
-          `against. Nothing is approved on the basis of no history.`,
-      )
+      throw new Refusal(noHistory({ wallet }))
     }
     return assessTrade(txs, { wallet, mint, side, size }, mintCheck).verdict
   },
