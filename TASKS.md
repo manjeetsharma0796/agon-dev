@@ -1494,7 +1494,10 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 ### T-A05, Category mix in the report, so style fit has something to compare against
 - Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-a05-category-mix
 - Depends-on: T-C12, T-A03, T-C22
-- Touches: packages/core/src/report.ts, fixtures/contracts/report.json, packages/miner/src/
+- Touches: packages/core/src/report.ts, fixtures/contracts/report.json, packages/miner/src/,
+  packages/guard/src/assess.ts, packages/guard/src/mint-check.ts, packages/guard/src/index.ts,
+  packages/cli/src/commands/check.ts, packages/cli/src/commands/report-io.ts,
+  fixtures/recorded/jupiter/
 - Note: changes frozen contract 2 of 3, so the PR body carries the "Changes a frozen contract in
   `packages/core`" line, the diff carries the fixture, and a second person reviews. It exists
   because `TradeFacts.categoryMix` has no producer anywhere: `packages/cli/src/commands/check.ts`
@@ -1506,7 +1509,21 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   mint to category map as a required argument, the way it already takes the quote, so 0 Jev calls
   move inside it; at least 1 production path fills `TradeFacts.categoryMix`, taking the
   `category-mix-missing` unsure from the 100% of calls it fires on today to 0 on that path
-- Evidence: <PR link, with the share of calls reaching a style-fit answer before and after>
+- Evidence: slice 1 of 2 on 2026-09-29 (the style-fit half; the `Report` field is slice 2, a
+  frozen contract that needs a second reviewer): `categoryMix` in the miner, pure, 4 tests written
+  first, null rather than partial when a traded mint has no category; `assessTrade` takes the
+  category map as data; `agon check` fills it with 1 batched listing of the wallet's traded mints,
+  stamped with the mint check's slot. On the recorded wallet the CLI's style fit went from
+  `category-mix-missing` on every call to an answer: mix other 1.0 over 20 closed trades, and a USDC
+  buy blocked as "0 of your 20 closed trades are in the stablecoin category". The MCP path is
+  `packages/mcp/src/index.ts`, inside T-C21's claim, so it is left for that row to pass the map
+- Finding: all 4 tokens this wallet traded are tagged `unknown` by Jupiter (unverified, low
+  organic score, launchpad tokens) and so fall to `other`. A trader of such tokens then buying a
+  tagged memecoin like BONK would be blocked as a new category, which is a false block. Whether
+  `unknown` means "cannot place" (mix absent, style fit unsure) or "memecoin" is a product call
+- Finding 2: a USDC buy is blocked by style fit for this wallet, but buying USDC with SOL is usually
+  leaving risk rather than taking a new kind on. Whether stablecoins are exempt from style fit is
+  the same kind of call
 - Kill criterion: fallback is shipping style fit as the `category-mix-missing` unsure with the
   reason printed, never a silent pass
 

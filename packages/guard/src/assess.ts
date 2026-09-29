@@ -10,9 +10,10 @@
 // replayed test with no key and a live agent call.
 
 import { decodeAll, fifoLedger, type RawTransaction } from '@agon/decoder'
-import { mine } from '@agon/miner'
+import { categoryMix, mine } from '@agon/miner'
 import type { CheckTradeOutput } from '@agon/core'
 import { checkTrade } from './check-trade.js'
+import type { TokenCategory } from './jev/index.js'
 import type { MintCheck } from './mint-check.js'
 
 /** SOL. The quote a wallet's sizing is counted in, and what a size cap is expressed against. */
@@ -53,9 +54,19 @@ export function assessTrade(
   trade: ProposedTrade,
   mintCheck: MintCheck,
   quoteMint: string = DEFAULT_QUOTE,
+  categories?: ReadonlyMap<string, TokenCategory>,
 ): Assessment {
   const decoded = decodeAll([...txs], trade.wallet)
-  const mined = mine(fifoLedger(decoded.swaps).closedTrades, quoteMint)
+  const closed = fifoLedger(decoded.swaps).closedTrades
+  const mined = mine(closed, quoteMint)
+  // The categories arrive as data the caller already looked up, so this stays at 0 network calls.
+  // No map, or a traded mint it cannot place, is no mix, and style fit then says so.
+  const mix =
+    categories === undefined
+      ? null
+      : (categoryMix(closed, quoteMint, categories) as Partial<
+          Record<TokenCategory, number>
+        > | null)
 
   const verdict = checkTrade(
     { wallet: trade.wallet, mint: trade.mint, side: trade.side, size: trade.size },
@@ -65,10 +76,15 @@ export function assessTrade(
       quote: null,
       jev: null,
       spendAsset: SOL,
-      categoryMix: null,
+      categoryMix: mix,
       ruleVersion: mintCheck.ruleVersion,
     },
   )
 
   return { verdict, closedTrades: mined.metrics.closedTrades, rules: mined.rules }
+}
+
+/** The mints this wallet has closed trades in, so a caller can look their categories up first. */
+export function tradedMints(txs: readonly RawTransaction[], wallet: string): string[] {
+  return [...new Set(fifoLedger(decodeAll([...txs], wallet).swaps).closedTrades.map((t) => t.mint))]
 }

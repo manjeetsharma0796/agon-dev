@@ -18,7 +18,7 @@ import { fromEnhanced, type EnhancedTransaction, type RawTransaction } from '@ag
 // Re-exported because the CLI's own tests import it from here. The mapping itself moved into the
 // decoder, where the MCP server can reach it too.
 export { fromEnhanced, type EnhancedTransaction }
-import { checkMints, type MintCheck } from '@agon/guard'
+import { categoriesOf, checkMints, type MintCheck } from '@agon/guard'
 import type { ReportIo } from './report.js'
 import type { CheckIo } from './check.js'
 
@@ -44,6 +44,7 @@ export function liveCheckIo(): CheckIo {
       }
       return check
     },
+    loadCategories: (mints, slot) => categoriesOf(mints, {}, slot),
   }
 }
 

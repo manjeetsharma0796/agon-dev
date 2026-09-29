@@ -12,6 +12,7 @@ export {
 
 // The mint check is the primary token-safety path and reads the chain itself. T-C04.
 export {
+  categoriesOf,
   checkMints,
   RULE_VERSION,
   type MintCheck,
@@ -24,4 +25,10 @@ export {
 export * from './jev/index.js'
 
 // The whole read path composed once: history and a proposed trade in, a verdict out. T-C09.
-export { assessTrade, DEFAULT_QUOTE, type Assessment, type ProposedTrade } from './assess.js'
+export {
+  assessTrade,
+  DEFAULT_QUOTE,
+  tradedMints,
+  type Assessment,
+  type ProposedTrade,
+} from './assess.js'
