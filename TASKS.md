@@ -1004,7 +1004,7 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   number
 - Evidence: `spikes/F4/result.json`, 20 of 20 verdicts matched, each by verdict and by the exact
   set of rules that fired, against `spikes/F4/cases.json`, committed with the thresholds before the
-  runner existed. p95 0.62 ms and p50 0.31 ms over 200 runs of decode to verdict on the 100
+  runner existed. p95 0.62 ms and p50 0.28 ms over 200 runs of decode to verdict on the 100
   recorded transactions, network excluded, against 300 ms. Every arithmetic reason carries a
   numeric observed and limit
 - Finding: the first run was 19 of 20, and the miss was a real money bug. Size and price band both
