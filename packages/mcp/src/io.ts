@@ -13,7 +13,18 @@ import {
   type ChainAgentRule,
   type ChainRole,
 } from '@agon/chain'
-import { call, heliusTransactions, network } from '@agon/core'
+import {
+  call,
+  chainMismatch as chainMismatchRow,
+  heliusTransactions,
+  historyProviderShape,
+  historyProviderStatus,
+  historyUnavailable,
+  mintCheckEmpty,
+  network,
+  noChainConfigured,
+  Refusal,
+} from '@agon/core'
 import { Connection, PublicKey } from '@solana/web3.js'
 import { fetchNullableSwig } from '@swig-wallet/classic/dist/index.js'
 import { fromEnhanced, type EnhancedTransaction, type RawTransaction } from '@agon/decoder'
@@ -80,10 +91,7 @@ export const liveIo = (): ToolIo => {
     async loadVaultRules(wallet: string): Promise<VaultRules> {
       const url = process.env['AGON_RPC_URL']
       if (!url) {
-        throw new Error(
-          `No chain is configured on this deployment, so no vault was read for ${wallet} and no rules ` +
-            `are listed. This is not the same as having none: ask the operator to point it at a chain.`,
-        )
+        throw new Refusal(noChainConfigured({ wallet }))
       }
       const res = await fetch(url, {
         method: 'POST',
@@ -93,7 +101,7 @@ export const liveIo = (): ToolIo => {
       const version = ((await res.json()) as { result?: Record<string, unknown> }).result ?? {}
       const mismatch = chainMismatch(network(process.env['AGON_NETWORK']).id, version)
       if (mismatch) {
-        throw new Error(`No rules are listed for ${wallet}: ${mismatch}. Nothing was read from it.`)
+        throw new Refusal(chainMismatchRow({ wallet, mismatch }))
       }
       const connection = new Connection(url, 'confirmed')
       const owner = new PublicKey(wallet)
@@ -122,29 +130,16 @@ export const liveIo = (): ToolIo => {
         const replay = /replay mode|No recorded response/i.test(
           error instanceof Error ? error.message : String(error),
         )
-        throw new Error(
-          replay
-            ? `No history is available for ${wallet} on this deployment. It answers from recorded ` +
-              `data and there is no recording for this wallet, so nothing was read and no verdict ` +
-              `is given. Ask about a wallet this deployment has, or run against live mainnet.`
-            : `Could not read the history for ${wallet}, so no verdict is given rather than one ` +
-              `based on a partial read.`,
-        )
+        throw new Refusal(historyUnavailable({ wallet, recorded: replay }))
       }
       if (res.fromFixture) fromFixture = true
       if (res.status !== 200) {
-        throw new Error(
-          `Helius answered ${res.status} for ${wallet}. Nothing was read, so this returns no ` +
-            `answer rather than one based on part of the history without saying so.`,
-        )
+        throw new Refusal(historyProviderStatus({ wallet, status: res.status }))
       }
       // Anything other than an array is a response shape change, and guessing at it is how a
       // decoder silently reports 0 swaps for a wallet that has hundreds.
       if (!Array.isArray(res.body)) {
-        throw new Error(
-          `Helius returned ${typeof res.body} where an array of transactions was expected, so the ` +
-            `history could not be read. This is a response shape change, not an empty wallet.`,
-        )
+        throw new Refusal(historyProviderShape({ wallet, got: typeof res.body }))
       }
       return (res.body as EnhancedTransaction[]).map(fromEnhanced)
     },
@@ -163,10 +158,7 @@ export const liveIo = (): ToolIo => {
         })
       ).get(mint)
       if (check === undefined) {
-        throw new Error(
-          `The mint check returned 0 verdicts for ${mint}, where 1 was asked for. Nothing was read ` +
-            `about this token, so it is not a token we can say anything about.`,
-        )
+        throw new Refusal(mintCheckEmpty({ mint }))
       }
       return check
     },
