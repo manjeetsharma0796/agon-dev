@@ -10,8 +10,9 @@ export const PrepareSwapInput = z.object({
   owner: Address,
   /**
    * The wallet whose own mined rules check_trade judges this trade against. Read only, because an
-   * address is public. On mainnet it is the owner; on the fork it is the user's real address, since
-   * a fresh test key has no history and check_trade fails closed on none.
+   * address is public. On mainnet it is the owner. On the fork it is any public wallet with swaps on
+   * mainnet, owned or not, since a fresh test key has no history, check_trade fails closed on none,
+   * and fork activity never counts as history.
    */
   historyWallet: Address,
   /** The agent key: the fee payer and the only signer of the returned transaction. */
@@ -29,7 +30,11 @@ export const PreparedSwap = z.object({
   transaction: z.string().min(1),
   /** Where the funds leave from. */
   vault: Address,
-  /** check_trade's answer for this exact trade. A transaction is only built on a pass. */
+  /**
+   * check_trade's answer for this exact trade. A transaction is built only on a pass, except on the
+   * practice fork when the history wallet has 0 closed trades: then its first reason is
+   * `no-trading-history`, and the rest are what the check found, none of which stopped the trade.
+   */
   verdict: CheckTradeOutput,
   quote: z.object({
     inAmount: BaseUnits,

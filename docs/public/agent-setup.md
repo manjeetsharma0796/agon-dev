@@ -116,7 +116,7 @@ Call `prepare_swap` with:
 | Field | Value |
 |---|---|
 | `owner` | the user's wallet, which owns the vault |
-| `historyWallet` | the wallet whose history judges the trade: on mainnet the owner; on the practice fork the user's real address, because a fresh test key has no history |
+| `historyWallet` | the wallet whose history judges the trade, only read, never signed for: the owner. On the practice fork, a wallet with 0 closed trades on mainnet (fork activity never counts) is not refused: the trade is built unchecked against a history, bounded only by the cap the owner signed, and the verdict's first reason, `no-trading-history`, says so. Tell the user before signing. **Never suggest a real mainnet trade to create history** |
 | `agent` | your **public** key |
 | `inputMint`, `outputMint` | 1 of them must be wrapped SOL, `So11111111111111111111111111111111111111112` |
 | `amount` | base units of `inputMint` |
