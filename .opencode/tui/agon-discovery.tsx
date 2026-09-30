@@ -24,23 +24,32 @@
 // opencode 1.18.33 has no image element for plugins. Each is fetched once as a small PNG through an
 // image proxy, decoded here and cached for the life of the process.
 
-import { createEffect, createMemo, createRoot, createSignal, For, on, onCleanup, Show } from "solid-js"
-import { useKeyboard } from "@opentui/solid"
-import { inflateSync } from "node:zlib"
-import { spawn } from "node:child_process"
-import type { TuiPlugin, TuiPluginApi, TuiPluginModule } from "@opencode-ai/plugin/tui"
+import {
+  createEffect,
+  createMemo,
+  createRoot,
+  createSignal,
+  For,
+  on,
+  onCleanup,
+  Show,
+} from 'solid-js'
+import { useKeyboard } from '@opentui/solid'
+import { inflateSync } from 'node:zlib'
+import { spawn } from 'node:child_process'
+import type { TuiPlugin, TuiPluginApi, TuiPluginModule } from '@opencode-ai/plugin/tui'
 
-const ID = "agon-discovery"
-const ROUTE = "agon.discovery"
-const JUP = "https://lite-api.jup.ag/tokens/v2"
-const WATCH_KEY = "agon.discovery.watchlist"
+const ID = 'agon-discovery'
+const ROUTE = 'agon.discovery'
+const JUP = 'https://lite-api.jup.ag/tokens/v2'
+const WATCH_KEY = 'agon.discovery.watchlist'
 
 const DEFAULT_WATCHLIST = [
-  "So11111111111111111111111111111111111111112",
-  "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-  "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
-  "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
-  "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn",
+  'So11111111111111111111111111111111111111112',
+  'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+  'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN',
+  'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263',
+  'J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn',
 ]
 
 type Options = { refreshMs: number; limit: number; mcpUrl: string; armUrl: string }
@@ -49,7 +58,9 @@ type Options = { refreshMs: number; limit: number; mcpUrl: string; armUrl: strin
 const httpUrl = (v: unknown, fallback: string) => {
   try {
     const u = new URL(String(v))
-    return u.protocol === "http:" || u.protocol === "https:" ? u.toString().replace(/\/$/, "") : fallback
+    return u.protocol === 'http:' || u.protocol === 'https:'
+      ? u.toString().replace(/\/$/, '')
+      : fallback
   } catch {
     return fallback
   }
@@ -57,10 +68,10 @@ const httpUrl = (v: unknown, fallback: string) => {
 const toOptions = (raw: unknown): Options => {
   const o = (raw ?? {}) as Partial<Options>
   return {
-    refreshMs: typeof o.refreshMs === "number" && o.refreshMs >= 5_000 ? o.refreshMs : 15_000,
-    limit: typeof o.limit === "number" && o.limit > 0 ? Math.min(o.limit, 100) : 50,
-    mcpUrl: httpUrl(o.mcpUrl, "http://127.0.0.1:8787"),
-    armUrl: httpUrl(o.armUrl, "http://localhost:3111/arm"),
+    refreshMs: typeof o.refreshMs === 'number' && o.refreshMs >= 5_000 ? o.refreshMs : 15_000,
+    limit: typeof o.limit === 'number' && o.limit > 0 ? Math.min(o.limit, 100) : 50,
+    mcpUrl: httpUrl(o.mcpUrl, 'http://127.0.0.1:8787'),
+    armUrl: httpUrl(o.armUrl, 'http://localhost:3111/arm'),
   }
 }
 
@@ -95,17 +106,17 @@ type Token = {
   tags: string[]
 }
 
-const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null)
-const bool = (v: unknown): boolean | null => (typeof v === "boolean" ? v : null)
+const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
+const bool = (v: unknown): boolean | null => (typeof v === 'boolean' ? v : null)
 
 const toToken = (t: Record<string, any>): Token => {
   const buy = num(t.stats24h?.buyVolume)
   const sell = num(t.stats24h?.sellVolume)
   return {
     mint: String(t.id),
-    symbol: typeof t.symbol === "string" ? t.symbol : String(t.id).slice(0, 4),
-    name: typeof t.name === "string" ? t.name : "",
-    icon: typeof t.icon === "string" ? t.icon : null,
+    symbol: typeof t.symbol === 'string' ? t.symbol : String(t.id).slice(0, 4),
+    name: typeof t.name === 'string' ? t.name : '',
+    icon: typeof t.icon === 'string' ? t.icon : null,
     price: num(t.usdPrice),
     change5m: num(t.stats5m?.priceChange),
     change1h: num(t.stats1h?.priceChange),
@@ -119,13 +130,13 @@ const toToken = (t: Record<string, any>): Token => {
     sells1h: num(t.stats1h?.numSells),
     traders1h: num(t.stats1h?.numTraders),
     organic: num(t.organicScore),
-    organicLabel: typeof t.organicScoreLabel === "string" ? t.organicScoreLabel : null,
+    organicLabel: typeof t.organicScoreLabel === 'string' ? t.organicScoreLabel : null,
     verified: t.isVerified === true,
     mintAuthorityOff: bool(t.audit?.mintAuthorityDisabled),
     freezeAuthorityOff: bool(t.audit?.freezeAuthorityDisabled),
     topHoldersPct: num(t.audit?.topHoldersPercentage),
     devPct: num(t.audit?.devBalancePercentage),
-    tags: Array.isArray(t.tags) ? t.tags.filter((x: unknown) => typeof x === "string") : [],
+    tags: Array.isArray(t.tags) ? t.tags.filter((x: unknown) => typeof x === 'string') : [],
   }
 }
 
@@ -133,18 +144,18 @@ async function getTokens(url: string): Promise<Token[]> {
   const res = await fetch(url)
   if (!res.ok) throw new Error(`Jupiter answered ${res.status}`)
   const body = (await res.json()) as unknown
-  if (!Array.isArray(body)) throw new Error("Jupiter answered something that is not a token list")
+  if (!Array.isArray(body)) throw new Error('Jupiter answered something that is not a token list')
   return body.map((t) => toToken(t as Record<string, any>))
 }
 
 type Source = { label: string; path: string; interval: boolean }
 const SOURCES: Source[] = [
-  { label: "trending", path: "toptrending", interval: true },
-  { label: "most traded", path: "toptraded", interval: true },
-  { label: "top organic", path: "toporganicscore", interval: true },
-  { label: "new", path: "recent", interval: false },
+  { label: 'trending', path: 'toptrending', interval: true },
+  { label: 'most traded', path: 'toptraded', interval: true },
+  { label: 'top organic', path: 'toporganicscore', interval: true },
+  { label: 'new', path: 'recent', interval: false },
 ]
-const INTERVALS = ["5m", "1h", "6h", "24h"]
+const INTERVALS = ['5m', '1h', '6h', '24h']
 
 /* ---------------------------------------------------------------------------------------------- */
 /* logos, as half-block pixels                                                                     */
@@ -169,20 +180,21 @@ function decodePng(buf: Uint8Array): Pixels {
     const len = dv.getUint32(p)
     const kind = String.fromCharCode(buf[p + 4]!, buf[p + 5]!, buf[p + 6]!, buf[p + 7]!)
     const d = buf.subarray(p + 8, p + 8 + len)
-    if (kind === "IHDR") {
+    if (kind === 'IHDR') {
       w = dv.getUint32(p + 8)
       h = dv.getUint32(p + 12)
       depth = d[8]!
       type = d[9]!
       interlace = d[12]!
-    } else if (kind === "PLTE") pal = d
-    else if (kind === "tRNS") trns = d
-    else if (kind === "IDAT") idat.push(d)
-    else if (kind === "IEND") break
+    } else if (kind === 'PLTE') pal = d
+    else if (kind === 'tRNS') trns = d
+    else if (kind === 'IDAT') idat.push(d)
+    else if (kind === 'IEND') break
     p += 12 + len
   }
   const ch = ({ 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 } as Record<number, number>)[type]
-  if (depth !== 8 || interlace !== 0 || !ch || (type === 3 && !pal)) throw new Error("unsupported png")
+  if (depth !== 8 || interlace !== 0 || !ch || (type === 3 && !pal))
+    throw new Error('unsupported png')
   const raw = inflateSync(Buffer.concat(idat))
   const stride = w * ch
   const out = new Uint8Array(w * h * 4)
@@ -199,7 +211,19 @@ function decodePng(buf: Uint8Array): Pixels {
       const pb = Math.abs(a - c)
       const pc = Math.abs(a + b - 2 * c)
       const pred =
-        f === 1 ? a : f === 2 ? b : f === 3 ? (a + b) >> 1 : f === 4 ? (pa <= pb && pa <= pc ? a : pb <= pc ? b : c) : 0
+        f === 1
+          ? a
+          : f === 2
+            ? b
+            : f === 3
+              ? (a + b) >> 1
+              : f === 4
+                ? pa <= pb && pa <= pc
+                  ? a
+                  : pb <= pc
+                    ? b
+                    : c
+                : 0
       cur[i] = (line[i]! + pred) & 255
     }
     for (let x = 0; x < w; x++) {
@@ -226,7 +250,7 @@ function decodePng(buf: Uint8Array): Pixels {
 }
 
 const hex = (r: number, g: number, b: number) =>
-  "#" + [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("")
+  '#' + [r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')
 
 // 1 cell = 1 pixel wide and 2 pixels tall, which is square on a typical terminal.
 type Cell = { ch: string; fg?: string; bg?: string }
@@ -239,7 +263,8 @@ function toCells(px: Pixels, bg: [number, number, number] | null): Cell[][] {
     const o = (y * px.w + x) * 4
     const a = px.rgba[o + 3]!
     if (a < (bg ? 16 : 128)) return undefined
-    const mix = (i: number) => (bg ? Math.round((px.rgba[o + i]! * a + bg[i]! * (255 - a)) / 255) : px.rgba[o + i]!)
+    const mix = (i: number) =>
+      bg ? Math.round((px.rgba[o + i]! * a + bg[i]! * (255 - a)) / 255) : px.rgba[o + i]!
     return hex(mix(0), mix(1), mix(2))
   }
   for (let y = 0; y + 1 < px.h; y += 2) {
@@ -247,10 +272,10 @@ function toCells(px: Pixels, bg: [number, number, number] | null): Cell[][] {
     for (let x = 0; x < px.w; x++) {
       const top = at(x, y)
       const bottom = at(x, y + 1)
-      if (top && bottom) row.push({ ch: "▀", fg: top, bg: bottom })
-      else if (top) row.push({ ch: "▀", fg: top })
-      else if (bottom) row.push({ ch: "▄", fg: bottom })
-      else row.push({ ch: " " })
+      if (top && bottom) row.push({ ch: '▀', fg: top, bg: bottom })
+      else if (top) row.push({ ch: '▀', fg: top })
+      else if (bottom) row.push({ ch: '▄', fg: bottom })
+      else row.push({ ch: ' ' })
     }
     rows.push(row)
   }
@@ -264,14 +289,14 @@ function toCells(px: Pixels, bg: [number, number, number] | null): Cell[][] {
 // Price history from GeckoTerminal's keyless API: the token's deepest pool, then its candles.
 // About 30 calls a minute on the free tier, so charts load for the selected token only, after the
 // selection settles, and each series is cached for a minute.
-const GT = "https://api.geckoterminal.com/api/v2/networks/solana"
+const GT = 'https://api.geckoterminal.com/api/v2/networks/solana'
 
 type Range = { label: string; path: string; aggregate: number; limit: number }
 const RANGES: Range[] = [
-  { label: "1h", path: "minute", aggregate: 1, limit: 60 },
-  { label: "24h", path: "minute", aggregate: 15, limit: 96 },
-  { label: "7d", path: "hour", aggregate: 4, limit: 42 },
-  { label: "30d", path: "day", aggregate: 1, limit: 30 },
+  { label: '1h', path: 'minute', aggregate: 1, limit: 60 },
+  { label: '24h', path: 'minute', aggregate: 15, limit: 96 },
+  { label: '7d', path: 'hour', aggregate: 4, limit: 42 },
+  { label: '30d', path: 'day', aggregate: 1, limit: 30 },
 ]
 
 type Series = { closes: number[]; volumes: number[] }
@@ -282,7 +307,7 @@ async function topPool(mint: string): Promise<string | null> {
   const body = (await res.json()) as { data?: Array<{ attributes?: Record<string, any> }> }
   const pools = (body.data ?? [])
     .map((p) => p.attributes ?? {})
-    .filter((a) => typeof a.address === "string")
+    .filter((a) => typeof a.address === 'string')
     .sort((a, b) => Number(b.reserve_in_usd ?? 0) - Number(a.reserve_in_usd ?? 0))
   return pools[0]?.address ?? null
 }
@@ -309,7 +334,7 @@ function brailleLine(values: number[], w: number, h: number): string[] {
   const dotsW = w * 2
   const dotsH = h * 4
   const grid = Array.from({ length: h }, () => Array.from({ length: w }, () => 0))
-  if (values.length < 2) return grid.map((r) => r.map(() => " ").join(""))
+  if (values.length < 2) return grid.map((r) => r.map(() => ' ').join(''))
   const lo = Math.min(...values)
   const hi = Math.max(...values)
   const span = hi - lo || 1
@@ -328,55 +353,56 @@ function brailleLine(values: number[], w: number, h: number): string[] {
     for (let yy = Math.min(from, y); yy <= Math.max(from, y); yy++) plot(x, yy)
     prevY = y
   }
-  return grid.map((r) => r.map((bits) => String.fromCharCode(0x2800 + bits)).join(""))
+  return grid.map((r) => r.map((bits) => String.fromCharCode(0x2800 + bits)).join(''))
 }
 
-const BARS = "\u2581\u2582\u2583\u2584\u2585\u2586\u2587\u2588"
+const BARS = '\u2581\u2582\u2583\u2584\u2585\u2586\u2587\u2588'
 function sparkline(values: number[], w: number): string {
-  if (values.length === 0) return ""
+  if (values.length === 0) return ''
   const lo = Math.min(...values)
   const hi = Math.max(...values)
   const span = hi - lo || 1
   return Array.from({ length: w }, (_, x) => {
     const v = values[Math.round((x / Math.max(1, w - 1)) * (values.length - 1))]!
     return BARS[Math.min(7, Math.floor(((v - lo) / span) * 8))]!
-  }).join("")
+  }).join('')
 }
 
 /* ---------------------------------------------------------------------------------------------- */
 /* formatting                                                                                      */
 /* ---------------------------------------------------------------------------------------------- */
 
-const pad = (s: string, n: number) => (s.length >= n ? s.slice(0, n) : s + " ".repeat(n - s.length))
-const lpad = (s: string, n: number) => (s.length >= n ? s.slice(0, n) : " ".repeat(n - s.length) + s)
+const pad = (s: string, n: number) => (s.length >= n ? s.slice(0, n) : s + ' '.repeat(n - s.length))
+const lpad = (s: string, n: number) =>
+  s.length >= n ? s.slice(0, n) : ' '.repeat(n - s.length) + s
 const price = (p: number | null) =>
-  p === null ? "-" : p >= 1 ? `$${p.toFixed(2)}` : `$${p.toPrecision(3)}`
+  p === null ? '-' : p >= 1 ? `$${p.toFixed(2)}` : `$${p.toPrecision(3)}`
 // Compact so a 7425% move fits the column instead of losing its sign or its % sign.
 const pct = (c: number | null) => {
-  if (c === null) return "-"
-  const sign = c >= 0 ? "+" : "-"
+  if (c === null) return '-'
+  const sign = c >= 0 ? '+' : '-'
   const a = Math.abs(c)
   const body = a >= 1000 ? `${(a / 1000).toFixed(1)}K` : a >= 100 ? a.toFixed(0) : a.toFixed(2)
   return `${sign}${body}%`
 }
 const compact = (v: number | null, dollar = true) => {
-  if (v === null) return "-"
-  const [d, s] = v >= 1e9 ? [1e9, "B"] : v >= 1e6 ? [1e6, "M"] : v >= 1e3 ? [1e3, "K"] : [1, ""]
-  return `${dollar ? "$" : ""}${(v / d).toFixed(v >= 1e3 ? 1 : 0)}${s}`
+  if (v === null) return '-'
+  const [d, s] = v >= 1e9 ? [1e9, 'B'] : v >= 1e6 ? [1e6, 'M'] : v >= 1e3 ? [1e3, 'K'] : [1, '']
+  return `${dollar ? '$' : ''}${(v / d).toFixed(v >= 1e3 ? 1 : 0)}${s}`
 }
 const short = (mint: string) => `${mint.slice(0, 4)}...${mint.slice(-4)}`
 
 type SortKey = { label: string; get: (t: Token) => number | null }
 const SORTS: SortKey[] = [
-  { label: "volume 24h", get: (t) => t.volume24h },
-  { label: "change 5m", get: (t) => t.change5m },
-  { label: "change 1h", get: (t) => t.change1h },
-  { label: "change 24h", get: (t) => t.change24h },
-  { label: "market cap", get: (t) => t.mcap },
-  { label: "liquidity", get: (t) => t.liquidity },
-  { label: "holders", get: (t) => t.holders },
-  { label: "organic score", get: (t) => t.organic },
-  { label: "traders 1h", get: (t) => t.traders1h },
+  { label: 'volume 24h', get: (t) => t.volume24h },
+  { label: 'change 5m', get: (t) => t.change5m },
+  { label: 'change 1h', get: (t) => t.change1h },
+  { label: 'change 24h', get: (t) => t.change24h },
+  { label: 'market cap', get: (t) => t.mcap },
+  { label: 'liquidity', get: (t) => t.liquidity },
+  { label: 'holders', get: (t) => t.holders },
+  { label: 'organic score', get: (t) => t.organic },
+  { label: 'traders 1h', get: (t) => t.traders1h },
 ]
 
 /* ---------------------------------------------------------------------------------------------- */
@@ -384,7 +410,9 @@ const SORTS: SortKey[] = [
 /* ---------------------------------------------------------------------------------------------- */
 
 function createModel(api: TuiPluginApi, options: Options) {
-  const [watchMints, setWatchMints] = createSignal<string[]>(api.kv.get<string[]>(WATCH_KEY, DEFAULT_WATCHLIST))
+  const [watchMints, setWatchMints] = createSignal<string[]>(
+    api.kv.get<string[]>(WATCH_KEY, DEFAULT_WATCHLIST),
+  )
   const [watchlist, setWatchlist] = createSignal<Token[]>([])
   const [list, setList] = createSignal<Token[]>([])
   const [source, setSource] = createSignal(0)
@@ -401,8 +429,9 @@ function createModel(api: TuiPluginApi, options: Options) {
   const logo = (url: string | null, size: number): Cell[][] | null | undefined => {
     if (!url) return null
     const back = api.theme.current?.background?.toInts()
-    const bg = back && back[3] >= 128 ? ([back[0], back[1], back[2]] as [number, number, number]) : null
-    const key = `${size}:${bg ?? "none"}:${url}`
+    const bg =
+      back && back[3] >= 128 ? ([back[0], back[1], back[2]] as [number, number, number]) : null
+    const key = `${size}:${bg ?? 'none'}:${url}`
     const have = logos().get(key)
     if (have !== undefined || pending.has(key)) return have
     pending.add(key)
@@ -412,7 +441,9 @@ function createModel(api: TuiPluginApi, options: Options) {
     const source = ipfs ? `https://ipfs.filebase.io/ipfs/${ipfs[1]}` : url
     const proxied = `https://wsrv.nl/?url=${encodeURIComponent(source)}&w=${size}&h=${size}&fit=cover&output=png`
     void fetch(proxied)
-      .then(async (r) => (r.ok ? toCells(decodePng(new Uint8Array(await r.arrayBuffer())), bg) : null))
+      .then(async (r) =>
+        r.ok ? toCells(decodePng(new Uint8Array(await r.arrayBuffer())), bg) : null,
+      )
       .catch(() => null)
       .then((cells) => {
         pending.delete(key)
@@ -432,11 +463,15 @@ function createModel(api: TuiPluginApi, options: Options) {
     const have = series().get(key)
     if ((have && Date.now() - have.at < maxAgeMs) || loadingSeries.has(key)) return have
     loadingSeries.add(key)
-    if (!pools.has(mint)) pools.set(mint, topPool(mint).catch(() => null))
+    if (!pools.has(mint))
+      pools.set(
+        mint,
+        topPool(mint).catch(() => null),
+      )
     void pools
       .get(mint)!
       .then(async (pool) => {
-        if (!pool) return { data: null, error: "no pool with a price history" }
+        if (!pool) return { data: null, error: 'no pool with a price history' }
         return { data: await candles(pool, RANGES[range]!), error: null }
       })
       .catch((e) => ({ data: null, error: e instanceof Error ? e.message : String(e) }))
@@ -449,7 +484,7 @@ function createModel(api: TuiPluginApi, options: Options) {
 
   const listUrl = () => {
     const s = SOURCES[source()]!
-    const i = s.interval ? `/${INTERVALS[interval()]}` : ""
+    const i = s.interval ? `/${INTERVALS[interval()]}` : ''
     return `${JUP}/${s.path}${i}?limit=${options.limit}`
   }
 
@@ -457,7 +492,7 @@ function createModel(api: TuiPluginApi, options: Options) {
     try {
       const mints = watchMints()
       const [w, l] = await Promise.all([
-        mints.length ? getTokens(`${JUP}/search?query=${mints.join(",")}`) : Promise.resolve([]),
+        mints.length ? getTokens(`${JUP}/search?query=${mints.join(',')}`) : Promise.resolve([]),
         getTokens(listUrl()),
       ])
       const byMint = new Map(w.map((t) => [t.mint, t]))
@@ -467,7 +502,9 @@ function createModel(api: TuiPluginApi, options: Options) {
       setError(null)
     } catch (e) {
       // The last good rows stay on screen, and the reason they are not moving is said.
-      setError(`${e instanceof Error ? e.message : String(e)}, retrying in ${options.refreshMs / 1000}s`)
+      setError(
+        `${e instanceof Error ? e.message : String(e)}, retrying in ${options.refreshMs / 1000}s`,
+      )
     }
   }
   // A new list or watchlist is fetched at once rather than on the next poll.
@@ -476,7 +513,9 @@ function createModel(api: TuiPluginApi, options: Options) {
   const tick = setInterval(() => setNow(Date.now()), 1_000)
 
   const toggleWatch = (mint: string) => {
-    const next = watchMints().includes(mint) ? watchMints().filter((m) => m !== mint) : [...watchMints(), mint]
+    const next = watchMints().includes(mint)
+      ? watchMints().filter((m) => m !== mint)
+      : [...watchMints(), mint]
     setWatchMints(next)
     api.kv.set(WATCH_KEY, next)
     return next.includes(mint)
@@ -484,7 +523,7 @@ function createModel(api: TuiPluginApi, options: Options) {
 
   const age = () => {
     const at = updatedAt()
-    return at === null ? "loading" : `${Math.max(0, Math.round((now() - at) / 1000))}s ago`
+    return at === null ? 'loading' : `${Math.max(0, Math.round((now() - at) / 1000))}s ago`
   }
   const stop = () => {
     clearInterval(poll)
@@ -523,12 +562,20 @@ function Logo(props: { model: Model; token: Token; size: number }) {
     <box flexDirection="column" width={props.size} height={props.size / 2}>
       <Show
         when={cells()}
-        fallback={<text fg={theme()?.accent}>{pad(props.token.symbol.slice(0, 1), props.size)}</text>}
+        fallback={
+          <text fg={theme()?.accent}>{pad(props.token.symbol.slice(0, 1), props.size)}</text>
+        }
       >
         <For each={cells()!}>
           {(row) => (
             <box flexDirection="row" height={1}>
-              <For each={row}>{(c) => <text fg={c.fg} bg={c.bg}>{c.ch}</text>}</For>
+              <For each={row}>
+                {(c) => (
+                  <text fg={c.fg} bg={c.bg}>
+                    {c.ch}
+                  </text>
+                )}
+              </For>
             </box>
           )}
         </For>
@@ -567,7 +614,11 @@ function Button(props: { model: Model; label: string; active?: boolean; onPress:
 }
 
 const colourOf = (api: TuiPluginApi, c: number | null) =>
-  c === null ? api.theme.current?.textMuted : c >= 0 ? api.theme.current?.success : api.theme.current?.error
+  c === null
+    ? api.theme.current?.textMuted
+    : c >= 0
+      ? api.theme.current?.success
+      : api.theme.current?.error
 
 function Sidebar(props: { model: Model; open: () => void; openSetup: () => void }) {
   const api = props.model.api
@@ -620,7 +671,12 @@ function Sidebar(props: { model: Model; open: () => void; openSetup: () => void 
   )
 }
 
-function Chart(props: { model: Model; token: Token; range: number; setRange: (r: number) => void }) {
+function Chart(props: {
+  model: Model
+  token: Token
+  range: number
+  setRange: (r: number) => void
+}) {
   const api = props.model.api
   const theme = () => api.theme.current
   // Waits for the selection to settle before asking, so scrolling a list is not 30 requests.
@@ -645,16 +701,21 @@ function Chart(props: { model: Model; token: Token; range: number; setRange: (r:
       <box flexDirection="row" height={1}>
         <For each={RANGES}>
           {(r, i) => (
-            <Button model={props.model} label={r.label} active={i() === props.range} onPress={() => props.setRange(i())} />
+            <Button
+              model={props.model}
+              label={r.label}
+              active={i() === props.range}
+              onPress={() => props.setRange(i())}
+            />
           )}
         </For>
-        <text fg={colourOf(api, change())}>{data() ? ` ${pct(change())}` : ""}</text>
+        <text fg={colourOf(api, change())}>{data() ? ` ${pct(change())}` : ''}</text>
       </box>
       <Show
         when={data() && data()!.closes.length > 1}
         fallback={
           <text fg={theme()?.textMuted}>
-            {entry()?.error ? `no chart: ${entry()!.error}` : "loading chart"}
+            {entry()?.error ? `no chart: ${entry()!.error}` : 'loading chart'}
           </text>
         }
       >
@@ -694,7 +755,7 @@ function Detail(props: {
   const api = props.model.api
   const theme = () => api.theme.current
   const yes = (v: boolean | null, good: string, bad: string) =>
-    v === null ? "unknown" : v ? good : bad
+    v === null ? 'unknown' : v ? good : bad
   return (
     <box flexDirection="column" width={42} paddingLeft={2} gap={0}>
       <Show when={props.token} fallback={<text fg={theme()?.textMuted}>no token selected</text>}>
@@ -716,7 +777,7 @@ function Detail(props: {
               <Button model={props.model} label="Check" onPress={() => props.actions.check(t())} />
               <Button
                 model={props.model}
-                label={props.model.watchMints().includes(t().mint) ? "Unwatch" : "Watch"}
+                label={props.model.watchMints().includes(t().mint) ? 'Unwatch' : 'Watch'}
                 onPress={() => props.actions.watch(t())}
               />
               <Button model={props.model} label="Copy" onPress={() => props.actions.copy(t())} />
@@ -738,22 +799,28 @@ function Detail(props: {
             </text>
             <text fg={theme()?.text}>{`liquidity ${compact(t().liquidity)}`}</text>
             <text fg={t().mintAuthorityOff === false ? theme()?.warning : theme()?.text}>
-              {`mint authority ${yes(t().mintAuthorityOff, "disabled", "LIVE")}`}
+              {`mint authority ${yes(t().mintAuthorityOff, 'disabled', 'LIVE')}`}
             </text>
             <text fg={t().freezeAuthorityOff === false ? theme()?.warning : theme()?.text}>
-              {`freeze authority ${yes(t().freezeAuthorityOff, "disabled", "LIVE")}`}
+              {`freeze authority ${yes(t().freezeAuthorityOff, 'disabled', 'LIVE')}`}
             </text>
             <text fg={theme()?.text}>
-              {`top holders ${t().topHoldersPct === null ? "-" : t().topHoldersPct!.toFixed(1) + "%"}, dev ${t().devPct === null ? "-" : t().devPct!.toFixed(2) + "%"}`}
+              {`top holders ${t().topHoldersPct === null ? '-' : t().topHoldersPct!.toFixed(1) + '%'}, dev ${t().devPct === null ? '-' : t().devPct!.toFixed(2) + '%'}`}
             </text>
             <text fg={theme()?.text}>
-              {`organic ${t().organic === null ? "-" : t().organic!.toFixed(0)} ${t().organicLabel ?? ""}${t().verified ? ", verified" : ""}`}
+              {`organic ${t().organic === null ? '-' : t().organic!.toFixed(0)} ${t().organicLabel ?? ''}${t().verified ? ', verified' : ''}`}
             </text>
             <text fg={theme()?.textMuted} wrapMode="word">
-              {t().tags.slice(0, 6).join(", ")}
+              {t().tags.slice(0, 6).join(', ')}
             </text>
-            <text fg={props.model.watchMints().includes(t().mint) ? theme()?.success : theme()?.textMuted}>
-              {props.model.watchMints().includes(t().mint) ? "on your watchlist" : "w to add to watchlist"}
+            <text
+              fg={
+                props.model.watchMints().includes(t().mint) ? theme()?.success : theme()?.textMuted
+              }
+            >
+              {props.model.watchMints().includes(t().mint)
+                ? 'on your watchlist'
+                : 'w to add to watchlist'}
             </text>
           </>
         )}
@@ -770,7 +837,7 @@ function Page(props: { model: Model; back: () => void }) {
   const [desc, setDesc] = createSignal(true)
   const [selected, setSelected] = createSignal(0)
   const [offset, setOffset] = createSignal(0)
-  const [search, setSearch] = createSignal("")
+  const [search, setSearch] = createSignal('')
   const [auditedOnly, setAuditedOnly] = createSignal(false)
   const [range, setRange] = createSignal(1)
 
@@ -785,7 +852,9 @@ function Page(props: { model: Model; back: () => void }) {
     return model
       .list()
       .filter((t) => !q || t.symbol.toLowerCase().includes(q) || t.name.toLowerCase().includes(q))
-      .filter((t) => !auditedOnly() || (t.mintAuthorityOff === true && t.freezeAuthorityOff === true))
+      .filter(
+        (t) => !auditedOnly() || (t.mintAuthorityOff === true && t.freezeAuthorityOff === true),
+      )
       .sort((a, b) => {
         const x = key.get(a)
         const y = key.get(b)
@@ -814,7 +883,9 @@ function Page(props: { model: Model; back: () => void }) {
   // the detail pane until the selection moves.
   const focused = () => {
     const m = model.focus()
-    return m ? (rows().find((t) => t.mint === m) ?? model.watchlist().find((t) => t.mint === m)) : undefined
+    return m
+      ? (rows().find((t) => t.mint === m) ?? model.watchlist().find((t) => t.mint === m))
+      : undefined
   }
   createEffect(
     on(rows, (list) => {
@@ -832,27 +903,32 @@ function Page(props: { model: Model; back: () => void }) {
     props.back()
     try {
       await api.client.tui.appendPrompt({ text })
-      api.ui.toast({ variant: "info", message: "Added to your prompt. Review it, then press Enter." })
+      api.ui.toast({
+        variant: 'info',
+        message: 'Added to your prompt. Review it, then press Enter.',
+      })
     } catch (e) {
       api.ui.toast({
-        variant: "error",
+        variant: 'error',
         message: `Could not fill the prompt (${e instanceof Error ? e.message : String(e)}). Nothing was sent.`,
       })
     }
   }
 
-  const askAmount = (side: "buy" | "sell", t: Token) => {
+  const askAmount = (side: 'buy' | 'sell', t: Token) => {
     api.ui.dialog.replace(() => (
       <api.ui.DialogPrompt
-        title={side === "buy" ? `Buy ${t.symbol}` : `Sell ${t.symbol}`}
-        placeholder={side === "buy" ? "amount of SOL to spend, e.g. 0.1" : "amount to sell, or 'all'"}
+        title={side === 'buy' ? `Buy ${t.symbol}` : `Sell ${t.symbol}`}
+        placeholder={
+          side === 'buy' ? 'amount of SOL to spend, e.g. 0.1' : "amount to sell, or 'all'"
+        }
         onCancel={() => api.ui.dialog.clear()}
         onConfirm={(value) => {
           api.ui.dialog.clear()
           const amount = value.trim()
           if (!amount) return
           void handOff(
-            side === "buy"
+            side === 'buy'
               ? `Buy ${amount} SOL of ${t.symbol} (mint ${t.mint}). Run Agon check_trade on it first and show me the verdict with its reasons. Build nothing unless it passes, and let me sign.`
               : `Sell ${amount} of ${t.symbol} (mint ${t.mint}) for SOL. Run Agon check_trade on it first and show me the verdict with its reasons. Build nothing unless it passes, and let me sign.`,
           )
@@ -878,21 +954,26 @@ function Page(props: { model: Model; back: () => void }) {
   }
 
   const actions: Actions = {
-    buy: (t) => askAmount("buy", t),
-    sell: (t) => askAmount("sell", t),
+    buy: (t) => askAmount('buy', t),
+    sell: (t) => askAmount('sell', t),
     check: (t) =>
       void handOff(
         `Run Agon check_trade for a buy of ${t.symbol} (mint ${t.mint}) at my usual size and explain the verdict. Do not trade.`,
       ),
     watch: (t) => {
       const on = model.toggleWatch(t.mint)
-      api.ui.toast({ variant: "info", message: `${t.symbol} ${on ? "added to" : "removed from"} your watchlist` })
+      api.ui.toast({
+        variant: 'info',
+        message: `${t.symbol} ${on ? 'added to' : 'removed from'} your watchlist`,
+      })
     },
     copy: (t) => {
       const ok = api.renderer.copyToClipboardOSC52(t.mint)
       api.ui.toast({
-        variant: ok ? "success" : "warning",
-        message: ok ? `Copied ${t.symbol} mint` : "This terminal does not accept clipboard writes (OSC 52)",
+        variant: ok ? 'success' : 'warning',
+        message: ok
+          ? `Copied ${t.symbol} mint`
+          : 'This terminal does not accept clipboard writes (OSC 52)',
       })
     },
   }
@@ -931,43 +1012,43 @@ function Page(props: { model: Model; back: () => void }) {
     if (api.ui.dialog.open) return
     const k = key.name
     const t = current()
-    if (k === "escape" || k === "q") props.back()
-    else if (k === "down" || k === "j") move(selected() + 1)
-    else if (k === "up" || k === "k") move(selected() - 1)
-    else if (k === "pagedown") move(selected() + visible())
-    else if (k === "pageup") move(selected() - visible())
-    else if (k === "home" || k === "g") move(0)
-    else if (k === "end") move(rows().length - 1)
-    else if (k === "s") nextSort()
-    else if (k === "r") reverse()
-    else if (k === "t") nextSource()
-    else if (k === "i") nextInterval()
-    else if (k === "v") setRange((range() + 1) % RANGES.length)
-    else if (k === "a") toggleAudited()
-    else if (k === "/") askSearch()
+    if (k === 'escape' || k === 'q') props.back()
+    else if (k === 'down' || k === 'j') move(selected() + 1)
+    else if (k === 'up' || k === 'k') move(selected() - 1)
+    else if (k === 'pagedown') move(selected() + visible())
+    else if (k === 'pageup') move(selected() - visible())
+    else if (k === 'home' || k === 'g') move(0)
+    else if (k === 'end') move(rows().length - 1)
+    else if (k === 's') nextSort()
+    else if (k === 'r') reverse()
+    else if (k === 't') nextSource()
+    else if (k === 'i') nextInterval()
+    else if (k === 'v') setRange((range() + 1) % RANGES.length)
+    else if (k === 'a') toggleAudited()
+    else if (k === '/') askSearch()
     else if (!t) return
-    else if (k === "w") actions.watch(t)
-    else if (k === "y") actions.copy(t)
-    else if (k === "b") actions.buy(t)
-    else if (k === "x") actions.sell(t)
-    else if (k === "c") actions.check(t)
+    else if (k === 'w') actions.watch(t)
+    else if (k === 'y') actions.copy(t)
+    else if (k === 'b') actions.buy(t)
+    else if (k === 'x') actions.sell(t)
+    else if (k === 'c') actions.check(t)
   })
 
   const window = () => rows().slice(offset(), offset() + visible())
   const src = () => SOURCES[model.source()]!
   // Column titles: label, width, and the SORTS index a click sorts by (null for none).
   const columns: [string, number, number | null][] = [
-    ["", 5, null],
-    ["token", 10, null],
-    ["price", 11, null],
-    ["5m", 9, 1],
-    ["1h", 9, 2],
-    ["24h", 9, 3],
-    ["vol 24h", 10, 0],
-    ["liq", 10, 5],
-    ["mcap", 10, 4],
-    ["holders", 9, 6],
-    ["org", 5, 7],
+    ['', 5, null],
+    ['token', 10, null],
+    ['price', 11, null],
+    ['5m', 9, 1],
+    ['1h', 9, 2],
+    ['24h', 9, 3],
+    ['vol 24h', 10, 0],
+    ['liq', 10, 5],
+    ['mcap', 10, 4],
+    ['holders', 9, 6],
+    ['org', 5, 7],
   ]
 
   return (
@@ -978,17 +1059,26 @@ function Page(props: { model: Model; back: () => void }) {
         </text>
         <Button model={model} label={src().label} active onPress={nextSource} />
         <Show when={src().interval}>
-          <Button model={model} label={INTERVALS[model.interval()]!} active onPress={nextInterval} />
+          <Button
+            model={model}
+            label={INTERVALS[model.interval()]!}
+            active
+            onPress={nextInterval}
+          />
         </Show>
         <text fg={theme()?.textMuted}>{`${rows().length} tokens, ${model.age()}`}</text>
       </box>
       <box flexDirection="row" gap={1} height={1}>
         <Button model={model} label={`sort: ${SORTS[sort()]!.label}`} onPress={nextSort} />
-        <Button model={model} label={desc() ? "high to low" : "low to high"} onPress={reverse} />
-        <Button model={model} label={search() ? `search: "${search()}"` : "search"} onPress={askSearch} />
+        <Button model={model} label={desc() ? 'high to low' : 'low to high'} onPress={reverse} />
         <Button
           model={model}
-          label={auditedOnly() ? "authorities disabled only" : "all tokens"}
+          label={search() ? `search: "${search()}"` : 'search'}
+          onPress={askSearch}
+        />
+        <Button
+          model={model}
+          label={auditedOnly() ? 'authorities disabled only' : 'all tokens'}
           active={auditedOnly()}
           onPress={toggleAudited}
         />
@@ -999,15 +1089,15 @@ function Page(props: { model: Model; back: () => void }) {
           flexGrow={1}
           onMouseScroll={(e) => {
             const d = e.scroll?.direction
-            if (d === "down") move(selected() + 1)
-            else if (d === "up") move(selected() - 1)
+            if (d === 'down') move(selected() + 1)
+            else if (d === 'up') move(selected() - 1)
           }}
         >
           <box flexDirection="row" height={1}>
             <For each={columns}>
               {([label, width, key]) => {
                 const active = () => key !== null && sort() === key
-                const text = () => (active() ? (desc() ? "v " : "^ ") : "") + label
+                const text = () => (active() ? (desc() ? 'v ' : '^ ') : '') + label
                 return (
                   <box
                     width={width}
@@ -1017,7 +1107,7 @@ function Page(props: { model: Model; back: () => void }) {
                     }}
                   >
                     <text fg={active() ? theme()?.primary : theme()?.textMuted} wrapMode="none">
-                      {label === "token" ? pad(text(), width) : lpad(text(), width)}
+                      {label === 'token' ? pad(text(), width) : lpad(text(), width)}
                     </text>
                   </box>
                 )
@@ -1049,24 +1139,36 @@ function Page(props: { model: Model; back: () => void }) {
                 >
                   <Logo model={model} token={t} size={4} />
                   <text fg={base()} wrapMode="none">
-                    {pad((watched() ? "*" : "") + t.symbol, 10) + lpad(price(t.price), 11)}
+                    {pad((watched() ? '*' : '') + t.symbol, 10) + lpad(price(t.price), 11)}
                   </text>
-                  <text fg={colourOf(api, t.change5m)} wrapMode="none">{lpad(pct(t.change5m), 8)}</text>
-                  <text fg={colourOf(api, t.change1h)} wrapMode="none">{lpad(pct(t.change1h), 8)}</text>
-                  <text fg={colourOf(api, t.change24h)} wrapMode="none">{lpad(pct(t.change24h), 8)}</text>
+                  <text fg={colourOf(api, t.change5m)} wrapMode="none">
+                    {lpad(pct(t.change5m), 8)}
+                  </text>
+                  <text fg={colourOf(api, t.change1h)} wrapMode="none">
+                    {lpad(pct(t.change1h), 8)}
+                  </text>
+                  <text fg={colourOf(api, t.change24h)} wrapMode="none">
+                    {lpad(pct(t.change24h), 8)}
+                  </text>
                   <text fg={base()} wrapMode="none">
                     {lpad(compact(t.volume24h), 9) +
                       lpad(compact(t.liquidity), 10) +
                       lpad(compact(t.mcap), 10) +
                       lpad(compact(t.holders, false), 9) +
-                      lpad(t.organic === null ? "-" : t.organic.toFixed(0), 5)}
+                      lpad(t.organic === null ? '-' : t.organic.toFixed(0), 5)}
                   </text>
                 </box>
               )
             }}
           </For>
         </box>
-        <Detail model={model} token={current()} range={range()} setRange={setRange} actions={actions} />
+        <Detail
+          model={model}
+          token={current()}
+          range={range()}
+          setRange={setRange}
+          actions={actions}
+        />
       </box>
       <Show when={model.error()}>
         <text fg={theme()?.warning}>{model.error()}</text>
@@ -1082,63 +1184,83 @@ function Page(props: { model: Model; back: () => void }) {
 /* setup                                                                                           */
 /* ---------------------------------------------------------------------------------------------- */
 
-const SETUP_ROUTE = "agon.setup"
-const WALLET_KEY = "agon.setup.wallet"
+const SETUP_ROUTE = 'agon.setup'
+const WALLET_KEY = 'agon.setup.wallet'
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/
 
 // 1 MCP tool call over Streamable HTTP. The server answers as JSON or as 1 server-sent event.
-async function mcpCall(base: string, name: string, args: object): Promise<{ ok: boolean; text: string }> {
+async function mcpCall(
+  base: string,
+  name: string,
+  args: object,
+): Promise<{ ok: boolean; text: string }> {
   const res = await fetch(`${base}/mcp`, {
-    method: "POST",
-    headers: { "content-type": "application/json", accept: "application/json, text/event-stream" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name, arguments: args } }),
+    method: 'POST',
+    headers: { 'content-type': 'application/json', accept: 'application/json, text/event-stream' },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: { name, arguments: args },
+    }),
     signal: AbortSignal.timeout(20_000),
   })
   if (!res.ok) throw new Error(`the Agon server at ${base} answered ${res.status}`)
   const raw = await res.text()
-  const data = raw.trimStart().startsWith("{") ? raw : raw.split("\n").find((l) => l.startsWith("data:"))?.slice(5)
+  const data = raw.trimStart().startsWith('{')
+    ? raw
+    : raw
+        .split('\n')
+        .find((l) => l.startsWith('data:'))
+        ?.slice(5)
   if (!data) throw new Error(`the Agon server at ${base} sent an answer with no body`)
-  const json = JSON.parse(data) as { error?: { message: string }; result?: { isError?: boolean; content?: { text?: string }[] } }
+  const json = JSON.parse(data) as {
+    error?: { message: string }
+    result?: { isError?: boolean; content?: { text?: string }[] }
+  }
   if (json.error) throw new Error(json.error.message)
-  return { ok: !json.result?.isError, text: json.result?.content?.[0]?.text ?? "" }
+  return { ok: !json.result?.isError, text: json.result?.content?.[0]?.text ?? '' }
 }
 
 // Base units to a decimal string by integer arithmetic, for the 2 mints whose decimals we pin.
 const DECIMALS: Record<string, [number, string]> = {
-  So11111111111111111111111111111111111111112: [9, "SOL"],
-  EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: [6, "USDC"],
+  So11111111111111111111111111111111111111112: [9, 'SOL'],
+  EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: [6, 'USDC'],
 }
 function units(amount: string, mint: string): string {
   const d = DECIMALS[mint]
   if (!d || !/^\d+$/.test(amount)) return `${amount} base units`
-  const padded = amount.padStart(d[0] + 1, "0")
+  const padded = amount.padStart(d[0] + 1, '0')
   const whole = padded.slice(0, -d[0])
-  const frac = padded.slice(-d[0]).replace(/0+$/, "")
-  return `${whole}${frac ? "." + frac : ""} ${d[1]}`
+  const frac = padded.slice(-d[0]).replace(/0+$/, '')
+  return `${whole}${frac ? '.' + frac : ''} ${d[1]}`
 }
 
 type Rule = {
   vault: string
   effectiveRemaining: string
   rollingWorstCase: string
-  swigRole: { authority: string; tokenRecurringLimit: { mint: string; amount: string; windowSlots: number } }
+  swigRole: {
+    authority: string
+    tokenRecurringLimit: { mint: string; amount: string; windowSlots: number }
+  }
 }
 
 function openInBrowser(url: string) {
   const [cmd, args] =
-    process.platform === "win32"
-      ? ["rundll32", ["url.dll,FileProtocolHandler", url]]
-      : [process.platform === "darwin" ? "open" : "xdg-open", [url]]
-  const child = spawn(cmd, args as string[], { detached: true, stdio: "ignore" })
-  child.on("error", () => {})
+    process.platform === 'win32'
+      ? ['rundll32', ['url.dll,FileProtocolHandler', url]]
+      : [process.platform === 'darwin' ? 'open' : 'xdg-open', [url]]
+  const child = spawn(cmd, args as string[], { detached: true, stdio: 'ignore' })
+  child.on('error', () => {})
   child.unref()
 }
 
 function Setup(props: { model: Model; options: Options; back: () => void }) {
   const api = props.model.api
   const theme = () => api.theme.current
-  const [wallet, setWallet] = createSignal(api.kv.get<string>(WALLET_KEY, ""))
-  const [server, setServer] = createSignal<"checking" | "up" | string>("checking")
+  const [wallet, setWallet] = createSignal(api.kv.get<string>(WALLET_KEY, ''))
+  const [server, setServer] = createSignal<'checking' | 'up' | string>('checking')
   const [network, setNetwork] = createSignal<string | null>(null)
   const [rules, setRules] = createSignal<Rule[] | null>(null)
   const [refusal, setRefusal] = createSignal<string | null>(null)
@@ -1148,11 +1270,13 @@ function Setup(props: { model: Model; options: Options; back: () => void }) {
   let run = 0
   const refresh = async () => {
     const mine = ++run
-    setServer("checking")
+    setServer('checking')
     let up: string
     try {
-      const res = await fetch(`${props.options.mcpUrl}/health`, { signal: AbortSignal.timeout(5_000) })
-      up = res.ok ? "up" : `answered ${res.status}`
+      const res = await fetch(`${props.options.mcpUrl}/health`, {
+        signal: AbortSignal.timeout(5_000),
+      })
+      up = res.ok ? 'up' : `answered ${res.status}`
     } catch (e) {
       up = e instanceof Error ? e.message : String(e)
     }
@@ -1161,11 +1285,11 @@ function Setup(props: { model: Model; options: Options; back: () => void }) {
     setRules(null)
     setRefusal(null)
     setNetwork(null)
-    if (up !== "up" || !wallet()) return
+    if (up !== 'up' || !wallet()) return
     try {
-      const r = await mcpCall(props.options.mcpUrl, "list_rules", { wallet: wallet() })
+      const r = await mcpCall(props.options.mcpUrl, 'list_rules', { wallet: wallet() })
       if (mine !== run) return
-      if (!r.ok) return setRefusal(r.text.split("\n")[0] ?? r.text)
+      if (!r.ok) return setRefusal(r.text.split('\n')[0] ?? r.text)
       const body = JSON.parse(r.text) as { network?: string; rules?: Rule[] }
       setNetwork(body.network ?? null)
       setRules(body.rules ?? [])
@@ -1189,7 +1313,7 @@ function Setup(props: { model: Model; options: Options; back: () => void }) {
           const v = value.trim()
           if (v && !BASE58.test(v)) {
             api.ui.toast({
-              variant: "error",
+              variant: 'error',
               message: `"${v.slice(0, 12)}" is not a Solana address: it must be 32 to 44 base58 characters. Nothing was saved.`,
             })
             return
@@ -1203,16 +1327,22 @@ function Setup(props: { model: Model; options: Options; back: () => void }) {
   }
   const openArm = () => {
     openInBrowser(props.options.armUrl)
-    api.ui.toast({ variant: "info", message: `Opening ${props.options.armUrl}. Your wallet signs there, not here.` })
+    api.ui.toast({
+      variant: 'info',
+      message: `Opening ${props.options.armUrl}. Your wallet signs there, not here.`,
+    })
   }
   const onboard = async () => {
     props.back()
     try {
-      await api.client.tui.appendPrompt({ text: "Onboard me with Agon." })
-      api.ui.toast({ variant: "info", message: "Added to your prompt. Review it, then press Enter." })
+      await api.client.tui.appendPrompt({ text: 'Onboard me with Agon.' })
+      api.ui.toast({
+        variant: 'info',
+        message: 'Added to your prompt. Review it, then press Enter.',
+      })
     } catch (e) {
       api.ui.toast({
-        variant: "error",
+        variant: 'error',
         message: `Could not fill the prompt (${e instanceof Error ? e.message : String(e)}). Nothing was sent.`,
       })
     }
@@ -1221,15 +1351,16 @@ function Setup(props: { model: Model; options: Options; back: () => void }) {
   useKeyboard((key) => {
     if (api.ui.dialog.open) return
     const k = key.name
-    if (k === "escape" || k === "q") props.back()
-    else if (k === "w") askWallet()
-    else if (k === "r") void refresh()
-    else if (k === "o") openArm()
-    else if (k === "p") void onboard()
+    if (k === 'escape' || k === 'q') props.back()
+    else if (k === 'w') askWallet()
+    else if (k === 'r') void refresh()
+    else if (k === 'o') openArm()
+    else if (k === 'p') void onboard()
   })
 
-  const mark = (ok: boolean | null) => (ok === null ? "[ ]" : ok ? "[x]" : "[!]")
-  const colour = (ok: boolean | null) => (ok === null ? theme()?.textMuted : ok ? theme()?.success : theme()?.warning)
+  const mark = (ok: boolean | null) => (ok === null ? '[ ]' : ok ? '[x]' : '[!]')
+  const colour = (ok: boolean | null) =>
+    ok === null ? theme()?.textMuted : ok ? theme()?.success : theme()?.warning
   const Step = (p: { ok: boolean | null; title: string; detail: string }) => (
     <box flexDirection="column">
       <text fg={colour(p.ok)}>{`${mark(p.ok)} ${p.title}`}</text>
@@ -1245,15 +1376,17 @@ function Setup(props: { model: Model; options: Options; back: () => void }) {
         <text fg={theme()?.text}>
           <b>Agon setup</b>
         </text>
-        <text fg={theme()?.textMuted}>{network() ? `network: ${network()}` : "network: not read yet"}</text>
+        <text fg={theme()?.textMuted}>
+          {network() ? `network: ${network()}` : 'network: not read yet'}
+        </text>
       </box>
       <Step
-        ok={server() === "checking" ? null : server() === "up"}
+        ok={server() === 'checking' ? null : server() === 'up'}
         title="Agon server"
         detail={
-          server() === "up"
+          server() === 'up'
             ? `answering at ${props.options.mcpUrl}`
-            : server() === "checking"
+            : server() === 'checking'
               ? `checking ${props.options.mcpUrl}`
               : `not answering at ${props.options.mcpUrl} (${server()}). Start it with: docker compose up -d --build`
         }
@@ -1261,7 +1394,11 @@ function Setup(props: { model: Model; options: Options; back: () => void }) {
       <Step
         ok={wallet() ? true : null}
         title="Your wallet"
-        detail={wallet() ? `${wallet()} (public address only, stored in opencode)` : "not set. Press w or the button below"}
+        detail={
+          wallet()
+            ? `${wallet()} (public address only, stored in opencode)`
+            : 'not set. Press w or the button below'
+        }
       />
       <Step
         ok={rules() ? rules()!.length > 0 : refusal() ? false : null}
@@ -1270,9 +1407,9 @@ function Setup(props: { model: Model; options: Options; back: () => void }) {
           refusal()
             ? `not read: ${refusal()}`
             : !rules()
-              ? "needs the server and your wallet"
+              ? 'needs the server and your wallet'
               : rules()!.length === 0
-                ? "no agent role is armed on this wallet. Arm one on the web screen"
+                ? 'no agent role is armed on this wallet. Arm one on the web screen'
                 : `${rules()!.length} armed`
         }
       />
@@ -1281,9 +1418,15 @@ function Setup(props: { model: Model; options: Options; back: () => void }) {
           const lim = r.swigRole.tokenRecurringLimit
           return (
             <box flexDirection="column" paddingLeft={4}>
-              <text fg={theme()?.text}>{`vault ${short(r.vault)}   agent ${short(r.swigRole.authority)}`}</text>
-              <text fg={theme()?.text}>{`cap ${units(lim.amount, lim.mint)} per ${lim.windowSlots} slots`}</text>
-              <text fg={theme()?.success}>{`can spend now ${units(r.effectiveRemaining, lim.mint)}`}</text>
+              <text
+                fg={theme()?.text}
+              >{`vault ${short(r.vault)}   agent ${short(r.swigRole.authority)}`}</text>
+              <text
+                fg={theme()?.text}
+              >{`cap ${units(lim.amount, lim.mint)} per ${lim.windowSlots} slots`}</text>
+              <text
+                fg={theme()?.success}
+              >{`can spend now ${units(r.effectiveRemaining, lim.mint)}`}</text>
               <text fg={theme()?.textMuted}>
                 {`most that can go out across a window edge ${units(r.rollingWorstCase, lim.mint)}`}
               </text>
@@ -1298,7 +1441,9 @@ function Setup(props: { model: Model; options: Options; back: () => void }) {
         <Button model={props.model} label="r refresh" onPress={() => void refresh()} />
       </box>
       <text fg={theme()?.textMuted} wrapMode="word">
-        {"Arming, funding and revoking happen on the web screen, signed by your own wallet. This page only reads. esc back"}
+        {
+          'Arming, funding and revoking happen on the web screen, signed by your own wallet. This page only reads. esc back'
+        }
       </text>
     </box>
   )
@@ -1323,7 +1468,7 @@ const tui: TuiPlugin = async (api, rawOptions) => {
   api.lifecycle.onDispose(dispose)
 
   // Where to return to when the page closes: the route that was open when it was entered.
-  let previous: { name: string; params?: Record<string, unknown> } = { name: "home" }
+  let previous: { name: string; params?: Record<string, unknown> } = { name: 'home' }
   const open = () => {
     const cur = api.route.current as { name: string; params?: Record<string, unknown> }
     if (cur.name !== ROUTE && cur.name !== SETUP_ROUTE) previous = cur
@@ -1344,19 +1489,19 @@ const tui: TuiPlugin = async (api, rawOptions) => {
 
   api.command?.register(() => [
     {
-      title: "Agon discovery",
+      title: 'Agon discovery',
       value: ROUTE,
-      description: "Live tokens: trending, most traded, top organic, new",
-      category: "Agon",
-      slash: { name: "discover" },
+      description: 'Live tokens: trending, most traded, top organic, new',
+      category: 'Agon',
+      slash: { name: 'discover' },
       onSelect: open,
     },
     {
-      title: "Agon setup",
+      title: 'Agon setup',
       value: SETUP_ROUTE,
-      description: "Where onboarding stands: the Agon server, your wallet, your vault and cap",
-      category: "Agon",
-      slash: { name: "agon-setup" },
+      description: 'Where onboarding stands: the Agon server, your wallet, your vault and cap',
+      category: 'Agon',
+      slash: { name: 'agon-setup' },
       onSelect: openSetup,
     },
   ])
