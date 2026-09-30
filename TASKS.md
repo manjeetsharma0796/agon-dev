@@ -1182,6 +1182,18 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 - Owed by slice 1b: `docs/public/agent-setup.md` section 5 still tells the agent to make its own
   keypair. The line becomes "run `agon agent-key` and give the user only the line it prints" after
   T-C24 (in review) and T-C21 (claimed) merge, since both hold that file in their Touches
+- Evidence, slice 1b on Linux, the built command in a `node:22-bookworm-slim` container: with
+  gnome-keyring running as the Secret Service, exit 0, 1 line on stdout, 0 bytes on stderr, the same
+  44-character key on the second run. With no Secret Service, both in a default container and with
+  the syscall filter lifted as on a plain VM, exit 1, 0 lines on stdout, and the cause with the next
+  step on stderr. Not tested on macOS: no Mac was available, so the Keychain path is unverified
+- Finding 3, slice 1b: on Linux the keychain binding silently fell back to the kernel keyring when
+  no Secret Service was running, and that keyring lives in memory. Measured in a container with the
+  syscall filter lifted: the write succeeded, a new process read 64 bytes back, and a fresh container
+  read nothing, so after a restart `agentKey()` would quietly make a new key while the armed role
+  names the old one, stranding its fee SOL and breaking the agent without a word. The entry is now
+  pinned to the Secret Service on Linux (`keychainEntry` in keystore.ts), so such a machine refuses.
+  In a default container the fallback was already blocked (`PermissionDenied`)
 - Finding 2, slice 1b: web3.js's dependencies make Node print a `punycode` deprecation warning,
   2 lines on stderr, so an agent whose shell merges the streams got 3 lines, not the key. The
   command now turns deprecation warnings off before loading, and prints 1 line with the streams

@@ -23,8 +23,10 @@ export function runAgentKey(
         (/run again/.test(cause)
           ? ''
           : 'Tried to read the entry "agent-key" and, when it was missing, to create it. Unlock or ' +
-            'enable the OS keychain (Credential Manager on Windows, Keychain on macOS, Secret ' +
-            'Service on Linux) and run `agon agent-key` again.\n'),
+            'enable the OS keychain (Credential Manager on Windows, Keychain on macOS, the Secret ' +
+            'Service such as gnome-keyring on Linux) and run `agon agent-key` again. A Linux ' +
+            'server with no desktop has no Secret Service, and the key is never kept anywhere ' +
+            'that would lose it on a restart.\n'),
     )
     return 1
   }

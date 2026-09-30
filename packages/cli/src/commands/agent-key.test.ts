@@ -1,7 +1,6 @@
-import { Entry } from '@napi-rs/keyring'
 import bs58 from 'bs58'
 import { afterAll, expect, test, vi } from 'vitest'
-import { agentKey } from '../daemon/keystore.js'
+import { agentKey, keychainEntry } from '../daemon/keystore.js'
 import { runAgentKey } from './agent-key.js'
 
 // The real OS keychain under a test-only service name, as keystore.test.ts does, so a test never
@@ -10,7 +9,7 @@ import { runAgentKey } from './agent-key.js'
 const SERVICE = `agon-test-cli-${process.pid}`
 const reachable = (() => {
   try {
-    new Entry(SERVICE, 'probe').getSecret()
+    keychainEntry(SERVICE, 'probe').getSecret()
     return true
   } catch {
     return false
@@ -19,7 +18,7 @@ const reachable = (() => {
 const why = 'no OS keychain reachable here (CI Linux has no Secret Service)'
 
 afterAll(() => {
-  if (reachable) new Entry(SERVICE, 'agent-key').deleteCredential()
+  if (reachable) keychainEntry(SERVICE, 'agent-key').deleteCredential()
 })
 
 /** Runs the command and captures everything it could print: its 2 streams and the console. */
@@ -67,7 +66,7 @@ test.skipIf(!reachable)('the printed key is the keychain key', () => {
 
 test.skipIf(!reachable)('the secret appears in no output, in any encoding', () => {
   // Both paths: made fresh, then read back.
-  new Entry(SERVICE, 'agent-key').deleteCredential()
+  keychainEntry(SERVICE, 'agent-key').deleteCredential()
   const made = run()
   const read = run()
   const secret = agentKey(SERVICE).secretKey
@@ -84,9 +83,9 @@ test.skipIf(!reachable)('the secret appears in no output, in any encoding', () =
 test.skipIf(!reachable)(
   'a bad keychain entry exits non-zero naming the cause and the next step',
   () => {
-    new Entry(SERVICE, 'agent-key').setSecret(new Uint8Array(10))
+    keychainEntry(SERVICE, 'agent-key').setSecret(new Uint8Array(10))
     const r = run()
-    new Entry(SERVICE, 'agent-key').deleteCredential()
+    keychainEntry(SERVICE, 'agent-key').deleteCredential()
     expect(r.code).not.toBe(0)
     expect(r.out).toBe('')
     expect(r.err).toContain('10 bytes where 64 were expected')
