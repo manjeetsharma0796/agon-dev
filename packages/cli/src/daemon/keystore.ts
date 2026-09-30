@@ -12,9 +12,19 @@ import { Keypair } from '@solana/web3.js'
 const SERVICE = 'agon'
 const ACCOUNT = 'agent-key'
 
+/**
+ * A keychain entry, pinned on Linux to the Secret Service (gnome-keyring, KWallet). Unpinned, the
+ * binding silently falls back to the kernel keyring, which lives in memory: measured 2026-10-01 in
+ * a Linux container, a key written there read back in a new process and was gone after a restart.
+ * `agentKey()` would then quietly make a new key while the armed role names the old one. Pinned, a
+ * machine with no Secret Service refuses instead. On macOS and Windows the option does nothing.
+ */
+export const keychainEntry = (service: string, account: string): Entry =>
+  new Entry(service, account, { linux: { store: 'secret-service' } })
+
 /** The agent keypair, created in the keychain on first use. `service` is a seam for tests only. */
 export function agentKey(service: string = SERVICE): Keypair {
-  const entry = new Entry(service, ACCOUNT)
+  const entry = keychainEntry(service, ACCOUNT)
   const stored = entry.getSecret()
   if (stored !== null) {
     if (stored.length !== 64) {

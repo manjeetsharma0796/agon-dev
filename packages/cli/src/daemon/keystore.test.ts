@@ -1,6 +1,5 @@
-import { Entry } from '@napi-rs/keyring'
 import { afterAll, expect, test, vi } from 'vitest'
-import { agentKey } from './keystore.js'
+import { agentKey, keychainEntry } from './keystore.js'
 
 // A real OS keychain, under a service name of its own so a test never touches the real key. CI's
 // Linux runner has no Secret Service to talk to, so there the store cannot be reached and this says
@@ -8,7 +7,7 @@ import { agentKey } from './keystore.js'
 const SERVICE = `agon-test-${process.pid}`
 const reachable = (() => {
   try {
-    new Entry(SERVICE, 'probe').getSecret()
+    keychainEntry(SERVICE, 'probe').getSecret()
     return true
   } catch {
     return false
@@ -16,7 +15,7 @@ const reachable = (() => {
 })()
 
 afterAll(() => {
-  if (reachable) new Entry(SERVICE, 'agent-key').deleteCredential()
+  if (reachable) keychainEntry(SERVICE, 'agent-key').deleteCredential()
 })
 
 test.skipIf(!reachable)(
@@ -37,7 +36,7 @@ test.skipIf(!reachable)('the key never reaches a log, in any of its encodings', 
   )
   // Both paths: made fresh, then read back. Without the delete, the first test's key is already
   // there and the path that creates one is never watched.
-  new Entry(SERVICE, 'agent-key').deleteCredential()
+  keychainEntry(SERVICE, 'agent-key').deleteCredential()
   const key = agentKey(SERVICE)
   agentKey(SERVICE)
   spies.forEach((s) => s.mockRestore())
