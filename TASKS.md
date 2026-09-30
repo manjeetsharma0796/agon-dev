@@ -1133,7 +1133,12 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
 ### T-C08, Local daemon
 - Status: claimed 2026-09-29 | Owner: Jishnu | Branch: feature/t-c08-daemon-signer
 - Depends-on: T-D01, T-C06
-- Touches: packages/cli/src/daemon/, packages/cli/package.json, pnpm-lock.yaml
+- Touches: packages/cli/src/daemon/, packages/cli/package.json, pnpm-lock.yaml,
+  packages/cli/src/index.ts, packages/cli/src/commands/agent-key.ts,
+  packages/cli/src/commands/agent-key.test.ts
+- Touches widened 2026-10-01 for slice 1b, `agon agent-key`: nothing runs `agentKey()` today, so
+  every agent makes its own key outside the keychain. The command needs 1 dispatch line in the
+  CLI entry and its own file, both under T-C09's `packages/cli/src/`, which the same owner holds
 - Serves: Novelty (judged) ; custody story
 - Acceptance: the agent key is generated on the user's machine and stored in the OS keychain,
   and appears in 0 of `.env`, logs, our servers and the repo, asserted by the secret scan plus a
