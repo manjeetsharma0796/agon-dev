@@ -30,7 +30,11 @@ export const PreparedSwap = z.object({
   transaction: z.string().min(1),
   /** Where the funds leave from. */
   vault: Address,
-  /** check_trade's answer for this exact trade. A transaction is only built on a pass. */
+  /**
+   * check_trade's answer for this exact trade. A transaction is built only on a pass, except on the
+   * practice fork when the history wallet has 0 closed trades: then its first reason is
+   * `no-trading-history`, and the rest are what the check found, none of which stopped the trade.
+   */
   verdict: CheckTradeOutput,
   quote: z.object({
     inAmount: BaseUnits,

@@ -407,3 +407,54 @@ test('a refusal about the quote names the field, never repeats what Jupiter sent
   expect(refusal).toMatch(/inAmount/)
   expect(refusal).not.toContain('SYSTEM')
 })
+
+// ---- No trading history, decided 2026-09-30. ----
+//
+// On the practice fork a history wallet with 0 closed trades is not refused: the check is not run
+// against a history, the trade is bounded only by the cap the owner signed, and the answer says so
+// first. Anywhere else it still fails closed.
+
+const withNetwork = async (id: string | undefined, run: () => Promise<void>) => {
+  const before = process.env['AGON_NETWORK']
+  if (id === undefined) delete process.env['AGON_NETWORK']
+  else process.env['AGON_NETWORK'] = id
+  try {
+    await run()
+  } finally {
+    if (before === undefined) delete process.env['AGON_NETWORK']
+    else process.env['AGON_NETWORK'] = before
+  }
+}
+
+test('on the fork, a history wallet with no trades still gets its trade, labelled unchecked', async () => {
+  await withNetwork('fork', async () => {
+    const { io, calls } = swapIo(500000000n, { loadTransactions: async () => [] })
+    const out = (await callTool('prepare_swap', SWAP, io)) as {
+      transaction: string
+      verdict: { reasons: { rule: string; message: string }[] }
+    }
+    expect(out.transaction).toBe('AQAB')
+    expect(out.verdict.reasons[0]?.rule).toBe('no-trading-history')
+    expect(out.verdict.reasons[0]?.message).toMatch(/0 closed trades.*0\.5 wSOL left/)
+    expect(calls).toContain('build')
+  })
+})
+
+test('off the fork, a history wallet with no trades is still refused, and nothing is built', async () => {
+  await withNetwork('mainnet', async () => {
+    const { io, calls } = swapIo(500000000n, { loadTransactions: async () => [] })
+    await expect(callTool('prepare_swap', SWAP, io)).rejects.toThrow(/0 transactions were read/)
+    expect(calls).not.toContain('build')
+  })
+})
+
+test('on the fork, a wallet that has history is still judged by it', async () => {
+  await withNetwork('fork', async () => {
+    // 10x the recorded wallet's median: its own rules block it, history or no fork.
+    const { io, calls } = swapIo(500000000n)
+    await expect(callTool('prepare_swap', { ...SWAP, amount: '4000000' }, io)).rejects.toThrow(
+      /check_trade answered block/,
+    )
+    expect(calls).not.toContain('build')
+  })
+})
