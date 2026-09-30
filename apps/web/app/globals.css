@@ -1,0 +1,68 @@
+/* The colour tokens every page already names. Without them each var() fell back to nothing, so a
+   browser in dark mode drew a dark page with black text, readable only when selected. Both
+   foreground and background are set for both schemes, and form fields inherit them. */
+
+:root {
+  color-scheme: light dark;
+  --bg: #ffffff;
+  --fg: #111827;
+  --muted: #4b5563;
+  --line: #d1d5db;
+  --field: #ffffff;
+  --accent: #1d4ed8;
+  --bad: #991b1b;
+  --warn: #fff4e5;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1115;
+    --fg: #e5e7eb;
+    --muted: #9ca3af;
+    --line: #374151;
+    --field: #1a1d24;
+    --accent: #93c5fd;
+    --bad: #fca5a5;
+    --warn: #3b2a12;
+  }
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+}
+
+input,
+textarea,
+select,
+button {
+  font: inherit;
+  color: var(--fg);
+  background: var(--field);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.35rem 0.5rem;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted);
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+a {
+  color: var(--accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

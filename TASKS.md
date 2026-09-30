@@ -2743,7 +2743,7 @@ _(empty)_
   read first, ship the manual docs only and no automatic install
 
 ### T-E18, Onboarding UI: readable web forms, and an opencode setup page beside discovery
-- Status: claimed 2026-10-01 | Owner: Jishnu | Branch: feature/t-e18-onboarding-ui
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/PRNUM | Owner: Jishnu | Branch: feature/t-e18-onboarding-ui
 - Depends-on: T-E06, T-E15
 - Touches: apps/web/app/globals.css, apps/web/app/layout.tsx, apps/web/app/arm/ArmClient.tsx,
   .opencode/tui/, tui.json
@@ -2758,8 +2758,28 @@ _(empty)_
   arithmetic; it opens the web arming screen for anything that signs and can put "Onboard me with
   Agon." in the chat box without sending it; a dialog opened by a mouse click stays open after the
   button is released
-- Evidence: <PR link, computed colours in both themes, the setup page's calls against a running
-  server, and the mouse test on opencode's OpenTUI version>
+- Evidence: computed colours in the browser, dark theme: body and fields `rgb(229, 231, 235)` on
+  `rgb(15, 17, 21)` and `rgb(26, 29, 36)`; light: `rgb(17, 24, 39)` on white; 0 console errors.
+  Contrast of every token pair, lowest first: 6.6 to 1 (muted on a dark field), then 6.7 (link,
+  light), 7.4, 7.6; body text 17.7 light and 15.3 dark. The setup page's own `mcpCall` and `units`,
+  cut from the plugin file and run against a local server on the fork: a wallet with no vault reads
+  `rules: []` under the fork's network label, a bad address comes back a refusal naming the reason, a
+  dead server throws "Unable to connect", and 500000000 lamports is "0.5 SOL", 1 is
+  "0.000000001 SOL", 2500000 USDC units "2.5 USDC", an unpinned mint stays in base units. The mouse
+  fix on OpenTUI 0.4.5, the version opencode 1.18.33 runs, with opencode's backdrop rule copied: a
+  button acting on mouse-down has its dialog closed by the same click, on mouse-up it stays open.
+  The plugin type-checks with 0 errors and lints with 0 warnings
+- Not evidenced: the setup page drawn with a real armed rule, and anything clicked by a person in
+  opencode. That is T-E19
+- Finding: the web pages already named 7 colour tokens that no stylesheet defined, so each `var()`
+  fell back to nothing, and a browser in dark mode drew a dark page with black text, readable only
+  when selected. Defining them fixed every page at once; the 1 hard-coded colour left, the vault
+  screen's error text, now uses `--bad`
+- Finding 2: the opencode "text only shows while I hold it" bug was ours, not opencode's. opencode's
+  prompt dialog draws its text correctly on the same OpenTUI version, over our page or alone. Our
+  buttons acted on mouse-down, and opencode's backdrop closes a dialog on any mouse-up that did not
+  start on it, so the same click opened and closed the dialog. opencode's own buttons act on
+  mouse-up
 - Kill criterion: none
 
 ### T-E19, Polish, test and fix the onboarding UI in opencode and on the web, with a person
