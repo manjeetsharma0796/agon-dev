@@ -2741,3 +2741,38 @@ _(empty)_
   `game-libgdx-unity/opencode2`. The setup step and the docs name `@opencode-ai/cli` only
 - Kill criterion: if opencode cannot pin a plugin to 1 version, or runs install scripts we cannot
   read first, ship the manual docs only and no automatic install
+
+### T-E18, Onboarding UI: readable web forms, and an opencode setup page beside discovery
+- Status: open
+- Depends-on: T-E06, T-E15
+- Touches: apps/web/app/globals.css, apps/web/app/layout.tsx, apps/web/app/arm/ArmClient.tsx,
+  .opencode/tui/, tui.json
+- Serves: UX (judged)
+- Acceptance: every web page reads in both a light and a dark browser theme, form fields included,
+  with text at a contrast ratio of at least 4.5 to 1 against its background, checked by computed
+  colour and not by eye; the colour tokens the pages already name (`--muted`,
+  `--bad`, `--warn`, `--line`, `--bg`, `--fg`, `--accent`) are defined once; the opencode plugin in
+  `.opencode/tui/` is committed with a setup page that reads, and never writes: whether the Agon
+  server answers, the wallet address the user typed, and each armed rule from `list_rules` (vault,
+  agent key, cap, what can be spent now, the rolling worst case), converting base units by integer
+  arithmetic; it opens the web arming screen for anything that signs and can put "Onboard me with
+  Agon." in the chat box without sending it; a dialog opened by a mouse click stays open after the
+  button is released
+- Evidence: <PR link, computed colours in both themes, the setup page's calls against a running
+  server, and the mouse test on opencode's OpenTUI version>
+- Kill criterion: none
+
+### T-E19, Polish, test and fix the onboarding UI in opencode and on the web, with a person
+- Status: open
+- Depends-on: T-E18
+- Touches: .opencode/tui/, tui.json, apps/web/app/globals.css
+- Serves: UX (judged)
+- Acceptance: a person, not an agent, runs onboarding end to end on the fork from the opencode
+  setup page (server, wallet, arming screen, back to the setup page showing the rule) and the
+  discovery page (keys, mouse, Buy, Sell, Check, search, watchlist), on 1 terminal that draws Sixel
+  or Kitty and 1 that draws neither, and lists what is broken, confusing or slow; each item is
+  fixed or rejected with a reason; the setup page is shown with a real armed rule, not only an
+  empty list
+- Evidence: <the person's list, screenshots before and after>
+- Kill criterion: none. Kept open on purpose: T-E18 was tested in a test renderer and against a
+  running server, never by a person clicking through opencode
