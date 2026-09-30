@@ -1143,25 +1143,34 @@ function Setup(props: { model: Model; options: Options; back: () => void }) {
   const [rules, setRules] = createSignal<Rule[] | null>(null)
   const [refusal, setRefusal] = createSignal<string | null>(null)
 
+  // Only the latest run writes: a slow answer for a wallet the user has since changed is dropped,
+  // rather than shown under the new address.
+  let run = 0
   const refresh = async () => {
+    const mine = ++run
     setServer("checking")
+    let up: string
     try {
       const res = await fetch(`${props.options.mcpUrl}/health`, { signal: AbortSignal.timeout(5_000) })
-      setServer(res.ok ? "up" : `answered ${res.status}`)
+      up = res.ok ? "up" : `answered ${res.status}`
     } catch (e) {
-      setServer(e instanceof Error ? e.message : String(e))
+      up = e instanceof Error ? e.message : String(e)
     }
+    if (mine !== run) return
+    setServer(up)
     setRules(null)
     setRefusal(null)
-    if (server() !== "up" || !wallet()) return
+    setNetwork(null)
+    if (up !== "up" || !wallet()) return
     try {
       const r = await mcpCall(props.options.mcpUrl, "list_rules", { wallet: wallet() })
+      if (mine !== run) return
       if (!r.ok) return setRefusal(r.text.split("\n")[0] ?? r.text)
       const body = JSON.parse(r.text) as { network?: string; rules?: Rule[] }
       setNetwork(body.network ?? null)
       setRules(body.rules ?? [])
     } catch (e) {
-      setRefusal(e instanceof Error ? e.message : String(e))
+      if (mine === run) setRefusal(e instanceof Error ? e.message : String(e))
     }
   }
   void refresh()
