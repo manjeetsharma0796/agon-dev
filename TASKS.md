@@ -2743,7 +2743,7 @@ _(empty)_
   read first, ship the manual docs only and no automatic install
 
 ### T-E18, Onboarding UI: readable web forms, and an opencode setup page beside discovery
-- Status: open
+- Status: claimed 2026-10-01 | Owner: Jishnu | Branch: feature/t-e18-onboarding-ui
 - Depends-on: T-E06, T-E15
 - Touches: apps/web/app/globals.css, apps/web/app/layout.tsx, apps/web/app/arm/ArmClient.tsx,
   .opencode/tui/, tui.json
