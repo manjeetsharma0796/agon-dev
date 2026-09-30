@@ -5,6 +5,12 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "agon": "./dist/index.js"
+  },
+  "scripts": {
+    "agon": "node dist/index.js"
+  },
   "dependencies": {
     "@agon/chain": "workspace:*",
     "@agon/core": "workspace:*",

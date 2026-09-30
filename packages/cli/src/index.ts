@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 // The agon CLI. Owned by T-C09.
 //
 // Cold start is a gate (300 ms in CI), so this entry pulls in nothing it does not need. Every
@@ -25,6 +26,10 @@ if (process.argv.includes('--version') || process.argv.includes('-v')) {
   // invocation, including `--version`.
   const { runRevoke } = await import('./commands/revoke.js')
   process.exitCode = await runRevoke(process.argv.slice(3))
+} else if (command === 'agent-key') {
+  // Dynamic like the others: the keychain binding and web3.js stay out of the cold start gate.
+  const { runAgentKey } = await import('./commands/agent-key.js')
+  process.exitCode = runAgentKey()
 } else if (command === 'report') {
   // Dynamic for the same reason as revoke: the decoder and the miner must not sit inside the
   // 300 ms cold start gate that every invocation pays, including `--version`.
@@ -32,5 +37,5 @@ if (process.argv.includes('--version') || process.argv.includes('-v')) {
   const { liveIo } = await import('./commands/report-io.js')
   process.exitCode = await runReport(process.argv.slice(3), liveIo())
 } else {
-  console.log(`agon ${version}. Commands: check, report, revoke.`)
+  console.log(`agon ${version}. Commands: agent-key, check, report, revoke.`)
 }

@@ -1163,6 +1163,26 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
     bytes, then reported dropped once its blockhash expired, about 63 s, with the receiver at 0.
     One whose status answer was hidden for a round was resent and landed exactly once, the receiver
     holding 1234567 lamports, the amount sent
+- Evidence, slice 1b on 2026-10-01: `agon agent-key` calls `agentKey()` and prints only the public
+  key, 1 line of base58. Before it, nothing ran `agentKey()`, so every agent made its own key
+  outside the keychain. 5 tests in `agent-key.test.ts`, against Windows Credential Manager under a
+  test-only service name: 1 line of 32-byte base58, the same on a second run; equal to
+  `agentKey().publicKey`; none of the secret's base64, hex, base58 or byte-list forms in stdout,
+  stderr or the console, on the make path and the read path; a 10-byte entry exits 1 naming "10
+  bytes where 64 were expected" and the delete-and-run-again step. 4 pass here; the 5th, an
+  unreachable keychain exiting 1 with the cause and "run `agon agent-key` again", runs only where
+  no keychain answers, which is CI's Linux runner, and skips here saying so. Controls: a planted
+  `console.log` of the secret in hex, and a planted base58 write to stderr, each failed the secret
+  test, and were removed. Run for real through `pnpm --filter @agon/cli agon agent-key`: 1 line,
+  44 characters, 32 bytes decoded, the same line on the second run. Cold start of `agon --version`
+  over 15 runs on Windows: median 120 ms before (min 110), 133 ms after (min 113), within run to
+  run noise, since the command loads behind a dynamic import like the others
+- Owed by slice 1b: `docs/public/agent-setup.md` section 5 still tells the agent to make its own
+  keypair. The line becomes "run `agon agent-key` and give the user only the line it prints" after
+  T-C24 (in review) and T-C21 (claimed) merge, since both hold that file in their Touches
+- Finding, slice 1b: `pnpm --filter @agon/cli exec agon` cannot work, because pnpm does not link a
+  package's own `bin` into its own path. The `bin` entry stays for an install later (T-C09, and
+  OP-39's rule on who publishes), and a package script named `agon` runs it inside the repo
 - Owed, slices 2 and 3: re-quote once when the quote moves past the 1% band, which needs the quote
   path T-C21 builds; and the offline report, which needs event rules T-C10 has not built. So the
   row stays claimed
