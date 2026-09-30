@@ -2635,7 +2635,7 @@ _(empty)_
   asks for the wallet once, and the rest still holds; measured 2026-10-01 that it can
 
 ### T-C26, The agent kit: 1 tested file the MCP serves, so no agent writes key or signing code
-- Status: claimed 2026-10-01 | Owner: manjeetsharma0796 | Branch: feature/t-c26-agent-kit
+- Status: in-review 2026-10-01 | Owner: manjeetsharma0796 | Branch: feature/t-c26-agent-kit
 - Depends-on: T-C21, T-C24
 - Touches: packages/mcp/kit/agon-kit.mjs, packages/mcp/src/kit.test.ts, packages/mcp/src/serve.ts,
   packages/mcp/src/index.ts, docs/public/agent-setup.md
@@ -2650,7 +2650,21 @@ _(empty)_
   signature) and a refusal of each kind, tests first. The instructions' step 1 and the signing step
   become those 2 commands, within Claude Code's 2,048 characters. Measured: a fresh agent, from
   "onboard me", uses only the kit for its key and its trade, and the trade lands
-- Evidence: <PR link, the kit tests, and the fresh-agent run>
+- Evidence: 4 kit tests, each guard killed once and caught (fee payer, program, signer count, fork
+  check, base58 leading zeros, a key whose public half does not match, a compute unit price, any
+  Swig call but SignV2, http for a non-local host: 9 of 9 fail). On the fork,
+  this branch's server on 8797: a fresh Claude Code agent (Sonnet), only the MCP, told "onboard me",
+  ran 1 command, the served `curl ... && node ~/.agon/agon-kit.mjs key`, and wrote 0 lines of code;
+  after the owner armed it, "buy 0.1 SOL worth of USDC" took `list_rules`, `prepare_swap` and
+  `node ~/.agon/agon-kit.mjs send`, which landed (`err` null) with 11.801342 USDC into the vault.
+  After review narrowed the kit to Swig's SignV2 and a compute unit limit, a real `prepare_swap`
+  transaction still signed and landed. Instructions 2,032 characters in the worst case that ships
+  (fork label, replay mode, port 8788)
+- Finding 2026-10-01: the same agent reported "~0.0118 USDC" for 11.8. `prepare_swap` gives
+  `outAmount` as bare base units ("11814173") and the agent guessed 9 decimals, not USDC's 6. It
+  also skipped telling the user the Phantom Localnet step and `no-trading-history` before signing.
+  The kit is not the cause; the first wants a decimals-aware field in `PreparedSwap` (a frozen
+  contract, so its own row)
 - Why it is its own row: found 2026-10-01. A new user's agent (opencode, MiMo Flash) had no Solana CLI
   and no web3.js and began writing its own ed25519 and base58 code, which crashed; a wrong address
   would hire a key nobody can sign for. #253 named web3.js, which still needs npm and a few lines of

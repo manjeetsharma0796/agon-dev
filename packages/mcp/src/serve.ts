@@ -3,14 +3,15 @@
 // another machine.
 //
 // `node:http` rather than express: the SDK's transport takes a plain Node request and response, and
-// express would be a dependency earning nothing. There is no router here because there is one
-// route.
+// express would be a dependency earning nothing. There is no router here because there are 3
+// fixed paths.
 //
 // Stateless on purpose. `sessionIdGenerator: undefined` means every request carries its own
 // transport and nothing is remembered between calls, which is what you want for a server whose
 // every tool is a read: there is no session state worth losing, and a client that reconnects or a
 // tunnel that drops costs nothing.
 
+import { readFileSync } from 'node:fs'
 import {
   createServer as createHttpServer,
   type IncomingMessage,
@@ -22,6 +23,12 @@ import { createServer } from './index.js'
 const PORT = Number(process.env['PORT'] ?? 8787)
 /** Loopback by default. Binding 0.0.0.0 exposes an unauthenticated server to the whole network. */
 const HOST = process.env['HOST'] ?? '127.0.0.1'
+/** The agent kit: 1 file an agent downloads and runs on its own machine, so we never see a key. */
+const KIT = readFileSync(new URL('../kit/agon-kit.mjs', import.meta.url))
+/** A host name or IP with an optional port, and nothing else, since it is written into text. */
+const PLAIN_HOST = /^([\w.-]+|\[[\da-f:]+\])(:\d{1,5})?$/i
+/** Plain http only on this machine: the kit holds a key, so from anywhere else it comes over TLS. */
+const LOOPBACK = /^(127\.0\.0\.1|localhost|\[::1\])(:|$)/i
 
 const handle = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
   // One health path, so somebody checking a tunnel gets an answer instead of a protocol error.
@@ -39,6 +46,11 @@ const handle = async (req: IncomingMessage, res: ServerResponse): Promise<void> 
     )
     return
   }
+  if ((req.method === 'GET' || req.method === 'HEAD') && req.url === '/kit.mjs') {
+    res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8' })
+    res.end(req.method === 'HEAD' ? undefined : KIT)
+    return
+  }
   if (!(req.url ?? '').startsWith('/mcp')) {
     res.writeHead(404, { 'content-type': 'application/json' })
     res.end(
@@ -52,7 +64,13 @@ const handle = async (req: IncomingMessage, res: ServerResponse): Promise<void> 
   // A transport and a server per request, and both closed when the response ends. Sharing one
   // across requests is what leaks when a client disconnects mid-stream.
   const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined })
-  const server = createServer()
+  // The kit's address as this client reached us, so it is right behind any port mapping.
+  const host = req.headers.host ?? ''
+  const scheme = LOOPBACK.test(host) ? 'http' : 'https'
+  const server = createServer(
+    undefined,
+    PLAIN_HOST.test(host) ? `${scheme}://${host}/kit.mjs` : undefined,
+  )
   res.on('close', () => {
     void transport.close()
     void server.close()

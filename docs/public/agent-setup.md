@@ -13,8 +13,8 @@ field: tell the user which network before you quote any number. Treat "unsure" a
 "the trade does not go out", and tell the user the reason word for word. Never propose a spending
 limit yourself: arm_rule returns a link, and the user sets the limit on that page with their own
 wallet. To see what you are allowed to spend, call list_rules and quote effectiveRemaining, with
-rollingWorstCase beside it. To trade, call prepare_swap and sign the transaction it returns with
-your own key, locally; never build a swap another way. If a call returns an error, read its first
+rollingWorstCase beside it. To trade, call prepare_swap and sign and send the transaction it
+returns with the agent kit from your agon instructions; never build a swap another way. If a call returns an error, read its first
 sentence to the user and do not retry the same call.
 ```
 
@@ -95,9 +95,9 @@ output schemas: [`mcp-tools.md`](./mcp-tools.md).
 
 What an agent does when the user says "onboard me". Nobody copies an address in either direction.
 
-1. The agent makes its own practice key with `@solana/web3.js` `Keypair.generate()` (installing it
-   with `npm i @solana/web3.js@1` if missing), saves it in a `chmod 600` file and never shows the
-   secret. It never writes its own key or address code. It does not ask for the user's address.
+1. The agent downloads the [agent kit](#the-agent-kit) from the server and runs
+   `node ~/.agon/agon-kit.mjs key`, which prints its public key. It never writes its own key or
+   signing code. It does not ask for the user's address.
 2. The user sets Phantom to **Settings, Developer Settings, Testnet Mode, Solana Localnet**, which
    points at the fork on `127.0.0.1:8899`.
 3. The agent calls `arm_rule` with `agent` set to its public key,
@@ -118,13 +118,34 @@ The agent has its own keypair. **It is never the user's key**, and Agon never se
 
 - Generate the agent's keypair on the machine the agent runs on and keep its secret in that
   machine's OS keychain. Never in a `.env` file, a log, a chat or anything hosted.
-- On the practice fork, until the `agon` CLI's keychain signer ships, a practice key in a
-  file only the user can read (`chmod 600`) is the stopgap. Never reuse it on mainnet.
-- Give the user only the agent's **public** key. They paste it on the arming screen, and their own
-  wallet signs a role for it.
+- On the practice fork, until the `agon` CLI's keychain signer ships, the agent kit's key file,
+  which only the user can read (`chmod 600`), is the stopgap. Never reuse it on mainnet.
+- The user sees only the agent's **public** key. The arming link carries it, and their own wallet
+  signs a role for it.
 - That role can do 1 thing: spend 1 mint through Jupiter, up to a cap per window of slots. It never
   holds `manageAuthority`, so the agent cannot raise its own cap. The user can revoke it at any
   time from the same screen.
+
+### The agent kit
+
+1 file, 0 dependencies, Node 18 or later, served by the MCP server at `/kit.mjs`. The agent runs it
+on its own machine, so the server never sees a key:
+
+```bash
+curl -fsS --create-dirs -o ~/.agon/agon-kit.mjs http://127.0.0.1:8787/kit.mjs
+```
+
+| Command | What it does |
+|---|---|
+| `node ~/.agon/agon-kit.mjs key` | Makes the agent's key on first run, or reuses it, in `~/.agon/agent-key.json` (`chmod 600`, the 64-byte array Solana tools read), and prints only the public key. |
+| `node ~/.agon/agon-kit.mjs send <base64>` | Signs a `prepare_swap` transaction, sends it to the fork on `127.0.0.1:8899` (`--rpc` for another) and prints the signature once confirmed. |
+
+`send` refuses, with the cause, a transaction whose fee payer is not its key, that needs another
+signer, or that calls anything but Swig's sign instruction and a compute unit limit (any other
+Swig call, or a compute unit price, could spend the agent's SOL), and it sends only to an RPC that reports a Surfpool version, never
+to mainnet. The instructions give the agent the kit's address as the agent reached the server, so
+a remapped port such as 8788 needs no change; from any host but this machine that address is
+`https`, since the file handles a key.
 
 ## 6. Find the vault and the cap
 
@@ -155,7 +176,8 @@ Call `prepare_swap` with:
 | `slippageBps` | at most 100 |
 
 It returns `transaction`, base64 and unsigned, with you as the fee payer and the only signer. Sign
-it with your key, locally, and send it before `lastValidBlockHeight`. It holds Jupiter's swap alone,
+and send it at once, before `lastValidBlockHeight`, with `node ~/.agon/agon-kit.mjs send
+<transaction>`, which prints the signature once the fork confirms it. It holds Jupiter's swap alone,
 wrapped in Swig's sign instruction for your role, so the chain's cap applies to it. Measured on the
 fork on 2026-09-29: a 0.1 wSOL swap built this way landed and left the allowance 100000000 lower,
 and a 0.45 request with 0.4 left was refused before anything was built.
