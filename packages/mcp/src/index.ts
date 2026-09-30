@@ -370,6 +370,39 @@ What works right now, with nothing to set up:
   trade still goes out, unchecked against a history and bounded only by the cap the owner signed,
   and the verdict's first reason, no-trading-history, says so; tell the user that before you sign.
   Never suggest a real mainnet trade to create history: that spends real funds.
+- arm_rule returns a link to the arming screen, a web page that already exists: the user opens it,
+  connects their own wallet, and signs for the vault and your cap there. You never name the limit,
+  and a request that carries one is refused. Practice fork only; elsewhere it refuses with the
+  reason, which is the correct answer, not an error to retry.
+
+Onboarding, when the user says "onboard me" or asks to get started. Do these in order, and do not
+build a website or read any source code: everything below already exists.
+1. Ask for their Solana wallet address (in Phantom, the account name copies it). Never ask for a
+   seed phrase or a private key.
+2. Tell them to put Phantom on the practice network: Settings, Developer Settings, Testnet Mode on,
+   then Solana Localnet. The practice fork's RPC in the local Docker setup is http://127.0.0.1:8899,
+   the same address Solana Localnet uses.
+3. Check their wallet's SOL there with getBalance. If it is under 1 SOL, ask that RPC for free
+   practice SOL with requestAirdrop, 5000000000 lamports. It is fake SOL on the fork only and never
+   touches mainnet.
+4. You need your own key to trade, separate from theirs. Generate a new keypair on this machine, save
+   it in a file only this user can read (chmod 600), and never print, send or log its secret. Give
+   the user only its public key. It is a practice key for the fork: never reuse it on mainnet.
+5. Call arm_rule with their wallet, mints ["So11111111111111111111111111111111111111112"],
+   triggerType "stop" and expiresAt null, and give them the link. On that page they connect Phantom,
+   paste your public key, choose a deposit and a cap, and approve 2 transactions. If they stop
+   halfway, the same link resumes where they left off.
+6. When they say it is done, call list_rules with their wallet and read back the cap and
+   effectiveRemaining. That is onboarded.
+
+Trading, after onboarding: call prepare_swap with owner and historyWallet both the user's wallet,
+agent your public key, inputMint wrapped SOL, the outputMint they want, the amount in base units and
+slippageBps up to 100. Tell the user what the verdict says before signing. Then sign the returned
+transaction with your key and send it to the same RPC before lastValidBlockHeight; with
+@solana/web3.js: Transaction.from(Buffer.from(transaction, "base64")), tx.sign(yourKeypair),
+connection.sendRawTransaction(tx.serialize()). A "failed simulation" refusal means the price or a
+pool moved: call prepare_swap again. To stop the agent, the user opens the arm_rule link and
+presses Revoke; there is no withdraw yet, and the funds stay in the vault.
 
 What is not real yet, so do not present it as a measurement:
 
@@ -377,15 +410,11 @@ What is not real yet, so do not present it as a measurement:
   same figures whatever wallet you pass. Its result carries a "note" field saying so. Repeat that
   note if you quote any of its numbers. It does not agree with check_trade about the same wallet,
   because the two read different recordings.
-- arm_rule arms nothing itself. It returns a link to the arming screen, where the user connects
-  their own wallet and sets the spending limit from what their history suggests; you never name the
-  limit, and a request that carries one is refused. It works on the practice fork only, and refuses
-  elsewhere with the reason: that refusal is the correct answer, not an error to retry.
 
-Setup: none. No wallet connection and no private key: this server never takes, returns or logs
-one, and signs nothing. Every call but prepare_swap is a read, and prepare_swap only returns a
-transaction for the agent to sign. You need a mainnet wallet address to ask about; a wallet with no
-trading history is refused rather than approved, because there is nothing to judge a trade against.
+This server never takes, returns or logs a private key, and signs nothing. Every call but
+prepare_swap is a read, and prepare_swap only returns a transaction for you to sign. check_trade
+alone still refuses a wallet with no trading history, since it has nothing to judge against; on the
+practice fork, prepare_swap trades for such a wallet as described above.
 
 Two things worth knowing before you interpret an answer. check_trade on its own takes no price
 quote, so its slippage and price impact answers are "not read" and it answers unsure; prepare_swap

@@ -6,8 +6,9 @@ handlers, and anything that is not real yet says so.
 ## Paste this to start
 
 ```text
-You have an MCP server called agon. Before any trade, call check_trade with the wallet, the mint,
-the side and the size in base units (1 SOL is 1000000000). Every answer starts with a "network"
+You have an MCP server called agon, on a practice copy of Solana mainnet with no real funds. If I
+say "onboard me", follow the onboarding steps in your agon instructions in order: the arming page
+already exists, so do not build one or read any source code. Every answer starts with a "network"
 field: tell the user which network before you quote any number. Treat "unsure" and "block" as
 "the trade does not go out", and tell the user the reason word for word. Never propose a spending
 limit yourself: arm_rule returns a link, and the user sets the limit on that page with their own
@@ -25,14 +26,22 @@ The server speaks MCP over Streamable HTTP at `/mcp`, with a health check at `/h
 docker compose up -d --build
 ```
 
-That starts a mainnet fork on `127.0.0.1:8899` and the MCP server on `http://127.0.0.1:8787/mcp`,
-both bound to this machine only. The server has no authentication, so do not bind it to a public
-address.
+That starts 3 services, all bound to this machine only: a mainnet fork on `127.0.0.1:8899`, the MCP
+server on `http://127.0.0.1:8787/mcp`, and the arming screen on `http://127.0.0.1:3111/arm`, which
+`arm_rule` links to. The server has no authentication, so do not bind it to a public address.
 
-As shipped, this compose file sets neither `AGON_RPC_URL` nor `AGON_PUBLIC_URL` for the server, so
-`list_rules` and `arm_rule` refuse with that reason. `check_trade` and `get_report` work. To read
-the fork's vaults, the server needs `AGON_RPC_URL` pointed at the fork; to hand out arming links, it
-needs `AGON_PUBLIC_URL` set to where the arming screen is served.
+To build trades, put these in a `.env` beside `compose.yaml` (compose passes only these names into
+the containers):
+
+```text
+HELIUS_API_KEY=...
+JUPITER_API_KEY=...
+AGON_NET_MODE=live
+```
+
+Without them the server reads recordings only: `list_rules` still reads the fork, but no trade can
+be built. If port 8787 is taken (Cloudflare wrangler uses it), add `AGON_MCP_PORT=8788` and point
+your client at `http://127.0.0.1:8788/mcp`.
 
 ## 2. Point your client at it
 
@@ -82,12 +91,33 @@ Two facts that change how you read `check_trade`:
 (a date-time, or `null`), and nothing else: an extra field such as a cap is refused. Full input and
 output schemas: [`mcp-tools.md`](./mcp-tools.md).
 
+## 4b. Onboarding a new user
+
+What an agent does when the user says "onboard me". Every piece exists; nothing is built.
+
+1. Ask for the user's Solana wallet address. Never a seed phrase or a private key.
+2. The user sets Phantom to **Settings, Developer Settings, Testnet Mode, Solana Localnet**, which
+   points at the fork on `127.0.0.1:8899`.
+3. If the wallet has under 1 SOL on the fork, the agent asks the fork for practice SOL:
+   `requestAirdrop` for 5000000000 lamports to `http://127.0.0.1:8899`. Fake SOL, fork only.
+4. The agent makes its own practice key (section 5) and gives the user only the public key.
+5. The agent calls `arm_rule` with the wallet, `mints: ["So11111111111111111111111111111111111111112"]`,
+   `triggerType: "stop"` and `expiresAt: null`, and hands over the link. On the page the user
+   connects Phantom, pastes the agent's public key, picks a deposit and a cap, and approves 2
+   transactions. Stopping halfway is fine: the same link resumes from what is on chain.
+6. The agent calls `list_rules` and reads back the cap and `effectiveRemaining`.
+
+A user with no trading history can trade on the fork: `prepare_swap` builds the trade bounded only by
+the cap they signed, and says so as the verdict's first reason, `no-trading-history`.
+
 ## 5. Where the agent's key lives
 
 The agent has its own keypair. **It is never the user's key**, and Agon never sees either.
 
 - Generate the agent's keypair on the machine the agent runs on and keep its secret in that
   machine's OS keychain. Never in a `.env` file, a log, a chat or anything hosted.
+- On the practice fork, until the `agon` CLI's keychain signer ships, a practice key in a
+  file only the user can read (`chmod 600`) is the stopgap. Never reuse it on mainnet.
 - Give the user only the agent's **public** key. They paste it on the arming screen, and their own
   wallet signs a role for it.
 - That role can do 1 thing: spend 1 mint through Jupiter, up to a cap per window of slots. It never
