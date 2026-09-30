@@ -119,7 +119,9 @@ const handlers = {
         io,
         toolContracts.check_trade.input.parse(input),
         null,
-        'the cap the owner signed on chain',
+        // check_trade has read no vault, so it promises no cap: prepare_swap names the amount left.
+        'whatever cap the owner has armed on chain for this agent, so arm 1 first, then call ' +
+          'prepare_swap, which names the amount left',
       )
     ).verdict,
 
