@@ -2672,6 +2672,38 @@ _(empty)_
   signing slice is not done and whose package is private; this kit bridges until it lands, then goes
 - Kill criterion: none; retired when T-C08 signs trades and `@agon/cli` installs
 
+### T-C25, 2 more tools: vault_status for balances, trades and P&L, and sync_fork for a fork out of step
+- Status: claimed 2026-10-01 | Owner: manjeetsharma0796 | Branch: feature/t-c25-vault-status-sync-fork
+- Depends-on: T-C21, T-C24
+- Touches: packages/core/src/vault.ts, packages/core/src/index.ts, packages/core/src/contracts.test.ts,
+  fixtures/contracts/, packages/mcp/src/index.ts, packages/mcp/src/io.ts, packages/mcp/src/mcp.test.ts,
+  packages/mcp/src/test-support.ts, packages/mcp/src/third-party-client.test.ts,
+  packages/mcp/src/token-budget.token.test.ts, docs/public/agent-setup.md, docs/public/mcp-tools.md,
+  docs/public/quickstart.md
+- Serves: Functionality (judged) ; UX (judged) ; a user can ask the agent what it holds and how it is
+  doing, and fix a fork gone stale without wiping it
+- Acceptance: the tool list grows from 5 to 7, appended so the first 5 keep their order (decided in
+  `DECISIONS.md` before any code). `vault_status` takes a wallet and returns the vault's balances by
+  mint in base units, each hired agent key's SOL for fees, the trades read from the vault's own
+  history (spent and received, by mint), P&L per trade and in total valued in wSOL at a live quote,
+  and explorer links to the vault and each trade on the configured chain; mints only, never a token's
+  name; the P&L is arithmetic over those numbers, and with no live quote it is null with the reason,
+  never a guess. `sync_fork` is fork only and never wipes a vault: it brings the fork's clock to real
+  time and waits until the Clock sysvar reports an absolute slot again (Surfpool 1.6.0 reports the
+  slot within the epoch for about 1 block after a jump, filed as solana-foundation/surfpool#843),
+  and given a pair it refreshes the accounts that pair's route reads; it returns the clock lag before
+  and after and the accounts refreshed. Both fit a token budget set in the same PR and the 2,048
+  characters Claude Code keeps per description. Measured on the fork: `vault_status` reads a vault
+  that traded and its P&L matches the arithmetic by hand; `sync_fork` takes the lag from its measured
+  value to under 2 s and a Whirlpool route that failed on the lag simulates afterwards
+- Evidence: <PR link, the vault_status answer against the hand arithmetic, the lag before and after>
+- Why it is its own row: asked for 2026-10-01 by manjeetsharma0796 ("agents balance, trades pnl,
+  explorer, sync to mainnet incase of outsync"), proposed as 2 tools rather than 4 to keep the list
+  small. The fork's clock was measured 33 to 46 s behind real time, which is why Whirlpool refused
+  fresh pools (0x1786)
+- Kill criterion: if the clock cannot be moved without a wrong Clock slot reaching a program, sync_fork
+  refreshes pools only and says the clock was left alone, with the lag it measured
+
 ### T-C22, check_trade screens tokens deterministically, and token text never reaches the agent
 - Status: done 2026-09-29 | Owner: Jishnu | PR: #223
 - Depends-on: T-C05, T-C12, OP-38
