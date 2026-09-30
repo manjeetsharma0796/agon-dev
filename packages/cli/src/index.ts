@@ -28,6 +28,9 @@ if (process.argv.includes('--version') || process.argv.includes('-v')) {
   process.exitCode = await runRevoke(process.argv.slice(3))
 } else if (command === 'agent-key') {
   // Dynamic like the others: the keychain binding and web3.js stay out of the cold start gate.
+  // The output is 1 line an agent hands to the user, and web3.js's dependencies make Node print a
+  // punycode deprecation warning on stderr, which a shell that merges the 2 streams shows first.
+  ;(process as { noDeprecation?: boolean }).noDeprecation = true
   const { runAgentKey } = await import('./commands/agent-key.js')
   process.exitCode = runAgentKey()
 } else if (command === 'report') {

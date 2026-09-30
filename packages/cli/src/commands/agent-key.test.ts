@@ -32,12 +32,19 @@ function run() {
       .spyOn(console, m)
       .mockImplementation((...a: unknown[]) => void logged.push(a.map(String).join(' '))),
   )
+  // The process streams too, so a direct write that skips the injected writers is still seen.
+  const streams = [process.stdout, process.stderr].map((stream) =>
+    vi.spyOn(stream, 'write').mockImplementation((chunk: unknown) => {
+      logged.push(String(chunk))
+      return true
+    }),
+  )
   const code = runAgentKey(
     (s) => void out.push(s),
     (s) => void err.push(s),
     SERVICE,
   )
-  spies.forEach((s) => s.mockRestore())
+  ;[...spies, ...streams].forEach((s) => s.mockRestore())
   return { code, out: out.join(''), err: err.join(''), logged: logged.join('\n') }
 }
 

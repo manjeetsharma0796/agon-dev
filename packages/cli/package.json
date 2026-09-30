@@ -9,7 +9,7 @@
     "agon": "./dist/index.js"
   },
   "scripts": {
-    "agon": "node dist/index.js"
+    "agon": "tsc -b && node dist/index.js"
   },
   "dependencies": {
     "@agon/chain": "workspace:*",

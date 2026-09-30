@@ -1173,13 +1173,19 @@ F7; F9 on 20 scenarios; F11 accuracy, adversarial and numeric-routing cases (c, 
   unreachable keychain exiting 1 with the cause and "run `agon agent-key` again", runs only where
   no keychain answers, which is CI's Linux runner, and skips here saying so. Controls: a planted
   `console.log` of the secret in hex, and a planted base58 write to stderr, each failed the secret
-  test, and were removed. Run for real through `pnpm --filter @agon/cli agon agent-key`: 1 line,
-  44 characters, 32 bytes decoded, the same line on the second run. Cold start of `agon --version`
-  over 15 runs on Windows: median 120 ms before (min 110), 133 ms after (min 113), within run to
+  test, and were removed; after `/code-review` the capture also watches the process streams
+  directly, and a planted `process.stderr.write` of the secret in base64 failed it too. Run for real
+  through `pnpm --filter @agon/cli agon agent-key`: 1 line on stdout, 0 bytes on stderr, 44
+  characters, 32 bytes decoded, the same line on the second run. Cold start of `agon --version`
+  over 15 runs on Windows: median 120 ms before (min 110), 128 ms after (min 110), within run to
   run noise, since the command loads behind a dynamic import like the others
 - Owed by slice 1b: `docs/public/agent-setup.md` section 5 still tells the agent to make its own
   keypair. The line becomes "run `agon agent-key` and give the user only the line it prints" after
   T-C24 (in review) and T-C21 (claimed) merge, since both hold that file in their Touches
+- Finding 2, slice 1b: web3.js's dependencies make Node print a `punycode` deprecation warning,
+  2 lines on stderr, so an agent whose shell merges the streams got 3 lines, not the key. The
+  command now turns deprecation warnings off before loading, and prints 1 line with the streams
+  merged
 - Finding, slice 1b: `pnpm --filter @agon/cli exec agon` cannot work, because pnpm does not link a
   package's own `bin` into its own path. The `bin` entry stays for an install later (T-C09, and
   OP-39's rule on who publishes), and a package script named `agon` runs it inside the repo
