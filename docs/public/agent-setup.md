@@ -100,7 +100,8 @@ What an agent does when the user says "onboard me". Every piece exists; nothing 
    points at the fork on `127.0.0.1:8899`.
 3. If the wallet has under 1 SOL on the fork, the agent asks the fork for practice SOL:
    `requestAirdrop` for 5000000000 lamports to `http://127.0.0.1:8899`. Fake SOL, fork only.
-4. The agent makes its own practice key (section 5) and gives the user only the public key.
+4. The agent makes its own practice key (section 5), gives the user only the public key, and airdrops
+   1000000000 lamports to that key as well: the agent pays each trade's fee.
 5. The agent calls `arm_rule` with the wallet, `mints: ["So11111111111111111111111111111111111111112"]`,
    `triggerType: "stop"` and `expiresAt: null`, and hands over the link. On the page the user
    connects Phantom, pastes the agent's public key, picks a deposit and a cap, and approves 2

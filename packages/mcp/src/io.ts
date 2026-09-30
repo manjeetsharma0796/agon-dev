@@ -27,6 +27,7 @@ import {
   mintCheckEmpty,
   network,
   noChainConfigured,
+  agentCannotPay,
   noOutputPocket,
   noVault,
   quoteNotRead,
@@ -109,8 +110,8 @@ export interface BuiltSwap {
   transaction: string
   lastValidBlockHeight: number
   unitsConsumed: number
-  /** Null when the simulation succeeded. */
-  failure: { logs: string[] } | null
+  /** Null when the simulation succeeded. `err` is the chain's own error, for when no program ran. */
+  failure: { logs: string[]; err?: string } | null
   /** Base units the vault's output account gains in the simulation. */
   outputGained: bigint
 }
@@ -250,6 +251,11 @@ export const liveIo = (): ToolIo => {
         new PublicKey(owner),
       )
       if (resolved.existing === null) throw new Refusal(noVault({ owner }))
+      // The agent pays the fee, and a fee payer must stay rent exempt afterwards, so below that
+      // the chain refuses before any program runs and names none. Said here, with the number.
+      const needed = (await connection.getMinimumBalanceForRentExemption(0)) + 5000
+      const held = await connection.getBalance(new PublicKey(agent))
+      if (held < needed) throw new Refusal(agentCannotPay({ agent, held, needed }))
       const vault = vaultAddress(resolved.swigId).toBase58()
       // The proceeds must land in the vault's own account for the output mint. Missing, the swap
       // cannot land; present, the simulation below proves the proceeds arrive there.
@@ -307,7 +313,7 @@ export const liveIo = (): ToolIo => {
         transaction: tx.serialize({ requireAllSignatures: false }).toString('base64'),
         lastValidBlockHeight,
         unitsConsumed: sim.unitsConsumed ?? 0,
-        failure: sim.err === null ? null : { logs: sim.logs ?? [] },
+        failure: sim.err === null ? null : { logs: sim.logs ?? [], err: JSON.stringify(sim.err) },
         // No post state reads as 0 gained, which refuses: never assumed to have arrived.
         outputGained:
           after === undefined

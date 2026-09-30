@@ -547,3 +547,17 @@ test('on the fork, a second failure is refused, naming the second venue, with no
     )
   })
 })
+
+test('a simulation that fails before any program runs names the chain error, not "no program"', async () => {
+  const { io } = swapIo(500000000n, {
+    buildSwap: async () => ({
+      vault: VAULT,
+      transaction: 'AQAB',
+      lastValidBlockHeight: 1,
+      unitsConsumed: 0,
+      outputGained: 0n,
+      failure: { logs: [], err: '"AccountNotFound"' },
+    }),
+  })
+  await expect(callTool('prepare_swap', SWAP, io)).rejects.toThrow(/AccountNotFound/)
+})

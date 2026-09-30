@@ -242,7 +242,8 @@ const handlers = {
         quote,
       })
       if (built.failure !== null) {
-        const program = innermostFailure(built.failure.logs) ?? 'unknown'
+        const failed = innermostFailure(built.failure.logs)
+        const program = failed ?? 'unknown'
         // Fork only: a venue that cannot run on the fork's copy, whose clock lags real time, is routed
         // around once, and every check above runs again on the new route. The spending limit is never
         // routed around, and off the fork a failed simulation is the answer.
@@ -250,7 +251,13 @@ const handlers = {
           const label = (leg.swapInfo as { label?: unknown }).label
           return typeof label === 'string' ? [label] : []
         })
-        if (fork && excludeDexes.length === 0 && program !== SWIG_PROGRAM_ID && venues.length > 0) {
+        if (
+          fork &&
+          excludeDexes.length === 0 &&
+          failed !== null &&
+          failed !== SWIG_PROGRAM_ID &&
+          venues.length > 0
+        ) {
           excludeDexes.push(...venues)
           continue
         }
@@ -259,7 +266,8 @@ const handlers = {
           simulationFailed({
             program,
             detail:
-              line?.replace(/^Program \S+ failed: /, '') ?? 'the logs named no failing program',
+              line?.replace(/^Program \S+ failed: /, '') ??
+              `no program ran; the chain answered ${built.failure.err ?? 'with no error'}`,
           }),
         )
       }
@@ -338,7 +346,7 @@ Network: ${network(process.env['AGON_NETWORK']).short}. Every result starts with
 1. Ask for their Solana wallet address. Never a seed phrase or a private key.
 2. They set Phantom to Settings, Developer Settings, Testnet Mode, Solana Localnet: the practice fork, RPC http://127.0.0.1:8899.
 3. Under 1 SOL there? Call requestAirdrop on that RPC for 5000000000 lamports: fake SOL, fork only.
-4. Make your own keypair on this machine in a file only this user can read (chmod 600). Never show its secret; give them its public key. Practice only, never mainnet.
+4. Make your own keypair on this machine in a file only this user can read (chmod 600). Never show its secret; give them its public key. requestAirdrop it 1000000000 lamports too: it pays each trade's fee. Practice only, never mainnet.
 5. arm_rule with wallet, mints ["So11111111111111111111111111111111111111112"], triggerType "stop", expiresAt null. Give them the link: there they connect Phantom, paste your public key, pick a deposit and a cap, and approve 2 transactions. The same link resumes if they stop.
 6. When done, list_rules: read back the cap and effectiveRemaining.
 
