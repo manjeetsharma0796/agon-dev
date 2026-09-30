@@ -328,99 +328,23 @@ export const isTool = (name: string): name is ToolName =>
  */
 const dataSource = (): string =>
   mode() === 'replay'
-    ? `This deployment is running in REPLAY MODE. It reads committed recordings and cannot reach the
-network at all, so every wallet figure it gives you was recorded earlier, not read just now. Each
-such result carries a "note" field saying so, and you should repeat that note alongside any number
-you quote. Only 1 wallet and a small set of mints have recordings; anything else is refused rather
-than guessed at. The arithmetic over those recorded inputs is real and recomputes per request.`
-    : `This deployment reads live mainnet, so wallet figures are read at request time and carry the
-slot they were read at in "dataSlot".`
+    ? 'Data: REPLAY MODE. Wallet figures are recordings, not read now; repeat any "note" a result carries.'
+    : 'Data: live mainnet reads, each stamped with its dataSlot.'
 
-const INSTRUCTIONS = `Agon turns a trader's own on-chain history into a spending limit their agent has to trade inside.
+const INSTRUCTIONS = `Agon: a spending limit, mined from a trader's own on-chain history, that their agent trades inside.
+Network: ${network(process.env['AGON_NETWORK']).short}. Every result starts with "network"; say it before quoting a number. ${dataSource()}
 
-Network: ${network(process.env['AGON_NETWORK']).short}. Every result starts with this as "network"
-(an error starts with "Network:"). Tell the user which network before quoting any number from it.
+"Onboard me": do these in order. Build nothing and read no source code; all of it exists.
+1. Ask for their Solana wallet address. Never a seed phrase or a private key.
+2. They set Phantom to Settings, Developer Settings, Testnet Mode, Solana Localnet: the practice fork, RPC http://127.0.0.1:8899.
+3. Under 1 SOL there? Call requestAirdrop on that RPC for 5000000000 lamports: fake SOL, fork only.
+4. Make your own keypair on this machine in a file only this user can read (chmod 600). Never show its secret; give them its public key. Practice only, never mainnet.
+5. arm_rule with wallet, mints ["So11111111111111111111111111111111111111112"], triggerType "stop", expiresAt null. Give them the link: there they connect Phantom, paste your public key, pick a deposit and a cap, and approve 2 transactions. The same link resumes if they stop.
+6. When done, list_rules: read back the cap and effectiveRemaining.
 
-${dataSource()}
+Trade: prepare_swap with owner and historyWallet both their wallet, agent your public key, inputMint wrapped SOL, amount in base units (1 SOL = 1000000000), slippageBps up to 100. Tell them the verdict, then sign the base64 transaction with your key and send it to the same RPC before lastValidBlockHeight. "failed simulation" means a price moved: call prepare_swap again. They revoke from the arm_rule link.
 
-What works right now, with nothing to set up:
-
-- check_trade is real, meaning the rule engine is real. Give it a wallet, a mint, a side and a size
-  in base units, and it decodes that wallet's swaps from balance changes, builds a FIFO ledger,
-  mines what that trader normally does, checks the mint's authorities, and answers pass, block or
-  unsure. A non-pass always names the rule and the number, for example "12.4x your median size of
-  0.162 SOL, past your 2x limit". Those numbers are arithmetic over that wallet's history, never a
-  model's opinion. Where that history came from is the paragraph above.
-- The size rule is checked on a BUY only. A sell is not sized against the median, because the
-  median is a cost basis counted in the quote asset and a sell's size is counted in the mint. So a
-  large sell returns no size reason. That is a gap, not a pass.
-- list_rules reads the wallet's vault from the chain this deployment names. Each rule gives the
-  vault, the agent key, the cap per window in slots, effectiveRemaining (what can be spent now) and
-  rollingWorstCase (up to 2 windows across a window edge). Quote effectiveRemaining, never a raw
-  figure, and give rollingWorstCase beside it. spec is null because the chain does not store it. An
-  empty list means no agent role is armed; an error means no chain was read, which is different.
-- prepare_swap builds 1 trade for an armed vault and never signs it. Give it the vault owner, the
-  wallet whose history judges the trade, the agent's public key, the 2 mints (1 must be wrapped SOL, So11111111111111111111111111111111111111112),
-  the amount in base units and a slippage of at most 100 bps. It runs check_trade itself with a
-  real quote and returns an unsigned base64 transaction only on a pass, after it passed simulation.
-  The agent signs it with its own key, locally, and sends it before lastValidBlockHeight. A refusal
-  means no transaction exists: never build one another way.
-- The history wallet is only read, never signed for. On mainnet it is the owner. On the practice
-  fork, pass the owner too: if it has never traded on mainnet (fork activity never counts), the
-  trade still goes out, unchecked against a history and bounded only by the cap the owner signed,
-  and the verdict's first reason, no-trading-history, says so; tell the user that before you sign.
-  Never suggest a real mainnet trade to create history: that spends real funds.
-- arm_rule returns a link to the arming screen, a web page that already exists: the user opens it,
-  connects their own wallet, and signs for the vault and your cap there. You never name the limit,
-  and a request that carries one is refused. Practice fork only; elsewhere it refuses with the
-  reason, which is the correct answer, not an error to retry.
-
-Onboarding, when the user says "onboard me" or asks to get started. Do these in order, and do not
-build a website or read any source code: everything below already exists.
-1. Ask for their Solana wallet address (in Phantom, the account name copies it). Never ask for a
-   seed phrase or a private key.
-2. Tell them to put Phantom on the practice network: Settings, Developer Settings, Testnet Mode on,
-   then Solana Localnet. The practice fork's RPC in the local Docker setup is http://127.0.0.1:8899,
-   the same address Solana Localnet uses.
-3. Check their wallet's SOL there with getBalance. If it is under 1 SOL, ask that RPC for free
-   practice SOL with requestAirdrop, 5000000000 lamports. It is fake SOL on the fork only and never
-   touches mainnet.
-4. You need your own key to trade, separate from theirs. Generate a new keypair on this machine, save
-   it in a file only this user can read (chmod 600), and never print, send or log its secret. Give
-   the user only its public key. It is a practice key for the fork: never reuse it on mainnet.
-5. Call arm_rule with their wallet, mints ["So11111111111111111111111111111111111111112"],
-   triggerType "stop" and expiresAt null, and give them the link. On that page they connect Phantom,
-   paste your public key, choose a deposit and a cap, and approve 2 transactions. If they stop
-   halfway, the same link resumes where they left off.
-6. When they say it is done, call list_rules with their wallet and read back the cap and
-   effectiveRemaining. That is onboarded.
-
-Trading, after onboarding: call prepare_swap with owner and historyWallet both the user's wallet,
-agent your public key, inputMint wrapped SOL, the outputMint they want, the amount in base units and
-slippageBps up to 100. Tell the user what the verdict says before signing. Then sign the returned
-transaction with your key and send it to the same RPC before lastValidBlockHeight; with
-@solana/web3.js: Transaction.from(Buffer.from(transaction, "base64")), tx.sign(yourKeypair),
-connection.sendRawTransaction(tx.serialize()). A "failed simulation" refusal means the price or a
-pool moved: call prepare_swap again. To stop the agent, the user opens the arm_rule link and
-presses Revoke; there is no withdraw yet, and the funds stay in the vault.
-
-What is not real yet, so do not present it as a measurement:
-
-- get_report answers from a recorded example, not from the wallet you asked about, and returns the
-  same figures whatever wallet you pass. Its result carries a "note" field saying so. Repeat that
-  note if you quote any of its numbers. It does not agree with check_trade about the same wallet,
-  because the two read different recordings.
-
-This server never takes, returns or logs a private key, and signs nothing. Every call but
-prepare_swap is a read, and prepare_swap only returns a transaction for you to sign. check_trade
-alone still refuses a wallet with no trading history, since it has nothing to judge against; on the
-practice fork, prepare_swap trades for such a wallet as described above.
-
-Two things worth knowing before you interpret an answer. check_trade on its own takes no price
-quote, so its slippage and price impact answers are "not read" and it answers unsure; prepare_swap
-runs the same check with the quote it routes, and only that can reach pass. Unsure is not a soft
-pass, it means the trade does not go out. Token names and descriptions never appear in any answer.
-And sizes are base units, never decimals: 1 SOL is 1000000000.`
+Rules: never name a limit; unsure or block means no trade; read a refusal's first sentence to the user and do not retry the same call; never suggest a real mainnet trade; this server never takes or signs with a key. Each tool's description has its details.`
 
 /**
  * What each tool does, shown to any agent that lists our tools before it decides whether to call
@@ -429,23 +353,42 @@ And sizes are base units, never decimals: 1 SOL is 1000000000.`
  */
 const DESCRIPTIONS: Record<ToolName, string> = {
   get_report:
-    "Read a wallet's mined trading habits: stop discipline, sizing, hold time, coverage and the " +
-    'cost of breaking its own rules. Read only, 0 chain writes.',
+    "A wallet's mined trading habits: stop discipline, sizing, hold time, coverage and the cost of " +
+    'breaking its own rules. Not real yet: it answers from 1 recorded example, the same figures for ' +
+    'any wallet, with a "note" saying so; repeat the note if you quote a number. Read only.',
   check_trade:
-    "Check a proposed trade against the wallet's own mined rules before it goes out. Returns " +
-    'pass, block or unsure; a non-pass verdict always names the rule and the number. Anything ' +
-    'that can move funds fails closed: unsure is not a soft pass.',
+    "Judge 1 proposed trade against the wallet's own mined rules: wallet, mint, side, size in base " +
+    "units. Real: it decodes the wallet's swaps, builds a FIFO ledger, mines its habits and checks " +
+    "the mint's authorities. Answers pass, block or unsure; a non-pass names the rule and the " +
+    'number. Unsure is not a soft pass: the trade does not go out. On its own it takes no price ' +
+    'quote, so it answers unsure at best; only prepare_swap can reach pass. The size rule checks ' +
+    'buys only, so a large sell gets no size reason, a gap and not a pass. A wallet with no trading ' +
+    'history is refused here, since there is nothing to judge against.',
   arm_rule:
-    'Get a link to the arming screen for a wallet. The user opens it, connects their own wallet ' +
-    'and sets the spending limit there; this tool never takes a limit and refuses a request that ' +
-    'carries one. Practice fork only until the pre-mainnet checklist is ticked.',
+    'Onboarding step 5. Returns a link to the arming screen, a web page that already exists: the ' +
+    'user connects their own wallet (Phantom on Solana Localnet), pastes your public key, picks a ' +
+    'deposit and a cap, and approves 2 transactions; the same link resumes if they stop halfway. ' +
+    'Pass wallet, mints ["So11111111111111111111111111111111111111112"], triggerType "stop", ' +
+    'expiresAt null. You never name the limit, and a request that carries one is refused. Practice ' +
+    'fork only; elsewhere it refuses with the reason, which is the answer, not an error to retry.',
   list_rules:
-    "List the agent rules armed on a wallet's vault, read from chain: the cap per window in slots, " +
-    'what the agent can spend now, and the most it can spend across a window edge.',
+    "The agent rules armed on a wallet's vault, read from the chain: vault, agent key, cap per " +
+    'window in slots, effectiveRemaining (what can be spent now) and rollingWorstCase (up to 2 ' +
+    'windows across a window edge). Quote effectiveRemaining, never a raw figure, with ' +
+    'rollingWorstCase beside it. An empty list means no agent is armed; an error means no chain ' +
+    'was read, which is different.',
   prepare_swap:
-    'Build 1 unsigned swap from an armed vault for the agent to sign locally. Runs check_trade ' +
-    'with a real quote and simulates first; returns a transaction only on a pass, and refuses ' +
-    'with the cause and number otherwise. Never takes or returns a private key.',
+    'Build 1 unsigned swap from an armed vault for you to sign locally. Pass owner and ' +
+    "historyWallet as the user's wallet, agent as your public key, inputMint and outputMint (1 must " +
+    'be wrapped SOL, So11111111111111111111111111111111111111112), amount in base units of the ' +
+    'input, slippageBps up to 100. It checks the amount against the chain cap, runs check_trade ' +
+    'with a real quote, and simulates; it returns a base64 transaction only past all 3, with you as ' +
+    'fee payer and only signer. Sign it with your key and send it before lastValidBlockHeight, e.g. ' +
+    'with @solana/web3.js: Transaction.from(Buffer.from(transaction, "base64")), tx.sign(keypair), ' +
+    'connection.sendRawTransaction(tx.serialize()). On the practice fork a wallet with no mainnet ' +
+    'trades still trades, bounded only by the cap the owner signed; the first reason, ' +
+    'no-trading-history, says so: tell the user before signing. A refusal means no transaction ' +
+    'exists: never build one another way, and never suggest a real mainnet trade to create history.',
 }
 
 /**

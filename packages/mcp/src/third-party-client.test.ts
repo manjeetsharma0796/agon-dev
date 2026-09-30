@@ -95,3 +95,22 @@ test('a wallet with no history is refused over MCP, not answered from nothing', 
   expect(result.isError).toBe(true)
   expect(textOf(result).length).toBeGreaterThan(0)
 })
+
+// Claude Code keeps only the first 2,048 characters of a server's instructions and of each tool's
+// description, silently. Ours once ran to several times that, so the onboarding steps never reached
+// an agent in Claude Code: it said arm_rule was not loaded and never mentioned Phantom or practice
+// SOL. The margin covers the longest network label, the fork's, which these tests do not render.
+const CLAUDE_CODE_CAP = 2048
+const LONGEST_LABEL_MARGIN = 20
+
+test('the instructions and every tool description fit what Claude Code keeps, onboarding first', async () => {
+  const client = await connectThirdPartyClient()
+  const instructions = client.getInstructions() ?? ''
+  expect(instructions.length).toBeLessThanOrEqual(CLAUDE_CODE_CAP - LONGEST_LABEL_MARGIN)
+  expect(instructions).toMatch(/Onboard me/)
+  expect(instructions).toMatch(/Solana Localnet/)
+  const { tools } = await client.listTools()
+  for (const tool of tools) {
+    expect(tool.description?.length ?? 0, tool.name).toBeLessThanOrEqual(CLAUDE_CODE_CAP)
+  }
+})
