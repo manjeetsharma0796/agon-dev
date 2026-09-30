@@ -57,15 +57,14 @@ const ARMED: Record<string, { unit: string; decimals: number }> = {
 /**
  * check_trade's whole read path, for both tools that answer it. The category lookup is enrichment:
  * if it fails the mix is absent and style fit answers unsure, which still keeps the trade in.
+ *
+ * Decided 2026-09-30: on the practice fork, a wallet with 0 closed trades is judged, not refused.
+ * The verdict's first reason, no-trading-history, says so and names `bound`, the only thing that
+ * limits the trade there, and `unchecked` tells the caller that the verdict gates nothing. Off the
+ * fork an empty history fails closed, because anything that can move funds does. Both tools call
+ * this, so an agent that checks before it builds is told the same thing twice (T-C24).
  */
-async function judge(
-  io: ToolIo,
-  trade: CheckTradeInput,
-  quote: Quote | null,
-  // Only prepare_swap on the practice fork: an empty history is judged (so the answer still says
-  // what the check found) rather than refused, and the caller decides what that verdict gates.
-  emptyHistoryAllowed = false,
-) {
+async function judge(io: ToolIo, trade: CheckTradeInput, quote: Quote | null, bound: string) {
   // A size of 0 parses, because the contract's BaseUnits is a non-negative integer, and then
   // sails through every check: 0 is under any median, so the size rule does not fire and the
   // answer reads like a trade that was examined. Nothing is being traded, so there is nothing to
@@ -73,18 +72,37 @@ async function judge(
   if (/^0+$/.test(trade.size)) {
     throw new Refusal(zeroSizeTrade())
   }
+  const fork = network(process.env['AGON_NETWORK']).id === 'fork'
   const [txs, mintCheck] = await Promise.all([
     io.loadTransactions(trade.wallet),
     io.loadMintCheck(trade.mint),
   ])
-  if (txs.length === 0 && !emptyHistoryAllowed) {
+  if (txs.length === 0 && !fork) {
     // Anything that can move funds fails closed, and an empty history is not a clean bill.
     throw new Refusal(noHistory({ wallet: trade.wallet }))
   }
   const categories = await io
     .loadCategories(tradedMints(txs, trade.wallet), mintCheck.dataSlot ?? undefined)
     .catch(() => undefined)
-  return assessTrade(txs, trade, mintCheck, DEFAULT_QUOTE, categories, quote)
+  const judged = assessTrade(txs, trade, mintCheck, DEFAULT_QUOTE, categories, quote)
+  const unchecked = fork && judged.closedTrades === 0
+  if (!unchecked) return { verdict: judged.verdict, unchecked }
+  return {
+    unchecked,
+    verdict: {
+      ...judged.verdict,
+      reasons: [
+        {
+          rule: 'no-trading-history',
+          message:
+            `0 closed trades on mainnet for ${trade.wallet}, so this trade was not checked against ` +
+            `a history. On the practice fork prepare_swap still builds it, bounded only by ${bound}. ` +
+            `The reasons after this one are what the check found, and none of them stopped the trade.`,
+        },
+        ...judged.verdict.reasons,
+      ],
+    },
+  }
 }
 
 const handlers = {
@@ -96,7 +114,14 @@ const handlers = {
   // Real. Reads this wallet's own history and this mint's own authorities, then runs the same
   // `assessTrade` the CLI runs, so the agent and the terminal cannot answer differently.
   check_trade: async (input: unknown, io: ToolIo) =>
-    (await judge(io, toolContracts.check_trade.input.parse(input), null)).verdict,
+    (
+      await judge(
+        io,
+        toolContracts.check_trade.input.parse(input),
+        null,
+        'the cap the owner signed on chain',
+      )
+    ).verdict,
 
   arm_rule: (input: unknown) =>
     armRule(input, {
@@ -160,9 +185,6 @@ const handlers = {
       )
     }
 
-    // Decided 2026-09-30: on the practice fork, a history wallet with 0 closed trades is not refused.
-    // Nothing is checked against a history it does not have, the trade is bounded only by the cap
-    // the owner signed on chain, and the answer says so first. Off the fork this still fails closed.
     const fork = network(process.env['AGON_NETWORK']).id === 'fork'
     // Venues to route around, filled at most once, on the fork, by a failed simulation below.
     const excludeDexes: string[] = []
@@ -192,7 +214,8 @@ const handlers = {
       ).find(([, ok]) => !ok)
       if (drift !== undefined) throw new Refusal(quoteMismatch({ field: drift[0] }))
       const route = quote.routePlan.map((leg) => leg.swapInfo.ammKey)
-      const judged = await judge(
+      // `judge` decides the fork's no-history case; here the bound it names is the signed cap.
+      const { verdict, unchecked } = await judge(
         io,
         {
           wallet: a.historyWallet,
@@ -205,26 +228,9 @@ const handlers = {
           slippageBps: quote.slippageBps,
           contextSlot: quote.contextSlot ?? null,
         },
-        fork,
+        `the cap the owner signed: ${formatUnits(rule.effectiveRemaining, armed.decimals)} ` +
+          `${armed.unit} left in this window`,
       )
-      const unchecked = fork && judged.closedTrades === 0
-      const verdict = unchecked
-        ? {
-            ...judged.verdict,
-            reasons: [
-              {
-                rule: 'no-trading-history',
-                message:
-                  `0 closed trades on mainnet for ${a.historyWallet}, so this trade was not checked ` +
-                  `against a history. On the practice fork it goes out bounded only by the cap the ` +
-                  `owner signed: ${formatUnits(rule.effectiveRemaining, armed.decimals)} ` +
-                  `${armed.unit} left in this window. The reasons after this one are what the check ` +
-                  `found, and none of them stopped the trade.`,
-              },
-              ...judged.verdict.reasons,
-            ],
-          }
-        : judged.verdict
       if (verdict.verdict !== 'pass' && !unchecked) {
         throw new Refusal(
           tradeNotPassed({
@@ -384,8 +390,11 @@ What is not real yet, so do not present it as a measurement:
 
 Setup: none. No wallet connection and no private key: this server never takes, returns or logs
 one, and signs nothing. Every call but prepare_swap is a read, and prepare_swap only returns a
-transaction for the agent to sign. You need a mainnet wallet address to ask about; a wallet with no
-trading history is refused rather than approved, because there is nothing to judge a trade against.
+transaction for the agent to sign. You need a mainnet wallet address to ask about. On mainnet a
+wallet with no trading history is refused rather than approved, because there is nothing to judge a
+trade against. On the practice fork a wallet with 0 closed trades is judged unchecked instead, and
+both check_trade and prepare_swap put no-trading-history first, as the history wallet paragraph
+above says.
 
 Two things worth knowing before you interpret an answer. check_trade on its own takes no price
 quote, so its slippage and price impact answers are "not read" and it answers unsure; prepare_swap
