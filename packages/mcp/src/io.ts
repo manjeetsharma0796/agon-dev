@@ -83,7 +83,25 @@ export interface ToolIo {
   }): Promise<BuiltSwap>
 }
 
-type QuoteAsk = Pick<PrepareSwapInput, 'inputMint' | 'outputMint' | 'amount' | 'slippageBps'>
+type QuoteAsk = Pick<PrepareSwapInput, 'inputMint' | 'outputMint' | 'amount' | 'slippageBps'> & {
+  /** Venues to route around, by Jupiter's own label. Sent back to Jupiter only, never to the agent. */
+  excludeDexes?: string[]
+}
+
+/**
+ * The accounts a swap reads that the fork should re-copy from mainnet before simulating: all of
+ * them except the vault and its own token accounts, which hold the fork's balances and have no
+ * mainnet state worth restoring. The fork copies an account the first time it is read and keeps
+ * that copy, so a pool read an hour ago no longer matches the price Jupiter quoted just now.
+ */
+export function accountsToRefresh(
+  accounts: readonly string[],
+  vault: string,
+  mints: readonly string[],
+): string[] {
+  const own = new Set([vault, ...mints.map((m) => pocketOf(new PublicKey(vault), m).toBase58())])
+  return [...new Set(accounts)].filter((a) => !own.has(a))
+}
 
 export interface BuiltSwap {
   vault: string
@@ -219,7 +237,7 @@ export const liveIo = (): ToolIo => {
 
     async loadQuote(q: QuoteAsk): Promise<unknown> {
       const res = await jupiter(
-        jupiterQuote(q.inputMint, q.outputMint, q.amount, q.slippageBps, true),
+        jupiterQuote(q.inputMint, q.outputMint, q.amount, q.slippageBps, true, q.excludeDexes),
       )
       if (res.status !== 200) throw new Refusal(quoteUnavailable({ status: res.status }))
       return res.body
@@ -241,6 +259,30 @@ export const liveIo = (): ToolIo => {
       const res = await jupiter(jupiterSwapInstructions(quote, vault))
       if (res.status !== 200) throw new Refusal(quoteUnavailable({ status: res.status }))
       const raw = (res.body as { swapInstruction: JupiterInstruction }).swapInstruction
+      // Fork only, and chainFor has already proved the chain is one: Surfpool's own cheatcode drops
+      // the fork's copy, so the simulation reads today's pool rather than the first one it saw. A
+      // failed refresh changes nothing but freshness; the simulation below still decides.
+      if (network(process.env['AGON_NETWORK']).id === 'fork') {
+        const stale = accountsToRefresh(
+          raw.accounts.map((k) => k.pubkey),
+          vault,
+          [quote.inputMint, quote.outputMint],
+        )
+        await Promise.allSettled(
+          stale.map((pubkey) =>
+            fetch(connection.rpcEndpoint, {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({
+                jsonrpc: '2.0',
+                id: 1,
+                method: 'surfnet_resetAccount',
+                params: [pubkey],
+              }),
+            }),
+          ),
+        )
+      }
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash()
       const tx = await swapTransaction({
         swig: resolved.existing,

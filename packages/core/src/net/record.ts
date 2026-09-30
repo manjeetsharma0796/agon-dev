@@ -49,12 +49,14 @@ export const jupiterQuote = (
   amount: string,
   slippageBps = 100,
   legacy = false,
+  excludeDexes: readonly string[] = [],
 ): NetRequest => ({
   provider: 'jupiter',
   url:
     `https://api.jup.ag/swap/v1/quote?inputMint=${inputMint}&outputMint=${outputMint}` +
     `&amount=${amount}&slippageBps=${slippageBps}` +
-    (legacy ? '&asLegacyTransaction=true' : ''),
+    (legacy ? '&asLegacyTransaction=true' : '') +
+    (excludeDexes.length > 0 ? `&excludeDexes=${encodeURIComponent(excludeDexes.join(','))}` : ''),
   headers: { 'x-api-key': env('JUPITER_API_KEY') },
 })
 
