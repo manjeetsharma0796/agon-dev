@@ -461,6 +461,31 @@ test('on the fork, a wallet that has history is still judged by it', async () =>
   })
 })
 
+// T-C24: an agent checks before it builds. check_trade refusing what prepare_swap would then build
+// sent every no-history fork trade home at the first call, so the 2 tools now give 1 answer.
+
+const CHECK = { wallet: RECORDED, mint: USDC, side: 'buy', size: '1000' } as const
+
+test('on the fork, check_trade judges a wallet with no trades unchecked, the answer prepare_swap gives', async () => {
+  await withNetwork('fork', async () => {
+    const { io } = swapIo(500000000n, { loadTransactions: async () => [] })
+    const out = (await callTool('check_trade', CHECK, io)) as {
+      verdict: string
+      reasons: { rule: string; message: string }[]
+    }
+    expect(out.verdict).not.toBe('pass')
+    expect(out.reasons[0]?.rule).toBe('no-trading-history')
+    expect(out.reasons[0]?.message).toMatch(/0 closed trades on mainnet for/)
+  })
+})
+
+test('off the fork, check_trade still refuses a wallet with no trades', async () => {
+  await withNetwork('mainnet', async () => {
+    const { io } = swapIo(500000000n, { loadTransactions: async () => [] })
+    await expect(callTool('check_trade', CHECK, io)).rejects.toThrow(/0 transactions were read/)
+  })
+})
+
 // ---- Fork swaps that fail on stale copies or the fork's lagging clock. 2026-10-01. ----
 
 test('the fork refreshes every account the swap touches, never the vault or its own token accounts', () => {
