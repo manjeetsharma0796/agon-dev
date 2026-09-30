@@ -108,26 +108,32 @@ const handlers = {
   // An empty list now means the chain holds no agent role for this wallet.
   list_rules: async (input: unknown, io: ToolIo) => {
     const { wallet } = input as { wallet: string }
-    const { vault, rules } = await io.loadVaultRules(wallet)
-    if (vault === null) return []
-    return rules.map((r) => ({
-      spec: null,
-      swigRole: {
-        roleId: String(r.roleId),
-        authority: r.authority,
-        // agentRulesOf lists only roles that passed assertAgentRoleShape, which requires Jupiter.
-        program: JUPITER_PROGRAM_ID,
-        tokenRecurringLimit: {
-          mint: r.mint,
-          amount: String(r.amount),
-          windowSlots: Number(r.windowSlots),
-        },
-      },
-      jupiterOrderId: null,
-      vault,
-      effectiveRemaining: String(r.effectiveRemaining),
-      rollingWorstCase: String(r.rollingWorstCase),
-    }))
+    // The owner's own vault, or else every wallet that hired this key when it is an agent's (T-C24).
+    const own = await io.loadVaultRules(wallet)
+    const found = own.vault !== null ? [own] : await io.findHirers(wallet)
+    return found.flatMap(({ owner, vault, rules }) =>
+      owner === null || vault === null
+        ? []
+        : rules.map((r) => ({
+            spec: null,
+            swigRole: {
+              roleId: String(r.roleId),
+              authority: r.authority,
+              // agentRulesOf lists only roles that passed assertAgentRoleShape, which requires Jupiter.
+              program: JUPITER_PROGRAM_ID,
+              tokenRecurringLimit: {
+                mint: r.mint,
+                amount: String(r.amount),
+                windowSlots: Number(r.windowSlots),
+              },
+            },
+            jupiterOrderId: null,
+            vault,
+            owner,
+            effectiveRemaining: String(r.effectiveRemaining),
+            rollingWorstCase: String(r.rollingWorstCase),
+          })),
+    )
   },
 
   // Builds the trade, never signs it. Every refusal comes before anything is built, in the order
@@ -342,17 +348,15 @@ const dataSource = (): string =>
 const INSTRUCTIONS = `Agon: a spending limit mined from a trader's own history, which their agent trades inside.
 Network: ${network(process.env['AGON_NETWORK']).short}. Every result starts with "network"; say it before quoting a number. ${dataSource()}
 
-"Onboard me": do these in order. Build nothing, read no source: it all exists.
-1. Ask for their Solana wallet address. Never a seed phrase or a private key.
+"Onboard me": do these in order. Build nothing, read no source: it all exists. Do not ask for their address.
+1. Make (or reuse) your own keypair here, in a chmod 600 file; never show its secret. Practice only, never mainnet.
 2. They set Phantom to Settings, Developer Settings, Testnet Mode, Solana Localnet: the practice fork, RPC http://127.0.0.1:8899.
-3. Under 1 SOL there? Call requestAirdrop on that RPC for 5000000000 lamports: fake SOL, fork only.
-4. Make your own keypair on this machine in a file only this user can read (chmod 600). Never show its secret; give them its public key. requestAirdrop it 1000000000 lamports too: it pays each trade's fee. Practice only, never mainnet.
-5. arm_rule with wallet, mints ["So11111111111111111111111111111111111111112"], triggerType "stop", expiresAt null. Give them the link: there they connect Phantom, paste your public key, pick a deposit and a cap, and approve 2 transactions. The same link resumes if they stop.
-6. When done, list_rules: read back the cap and effectiveRemaining.
+3. arm_rule with agent your public key, mints ["So11111111111111111111111111111111111111112"], triggerType "stop", expiresAt null. Give them the link: they connect Phantom (your key is prefilled), take free practice SOL if short, pick a deposit and cap, and approve 2 transactions (which also pay your fees). The link resumes if they stop.
+4. When they say done, list_rules with your own public key: it lists every wallet that hired you (owner), each with its vault, cap and effectiveRemaining. Show them the owner and ask them to confirm it is the wallet in Phantom (if several, which one); then remember it.
 
-Trade: prepare_swap with owner and historyWallet both their wallet, agent your public key, inputMint wrapped SOL, amount in base units (1 SOL = 1000000000), slippageBps up to 100. A returned transaction is cleared to go out, whatever the verdict word: tell them the verdict and its first reason, then sign it with your key and send it to the same RPC before lastValidBlockHeight. "failed simulation": a price moved, so call prepare_swap again. They revoke from the arm_rule link.
+Trade: prepare_swap with owner and historyWallet both the owner list_rules gave, agent your public key, inputMint wrapped SOL, amount in base units (1 SOL = 1000000000), slippageBps up to 100. A returned transaction is cleared to go out, whatever the verdict word: tell them the verdict and its first reason, then sign it with your key and send it to the same RPC before lastValidBlockHeight. "failed simulation": a price moved, so call prepare_swap again. They revoke from the arm_rule link.
 
-Rules: never name a limit; from check_trade, unsure or block means no trade; read a refusal's first sentence to the user and do not retry the same call; never suggest a real mainnet trade; this server never takes or signs with a key. Details: each tool's description.`
+Rules: never name a limit; from check_trade, unsure or block means no trade; read a refusal's first sentence to the user, and do not retry it; never suggest a real mainnet trade; this server never holds or signs with a key. Details: each tool's description.`
 
 /**
  * What each tool does, shown to any agent that lists our tools before it decides whether to call
@@ -373,14 +377,17 @@ const DESCRIPTIONS: Record<ToolName, string> = {
     'buys only, so a large sell gets no size reason, a gap and not a pass. A wallet with no trading ' +
     'history is refused here, since there is nothing to judge against.',
   arm_rule:
-    'Onboarding step 5. Returns a link to the arming screen, a web page that already exists: the ' +
-    'user connects their own wallet (Phantom on Solana Localnet), pastes your public key, picks a ' +
-    'deposit and a cap, and approves 2 transactions; the same link resumes if they stop halfway. ' +
-    'Pass wallet, mints ["So11111111111111111111111111111111111111112"], triggerType "stop", ' +
-    'expiresAt null. You never name the limit, and a request that carries one is refused. Practice ' +
+    'Onboarding step 3. Returns a link to the arming screen, a web page that already exists: the ' +
+    'user connects their own wallet (Phantom on Solana Localnet), your key is filled in from the ' +
+    'link, they can take free practice SOL, pick a deposit and a cap, and approve 2 transactions ' +
+    'that also send your key 0.01 SOL for fees; the same link resumes if they stop halfway. Pass ' +
+    'agent (your public key), and wallet only if they gave it; mints ' +
+    '["So11111111111111111111111111111111111111112"], triggerType "stop", expiresAt null. You never name the limit, and a request that carries one is refused. Practice ' +
     'fork only; elsewhere it refuses with the reason, which is the answer, not an error to retry.',
   list_rules:
-    "The agent rules armed on a wallet's vault, read from the chain: vault, agent key, cap per " +
+    "The agent rules armed on a wallet's vault, read from the chain. Pass the owner's wallet, or " +
+    'your own public key to find the wallet that hired you: each rule carries owner, which is ' +
+    'what prepare_swap takes. Each also gives vault, agent key, cap per ' +
     'window in slots, effectiveRemaining (what can be spent now) and rollingWorstCase (up to 2 ' +
     'windows across a window edge). Quote effectiveRemaining, never a raw figure, with ' +
     'rollingWorstCase beside it. An empty list means no agent is armed; an error means no chain ' +

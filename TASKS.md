@@ -2556,7 +2556,7 @@ _(empty)_
 
 
 ### T-C24, "Onboard me" with nothing copied: the link carries the agent key, the chain carries the wallet back
-- Status: claimed 2026-10-01 | Owner: manjeetsharma0796 | Branch: feature/t-c24-onboard-without-copying
+- Status: in-review 2026-10-01 | Owner: manjeetsharma0796 | Branch: feature/t-c24-onboard-without-copying
 - Depends-on: T-C21, T-E06, T-B21
 - Touches: packages/core/src/rule.ts, packages/core/src/index.ts, packages/core/src/contracts.test.ts,
   fixtures/contracts/, apps/web/src/legs.ts, apps/web/src/legs.test.ts, apps/web/src/arm-flow.ts,
@@ -2575,7 +2575,14 @@ _(empty)_
   connects, takes practice SOL and approves on the page; then the same agent, told "done, buy
   0.005 SOL of USDC", names the connected wallet itself and the trade lands; 0 addresses typed or
   pasted by the user in either direction
-- Evidence: <PR link, the fresh-agent transcript and the landed signature>
+- Evidence: a fresh Claude Code agent, only the MCP, told "onboard me" with no address: 1 link with
+  its key; the page's flow took practice SOL and armed, paying the key 0.01 SOL; told "done, buy 0.005
+  SOL of USDC", it called list_rules with its own key, got the owner it was never told, and the trade
+  finalized from that vault (`4U14XhPX...`, 0.5886 USDC, 0.495 of 0.5 left). 0 addresses typed
+- Finding 2026-10-01, from the security review: the lookup first trusted the newest payer within 25
+  signatures, so a stranger hiring the same key could win on a shared fork, and the agent's own
+  trades pushed the real owner out after about 24. Now every hirer is listed, failed transactions
+  name nobody, 400 signatures are read, and the agent confirms the owner with the user once
 - Why it is its own row: asked for 2026-10-01 by manjeetsharma0796 after T-C21's fresh-agent run.
   Onboarding worked, but the user had to paste their wallet into the chat and the agent's key into
   the page. The page learns the wallet from Phantom, but nothing carried it back to the agent, and

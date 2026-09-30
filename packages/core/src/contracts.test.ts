@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   ArmedRule,
+  ArmRequest,
   PrepareSwapInput,
   PreparedSwap,
   ArmingLink,
@@ -61,6 +62,31 @@ describe('examples parse against their contract', () => {
     expect(() =>
       RuleSpec.parse({ ...spec, cap: { mint: spec.mints[0], amount: '1', windowSeconds: 60 } }),
     ).toThrow(/cap/)
+  })
+
+  // T-C24: an agent onboarding a user does not know their wallet yet, only its own key. The link
+  // carries the key so the arming screen fills it in, and the chain carries the wallet back.
+  it('arm_rule takes the agent key, the wallet, or both, but not neither, and still never a cap', () => {
+    const { wallet, ...rest } = example('armed-rule').spec
+    const agent = 'DNDYmqxubRKmMtnq88AW4aUHreu88XrrGijAKpUojw1A'
+    expect(() => ArmRequest.parse({ ...rest, agent })).not.toThrow()
+    expect(() => ArmRequest.parse({ ...rest, wallet })).not.toThrow()
+    expect(() => ArmRequest.parse({ ...rest, wallet, agent })).not.toThrow()
+    expect(() => ArmRequest.parse(rest)).toThrow(/wallet|agent/)
+    expect(() =>
+      ArmRequest.parse({
+        ...rest,
+        agent,
+        cap: { mint: rest.mints[0], amount: '1', windowSeconds: 60 },
+      }),
+    ).toThrow(/cap/)
+    expect(toolContracts.arm_rule.input).toBe(ArmRequest)
+  })
+
+  it('an armed rule names the wallet that owns the vault, which is what prepare_swap takes', () => {
+    const { owner, ...rest } = example('armed-rule')
+    expect(owner).toMatch(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/)
+    expect(() => ArmedRule.parse(rest)).toThrow(/owner/)
   })
 
   // A wallet we read nothing for. It is a separate file because the interesting part is a value
@@ -177,6 +203,7 @@ describe('an ArmedRule read back from chain', () => {
     },
     jupiterOrderId: null,
     vault,
+    owner: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM',
     effectiveRemaining: '500000000',
     rollingWorstCase: '1000000000',
   }

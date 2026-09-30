@@ -22,6 +22,7 @@ import {
 } from '@agon/chain'
 import {
   PublicKey,
+  SystemProgram,
   TransactionMessage,
   VersionedTransaction,
   type Connection,
@@ -183,6 +184,32 @@ interface ArmRequest {
 }
 
 /**
+ * What the hire approval also pays the agent's key, in practice SOL on the fork: its fees for about
+ * 1,800 trades. It is also how the agent finds this wallet from its own history (T-C24), so the user
+ * never pastes an address into the chat. The chain's role, not this transfer, decides who hired it.
+ */
+export const AGENT_FEE_LAMPORTS = 10_000_000
+
+/** The hire instructions, then the fee transfer, so 1 approval does both. */
+const hireWithFee = async (
+  swig: NonNullable<Awaited<ReturnType<SwigReader>>>,
+  request: Omit<ArmRequest, 'depositLamports'>,
+): Promise<TransactionInstruction[]> => [
+  ...(await hireAgent({
+    swig,
+    owner: request.owner,
+    agent: request.agent,
+    mint: WSOL_MINT,
+    approved: { amount: request.cap, window: request.window },
+  })),
+  SystemProgram.transfer({
+    fromPubkey: request.owner,
+    toPubkey: request.agent,
+    lamports: AGENT_FEE_LAMPORTS,
+  }),
+]
+
+/**
  * Create the vault, fund it, and let the agent trade: 2 wallet approvals.
  *
  * Refuses when the wallet already has a vault, rather than creating a second one: the lookup finds
@@ -218,13 +245,7 @@ export async function arm(
   const hireSignature = await send(
     connection,
     request.owner,
-    await hireAgent({
-      swig: created,
-      owner: request.owner,
-      agent: request.agent,
-      mint: WSOL_MINT,
-      approved: { amount: request.cap, window: request.window },
-    }),
+    await hireWithFee(created, request),
     sign,
   )
   await verifyHired(connection, found.swigId, request.agent, {
@@ -245,13 +266,7 @@ export async function hire(
   const signature = await send(
     connection,
     request.owner,
-    await hireAgent({
-      swig: found.existing,
-      owner: request.owner,
-      agent: request.agent,
-      mint: WSOL_MINT,
-      approved: { amount: request.cap, window: request.window },
-    }),
+    await hireWithFee(found.existing, request),
     sign,
   )
   await verifyHired(connection, found.swigId, request.agent, {

@@ -93,20 +93,19 @@ output schemas: [`mcp-tools.md`](./mcp-tools.md).
 
 ## 4b. Onboarding a new user
 
-What an agent does when the user says "onboard me". Every piece exists; nothing is built.
+What an agent does when the user says "onboard me". Nobody copies an address in either direction.
 
-1. Ask for the user's Solana wallet address. Never a seed phrase or a private key.
+1. The agent makes its own practice key (section 5). It does not ask for the user's address.
 2. The user sets Phantom to **Settings, Developer Settings, Testnet Mode, Solana Localnet**, which
    points at the fork on `127.0.0.1:8899`.
-3. If the wallet has under 1 SOL on the fork, the agent asks the fork for practice SOL:
-   `requestAirdrop` for 5000000000 lamports to `http://127.0.0.1:8899`. Fake SOL, fork only.
-4. The agent makes its own practice key (section 5), gives the user only the public key, and airdrops
-   1000000000 lamports to that key as well: the agent pays each trade's fee.
-5. The agent calls `arm_rule` with the wallet, `mints: ["So11111111111111111111111111111111111111112"]`,
-   `triggerType: "stop"` and `expiresAt: null`, and hands over the link. On the page the user
-   connects Phantom, pastes the agent's public key, picks a deposit and a cap, and approves 2
-   transactions. Stopping halfway is fine: the same link resumes from what is on chain.
-6. The agent calls `list_rules` and reads back the cap and `effectiveRemaining`.
+3. The agent calls `arm_rule` with `agent` set to its public key,
+   `mints: ["So11111111111111111111111111111111111111112"]`, `triggerType: "stop"` and
+   `expiresAt: null`, and hands over the link. On the page the user connects Phantom (the agent's key
+   is already filled in), takes free practice SOL if the wallet is short, picks a deposit and a cap,
+   and approves 2 transactions. The second also sends the agent's key 0.01 SOL for its fees.
+   Stopping halfway is fine: the same link resumes from what is on chain.
+4. The agent calls `list_rules` with **its own public key**. The chain names the wallet that hired
+   it: each rule carries `owner`, along with the vault, the cap and `effectiveRemaining`.
 
 A user with no trading history can trade on the fork: `prepare_swap` builds the trade bounded only by
 the cap they signed, and says so as the verdict's first reason, `no-trading-history`.

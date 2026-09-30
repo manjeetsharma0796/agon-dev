@@ -17,7 +17,7 @@ import {
   noPublicAddress,
   Refusal,
   Report,
-  RuleSpec,
+  ArmRequest,
   WalletQuery,
 } from '@agon/core'
 
@@ -73,24 +73,33 @@ export const armRule = (
   input: unknown,
   env: { publicUrl: string | undefined; network: string | undefined },
 ): ArmingLink => {
-  const spec = RuleSpec.parse(input)
+  const spec = ArmRequest.parse(input)
+  // Refusals name whoever the link was for: the wallet if the agent knew it, else its own key.
+  const whose = spec.wallet ?? `the wallet that hires agent ${spec.agent}`
   const net = network(env.network)
   if (net.id !== 'fork') {
-    throw new NotArmable(armingOffFork({ wallet: spec.wallet, network: net.short }))
+    throw new NotArmable(armingOffFork({ wallet: whose, network: net.short }))
   }
   if (!env.publicUrl) {
-    throw new NotArmable(noPublicAddress({ wallet: spec.wallet }))
+    throw new NotArmable(noPublicAddress({ wallet: whose }))
   }
   const url = new URL('/arm', env.publicUrl)
-  // The fragment, not the query: a browser never sends it to a server, so the wallet does not
-  // land in anyone's request log.
-  url.hash = `wallet=${spec.wallet}`
+  // The fragment, not the query: a browser never sends it to a server, so neither key lands in
+  // anyone's request log. The screen reads `agent` to fill in the key the user would paste.
+  url.hash = [
+    spec.wallet === undefined ? null : `wallet=${spec.wallet}`,
+    spec.agent === undefined ? null : `agent=${spec.agent}`,
+  ]
+    .filter((part) => part !== null)
+    .join('&')
   return ArmingLink.parse({
     url: url.toString(),
-    wallet: spec.wallet,
+    wallet: spec.wallet ?? null,
+    agent: spec.agent ?? null,
     note:
-      `Open this link and connect ${spec.wallet}. You set the spending limit there yourself, ` +
-      `starting from what your own trading history suggests; this tool never names one.`,
+      `Open this link and connect ${spec.wallet ?? 'your wallet'}. You set the spending limit ` +
+      `there yourself, starting from what your own trading history suggests; this tool never ` +
+      `names one.`,
   })
 }
 

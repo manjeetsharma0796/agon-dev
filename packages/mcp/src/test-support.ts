@@ -24,6 +24,7 @@ export const textOf = (result: unknown): string => {
 export const withChain = (vaultRules: VaultRules): ToolIo => ({
   ...liveIo(),
   loadVaultRules: async () => vaultRules,
+  findHirers: async () => [],
 })
 
 // prepare_swap's chain and Jupiter, faked; check_trade stays real, on the recorded wallet.
@@ -75,6 +76,7 @@ export const swapIo = (remaining: bigint, over: Partial<ToolIo> = {}) => {
     loadVaultRules: async () => {
       calls.push('vault')
       return {
+        owner: SWAP.owner,
         vault: SWAP_VAULT,
         rules: [
           {

@@ -425,10 +425,13 @@ Returns a link to the arming screen. The user connects their own wallet there an
           "type": "null"
         }
       ]
+    },
+    "agent": {
+      "type": "string",
+      "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
     }
   },
   "required": [
-    "wallet",
     "mints",
     "triggerType",
     "expiresAt"
@@ -449,8 +452,26 @@ Returns a link to the arming screen. The user connects their own wallet there an
       "format": "uri"
     },
     "wallet": {
-      "type": "string",
-      "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "agent": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "note": {
       "type": "string",
@@ -460,6 +481,7 @@ Returns a link to the arming screen. The user connects their own wallet there an
   "required": [
     "url",
     "wallet",
+    "agent",
     "note"
   ],
   "additionalProperties": false
@@ -617,6 +639,10 @@ Lists the caps currently armed for a wallet.
         "type": "string",
         "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
       },
+      "owner": {
+        "type": "string",
+        "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+      },
       "effectiveRemaining": {
         "type": "string",
         "pattern": "^(0|[1-9][0-9]*)$"
@@ -631,6 +657,7 @@ Lists the caps currently armed for a wallet.
       "swigRole",
       "jupiterOrderId",
       "vault",
+      "owner",
       "effectiveRemaining",
       "rollingWorstCase"
     ],

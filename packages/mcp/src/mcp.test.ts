@@ -4,7 +4,7 @@ import { FIXTURE_NOTE, reportRoute } from '@agon/web'
 import { callAsTool, callTool, isTool } from './index.js'
 import { PublicKey } from '@solana/web3.js'
 import { pocketOf } from '@agon/chain'
-import { accountsToRefresh, chainMismatch } from './io.js'
+import { accountsToRefresh, chainMismatch, payersTo } from './io.js'
 import {
   POOL,
   quoteFor,
@@ -24,7 +24,7 @@ const RECORDED = 'HLnpSz9h2S4hiLQ43rnSD9XkcUThA7B8hQMKmDaiTLcC'
 const USDC = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
 
 /** A chain that holds no vault for the wallet: list_rules answers [] and reads nothing else. */
-const NO_VAULT = withChain({ vault: null, rules: [] })
+const NO_VAULT = withChain({ owner: null, vault: null, rules: [] })
 
 // What an agent may send arm_rule: whose vault, and no cap.
 const SPEC = {
@@ -207,6 +207,7 @@ test('list_rules reports a vault rule as the chain proves it, with a null spec a
     'list_rules',
     { wallet: WALLET },
     withChain({
+      owner: WALLET,
       vault,
       rules: [
         {
@@ -226,6 +227,7 @@ test('list_rules reports a vault rule as the chain proves it, with a null spec a
     spec: null,
     jupiterOrderId: null,
     vault,
+    owner: WALLET,
     effectiveRemaining: '500000000',
     rollingWorstCase: '1000000000',
     swigRole: { roleId: '1', tokenRecurringLimit: { windowSlots: 150, amount: '500000000' } },
@@ -560,4 +562,71 @@ test('a simulation that fails before any program runs names the chain error, not
     }),
   })
   await expect(callTool('prepare_swap', SWAP, io)).rejects.toThrow(/AccountNotFound/)
+})
+
+// ---- T-C24: the agent finds the wallet that hired it from its own key's history. ----
+
+test('the wallets that sent the agent key a transfer are the candidates, most recent first', () => {
+  const agent = 'DNDYmqxubRKmMtnq88AW4aUHreu88XrrGijAKpUojw1A'
+  const transfer = (source: string, destination: string) => ({
+    transaction: {
+      message: {
+        instructions: [
+          { program: 'system', parsed: { type: 'transfer', info: { source, destination } } },
+        ],
+      },
+    },
+  })
+  const owner = '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU'
+  const other = '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM'
+  const txs = [
+    transfer(owner, agent),
+    null,
+    transfer(other, VAULT), // not to the agent
+    { transaction: { message: { instructions: [{ programId: 'x', data: 'y' }] } } }, // not parsed
+    transfer(owner, agent), // the same payer twice counts once
+    transfer(other, agent),
+  ]
+  expect(payersTo(txs, agent)).toEqual([owner, other])
+})
+
+test('a failed transaction never names a payer: its transfer did not happen', () => {
+  const agent = 'DNDYmqxubRKmMtnq88AW4aUHreu88XrrGijAKpUojw1A'
+  const forged = '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU'
+  const failed = {
+    meta: { err: { InstructionError: [0, 'Custom'] } },
+    transaction: {
+      message: {
+        instructions: [
+          {
+            program: 'system',
+            parsed: { type: 'transfer', info: { source: forged, destination: agent } },
+          },
+        ],
+      },
+    },
+  }
+  expect(payersTo([failed], agent)).toEqual([])
+})
+
+test('list_rules with an agent key lists every wallet that hires it, each rule with its owner', async () => {
+  const agent = 'DNDYmqxubRKmMtnq88AW4aUHreu88XrrGijAKpUojw1A'
+  const rule = {
+    roleId: 1,
+    authority: agent,
+    mint: 'So11111111111111111111111111111111111111112',
+    amount: 500_000_000n,
+    windowSlots: 150n,
+    effectiveRemaining: 500_000_000n,
+    rollingWorstCase: 1_000_000_000n,
+  }
+  const mine = { owner: WALLET, vault: VAULT, rules: [rule] }
+  const stranger = {
+    owner: '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
+    vault: 'C7Bz4nps2z1NDftJUBzXQyeR2iDE5j5ztad5q1k4iA8R',
+    rules: [rule],
+  }
+  const io = { ...NO_VAULT, findHirers: async () => [stranger, mine] }
+  const rules = (await callTool('list_rules', { wallet: agent }, io)) as Array<{ owner: string }>
+  expect(rules.map((r) => r.owner)).toEqual([stranger.owner, WALLET])
 })

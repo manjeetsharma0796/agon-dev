@@ -58,9 +58,17 @@ export default function ArmClient({ rpcUrl }: { rpcUrl: string }) {
   // arm_rule links here with the wallet in the fragment. Arming always acts on the wallet that
   // connects, so a different one is said out loud rather than silently armed in its place.
   const [linkedFor, setLinkedFor] = useState<string | null>(null)
+  // The agent's own public key rides in the same fragment (T-C24), so nobody copies it here by hand.
+  const [agentFromLink, setAgentFromLink] = useState(false)
   useEffect(() => {
-    const m = /wallet=([1-9A-HJ-NP-Za-km-z]{32,44})/.exec(globalThis.location?.hash ?? '')
+    const hash = globalThis.location?.hash ?? ''
+    const m = /wallet=([1-9A-HJ-NP-Za-km-z]{32,44})/.exec(hash)
     setLinkedFor(m?.[1] ?? null)
+    const a = /agent=([1-9A-HJ-NP-Za-km-z]{32,44})/.exec(hash)?.[1]
+    if (a !== undefined) {
+      setAgent(a)
+      setAgentFromLink(true)
+    }
   }, [])
 
   /** The wallet signs; we only hand it bytes and take bytes back. */
@@ -79,9 +87,12 @@ export default function ArmClient({ rpcUrl }: { rpcUrl: string }) {
       }
     : null
 
+  // The wallet's own SOL, so the user sees before approving whether it covers the deposit.
+  const [sol, setSol] = useState<bigint | null>(null)
   const reload = useCallback(async () => {
     if (!owner) return
     setView(await loadVault(conn, owner))
+    setSol(BigInt(await conn.getBalance(owner)))
   }, [conn, owner?.toBase58()])
 
   useEffect(() => {
@@ -89,6 +100,16 @@ export default function ArmClient({ rpcUrl }: { rpcUrl: string }) {
       setProblem(`Could not read your vault from ${rpcUrl}: ${String(e)}`),
     )
   }, [reload, rpcUrl])
+
+  // Shown above every form the link pre-fills, create or re-hire: a pre-filled key is one nobody
+  // typed, so the page says plainly whose it must be before anyone approves.
+  const linkKeyNote = (
+    <p role="note">
+      Your agent&apos;s public key came with its link and is filled in below. Continue only if your
+      own agent gave you this link: whoever holds that key can trade from this vault up to the limit
+      you set.
+    </p>
+  )
 
   /** Run one step, and always say what happened, including when it did not. */
   const run = async (label: string, step: () => Promise<string>) => {
@@ -184,9 +205,31 @@ export default function ArmClient({ rpcUrl }: { rpcUrl: string }) {
 
       {who && owner && (
         <p>
-          Connected: <code>{owner.toBase58()}</code> through {who.wallet.name}.{' '}
+          Connected: <code style={{ overflowWrap: 'anywhere' }}>{owner.toBase58()}</code> through{' '}
+          {who.wallet.name}
+          {sol !== null && (
+            <>
+              , holding <strong>{formatSol(sol)} SOL</strong>
+            </>
+          )}
+          .{' '}
           <button type="button" onClick={() => reload()} disabled={busy !== null}>
             Refresh
+          </button>{' '}
+          {/* This page only runs on the practice fork, so this is free test SOL there and nowhere else. */}
+          <button
+            type="button"
+            disabled={busy !== null}
+            onClick={() =>
+              void run('Getting practice SOL', async () => {
+                const signature = await conn.requestAirdrop(owner, 5_000_000_000)
+                await conn.confirmTransaction(signature, 'confirmed')
+                await reload()
+                return `5 practice SOL arrived in ${signature}. It exists on this fork only.`
+              })
+            }
+          >
+            Get 5 practice SOL
           </button>
         </p>
       )}
@@ -212,8 +255,9 @@ export default function ArmClient({ rpcUrl }: { rpcUrl: string }) {
           <h2 id="create">2. Create and fund your vault</h2>
           <p>
             Your wallet asks you to approve 2 transactions: one creates and funds the vault, one
-            lets the agent trade.
+            lets the agent trade and sends its key 0.01 SOL for its fees.
           </p>
+          {agentFromLink && linkKeyNote}
           <form
             onSubmit={(e) => {
               e.preventDefault()
@@ -302,6 +346,7 @@ export default function ArmClient({ rpcUrl }: { rpcUrl: string }) {
           {view.agents.length === 0 ? (
             <>
               <p>No agent can trade from this vault right now.</p>
+              {agentFromLink && linkKeyNote}
               <form
                 onSubmit={(e) => {
                   e.preventDefault()
@@ -397,7 +442,9 @@ function AgentFields(p: {
   onPractice: () => void
 }) {
   return (
-    <fieldset>
+    // A fieldset will not shrink below its widest child by default, which pushed a phone screen
+    // sideways; letting it shrink, with the key input capped at its width, keeps 375 px readable.
+    <fieldset style={{ minInlineSize: 0 }}>
       <legend>What the agent may do</legend>
       <label>
         Limit per window, in wSOL{' '}
@@ -426,7 +473,13 @@ function AgentFields(p: {
       <p>About 400 ms per slot, so 150 is about a minute.</p>
       <label>
         Agent public key{' '}
-        <input value={p.agent} onChange={(e) => p.setAgent(e.target.value)} required size={48} />
+        <input
+          value={p.agent}
+          onChange={(e) => p.setAgent(e.target.value)}
+          required
+          size={48}
+          style={{ maxWidth: '100%' }}
+        />
       </label>{' '}
       <button type="button" onClick={p.onPractice}>
         Make a practice agent key

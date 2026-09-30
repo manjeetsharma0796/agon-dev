@@ -1,6 +1,7 @@
 {
   "synthetic": true,
-  "url": "https://agon.example/arm#wallet=7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+  "url": "https://agon.example/arm#wallet=7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU&agent=DNDYmqxubRKmMtnq88AW4aUHreu88XrrGijAKpUojw1A",
   "wallet": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+  "agent": "DNDYmqxubRKmMtnq88AW4aUHreu88XrrGijAKpUojw1A",
   "note": "Open this link and connect 7xKX...sAsU to set the limit yourself."
 }

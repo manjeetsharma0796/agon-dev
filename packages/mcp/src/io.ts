@@ -65,6 +65,8 @@ export interface ToolIo {
    * network this deployment names, rather than answering with an empty list.
    */
   loadVaultRules(wallet: string): Promise<VaultRules>
+  /** Every wallet whose vault hires this agent key, found from the payers in the key's history. */
+  findHirers(agent: string): Promise<VaultRules[]>
   /** The token category of each mint, for the wallet's category mix. A mint it cannot place is left out. */
   loadCategories(mints: string[], slot?: number): Promise<ReadonlyMap<string, TokenCategory>>
   /**
@@ -120,8 +122,46 @@ export interface BuiltSwap {
 const tokenAmount = (data: Buffer): bigint => data.readBigUInt64LE(64)
 
 export interface VaultRules {
+  /** The wallet that owns the vault: the one asked about, or the one that hired the agent key asked about. */
+  owner: string | null
   vault: string | null
   rules: ChainAgentRule[]
+}
+
+/** Just the parts of a parsed transaction `payersTo` reads, so a test can hand in plain objects. */
+interface ParsedTx {
+  meta?: { err: unknown } | null
+  transaction: { message: { instructions: ReadonlyArray<object> } }
+}
+
+/**
+ * The wallets that sent `agent` a plain SOL transfer, most recent first, each once. The arming page
+ * pays the agent's key its fees from the owner's wallet in the hire approval, so the owner is among
+ * them. Only a candidate: anyone can send a key SOL, and the chain's role decides who hired it.
+ */
+export function payersTo(txs: ReadonlyArray<ParsedTx | null>, agent: string): string[] {
+  const payers: string[] = []
+  for (const tx of txs) {
+    // A failed transaction moved nothing, so its transfer names nobody, whatever it claims.
+    if (tx?.meta?.err != null) continue
+    for (const ix of tx?.transaction.message.instructions ?? []) {
+      const { program, parsed: raw } = ix as { program?: string; parsed?: unknown }
+      const parsed = raw as
+        | { type?: string; info?: { source?: string; destination?: string } }
+        | undefined
+      const source = parsed?.info?.source
+      if (
+        program === 'system' &&
+        parsed?.type === 'transfer' &&
+        parsed.info?.destination === agent &&
+        source !== undefined &&
+        !payers.includes(source)
+      ) {
+        payers.push(source)
+      }
+    }
+  }
+  return payers
 }
 
 interface JupiterInstruction {
@@ -194,17 +234,64 @@ export const liveIo = (): ToolIo => {
 
     async loadVaultRules(wallet: string): Promise<VaultRules> {
       const connection = await chainFor(wallet)
-      const owner = new PublicKey(wallet)
-      const resolved = await resolveVault(
-        (address) => fetchNullableSwig(connection, address),
-        owner,
-      )
-      if (resolved.existing === null) return { vault: null, rules: [] }
       const slot = BigInt(await connection.getSlot())
-      return {
-        vault: vaultAddress(resolved.swigId).toBase58(),
-        rules: agentRulesOf(resolved.existing.roles as unknown as ChainRole[], ARMED_MINTS, slot),
+      const read = async (owner: string) => {
+        const resolved = await resolveVault(
+          (address) => fetchNullableSwig(connection, address),
+          new PublicKey(owner),
+        )
+        if (resolved.existing === null) return null
+        return {
+          vault: vaultAddress(resolved.swigId).toBase58(),
+          rules: agentRulesOf(resolved.existing.roles as unknown as ChainRole[], ARMED_MINTS, slot),
+        }
       }
+      const own = await read(wallet)
+      return own === null ? { owner: null, vault: null, rules: [] } : { owner: wallet, ...own }
+    },
+
+    async findHirers(agent: string): Promise<VaultRules[]> {
+      const connection = await chainFor(agent)
+      const slot = BigInt(await connection.getSlot())
+      // The wallet that hired this key paid it its fees from the arming page, so it is among the
+      // payers in the key's history. Every payer whose vault holds a role for this key is returned,
+      // never just the first: anyone can hire a key, and the user says which wallet is theirs.
+      // ponytail: 400 signatures back, enough for the fee transfer to survive 399 trades; the agent
+      // is told to remember the owner once confirmed, so this runs once per onboarding.
+      const txs: Array<ParsedTx | null> = []
+      let before: string | undefined
+      for (let page = 0; page < 4; page++) {
+        const signatures = await connection.getSignaturesForAddress(new PublicKey(agent), {
+          limit: 100,
+          before,
+        })
+        txs.push(
+          ...((await Promise.all(
+            signatures.map((s) =>
+              connection.getParsedTransaction(s.signature, { maxSupportedTransactionVersion: 0 }),
+            ),
+          )) as Array<ParsedTx | null>),
+        )
+        if (signatures.length < 100) break
+        before = signatures[signatures.length - 1]?.signature
+      }
+      const hirers: VaultRules[] = []
+      for (const owner of payersTo(txs, agent)) {
+        const resolved = await resolveVault(
+          (address) => fetchNullableSwig(connection, address),
+          new PublicKey(owner),
+        )
+        if (resolved.existing === null) continue
+        const rules = agentRulesOf(
+          resolved.existing.roles as unknown as ChainRole[],
+          ARMED_MINTS,
+          slot,
+        ).filter((r) => r.authority === agent)
+        if (rules.length > 0) {
+          hirers.push({ owner, vault: vaultAddress(resolved.swigId).toBase58(), rules })
+        }
+      }
+      return hirers
     },
 
     async loadTransactions(wallet: string): Promise<RawTransaction[]> {
