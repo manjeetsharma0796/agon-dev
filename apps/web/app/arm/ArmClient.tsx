@@ -442,7 +442,9 @@ function AgentFields(p: {
   onPractice: () => void
 }) {
   return (
-    <fieldset>
+    // A fieldset will not shrink below its widest child by default, which pushed a phone screen
+    // sideways; letting it shrink, with the key input capped at its width, keeps 375 px readable.
+    <fieldset style={{ minInlineSize: 0 }}>
       <legend>What the agent may do</legend>
       <label>
         Limit per window, in wSOL{' '}
@@ -471,7 +473,13 @@ function AgentFields(p: {
       <p>About 400 ms per slot, so 150 is about a minute.</p>
       <label>
         Agent public key{' '}
-        <input value={p.agent} onChange={(e) => p.setAgent(e.target.value)} required size={48} />
+        <input
+          value={p.agent}
+          onChange={(e) => p.setAgent(e.target.value)}
+          required
+          size={48}
+          style={{ maxWidth: '100%' }}
+        />
       </label>{' '}
       <button type="button" onClick={p.onPractice}>
         Make a practice agent key
