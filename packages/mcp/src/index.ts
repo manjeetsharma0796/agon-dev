@@ -339,10 +339,10 @@ const dataSource = (): string =>
     ? 'Data: REPLAY MODE. Wallet figures are recordings, not read now; repeat any "note" a result carries.'
     : 'Data: live mainnet reads, each stamped with its dataSlot.'
 
-const INSTRUCTIONS = `Agon: a spending limit, mined from a trader's own on-chain history, that their agent trades inside.
+const INSTRUCTIONS = `Agon: a spending limit mined from a trader's own history, which their agent trades inside.
 Network: ${network(process.env['AGON_NETWORK']).short}. Every result starts with "network"; say it before quoting a number. ${dataSource()}
 
-"Onboard me": do these in order. Build nothing and read no source code; all of it exists.
+"Onboard me": do these in order. Build nothing, read no source: it all exists.
 1. Ask for their Solana wallet address. Never a seed phrase or a private key.
 2. They set Phantom to Settings, Developer Settings, Testnet Mode, Solana Localnet: the practice fork, RPC http://127.0.0.1:8899.
 3. Under 1 SOL there? Call requestAirdrop on that RPC for 5000000000 lamports: fake SOL, fork only.
@@ -350,9 +350,9 @@ Network: ${network(process.env['AGON_NETWORK']).short}. Every result starts with
 5. arm_rule with wallet, mints ["So11111111111111111111111111111111111111112"], triggerType "stop", expiresAt null. Give them the link: there they connect Phantom, paste your public key, pick a deposit and a cap, and approve 2 transactions. The same link resumes if they stop.
 6. When done, list_rules: read back the cap and effectiveRemaining.
 
-Trade: prepare_swap with owner and historyWallet both their wallet, agent your public key, inputMint wrapped SOL, amount in base units (1 SOL = 1000000000), slippageBps up to 100. Tell them the verdict, then sign the base64 transaction with your key and send it to the same RPC before lastValidBlockHeight. "failed simulation" means a price moved: call prepare_swap again. They revoke from the arm_rule link.
+Trade: prepare_swap with owner and historyWallet both their wallet, agent your public key, inputMint wrapped SOL, amount in base units (1 SOL = 1000000000), slippageBps up to 100. A returned transaction is cleared to go out, whatever the verdict word: tell them the verdict and its first reason, then sign it with your key and send it to the same RPC before lastValidBlockHeight. "failed simulation": a price moved, so call prepare_swap again. They revoke from the arm_rule link.
 
-Rules: never name a limit; unsure or block means no trade; read a refusal's first sentence to the user and do not retry the same call; never suggest a real mainnet trade; this server never takes or signs with a key. Each tool's description has its details.`
+Rules: never name a limit; from check_trade, unsure or block means no trade; read a refusal's first sentence to the user and do not retry the same call; never suggest a real mainnet trade; this server never takes or signs with a key. Details: each tool's description.`
 
 /**
  * What each tool does, shown to any agent that lists our tools before it decides whether to call
@@ -394,8 +394,9 @@ const DESCRIPTIONS: Record<ToolName, string> = {
     'fee payer and only signer. Sign it with your key and send it before lastValidBlockHeight, e.g. ' +
     'with @solana/web3.js: Transaction.from(Buffer.from(transaction, "base64")), tx.sign(keypair), ' +
     'connection.sendRawTransaction(tx.serialize()). On the practice fork a wallet with no mainnet ' +
-    'trades still trades, bounded only by the cap the owner signed; the first reason, ' +
-    'no-trading-history, says so: tell the user before signing. A refusal means no transaction ' +
+    'trades still trades, bounded only by the cap the owner signed: its verdict stays unsure, the ' +
+    'first reason, no-trading-history, says so, and the transaction is cleared to sign; tell the ' +
+    'user before signing. A refusal means no transaction ' +
     'exists: never build one another way, and never suggest a real mainnet trade to create history.',
 }
 
