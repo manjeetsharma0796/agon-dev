@@ -2555,6 +2555,35 @@ _(empty)_
   the user's machine with the same acceptance, and the MCP instructions point agents at it
 
 
+### T-C24, "Onboard me" with nothing copied: the link carries the agent key, the chain carries the wallet back
+- Status: claimed 2026-10-01 | Owner: manjeetsharma0796 | Branch: feature/t-c24-onboard-without-copying
+- Depends-on: T-C21, T-E06, T-B21
+- Touches: packages/core/src/rule.ts, packages/core/src/index.ts, packages/core/src/contracts.test.ts,
+  fixtures/contracts/, apps/web/src/legs.ts, apps/web/src/legs.test.ts, apps/web/src/arm-flow.ts,
+  apps/web/src/arm-flow.test.ts, apps/web/app/arm/ArmClient.tsx, packages/mcp/src/index.ts,
+  packages/mcp/src/io.ts, packages/mcp/src/mcp.test.ts, packages/mcp/src/test-support.ts,
+  packages/mcp/src/third-party-client.test.ts, docs/public/agent-setup.md, docs/public/mcp-tools.md
+- Serves: UX (judged) ; Functionality (judged) ; a new user connects Phantom once and copies nothing
+- Acceptance: `arm_rule` takes the agent's public key (the wallet becomes optional) and its link
+  carries it, so the arming page fills the agent field itself; the page offers free practice SOL on
+  the fork for the connected wallet; the hire transaction also sends the agent's key 0.01 SOL for
+  fees, in the same approval; `list_rules` called with the agent's own key finds the owner from that
+  transfer and returns the owner with each rule, trusting the chain's role and never the transfer
+  alone. 2 frozen contracts change in `packages/core` (the `arm_rule` input and `ArmingLink`, and
+  `ArmedRule` gains `owner`), fixtures in the same commit, and a second reviewer, Jishnu, reads
+  them. Measured: a fresh agent, given "onboard me" and no address, hands over 1 link; the wallet
+  connects, takes practice SOL and approves on the page; then the same agent, told "done, buy
+  0.005 SOL of USDC", names the connected wallet itself and the trade lands; 0 addresses typed or
+  pasted by the user in either direction
+- Evidence: <PR link, the fresh-agent transcript and the landed signature>
+- Why it is its own row: asked for 2026-10-01 by manjeetsharma0796 after T-C21's fresh-agent run.
+  Onboarding worked, but the user had to paste their wallet into the chat and the agent's key into
+  the page. The page learns the wallet from Phantom, but nothing carried it back to the agent, and
+  an agent in the terminal cannot read a browser tab. The practice-SOL transfer is on the fork
+  only, like the page; on mainnet it would be real SOL, decided with T-D04
+- Kill criterion: if the fork cannot answer `getSignaturesForAddress` for a local key, the agent
+  asks for the wallet once, and the rest still holds; measured 2026-10-01 that it can
+
 ### T-C22, check_trade screens tokens deterministically, and token text never reaches the agent
 - Status: done 2026-09-29 | Owner: Jishnu | PR: #223
 - Depends-on: T-C05, T-C12, OP-38
