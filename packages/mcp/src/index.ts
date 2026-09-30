@@ -28,7 +28,7 @@ import {
   toolContracts,
   zeroSizeTrade,
 } from '@agon/core'
-import { JUPITER_PROGRAM_ID, USDC_MINT, WSOL_MINT } from '@agon/chain'
+import { JUPITER_PROGRAM_ID, SWIG_PROGRAM_ID, USDC_MINT, WSOL_MINT } from '@agon/chain'
 import { assessTrade, DEFAULT_QUOTE, tradedMints, type Quote } from '@agon/guard'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
@@ -160,109 +160,132 @@ const handlers = {
       )
     }
 
-    // The quote is outside data. It must parse, and be the trade that was asked for, or the check
-    // below would judge one trade and the transaction would carry another.
-    const parsed = JupiterQuote.safeParse(await io.loadQuote(a))
-    if (!parsed.success) {
-      throw new Refusal(
-        quoteMismatch({ field: String(parsed.error.issues[0]?.path[0] ?? 'shape') }),
-      )
-    }
-    const quote = parsed.data
-    // The floor the output check holds the swap to is recomputed from what was asked, never taken
-    // on Jupiter's word, so a floor of 0 cannot wave through a swap that pays the vault nothing.
-    const floor = (BigInt(quote.outAmount) * BigInt(10000 - a.slippageBps)) / 10000n
-    const drift = (
-      [
-        ['inAmount', quote.inAmount === a.amount],
-        ['inputMint', quote.inputMint === a.inputMint],
-        ['outputMint', quote.outputMint === a.outputMint],
-        ['slippageBps', quote.slippageBps === a.slippageBps],
-        ['otherAmountThreshold', floor > 0n && BigInt(quote.otherAmountThreshold) >= floor],
-      ] as const
-    ).find(([, ok]) => !ok)
-    if (drift !== undefined) throw new Refusal(quoteMismatch({ field: drift[0] }))
-    const route = quote.routePlan.map((leg) => leg.swapInfo.ammKey)
     // Decided 2026-09-30: on the practice fork, a history wallet with 0 closed trades is not refused.
     // Nothing is checked against a history it does not have, the trade is bounded only by the cap
     // the owner signed on chain, and the answer says so first. Off the fork this still fails closed.
     const fork = network(process.env['AGON_NETWORK']).id === 'fork'
-    const judged = await judge(
-      io,
-      {
-        wallet: a.historyWallet,
-        mint: side === 'buy' ? a.outputMint : a.inputMint,
-        side,
-        size: a.amount,
-      },
-      {
-        priceImpactPct: quote.priceImpactPct,
-        slippageBps: quote.slippageBps,
-        contextSlot: quote.contextSlot ?? null,
-      },
-      fork,
-    )
-    const unchecked = fork && judged.closedTrades === 0
-    const verdict = unchecked
-      ? {
-          ...judged.verdict,
-          reasons: [
-            {
-              rule: 'no-trading-history',
-              message:
-                `0 closed trades on mainnet for ${a.historyWallet}, so this trade was not checked ` +
-                `against a history. On the practice fork it goes out bounded only by the cap the ` +
-                `owner signed: ${formatUnits(rule.effectiveRemaining, armed.decimals)} ` +
-                `${armed.unit} left in this window. The reasons after this one are what the check ` +
-                `found, and none of them stopped the trade.`,
-            },
-            ...judged.verdict.reasons,
-          ],
-        }
-      : judged.verdict
-    if (verdict.verdict !== 'pass' && !unchecked) {
-      throw new Refusal(
-        tradeNotPassed({
-          verdict: verdict.verdict,
-          reasons: verdict.reasons.length,
-          first: verdict.reasons[0]?.message ?? 'none was given.',
-        }),
+    // Venues to route around, filled at most once, on the fork, by a failed simulation below.
+    const excludeDexes: string[] = []
+    for (;;) {
+      // The quote is outside data. It must parse, and be the trade that was asked for, or the check
+      // below would judge one trade and the transaction would carry another.
+      const parsed = JupiterQuote.safeParse(
+        await io.loadQuote(excludeDexes.length > 0 ? { ...a, excludeDexes } : a),
       )
-    }
+      if (!parsed.success) {
+        throw new Refusal(
+          quoteMismatch({ field: String(parsed.error.issues[0]?.path[0] ?? 'shape') }),
+        )
+      }
+      const quote = parsed.data
+      // The floor the output check holds the swap to is recomputed from what was asked, never taken
+      // on Jupiter's word, so a floor of 0 cannot wave through a swap that pays the vault nothing.
+      const floor = (BigInt(quote.outAmount) * BigInt(10000 - a.slippageBps)) / 10000n
+      const drift = (
+        [
+          ['inAmount', quote.inAmount === a.amount],
+          ['inputMint', quote.inputMint === a.inputMint],
+          ['outputMint', quote.outputMint === a.outputMint],
+          ['slippageBps', quote.slippageBps === a.slippageBps],
+          ['otherAmountThreshold', floor > 0n && BigInt(quote.otherAmountThreshold) >= floor],
+        ] as const
+      ).find(([, ok]) => !ok)
+      if (drift !== undefined) throw new Refusal(quoteMismatch({ field: drift[0] }))
+      const route = quote.routePlan.map((leg) => leg.swapInfo.ammKey)
+      const judged = await judge(
+        io,
+        {
+          wallet: a.historyWallet,
+          mint: side === 'buy' ? a.outputMint : a.inputMint,
+          side,
+          size: a.amount,
+        },
+        {
+          priceImpactPct: quote.priceImpactPct,
+          slippageBps: quote.slippageBps,
+          contextSlot: quote.contextSlot ?? null,
+        },
+        fork,
+      )
+      const unchecked = fork && judged.closedTrades === 0
+      const verdict = unchecked
+        ? {
+            ...judged.verdict,
+            reasons: [
+              {
+                rule: 'no-trading-history',
+                message:
+                  `0 closed trades on mainnet for ${a.historyWallet}, so this trade was not checked ` +
+                  `against a history. On the practice fork it goes out bounded only by the cap the ` +
+                  `owner signed: ${formatUnits(rule.effectiveRemaining, armed.decimals)} ` +
+                  `${armed.unit} left in this window. The reasons after this one are what the check ` +
+                  `found, and none of them stopped the trade.`,
+              },
+              ...judged.verdict.reasons,
+            ],
+          }
+        : judged.verdict
+      if (verdict.verdict !== 'pass' && !unchecked) {
+        throw new Refusal(
+          tradeNotPassed({
+            verdict: verdict.verdict,
+            reasons: verdict.reasons.length,
+            first: verdict.reasons[0]?.message ?? 'none was given.',
+          }),
+        )
+      }
 
-    const built = await io.buildSwap({ owner: a.owner, agent: a.agent, roleId: rule.roleId, quote })
-    if (built.failure !== null) {
-      const program = innermostFailure(built.failure.logs) ?? 'unknown'
-      const line = built.failure.logs.find((l) => l.startsWith(`Program ${program} failed`))
-      throw new Refusal(
-        simulationFailed({
-          program,
-          detail: line?.replace(/^Program \S+ failed: /, '') ?? 'the logs named no failing program',
-        }),
-      )
-    }
-    if (built.outputGained < BigInt(quote.otherAmountThreshold)) {
-      throw new Refusal(
-        outputNotToVault({
-          gained: String(built.outputGained),
-          promised: quote.otherAmountThreshold,
-        }),
-      )
-    }
-    return {
-      transaction: built.transaction,
-      vault: built.vault,
-      verdict,
-      quote: {
-        inAmount: quote.inAmount,
-        outAmount: quote.outAmount,
-        minOutAmount: quote.otherAmountThreshold,
-        slippageBps: quote.slippageBps,
-        route,
-      },
-      effectiveRemaining: String(rule.effectiveRemaining),
-      lastValidBlockHeight: built.lastValidBlockHeight,
-      unitsConsumed: built.unitsConsumed,
+      const built = await io.buildSwap({
+        owner: a.owner,
+        agent: a.agent,
+        roleId: rule.roleId,
+        quote,
+      })
+      if (built.failure !== null) {
+        const program = innermostFailure(built.failure.logs) ?? 'unknown'
+        // Fork only: a venue that cannot run on the fork's copy, whose clock lags real time, is routed
+        // around once, and every check above runs again on the new route. The spending limit is never
+        // routed around, and off the fork a failed simulation is the answer.
+        const venues = quote.routePlan.flatMap((leg) => {
+          const label = (leg.swapInfo as { label?: unknown }).label
+          return typeof label === 'string' ? [label] : []
+        })
+        if (fork && excludeDexes.length === 0 && program !== SWIG_PROGRAM_ID && venues.length > 0) {
+          excludeDexes.push(...venues)
+          continue
+        }
+        const line = built.failure.logs.find((l) => l.startsWith(`Program ${program} failed`))
+        throw new Refusal(
+          simulationFailed({
+            program,
+            detail:
+              line?.replace(/^Program \S+ failed: /, '') ?? 'the logs named no failing program',
+          }),
+        )
+      }
+      if (built.outputGained < BigInt(quote.otherAmountThreshold)) {
+        throw new Refusal(
+          outputNotToVault({
+            gained: String(built.outputGained),
+            promised: quote.otherAmountThreshold,
+          }),
+        )
+      }
+      return {
+        transaction: built.transaction,
+        vault: built.vault,
+        verdict,
+        quote: {
+          inAmount: quote.inAmount,
+          outAmount: quote.outAmount,
+          minOutAmount: quote.otherAmountThreshold,
+          slippageBps: quote.slippageBps,
+          route,
+        },
+        effectiveRemaining: String(rule.effectiveRemaining),
+        lastValidBlockHeight: built.lastValidBlockHeight,
+        unitsConsumed: built.unitsConsumed,
+      }
     }
   },
 } satisfies Record<ToolName, Handler>

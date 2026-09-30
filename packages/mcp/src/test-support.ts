@@ -56,7 +56,7 @@ export const quoteFor = (amount: string, priceImpactPct = '0.0001') => ({
   contextSlot: 450115322,
   inputMint: WSOL,
   outputMint: USDC,
-  routePlan: [{ swapInfo: { ammKey: POOL } }],
+  routePlan: [{ swapInfo: { ammKey: POOL, label: 'Raydium CLMM' } }],
 })
 
 /** A vault holding 1 agent role on wSOL with `remaining` left, and a record of what was called. */

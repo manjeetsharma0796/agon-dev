@@ -2,7 +2,9 @@ import { expect, test } from 'vitest'
 import { TOOLS } from '@agon/core'
 import { FIXTURE_NOTE, reportRoute } from '@agon/web'
 import { callAsTool, callTool, isTool } from './index.js'
-import { chainMismatch } from './io.js'
+import { PublicKey } from '@solana/web3.js'
+import { pocketOf } from '@agon/chain'
+import { accountsToRefresh, chainMismatch } from './io.js'
 import {
   POOL,
   quoteFor,
@@ -456,5 +458,92 @@ test('on the fork, a wallet that has history is still judged by it', async () =>
       /check_trade answered block/,
     )
     expect(calls).not.toContain('build')
+  })
+})
+
+// ---- Fork swaps that fail on stale copies or the fork's lagging clock. 2026-10-01. ----
+
+test('the fork refreshes every account the swap touches, never the vault or its own token accounts', () => {
+  const vault = new PublicKey(VAULT)
+  const pockets = [WSOL_, USDC].map((m) => pocketOf(vault, m).toBase58())
+  const pool = '8sLbNZoA1cfnvMJLPfp98ZLAnFSYCFApfJKMbiXNLwxj'
+  const refresh = accountsToRefresh([pool, VAULT, pockets[0]!, pool, pockets[1]!], VAULT, [
+    WSOL_,
+    USDC,
+  ])
+  expect(refresh).toEqual([pool])
+})
+
+/** A build that fails inside `program` the first `failures` times, then succeeds. */
+const failingThenOk = (program: string, failures: number) => {
+  let n = 0
+  return async () => ({
+    vault: VAULT,
+    transaction: 'AQAB',
+    lastValidBlockHeight: 1,
+    unitsConsumed: 90000,
+    outputGained: 75900n,
+    failure:
+      n++ < failures ? { logs: [`Program ${program} failed: custom program error: 0x1786`] } : null,
+  })
+}
+const WHIRLPOOL = 'whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc'
+
+test('on the fork, a swap that fails inside a venue is re-quoted once around that venue', async () => {
+  await withNetwork('fork', async () => {
+    const asked: (string[] | undefined)[] = []
+    const { io } = swapIo(500000000n, {
+      loadQuote: async (q) => {
+        asked.push(q.excludeDexes)
+        return quoteFor(q.amount)
+      },
+      buildSwap: failingThenOk(WHIRLPOOL, 1),
+    })
+    const out = (await callTool('prepare_swap', SWAP, io)) as { transaction: string }
+    expect(out.transaction).toBe('AQAB')
+    expect(asked).toEqual([undefined, ['Raydium CLMM']])
+  })
+})
+
+test('a refusal by the spending limit is never routed around, on the fork or off it', async () => {
+  await withNetwork('fork', async () => {
+    const asked: unknown[] = []
+    const { io } = swapIo(500000000n, {
+      loadQuote: async (q) => {
+        asked.push(q.excludeDexes)
+        return quoteFor(q.amount)
+      },
+      buildSwap: failingThenOk('swigypWHEksbC64pWKwah1WTeh9JXwx8H1rJHLdbQMB', 1),
+    })
+    await expect(callTool('prepare_swap', SWAP, io)).rejects.toThrow(
+      /failed simulation at program swig/,
+    )
+    expect(asked).toHaveLength(1)
+  })
+})
+
+test('off the fork, a failed simulation is refused as before, with no second route', async () => {
+  await withNetwork('mainnet', async () => {
+    const asked: unknown[] = []
+    const { io } = swapIo(500000000n, {
+      loadQuote: async (q) => {
+        asked.push(q.excludeDexes)
+        return quoteFor(q.amount)
+      },
+      buildSwap: failingThenOk(WHIRLPOOL, 1),
+    })
+    await expect(callTool('prepare_swap', SWAP, io)).rejects.toThrow(
+      /failed simulation at program whirLb/,
+    )
+    expect(asked).toHaveLength(1)
+  })
+})
+
+test('on the fork, a second failure is refused, naming the second venue, with no third try', async () => {
+  await withNetwork('fork', async () => {
+    const { io } = swapIo(500000000n, { buildSwap: failingThenOk(WHIRLPOOL, 2) })
+    await expect(callTool('prepare_swap', SWAP, io)).rejects.toThrow(
+      /failed simulation at program whirLb/,
+    )
   })
 })
