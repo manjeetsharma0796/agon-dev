@@ -2634,6 +2634,30 @@ _(empty)_
 - Kill criterion: if the fork cannot answer `getSignaturesForAddress` for a local key, the agent
   asks for the wallet once, and the rest still holds; measured 2026-10-01 that it can
 
+### T-C26, The agent kit: 1 tested file the MCP serves, so no agent writes key or signing code
+- Status: claimed 2026-10-01 | Owner: manjeetsharma0796 | Branch: feature/t-c26-agent-kit
+- Depends-on: T-C21, T-C24
+- Touches: packages/mcp/kit/agon-kit.mjs, packages/mcp/src/kit.test.ts, packages/mcp/src/serve.ts,
+  packages/mcp/src/index.ts, docs/public/agent-setup.md
+- Serves: UX (judged) ; Functionality (judged) ; onboarding and trading work for a small model too
+- Acceptance: the MCP server serves `GET /kit.mjs`, 1 dependency-free Node file the agent downloads
+  and runs on the user's machine, so the server never sees a key. `node agon-kit.mjs key` makes the
+  agent's key on first run (or reuses it) in a `chmod 600` file under `~/.agon`, and prints only
+  the public key; the file loads in `@solana/web3.js` as the same keypair. `node agon-kit.mjs send
+  <base64>` signs a `prepare_swap` transaction and sends it to the fork, and refuses, with the cause,
+  a transaction whose fee payer is not its key, that needs another signer, or that calls any program
+  but the compute budget and Swig. Tested against `@solana/web3.js` (the key, the address, the
+  signature) and a refusal of each kind, tests first. The instructions' step 1 and the signing step
+  become those 2 commands, within Claude Code's 2,048 characters. Measured: a fresh agent, from
+  "onboard me", uses only the kit for its key and its trade, and the trade lands
+- Evidence: <PR link, the kit tests, and the fresh-agent run>
+- Why it is its own row: found 2026-10-01. A new user's agent (opencode, MiMo Flash) had no Solana CLI
+  and no web3.js and began writing its own ed25519 and base58 code, which crashed; a wrong address
+  would hire a key nobody can sign for. #253 named web3.js, which still needs npm and a few lines of
+  code. The proper answer is T-C08's `agon` CLI (key in the OS keychain, a daemon signs), whose
+  signing slice is not done and whose package is private; this kit bridges until it lands, then goes
+- Kill criterion: none; retired when T-C08 signs trades and `@agon/cli` installs
+
 ### T-C22, check_trade screens tokens deterministically, and token text never reaches the agent
 - Status: done 2026-09-29 | Owner: Jishnu | PR: #223
 - Depends-on: T-C05, T-C12, OP-38
