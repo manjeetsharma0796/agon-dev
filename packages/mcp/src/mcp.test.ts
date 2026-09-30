@@ -589,3 +589,44 @@ test('the wallets that sent the agent key a transfer are the candidates, most re
   ]
   expect(payersTo(txs, agent)).toEqual([owner, other])
 })
+
+test('a failed transaction never names a payer: its transfer did not happen', () => {
+  const agent = 'DNDYmqxubRKmMtnq88AW4aUHreu88XrrGijAKpUojw1A'
+  const forged = '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU'
+  const failed = {
+    meta: { err: { InstructionError: [0, 'Custom'] } },
+    transaction: {
+      message: {
+        instructions: [
+          {
+            program: 'system',
+            parsed: { type: 'transfer', info: { source: forged, destination: agent } },
+          },
+        ],
+      },
+    },
+  }
+  expect(payersTo([failed], agent)).toEqual([])
+})
+
+test('list_rules with an agent key lists every wallet that hires it, each rule with its owner', async () => {
+  const agent = 'DNDYmqxubRKmMtnq88AW4aUHreu88XrrGijAKpUojw1A'
+  const rule = {
+    roleId: 1,
+    authority: agent,
+    mint: 'So11111111111111111111111111111111111111112',
+    amount: 500_000_000n,
+    windowSlots: 150n,
+    effectiveRemaining: 500_000_000n,
+    rollingWorstCase: 1_000_000_000n,
+  }
+  const mine = { owner: WALLET, vault: VAULT, rules: [rule] }
+  const stranger = {
+    owner: '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
+    vault: 'C7Bz4nps2z1NDftJUBzXQyeR2iDE5j5ztad5q1k4iA8R',
+    rules: [rule],
+  }
+  const io = { ...NO_VAULT, findHirers: async () => [stranger, mine] }
+  const rules = (await callTool('list_rules', { wallet: agent }, io)) as Array<{ owner: string }>
+  expect(rules.map((r) => r.owner)).toEqual([stranger.owner, WALLET])
+})

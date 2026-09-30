@@ -101,6 +101,16 @@ export default function ArmClient({ rpcUrl }: { rpcUrl: string }) {
     )
   }, [reload, rpcUrl])
 
+  // Shown above every form the link pre-fills, create or re-hire: a pre-filled key is one nobody
+  // typed, so the page says plainly whose it must be before anyone approves.
+  const linkKeyNote = (
+    <p role="note">
+      Your agent&apos;s public key came with its link and is filled in below. Continue only if your
+      own agent gave you this link: whoever holds that key can trade from this vault up to the limit
+      you set.
+    </p>
+  )
+
   /** Run one step, and always say what happened, including when it did not. */
   const run = async (label: string, step: () => Promise<string>) => {
     setBusy(label)
@@ -247,13 +257,7 @@ export default function ArmClient({ rpcUrl }: { rpcUrl: string }) {
             Your wallet asks you to approve 2 transactions: one creates and funds the vault, one
             lets the agent trade and sends its key 0.01 SOL for its fees.
           </p>
-          {agentFromLink && (
-            <p role="note">
-              Your agent&apos;s public key came with its link and is filled in below. Continue only
-              if your own agent gave you this link: whoever holds that key can trade from this vault
-              up to the limit you set.
-            </p>
-          )}
+          {agentFromLink && linkKeyNote}
           <form
             onSubmit={(e) => {
               e.preventDefault()
@@ -342,6 +346,7 @@ export default function ArmClient({ rpcUrl }: { rpcUrl: string }) {
           {view.agents.length === 0 ? (
             <>
               <p>No agent can trade from this vault right now.</p>
+              {agentFromLink && linkKeyNote}
               <form
                 onSubmit={(e) => {
                   e.preventDefault()
