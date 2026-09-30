@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { Address } from './primitives.js'
 import { CheckTradeInput, CheckTradeOutput } from './check-trade.js'
 import { Report } from './report.js'
-import { ArmedRule, ArmingLink, RuleSpec } from './rule.js'
+import { ArmedRule, ArmingLink, ArmRequest } from './rule.js'
 import { PrepareSwapInput, PreparedSwap } from './trade.js'
 
 // Frozen contracts and the shared types every other package builds on. Owned by T-C01.
@@ -52,7 +52,7 @@ export type ToolName = (typeof TOOLS)[number]
 const contracts = {
   get_report: { input: WalletQuery, output: Report },
   check_trade: { input: CheckTradeInput, output: CheckTradeOutput },
-  arm_rule: { input: RuleSpec, output: ArmingLink },
+  arm_rule: { input: ArmRequest, output: ArmingLink },
   list_rules: { input: WalletQuery, output: z.array(ArmedRule) },
   prepare_swap: { input: PrepareSwapInput, output: PreparedSwap },
 } satisfies Record<ToolName, { input: z.ZodType; output: z.ZodType }>

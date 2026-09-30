@@ -80,3 +80,39 @@ test('every leg validates its input, so a bad one never reaches the fixture', ()
 test('the armed-rule example is contract valid, so the shape is right when arming turns on', () => {
   expect(() => ArmedRule.parse(armedRuleExample())).not.toThrow()
 })
+
+// T-C24: an agent onboarding a user knows its own key before their wallet. The link carries the key
+// in the fragment, so the arming screen fills it in, and whoever connects there arms.
+test('arm_rule with only the agent key links to a screen that pre-fills it, for any wallet', () => {
+  const agent = 'DNDYmqxubRKmMtnq88AW4aUHreu88XrrGijAKpUojw1A'
+  const link = armRule(
+    {
+      mints: ['So11111111111111111111111111111111111111112'],
+      triggerType: 'stop',
+      expiresAt: null,
+      agent,
+    },
+    { publicUrl: 'https://agon.example', network: 'fork' },
+  )
+  expect(link.url).toBe(`https://agon.example/arm#agent=${agent}`)
+  expect(link.wallet).toBeNull()
+  expect(link.agent).toBe(agent)
+  expect(link.note).toMatch(/connect your wallet/)
+})
+
+test('arm_rule with both puts both in the fragment, never in the query a server would log', () => {
+  const agent = 'DNDYmqxubRKmMtnq88AW4aUHreu88XrrGijAKpUojw1A'
+  const wallet = '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU'
+  const link = armRule(
+    {
+      mints: ['So11111111111111111111111111111111111111112'],
+      triggerType: 'stop',
+      expiresAt: null,
+      wallet,
+      agent,
+    },
+    { publicUrl: 'https://agon.example', network: 'fork' },
+  )
+  expect(link.url).toBe(`https://agon.example/arm#wallet=${wallet}&agent=${agent}`)
+  expect(new URL(link.url).search).toBe('')
+})

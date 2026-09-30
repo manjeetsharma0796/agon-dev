@@ -1,7 +1,15 @@
 import { Connection, Keypair, type VersionedTransaction } from '@solana/web3.js'
 import { expect, test } from 'vitest'
 import { fetchSwig, resolveVault } from '@agon/chain'
-import { arm, hire, loadVault, revoke, verifyHired, type Sign } from './arm-flow.js'
+import {
+  AGENT_FEE_LAMPORTS,
+  arm,
+  hire,
+  loadVault,
+  revoke,
+  verifyHired,
+  type Sign,
+} from './arm-flow.js'
 
 // Against a real fork only, and only when one is named. CI has no chain, and a flow test that
 // fakes the chain would measure the fake. Locally: docker compose up, then
@@ -36,6 +44,9 @@ test.skipIf(!isLocal)(
     if (armed.kind !== 'vault') throw new Error('no vault after arming')
     expect(armed.wsol).toBe(1_000_000_000n)
     expect(armed.agents).toHaveLength(1)
+    // T-C24: the hire approval also pays the agent's key its fees, which is how the agent later finds
+    // this wallet from its own history. Paid by the owner, in the same approval, and nothing more.
+    expect(await c.getBalance(agent)).toBe(AGENT_FEE_LAMPORTS)
     // The cap as the CHAIN holds it equals the number typed. Read back, not compared with the spec
     // it was built from, which would always pass.
     expect(armed.agents[0]?.cap, 'the cap on chain is not the cap the user typed').toBe(typed.cap)

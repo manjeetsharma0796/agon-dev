@@ -61,6 +61,23 @@ export const RuleSpec = z
   .strict()
 
 /**
+ * What `arm_rule` takes (T-C24): a rule spec whose wallet may not be known yet, plus the agent's own
+ * public key, so the arming screen can fill it in. An agent onboarding a user knows its key before
+ * it knows their wallet; the wallet comes back from the chain once they arm. At least 1 of the 2,
+ * so the link always says whose. Strict like `RuleSpec`, so a cap is still refused, never dropped.
+ */
+export const ArmRequest = z
+  .strictObject({
+    ...RuleSpec.shape,
+    wallet: Address.optional(),
+    /** The agent's public key, never a secret. The arming screen pre-fills it. */
+    agent: Address.optional(),
+  })
+  .refine((r) => r.wallet !== undefined || r.agent !== undefined, {
+    message: 'name the wallet, the agent key, or both, so the link says whose',
+  })
+
+/**
  * What `arm_rule` returns: where the user goes to arm, not a claim that anything is armed. Nothing
  * exists on chain until the user's wallet signs on that screen, so the tool reports a place, never a
  * role id or an order id it did not create.
@@ -68,7 +85,10 @@ export const RuleSpec = z
 export const ArmingLink = z.object({
   /** The arming screen. The wallet rides in the fragment, which a browser never sends to a server. */
   url: z.url(),
-  wallet: Address,
+  /** Null when the agent asked before it knew the wallet: whoever connects on the screen arms. */
+  wallet: Address.nullable(),
+  /** The agent key the screen pre-fills, or null when the user pastes one there. */
+  agent: Address.nullable(),
   /** What the agent should tell the user, in 1 or 2 sentences. */
   note: z.string().min(1),
 })
@@ -92,6 +112,8 @@ export const ArmedRule = z.object({
   jupiterOrderId: z.string().min(1).nullable(),
   /** Where the funds sit: the Swig's wallet address, not the Swig account that holds the roles. */
   vault: Address,
+  /** The wallet that owns the vault and signed this role: what prepare_swap takes as `owner`. */
+  owner: Address,
   /**
    * What the agent can spend right now. Not the raw field, which Swig leaves stale until the next
    * spend; see `effectiveRemaining` in packages/chain (T-C17).
@@ -107,5 +129,6 @@ export const ArmedRule = z.object({
 export type RecurringLimit = z.infer<typeof RecurringLimit>
 export type TriggerType = z.infer<typeof TriggerType>
 export type RuleSpec = z.infer<typeof RuleSpec>
+export type ArmRequest = z.infer<typeof ArmRequest>
 export type ArmedRule = z.infer<typeof ArmedRule>
 export type ArmingLink = z.infer<typeof ArmingLink>
