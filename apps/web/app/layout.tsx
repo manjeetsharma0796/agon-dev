@@ -1,4 +1,3 @@
-import './globals.css'
 import NetworkBanner from './NetworkBanner'
 
 export const metadata = {
