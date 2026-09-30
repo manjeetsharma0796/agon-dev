@@ -345,18 +345,20 @@ const dataSource = (): string =>
     ? 'Data: REPLAY MODE. Wallet figures are recordings, not read now; repeat any "note" a result carries.'
     : 'Data: live mainnet reads, each stamped with its dataSlot.'
 
-const INSTRUCTIONS = `Agon: a spending limit mined from a trader's own history, which their agent trades inside.
+const instructions = (
+  kit: string,
+): string => `Agon: a spending limit mined from a trader's own history, which their agent trades inside.
 Network: ${network(process.env['AGON_NETWORK']).short}. Every result starts with "network"; say it before quoting a number. ${dataSource()}
 
 "Onboard me": do these in order. Build nothing, read no source: it all exists. Do not ask for their address.
-1. Make (or reuse) your keypair with @solana/web3.js Keypair.generate() (npm i @solana/web3.js@1 if missing), saved in a chmod 600 file. No hand-rolled key code; never show the secret. Practice only.
+1. Your key: run curl -fsS --create-dirs -o ~/.agon/agon-kit.mjs ${kit} && node ~/.agon/agon-kit.mjs key. It prints your public key (made once, chmod 600). Write no key or signing code; never show the secret.
 2. Phantom: Settings, Developer Settings, Testnet Mode, Solana Localnet (the fork, RPC http://127.0.0.1:8899).
-3. arm_rule with agent your public key, mints ["So11111111111111111111111111111111111111112"], triggerType "stop", expiresAt null. Give them the link: they connect Phantom (your key is prefilled), take free practice SOL if short, pick a deposit and cap, and approve 2 transactions (which also pay your fees). The link resumes if they stop.
-4. When they say done, list_rules with your own public key: it lists every wallet that hired you (owner) with its vault, cap and effectiveRemaining. Ask them to confirm the owner matches Phantom (if several, which), then remember it.
+3. arm_rule with agent your public key, mints ["So11111111111111111111111111111111111111112"], triggerType "stop", expiresAt null. Give them the link: they connect Phantom (your key is prefilled), take free practice SOL if short, pick a deposit and cap, and approve 2 transactions (also funding your fees). The link resumes if they stop.
+4. When they say done, list_rules with your own public key: it lists each wallet that hired you (owner), vault, cap and effectiveRemaining. Ask them to confirm the owner matches Phantom (if several, which), then remember it.
 
-Trade: prepare_swap with owner and historyWallet both the owner list_rules gave, agent your public key, inputMint wrapped SOL, amount in base units (1 SOL = 1000000000), slippageBps up to 100. A returned transaction is cleared, whatever the verdict word: tell them its first reason, sign it with your key and send it to the same RPC before lastValidBlockHeight. "failed simulation": a price moved, so call prepare_swap again. They revoke from the arm_rule link.
+Trade: prepare_swap with owner and historyWallet both the owner list_rules gave, agent your public key, inputMint wrapped SOL, amount in base units (1 SOL = 1000000000), slippageBps up to 100. A returned transaction is cleared, whatever the verdict word: tell them its first reason, then at once run node ~/.agon/agon-kit.mjs send <transaction> (signs, sends, prints the signature). "failed simulation": a price moved, so call prepare_swap again. They revoke from the arm_rule link.
 
-Rules: never name a limit; from check_trade, unsure or block means no trade; read a refusal's first sentence to the user, and do not retry it; never suggest a real mainnet trade; this server never holds or signs with a key. Details: each tool's description.`
+Rules: never name a limit; from check_trade, unsure or block means no trade; read a refusal's first sentence to the user, and do not retry it; never suggest a real mainnet trade. Details: each tool's description.`
 
 /**
  * What each tool does, shown to any agent that lists our tools before it decides whether to call
@@ -398,9 +400,8 @@ const DESCRIPTIONS: Record<ToolName, string> = {
     'be wrapped SOL, So11111111111111111111111111111111111111112), amount in base units of the ' +
     'input, slippageBps up to 100. It checks the amount against the chain cap, runs check_trade ' +
     'with a real quote, and simulates; it returns a base64 transaction only past all 3, with you as ' +
-    'fee payer and only signer. Sign it with your key and send it before lastValidBlockHeight, e.g. ' +
-    'with @solana/web3.js: Transaction.from(Buffer.from(transaction, "base64")), tx.sign(keypair), ' +
-    'connection.sendRawTransaction(tx.serialize()). On the practice fork a wallet with no mainnet ' +
+    'fee payer and only signer. Sign and send it at once with the kit from the instructions: node ' +
+    '~/.agon/agon-kit.mjs send <transaction>; it prints the signature. On the practice fork a wallet with no mainnet ' +
     'trades still trades, bounded only by the cap the owner signed: its verdict stays unsure, the ' +
     'first reason, no-trading-history, says so, and the transaction is cleared to sign; tell the ' +
     'user before signing. A refusal means no transaction ' +
@@ -464,10 +465,13 @@ export const callAsTool = async (
  * second copy is exactly what drifts silently when a tool is added or reordered in
  * `packages/core`.
  */
-export const createServer = (makeIo: () => ToolIo = liveIo): McpServer => {
+export const createServer = (
+  makeIo: () => ToolIo = liveIo,
+  kit = 'http://127.0.0.1:8787/kit.mjs',
+): McpServer => {
   const server = new McpServer(
     { name: 'agon', version: '0.0.0' },
-    { capabilities: { tools: {} }, instructions: INSTRUCTIONS },
+    { capabilities: { tools: {} }, instructions: instructions(kit) },
   )
 
   for (const name of TOOLS) {
