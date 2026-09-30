@@ -462,6 +462,20 @@ export const outputNotToVault = (a: { gained: string; promised: string }): Failu
   systemDoes: 'Never returns a swap whose proceeds leave the vault, whatever Jupiter answered.',
 })
 
+export const agentCannotPay = (a: {
+  agent: string
+  held: number
+  needed: number
+}): FailureMessage => ({
+  id: 'agent-cannot-pay',
+  text:
+    `Agent ${a.agent} holds ${a.held} lamports and paying this transaction's fee needs ${a.needed}, ` +
+    `so no transaction was built. Send the agent's key a little SOL; on the practice fork, ` +
+    `requestAirdrop on the fork's RPC gives it free.`,
+  mode: 'closed',
+  systemDoes: 'Builds nothing the chain would refuse before any program runs.',
+})
+
 export const simulationFailed = (a: { program: string; detail: string }): FailureMessage => ({
   id: 'simulation-failed',
   text:
@@ -552,4 +566,5 @@ export const AGENT_SURFACE_MESSAGES = [
     mint: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263',
   }),
   outputNotToVault({ gained: '0', promised: '11928632' }),
+  agentCannotPay({ agent: SAMPLE_WALLET, held: 0, needed: 895880 }),
 ] as const
