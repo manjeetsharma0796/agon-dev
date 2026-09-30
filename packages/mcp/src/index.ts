@@ -307,12 +307,16 @@ What works right now, with nothing to set up:
   figure, and give rollingWorstCase beside it. spec is null because the chain does not store it. An
   empty list means no agent role is armed; an error means no chain was read, which is different.
 - prepare_swap builds 1 trade for an armed vault and never signs it. Give it the vault owner, the
-  wallet whose history judges the trade (on the practice fork, the user's real address; on mainnet,
-  the owner), the agent's public key, the 2 mints (1 must be wrapped SOL, So11111111111111111111111111111111111111112),
+  wallet whose history judges the trade, the agent's public key, the 2 mints (1 must be wrapped SOL, So11111111111111111111111111111111111111112),
   the amount in base units and a slippage of at most 100 bps. It runs check_trade itself with a
   real quote and returns an unsigned base64 transaction only on a pass, after it passed simulation.
   The agent signs it with its own key, locally, and sends it before lastValidBlockHeight. A refusal
   means no transaction exists: never build one another way.
+- The history wallet is only read, never signed for. On mainnet it is the owner. On the practice
+  fork it is any public wallet with swaps on mainnet, and the user does not need to own it; fork
+  activity never counts as history. If the user has no such wallet, ask them for one. Never
+  suggest a real mainnet trade to create history: that spends real funds, which the fork exists to
+  avoid.
 
 What is not real yet, so do not present it as a measurement:
 

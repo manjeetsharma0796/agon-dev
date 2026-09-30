@@ -10,8 +10,9 @@ export const PrepareSwapInput = z.object({
   owner: Address,
   /**
    * The wallet whose own mined rules check_trade judges this trade against. Read only, because an
-   * address is public. On mainnet it is the owner; on the fork it is the user's real address, since
-   * a fresh test key has no history and check_trade fails closed on none.
+   * address is public. On mainnet it is the owner. On the fork it is any public wallet with swaps on
+   * mainnet, owned or not, since a fresh test key has no history, check_trade fails closed on none,
+   * and fork activity never counts as history.
    */
   historyWallet: Address,
   /** The agent key: the fee payer and the only signer of the returned transaction. */

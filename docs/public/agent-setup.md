@@ -116,7 +116,7 @@ Call `prepare_swap` with:
 | Field | Value |
 |---|---|
 | `owner` | the user's wallet, which owns the vault |
-| `historyWallet` | the wallet whose history judges the trade: on mainnet the owner; on the practice fork the user's real address, because a fresh test key has no history |
+| `historyWallet` | the wallet whose history judges the trade, only read, never signed for: on mainnet the owner; on the practice fork any public wallet with swaps on mainnet, which the user does not need to own, because a fresh test key has no history and fork activity never counts. If the user has none, ask for one. **Never suggest a real mainnet trade to create history** |
 | `agent` | your **public** key |
 | `inputMint`, `outputMint` | 1 of them must be wrapped SOL, `So11111111111111111111111111111111111111112` |
 | `amount` | base units of `inputMint` |
