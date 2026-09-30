@@ -349,12 +349,12 @@ const INSTRUCTIONS = `Agon: a spending limit mined from a trader's own history, 
 Network: ${network(process.env['AGON_NETWORK']).short}. Every result starts with "network"; say it before quoting a number. ${dataSource()}
 
 "Onboard me": do these in order. Build nothing, read no source: it all exists. Do not ask for their address.
-1. Make (or reuse) your own keypair here, in a chmod 600 file; never show its secret. Practice only, never mainnet.
-2. They set Phantom to Settings, Developer Settings, Testnet Mode, Solana Localnet: the practice fork, RPC http://127.0.0.1:8899.
+1. Make (or reuse) your keypair with @solana/web3.js Keypair.generate() (npm i @solana/web3.js@1 if missing), saved in a chmod 600 file. No hand-rolled key code; never show the secret. Practice only.
+2. Phantom: Settings, Developer Settings, Testnet Mode, Solana Localnet (the fork, RPC http://127.0.0.1:8899).
 3. arm_rule with agent your public key, mints ["So11111111111111111111111111111111111111112"], triggerType "stop", expiresAt null. Give them the link: they connect Phantom (your key is prefilled), take free practice SOL if short, pick a deposit and cap, and approve 2 transactions (which also pay your fees). The link resumes if they stop.
-4. When they say done, list_rules with your own public key: it lists every wallet that hired you (owner), each with its vault, cap and effectiveRemaining. Show them the owner and ask them to confirm it is the wallet in Phantom (if several, which one); then remember it.
+4. When they say done, list_rules with your own public key: it lists every wallet that hired you (owner) with its vault, cap and effectiveRemaining. Ask them to confirm the owner matches Phantom (if several, which), then remember it.
 
-Trade: prepare_swap with owner and historyWallet both the owner list_rules gave, agent your public key, inputMint wrapped SOL, amount in base units (1 SOL = 1000000000), slippageBps up to 100. A returned transaction is cleared to go out, whatever the verdict word: tell them the verdict and its first reason, then sign it with your key and send it to the same RPC before lastValidBlockHeight. "failed simulation": a price moved, so call prepare_swap again. They revoke from the arm_rule link.
+Trade: prepare_swap with owner and historyWallet both the owner list_rules gave, agent your public key, inputMint wrapped SOL, amount in base units (1 SOL = 1000000000), slippageBps up to 100. A returned transaction is cleared, whatever the verdict word: tell them its first reason, sign it with your key and send it to the same RPC before lastValidBlockHeight. "failed simulation": a price moved, so call prepare_swap again. They revoke from the arm_rule link.
 
 Rules: never name a limit; from check_trade, unsure or block means no trade; read a refusal's first sentence to the user, and do not retry it; never suggest a real mainnet trade; this server never holds or signs with a key. Details: each tool's description.`
 
