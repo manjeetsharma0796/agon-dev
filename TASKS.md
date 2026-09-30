@@ -2679,7 +2679,7 @@ _(empty)_
   fixtures/contracts/, packages/mcp/src/index.ts, packages/mcp/src/io.ts, packages/mcp/src/mcp.test.ts,
   packages/mcp/src/test-support.ts, packages/mcp/src/third-party-client.test.ts,
   packages/mcp/src/token-budget.token.test.ts, docs/public/agent-setup.md, docs/public/mcp-tools.md,
-  docs/public/quickstart.md
+  docs/public/quickstart.md, packages/core/src/messages.ts
 - Serves: Functionality (judged) ; UX (judged) ; a user can ask the agent what it holds and how it is
   doing, and fix a fork gone stale without wiping it
 - Acceptance: the tool list grows from 5 to 7, appended so the first 5 keep their order (decided in
