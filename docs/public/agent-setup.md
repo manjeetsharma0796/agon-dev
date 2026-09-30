@@ -95,7 +95,9 @@ output schemas: [`mcp-tools.md`](./mcp-tools.md).
 
 What an agent does when the user says "onboard me". Nobody copies an address in either direction.
 
-1. The agent makes its own practice key (section 5). It does not ask for the user's address.
+1. The agent makes its own practice key with `@solana/web3.js` `Keypair.generate()` (installing it
+   with `npm i @solana/web3.js@1` if missing), saves it in a `chmod 600` file and never shows the
+   secret. It never writes its own key or address code. It does not ask for the user's address.
 2. The user sets Phantom to **Settings, Developer Settings, Testnet Mode, Solana Localnet**, which
    points at the fork on `127.0.0.1:8899`.
 3. The agent calls `arm_rule` with `agent` set to its public key,
