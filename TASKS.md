@@ -1702,7 +1702,7 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
 - Kill criterion: none. A PRD that contradicts the code misleads the reader it exists for
 
 ### T-B21, Docker runs the arming screen, so a new user onboards from the agent's link
-- Status: claimed 2026-09-30 | Owner: manjeetsharma0796 | Branch: feature/t-b21-arming-in-docker
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/237 | Owner: manjeetsharma0796 | Branch: feature/t-b21-arming-in-docker
 - Depends-on: T-B19, T-E06, T-C18
 - Touches: compose.yaml, apps/web/Dockerfile, .dockerignore
 - Serves: Functionality (judged) ; UX (judged) ; the first step of a new user, which Docker cannot
@@ -1717,7 +1717,12 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
   the agent, and `list_rules` then shows the cap. Then the resume case: stopped after the first
   signature and reloaded, the page shows the hire step and not the create step, and finishing it
   gives the same `list_rules` answer. 0 `.env` files in the web image
-- Evidence: <PR link, the Phantom run, the resume run and the image listing>
+- Evidence: #237. `/arm` 200 in Docker; `arm_rule` returns the link; 0 `.env` files in the image.
+  The page's own flow with a script signer on the fork: 2nd signature rejected, reload shows the
+  vault with 1 wSOL and 0 agents (the hire step), create again refused, hire landed, `list_rules`
+  read the 0.5 cap through the Docker MCP. Not yet measured: the real Phantom click-through
+- Finding 2026-09-30: the fork's public upstream failed the first transaction of 1 of 2 runs
+  ("Failed to fetch accounts from remote"); a new wallet cannot get fork SOL from the page
 - Why it is its own row: found 2026-09-30. In Docker, `arm_rule` refuses ("this deployment has no
   public address"), because compose runs only the fork and the MCP, so a new user cannot create a
   vault without a script. The screen itself exists (T-E06, #170). Read from the code, not yet

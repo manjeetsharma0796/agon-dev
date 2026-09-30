@@ -1,8 +1,9 @@
 # T-B16: the Surfpool mainnet fork and the Agon MCP server, side by side, on this machine only.
 #
-#   docker compose up -d --build     then: fork on 127.0.0.1:8899, MCP on 127.0.0.1:8787/mcp
+#   docker compose up -d --build     then: fork on 127.0.0.1:8899, MCP on 127.0.0.1:8787/mcp,
+#                                    arming screen on 127.0.0.1:3111/arm
 #                                    (AGON_MCP_PORT=8788 docker compose up ... if 8787 is taken)
-#   docker compose down              stops and removes both
+#   docker compose down              stops and removes all 3
 #
 # With no .env it needs no keys: the MCP server reads vaults from the fork and everything else from
 # committed recordings (replay mode), which hold no live price, so it cannot build a trade. To
@@ -48,6 +49,8 @@ services:
       AGON_NETWORK: fork
       # Vaults are read from, and trades simulated on, the fork service, by its name on this network.
       AGON_RPC_URL: http://fork:8899
+      # Where arm_rule's link points: the arming screen below, as the user's browser reaches it.
+      AGON_PUBLIC_URL: http://127.0.0.1:${AGON_WEB_PORT:-3111}
       # Named 1 by 1 on purpose, never env_file: a .env usually holds other keys too.
       AGON_NET_MODE: ${AGON_NET_MODE:-replay}
       HELIUS_API_KEY: ${HELIUS_API_KEY:-}
@@ -55,3 +58,20 @@ services:
     ports:
       # 8787 is also Cloudflare wrangler's default dev port. If it is taken, set AGON_MCP_PORT.
       - '127.0.0.1:${AGON_MCP_PORT:-8787}:8787'
+
+  # The arming screen (T-E06), where the user's own wallet creates the vault and hires the agent.
+  # T-B21. It signs nothing: the wallet in the user's browser does.
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    depends_on:
+      fork:
+        condition: service_healthy
+    environment:
+      AGON_NETWORK: fork
+      # The host address, not http://fork:8899: the page hands this to the browser, and the browser
+      # talks to the fork directly, from outside this network.
+      AGON_RPC_URL: http://127.0.0.1:8899
+    ports:
+      - '127.0.0.1:${AGON_WEB_PORT:-3111}:3111'
