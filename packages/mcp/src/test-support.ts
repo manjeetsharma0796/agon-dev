@@ -75,6 +75,7 @@ export const swapIo = (remaining: bigint, over: Partial<ToolIo> = {}) => {
     loadVaultRules: async () => {
       calls.push('vault')
       return {
+        owner: SWAP.owner,
         vault: SWAP_VAULT,
         rules: [
           {

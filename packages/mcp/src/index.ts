@@ -108,8 +108,8 @@ const handlers = {
   // An empty list now means the chain holds no agent role for this wallet.
   list_rules: async (input: unknown, io: ToolIo) => {
     const { wallet } = input as { wallet: string }
-    const { vault, rules } = await io.loadVaultRules(wallet)
-    if (vault === null) return []
+    const { owner, vault, rules } = await io.loadVaultRules(wallet)
+    if (vault === null || owner === null) return []
     return rules.map((r) => ({
       spec: null,
       swigRole: {
@@ -125,6 +125,7 @@ const handlers = {
       },
       jupiterOrderId: null,
       vault,
+      owner,
       effectiveRemaining: String(r.effectiveRemaining),
       rollingWorstCase: String(r.rollingWorstCase),
     }))
