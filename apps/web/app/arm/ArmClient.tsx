@@ -158,7 +158,7 @@ export default function ArmClient({ rpcUrl }: { rpcUrl: string }) {
       </p>
 
       {problem && (
-        <p role="alert" style={{ color: '#991b1b' }}>
+        <p role="alert" style={{ color: 'var(--bad)' }}>
           {problem}
         </p>
       )}

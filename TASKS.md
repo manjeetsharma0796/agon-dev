@@ -2749,7 +2749,8 @@ _(empty)_
   .opencode/tui/, tui.json
 - Serves: UX (judged)
 - Acceptance: every web page reads in both a light and a dark browser theme, form fields included,
-  checked by computed colour and not by eye; the colour tokens the pages already name (`--muted`,
+  with text at a contrast ratio of at least 4.5 to 1 against its background, checked by computed
+  colour and not by eye; the colour tokens the pages already name (`--muted`,
   `--bad`, `--warn`, `--line`, `--bg`, `--fg`, `--accent`) are defined once; the opencode plugin in
   `.opencode/tui/` is committed with a setup page that reads, and never writes: whether the Agon
   server answers, the wallet address the user typed, and each armed rule from `list_rules` (vault,
