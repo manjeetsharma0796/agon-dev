@@ -2628,6 +2628,21 @@ _(empty)_
   `quote-missing` and `text-not-screened`, which fire on every token: T-C22 and OP-38. An issuer
   list is still useful for impersonation, where Jev called the genuine USDC an imitation at 0.97,
   so it moves to OP-38's measurement
+### T-C24, check_trade agrees with prepare_swap on the fork: no history is judged unchecked, not refused
+- Status: claimed 2026-10-01 | Owner: prithwish122 | Branch: feature/t-c24-check-trade-no-history
+- Depends-on: T-C21
+- Touches: packages/mcp/src/index.ts, packages/mcp/src/mcp.test.ts
+- Serves: Functionality (judged) ; a first-time trader can try the fork through an agent that
+  checks a trade before it builds one
+- Acceptance: on the fork, `check_trade` for a wallet with 0 closed trades answers a verdict whose
+  first reason is `no-trading-history`, the same reason `prepare_swap` gives, instead of the
+  `no-history` refusal; off the fork it still refuses with 0 transactions read; the fork decision
+  lives in 1 function that both tools call, and the server instructions stop saying a wallet with
+  no history is always refused; 2 tests, 0 new files
+- Evidence: <PR link>
+- Kill criterion: none. DECISIONS.md 2026-09-30 decided this for prepare_swap; this makes
+  check_trade obey the same row, because an agent that checks first was refused before it built
+
 ### T-B18, CLAUDE.md scopes the Jev rule to the trading guard
 - Status: done 2026-09-29 | Owner: Jishnu | PR: #205
 - Depends-on: OP-24
