@@ -1701,6 +1701,32 @@ A v1 and benchmark B v1 published; "rule is right" at 70% or above across 10+ re
   same reason, so this row adds the check, not only the edit
 - Kill criterion: none. A PRD that contradicts the code misleads the reader it exists for
 
+### T-B21, Docker runs the arming screen, so a new user onboards from the agent's link
+- Status: claimed 2026-09-30 | Owner: manjeetsharma0796 | Branch: feature/t-b21-arming-in-docker
+- Depends-on: T-B19, T-E06, T-C18
+- Touches: compose.yaml, apps/web/Dockerfile, .dockerignore
+- Serves: Functionality (judged) ; UX (judged) ; the first step of a new user, which Docker cannot
+  do today
+- Acceptance: `docker compose up` starts a 3rd service, the arming screen (`apps/web`), built from
+  its own `apps/web/Dockerfile` so T-E03's `Dockerfile` is untouched, on `127.0.0.1:3111`; the MCP
+  gets `AGON_PUBLIC_URL` pointing at it, so `arm_rule` returns a link instead of refusing with
+  "no public address". The web service gets `AGON_RPC_URL=http://127.0.0.1:8899`, not the fork's
+  service name, because the page hands it to the browser, which talks to the fork directly.
+  Measured with a real Phantom on Solana Localnet, from the agent's words "onboard me": the agent
+  returns the link, the page connects the wallet, 2 signatures create and fund the vault and hire
+  the agent, and `list_rules` then shows the cap. Then the resume case: stopped after the first
+  signature and reloaded, the page shows the hire step and not the create step, and finishing it
+  gives the same `list_rules` answer. 0 `.env` files in the web image
+- Evidence: <PR link, the Phantom run, the resume run and the image listing>
+- Why it is its own row: found 2026-09-30. In Docker, `arm_rule` refuses ("this deployment has no
+  public address"), because compose runs only the fork and the MCP, so a new user cannot create a
+  vault without a script. The screen itself exists (T-E06, #170). Read from the code, not yet
+  measured: the page keeps no progress record and resumes from chain state on every load, which
+  covers a stop between the 2 signatures; what the user typed (deposit, cap, window, agent key) is
+  lost on reload and retyped
+- Kill criterion: if `next build` cannot run inside the image, the web service runs `next dev`
+  with the reason written in `compose.yaml`, never a skipped arming step
+
 ### T-D04, Pre-mainnet checklist, before team wallets touch mainnet
 - Status: open
 - Depends-on: T-F05c, T-F06a, T-D03, T-C08, OP-5
