@@ -1081,3 +1081,19 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   a new held-out set with further question redesign; (3) run the LLM-guard arm (MiMo, OP-9) and
   compare before deciding. Recommendation: (1), because it is arithmetic and lookups, deterministic,
   fast, and costs no model call per trade
+
+### OP-39, The npm name for Agon's opencode package, and who may publish it
+- Status: open
+- Owner: Jishnu
+- Needed by: before T-E17 publishes anything
+- Unblocks: T-E17's automatic install. The manual docs and the package build do not wait on it
+- What exactly: T-E17 ships the discovery screen as an npm package that `opencode plugin <name> -g`
+  installs. Publishing is public and cannot be fully taken back, so it needs a name, an npm account
+  with 2-factor auth that owns it, and a rule for who runs the publish. The startup prompt will pin
+  1 exact version, so a publish is also a change to what every new user installs
+- Options: (1) a scoped name such as `@agon/opencode`, published by the release job from a tag
+  with npm provenance, the same way `main` is written only by the release job; (2) the same name,
+  published by hand by 1 named person; (3) no npm package, the repo's docs only. Recommendation:
+  (1), because a pinned version from a signed release job is the only form a stranger's agent can
+  install and we can still say exactly what it ran
+- Done when: the decision is in `DECISIONS.md`, and T-E17's row names the package and the publisher

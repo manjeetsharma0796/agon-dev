@@ -2707,3 +2707,37 @@ _(empty)_
 - Kill criterion: none. Measured: a `sed` meant for 1 row rewrote 26 done rows to "in-review on
   #166", it passed the lint and merged, and it sat on `dev` for about 5 minutes until the next PR
   reversed it. The lint checked branch uniqueness for `claimed` rows only
+
+### T-E17, Agon in opencode: the discovery screen as 1 install, set up by the startup prompt or by hand
+- Status: open
+- Depends-on: T-C21, T-E15
+- Touches: packages/opencode/, docs/public/opencode.md, docs/public/agent-setup.md, .opencode/tui/,
+  tui.json
+- Serves: UX (judged) ; Potential impact (judged)
+- Acceptance: the discovery screen (live token lists, sort and search, logos, price charts, a
+  watchlist in the sidebar, mouse, and Buy, Sell and Check buttons) ships as 1 npm package with a
+  `./tui` export, so `opencode plugin <name> -g` installs it and opencode updates it at startup; the
+  package never signs, sends or reads a key, and a test asserts the quick-trade buttons only append
+  text to the prompt, never submit it; the startup prompt gains 1 setup step that reads
+  `opencode --version` and installs the build for that major version, shows the exact command
+  pinned to 1 version, and runs it only after the user says yes; logos pick their protocol from the
+  terminal at runtime (Sixel, Kitty, or half-blocks when neither) with 0 settings;
+  `docs/public/opencode.md` gives the same steps by hand, including how to remove it; a fresh agent
+  on a clean opencode, given only the startup prompt, reaches the discovery page with 0 questions
+  asked beyond the install approval
+- Evidence: <PR link, the fresh agent's transcript, and a screenshot on 1 Sixel terminal and 1
+  terminal with neither protocol>
+- Finding, from the prototype in `.opencode/tui/agon-discovery.tsx` (not yet committed): opencode
+  1.18.33 and its dev branch pin OpenTUI 0.4.5, which has no image element, so logos are drawn as
+  half-blocks, 2 pixels per cell. opencode's v2 branch (`@opencode-ai/cli@beta`, command
+  `opencode2`) pins OpenTUI 0.5.14, whose image element drew real pixels in Windows Terminal 1.24
+  over Sixel, with the terminal reporting `kitty=false sixel=true`. v2's plugin API is a different
+  shape, so sharp logos mean a port, not a flag
+- Finding 2: ipfs.io and 4 other public IPFS gateways refused the image proxy, so 10 of the top 40
+  trending logos never loaded; routing IPFS through ipfs.filebase.io served 12 of 12, and 38 of 40
+  logos load. The 2 left are dead at the source. An SVG logo (ZEC) fails in the native image
+  element, so logos still go through the proxy as PNG
+- Finding 3: the npm package named `opencode2` is not from the opencode team; its repository is
+  `game-libgdx-unity/opencode2`. The setup step and the docs name `@opencode-ai/cli` only
+- Kill criterion: if opencode cannot pin a plugin to 1 version, or runs install scripts we cannot
+  read first, ship the manual docs only and no automatic install
