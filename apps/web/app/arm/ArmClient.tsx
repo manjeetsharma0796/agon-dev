@@ -248,7 +248,11 @@ export default function ArmClient({ rpcUrl }: { rpcUrl: string }) {
             lets the agent trade and sends its key 0.01 SOL for its fees.
           </p>
           {agentFromLink && (
-            <p>Your agent&apos;s public key came with its link and is filled in below.</p>
+            <p role="note">
+              Your agent&apos;s public key came with its link and is filled in below. Continue only
+              if your own agent gave you this link: whoever holds that key can trade from this vault
+              up to the limit you set.
+            </p>
           )}
           <form
             onSubmit={(e) => {
