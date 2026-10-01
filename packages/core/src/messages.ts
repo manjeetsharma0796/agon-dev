@@ -381,8 +381,8 @@ export const noVault = (a: { owner: string }): FailureMessage => ({
 export const noAgentHistory = (a: { agent: string }): FailureMessage => ({
   id: 'no-agent-history',
   text:
-    `No history found for ${a.agent}: 0 transactions on this chain, so no wallet has hired this ` +
-    `key yet. The owner hires it on the arming screen: arm_rule returns the link.`,
+    `No history found for ${a.agent}: 0 transactions on this chain, so it owns no vault and no ` +
+    `wallet has hired it as an agent. Arm one first: arm_rule returns the link.`,
   mode: 'closed',
   systemDoes: 'Returns no list. An empty one would not say whether the scan saw anything at all.',
 })
