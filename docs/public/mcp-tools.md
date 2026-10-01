@@ -926,7 +926,7 @@ Lists the caps currently armed for a wallet.
       "items": {
         "type": "object",
         "properties": {
-          "key": {
+          "address": {
             "type": "string",
             "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
           },
@@ -936,7 +936,7 @@ Lists the caps currently armed for a wallet.
           }
         },
         "required": [
-          "key",
+          "address",
           "feeSol"
         ],
         "additionalProperties": false
