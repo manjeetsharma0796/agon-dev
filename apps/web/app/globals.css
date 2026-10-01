@@ -129,7 +129,6 @@ textarea {
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
-  overflow: hidden;
 }
 .page::after {
   content: '';
@@ -142,8 +141,7 @@ textarea {
 }
 
 .nav {
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 50;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -298,11 +296,14 @@ textarea {
   border-color: #d4bf7c73;
 }
 
-/* ---- The network strip. role="status" and data-network stay: Docker's health check reads them. ---- */
+/* ---- The network strip. role="status" and data-network stay: Docker's health check reads them.
+   Sticky, so which chain this is stays on screen above every form, however far down it sits. ---- */
 
 .net {
-  position: relative;
+  position: sticky;
+  top: 0;
   z-index: 40;
+  background-color: var(--bg);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -657,6 +658,12 @@ textarea {
   color: var(--fg-dim);
   font-size: 12px;
 }
+.form__wallet-sol {
+  flex: none;
+  color: var(--fg);
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+}
 .form__wallet-change {
   flex: none;
   height: 34px;
@@ -893,12 +900,12 @@ textarea {
   text-transform: uppercase;
   font-variant-numeric: tabular-nums;
 }
-.step p {
+.step > p:not([class]) {
   margin: 10px 0 0;
   color: var(--fg-muted);
   line-height: 1.6;
 }
-.step p strong {
+.step > p:not([class]) strong {
   color: var(--fg);
 }
 

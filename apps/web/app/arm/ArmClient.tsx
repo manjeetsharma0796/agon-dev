@@ -239,10 +239,8 @@ export default function ArmClient({ rpcUrl }: { rpcUrl: string }) {
           <div className="form__wallet">
             <img className="form__wallet-ico" src={who.wallet.icon} alt="" />
             <span className="form__wallet-addr">{owner.toBase58()}</span>
-            <span className="form__wallet-tag">
-              {who.wallet.name}
-              {sol !== null && `, ${formatSol(sol)} SOL`}
-            </span>
+            <span className="form__wallet-tag">{who.wallet.name}</span>
+            {sol !== null && <span className="form__wallet-sol">{formatSol(sol)} SOL</span>}
             <button
               type="button"
               className="form__wallet-change"

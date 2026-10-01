@@ -1,9 +1,11 @@
 // The Agon mark, the same paths and gold gradient as waitlist.getagon.tech. A server-safe SVG with
 // no state. `id` keeps the gradient unique when the mark is drawn more than once on a page.
+// Decorative everywhere it is used: the word "Agon" sits beside it as text or as the link's label,
+// so a screen reader is not told the name twice.
 export default function Mark({ className, id }: { className?: string; id: string }) {
   const grad = `lg-gold-${id}`
   return (
-    <svg className={className} viewBox="0 0 243 177" role="img" aria-label="Agon">
+    <svg className={className} viewBox="0 0 243 177" aria-hidden="true" focusable="false">
       <defs>
         <linearGradient id={grad} gradientUnits="userSpaceOnUse" x1="40" y1="0" x2="200" y2="177">
           <stop offset="0" stopColor="#f6dea6" />
