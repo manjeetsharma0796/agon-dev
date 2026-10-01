@@ -2673,7 +2673,7 @@ _(empty)_
 - Kill criterion: none; retired when T-C08 signs trades and `@agon/cli` installs
 
 ### T-C25, 2 more tools: vault_status for balances, trades and P&L, and sync_fork for a fork out of step
-- Status: claimed 2026-10-01 | Owner: manjeetsharma0796 | Branch: feature/t-c25-vault-status-sync-fork
+- Status: in-review 2026-10-01 | Owner: manjeetsharma0796 | Branch: feature/t-c25-vault-status-sync-fork
 - Depends-on: T-C21, T-C24
 - Touches: packages/core/src/vault.ts, packages/core/src/index.ts, packages/core/src/contracts.test.ts,
   fixtures/contracts/, packages/mcp/src/index.ts, packages/mcp/src/io.ts, packages/mcp/src/mcp.test.ts,
@@ -2696,7 +2696,17 @@ _(empty)_
   characters Claude Code keeps per description. Measured on the fork: `vault_status` reads a vault
   that traded and its P&L matches the arithmetic by hand; `sync_fork` takes the lag from its measured
   value to under 2 s and a Whirlpool route that failed on the lag simulates afterwards
-- Evidence: <PR link, the vault_status answer against the hand arithmetic, the lag before and after>
+- Evidence: on the fork, this branch's server, the vault a fresh agent traded from in T-C26:
+  `vault_status` gave 11801342 USDC and 900000000 wSOL (the chain's own balances), the agent's
+  9995000 lamports of fee SOL, 1 trade (`3793M3Ko...`, 100000000 wSOL in, 11801342 USDC out) with
+  an explorer link, and P&L 176552 = 100176552 (1 live quote) - 100000000 spent, by hand the same.
+  `sync_fork`: clock 23870.8 s behind before, 1.4 s after, 14 accounts refreshed, 1.05 s. Tests:
+  trade detection, P&L arithmetic, clock rule, both handlers through their contracts, no quote
+  gives a null total with the reason, off the fork refused
+- Finding 2026-10-01: the first live `vault_status` crashed: a parsed token account names its
+  amount `tokenAmount`, a transaction's balances `uiTokenAmount`, and the unit tests used only the
+  second. Now 1 pure reader with a test on the real shape. The fork's clock had drifted 6.6 hours
+  in a day of running, which is what made swaps fail as stale
 - Why it is its own row: asked for 2026-10-01 by manjeetsharma0796 ("agents balance, trades pnl,
   explorer, sync to mainnet incase of outsync"), proposed as 2 tools rather than 4 to keep the list
   small. The fork's clock was measured 33 to 46 s behind real time, which is why Whirlpool refused

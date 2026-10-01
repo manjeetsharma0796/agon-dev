@@ -68,7 +68,7 @@ and never reaches the network. It has 1 recorded wallet,
 `HLnpSz9h2S4hiLQ43rnSD9XkcUThA7B8hQMKmDaiTLcC`, with USDC as the recorded mint. Any other wallet
 is refused with the reason, not guessed at.
 
-## 4. The five tools, as they behave today
+## 4. The seven tools, as they behave today
 
 | Tool | What it really does now |
 |---|---|
@@ -77,6 +77,8 @@ is refused with the reason, not guessed at.
 | `arm_rule` | Arms nothing. Returns a link to the arming screen, on the practice fork only. A request that carries a cap is refused. |
 | `list_rules` | Reads the wallet's vault from the chain this deployment names. Needs `AGON_RPC_URL`; without it the call refuses, which is not the same as "no rules". |
 | `prepare_swap` | Builds 1 unsigned swap from the vault, signed by nobody. Runs `check_trade` itself with the real quote, checks the amount against `effectiveRemaining` and simulates on the configured chain; returns the transaction only past all 3. Needs `AGON_RPC_URL`, and live mode for any wallet but the recorded one. |
+| `vault_status` | Reads the owner's vault from the chain: SOL and token balances, each hired agent's fee SOL, the last 20 trades with explorer links, and P&L in wSOL base units, valued at 1 live Jupiter quote per mint. With no quote the total is `null` and `pnlNote` says why. |
+| `sync_fork` | Practice fork only, refused anywhere else. Refreshes the pools a SOL swap routes through from mainnet and moves a lagging fork clock forward; never resets a vault. Call it when a swap fails on a stale price or the clock lags. |
 
 Two facts that change how you read `check_trade`:
 

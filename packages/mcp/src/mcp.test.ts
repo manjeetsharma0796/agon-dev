@@ -4,7 +4,15 @@ import { FIXTURE_NOTE, reportRoute } from '@agon/web'
 import { callAsTool, callTool, isTool } from './index.js'
 import { PublicKey } from '@solana/web3.js'
 import { pocketOf } from '@agon/chain'
-import { accountsToRefresh, chainMismatch, payersTo } from './io.js'
+import {
+  accountsToRefresh,
+  chainMismatch,
+  clockNeedsMove,
+  payersTo,
+  balancesFrom,
+  tradesFrom,
+  valueTrades,
+} from './io.js'
 import {
   POOL,
   quoteFor,
@@ -91,8 +99,8 @@ test('the HTTP route has not caught up, and the test says so rather than hiding 
   expect(fromLeg.reasons).not.toEqual(fromTool.reasons)
 })
 
-test('all 5 tools are reachable, and arm_rule refuses off the fork rather than answering', async () => {
-  expect(TOOLS).toHaveLength(5)
+test('all 7 tools are reachable, and arm_rule refuses off the fork rather than answering', async () => {
+  expect(TOOLS).toHaveLength(7)
   for (const name of TOOLS) expect(isTool(name)).toBe(true)
   expect(isTool('drop_table')).toBe(false)
   await expect(callTool('arm_rule', SPEC)).rejects.toThrow(/practice fork only/)
@@ -629,4 +637,139 @@ test('list_rules with an agent key lists every wallet that hires it, each rule w
   const io = { ...NO_VAULT, findHirers: async () => [stranger, mine] }
   const rules = (await callTool('list_rules', { wallet: agent }, io)) as Array<{ owner: string }>
   expect(rules.map((r) => r.owner)).toEqual([stranger.owner, WALLET])
+})
+
+// ---- T-C25: vault_status and sync_fork. ----
+
+const VAULT_ = '6L3SNQ1UJmDm7FfjnfRvwXj1ECyEciSAQsk2hndTqNye'
+const USDC_ = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
+const bal = (accountIndex: number, mint: string, amount: string, owner = VAULT_) => ({
+  accountIndex,
+  mint,
+  owner,
+  uiTokenAmount: { amount },
+})
+const txOf = (
+  signature: string,
+  slot: number,
+  pre: ReturnType<typeof bal>[],
+  post: ReturnType<typeof bal>[],
+  err: unknown = null,
+) => ({
+  slot,
+  transaction: { signatures: [signature] },
+  meta: { err, preTokenBalances: pre, postTokenBalances: post },
+})
+
+test('the vault history reads as trades: one mint out, one in, successful, and the vault only', () => {
+  const deposit = txOf('dep', 10, [], [bal(1, WSOL_, '1000000000')])
+  const trade = txOf(
+    'swap',
+    20,
+    [bal(1, WSOL_, '1000000000'), bal(2, USDC_, '0'), bal(3, USDC_, '999', 'someone-else')],
+    [bal(1, WSOL_, '995000000'), bal(2, USDC_, '588572'), bal(3, USDC_, '0', 'someone-else')],
+  )
+  const failed = txOf('fail', 30, [bal(1, WSOL_, '995000000')], [bal(1, WSOL_, '1')], { Custom: 1 })
+  expect(tradesFrom([trade, deposit, failed, null], VAULT_)).toEqual([
+    {
+      signature: 'swap',
+      slot: 20,
+      spent: { mint: WSOL_, amount: 5000000n },
+      received: { mint: USDC_, amount: 588572n },
+    },
+  ])
+})
+
+test('P&L is arithmetic: each trade gets its share of 1 quote per mint, less the wSOL it spent', () => {
+  const t = (spentMint: string, spent: bigint, received: bigint) => ({
+    signature: 's',
+    slot: 1,
+    spent: { mint: spentMint, amount: spent },
+    received: { mint: USDC_, amount: received },
+  })
+  // 400 USDC is worth 40 lamports at the quote, so 100 is worth 10 and 300 is worth 30.
+  const worth = new Map([[USDC_, { amount: 400n, worth: 40n }]])
+  const valued = valueTrades([t(WSOL_, 12n, 100n), t(WSOL_, 25n, 300n), t(USDC_, 5n, 50n)], worth)
+  expect(valued.map((v) => [v.worthNow, v.pnl])).toEqual([
+    [10n, -2n],
+    [30n, 5n],
+    [5n, null], // not bought with wSOL, so no P&L in wSOL
+  ])
+})
+
+test('sync_fork only moves the clock forward, and only when it lags by more than 2 s', () => {
+  expect(clockNeedsMove(41000)).toBe(true)
+  expect(clockNeedsMove(1500)).toBe(false)
+  expect(clockNeedsMove(-60000)).toBe(false) // ahead: time travel cannot go back
+})
+
+const activity = (trades: Array<[string, bigint, string, bigint]>) => ({
+  ...withChain({ owner: null, vault: null, rules: [] }),
+  loadVaultActivity: async () => ({
+    vault: VAULT_,
+    nativeSol: 2_000_000n,
+    balances: [{ mint: USDC_, amount: 588572n }],
+    agents: [{ key: '1HVWcU6i42t4hCuAUgHtoizLpXxsPxmsZnqxiTB5jYU', feeSol: 9_000_000n }],
+    trades: trades.map(([sm, s, rm, r], i) => ({
+      signature: `sig${i}`,
+      slot: 100 + i,
+      spent: { mint: sm, amount: s },
+      received: { mint: rm, amount: r },
+    })),
+    slot: 200,
+  }),
+})
+
+test('vault_status: P&L from 1 quote per mint, explorer links, and every amount a string', async () => {
+  const io = {
+    ...activity([[WSOL_, 5_000_000n, USDC_, 588_572n]]),
+    loadWorth: async () => 6_000_000n,
+  }
+  const out = (await callTool('vault_status', { wallet: VAULT_ }, io)) as {
+    pnl: string | null
+    trades: Array<{ pnl: string | null; explorer: string }>
+    dataSlot: number
+  }
+  expect(out.pnl).toBe('1000000')
+  expect(out.trades[0]?.pnl).toBe('1000000')
+  expect(out.trades[0]?.explorer).toContain('sig0')
+  expect(out.dataSlot).toBe(200)
+})
+
+test('vault_status: with no quote the total is null and says why, never a guess', async () => {
+  const io = {
+    ...activity([[WSOL_, 5_000_000n, USDC_, 588_572n]]),
+    loadWorth: async () => {
+      throw new Error('Jupiter answered 429.')
+    },
+  }
+  const out = (await callTool('vault_status', { wallet: VAULT_ }, io)) as {
+    pnl: string | null
+    pnlNote: string
+  }
+  expect(out.pnl).toBeNull()
+  expect(out.pnlNote).toContain('Jupiter answered 429.')
+  const none = (await callTool('vault_status', { wallet: VAULT_ }, activity([]))) as {
+    pnlNote: string
+  }
+  expect(none.pnlNote).toMatch(/^0 trades/)
+})
+
+test('sync_fork refuses off the fork and touches nothing', async () => {
+  await expect(callTool('sync_fork', {})).rejects.toThrow(
+    /sync_fork only runs on the practice fork/,
+  )
+})
+
+test('vault balances read the shape getParsedTokenAccountsByOwner really returns, empties dropped', () => {
+  const account = (mint: string, amount: string) => ({
+    program: 'spl-token',
+    parsed: {
+      type: 'account',
+      info: { mint, owner: VAULT_, tokenAmount: { amount, decimals: 6 } },
+    },
+  })
+  expect(balancesFrom([account(USDC_, '11801342'), account(WSOL_, '0')])).toEqual([
+    { mint: USDC_, amount: 11801342n },
+  ])
 })

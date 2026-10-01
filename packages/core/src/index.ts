@@ -4,6 +4,7 @@ import { CheckTradeInput, CheckTradeOutput } from './check-trade.js'
 import { Report } from './report.js'
 import { ArmedRule, ArmingLink, ArmRequest } from './rule.js'
 import { PrepareSwapInput, PreparedSwap } from './trade.js'
+import { SyncForkInput, SyncForkResult, VaultStatus } from './vault.js'
 
 // Frozen contracts and the shared types every other package builds on. Owned by T-C01.
 //
@@ -16,6 +17,7 @@ export * from './check-trade.js'
 export * from './report.js'
 export * from './rule.js'
 export * from './trade.js'
+export * from './vault.js'
 
 // The failure-message catalogue, T-E10. Every message a user ever sees when something did not
 // work lives here, so "something went wrong" has nowhere to be written.
@@ -37,8 +39,9 @@ export type WalletQuery = z.infer<typeof WalletQuery>
 
 /**
  * The MCP tool list, and it is stable: the agent's prompt cache is keyed on it, so adding or
- * reordering a tool costs every user a cache miss. prepare_swap was appended as the 5th, last, by a
- * recorded decision, so the first 4 kept their order.
+ * reordering a tool costs every user a cache miss. prepare_swap was appended as the 5th, and
+ * vault_status and sync_fork as the 6th and 7th, each by a recorded decision, so earlier tools kept
+ * their order.
  */
 export const TOOLS = [
   'get_report',
@@ -46,6 +49,8 @@ export const TOOLS = [
   'arm_rule',
   'list_rules',
   'prepare_swap',
+  'vault_status',
+  'sync_fork',
 ] as const
 export type ToolName = (typeof TOOLS)[number]
 
@@ -55,6 +60,8 @@ const contracts = {
   arm_rule: { input: ArmRequest, output: ArmingLink },
   list_rules: { input: WalletQuery, output: z.array(ArmedRule) },
   prepare_swap: { input: PrepareSwapInput, output: PreparedSwap },
+  vault_status: { input: WalletQuery, output: VaultStatus },
+  sync_fork: { input: SyncForkInput, output: SyncForkResult },
 } satisfies Record<ToolName, { input: z.ZodType; output: z.ZodType }>
 
 /** The zod schemas behind each tool, for validating a call and its result. */

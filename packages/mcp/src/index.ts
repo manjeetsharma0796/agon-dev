@@ -32,7 +32,7 @@ import { JUPITER_PROGRAM_ID, SWIG_PROGRAM_ID, USDC_MINT, WSOL_MINT } from '@agon
 import { assessTrade, DEFAULT_QUOTE, tradedMints, type Quote } from '@agon/guard'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
-import { liveIo, type ToolIo } from './io.js'
+import { liveIo, valueTrades, type ToolIo } from './io.js'
 
 export { TOOLS, type ToolName }
 
@@ -85,6 +85,19 @@ async function judge(
     .loadCategories(tradedMints(txs, trade.wallet), mintCheck.dataSlot ?? undefined)
     .catch(() => undefined)
   return assessTrade(txs, trade, mintCheck, DEFAULT_QUOTE, categories, quote)
+}
+
+/**
+ * A Solana Explorer link on the network this deployment names. On the practice fork it points the
+ * explorer at the fork's RPC as the user's browser reaches it (127.0.0.1:8899 in the local Docker).
+ */
+const explorer = (kind: 'address' | 'tx', id: string): string => {
+  const base = `https://explorer.solana.com/${kind}/${id}`
+  const net = network(process.env['AGON_NETWORK']).id
+  if (net === 'mainnet') return base
+  if (net === 'devnet') return `${base}?cluster=devnet`
+  const rpc = process.env['AGON_PUBLIC_RPC_URL'] ?? 'http://127.0.0.1:8899'
+  return `${base}?cluster=custom&customUrl=${encodeURIComponent(rpc)}`
 }
 
 const handlers = {
@@ -302,6 +315,63 @@ const handlers = {
       }
     }
   },
+
+  // What an armed vault holds and how its trades are doing (T-C25). The P&L is arithmetic over
+  // chain numbers and 1 live quote per received mint; with no quote it is null and says why.
+  vault_status: async (input: unknown, io: ToolIo) => {
+    const { wallet } = toolContracts.vault_status.input.parse(input)
+    const a = await io.loadVaultActivity(wallet)
+    const received = new Map<string, bigint>()
+    for (const t of a.trades) {
+      if (t.received.mint !== WSOL_MINT) {
+        received.set(t.received.mint, (received.get(t.received.mint) ?? 0n) + t.received.amount)
+      }
+    }
+    const worth = new Map<string, { amount: bigint; worth: bigint }>()
+    let noQuote: string | null = null
+    for (const [mint, amount] of received) {
+      try {
+        worth.set(mint, { amount, worth: await io.loadWorth(mint, String(amount)) })
+      } catch (error) {
+        noQuote = error instanceof Error ? error.message : String(error)
+      }
+    }
+    const valued = valueTrades(a.trades, worth)
+    const complete = valued.length > 0 && valued.every((v) => v.pnl !== null)
+    const total = complete ? valued.reduce((sum, v) => sum + (v.pnl ?? 0n), 0n) : null
+    return {
+      vault: a.vault,
+      owner: wallet,
+      nativeSol: String(a.nativeSol),
+      balances: a.balances.map((b) => ({ mint: b.mint, amount: String(b.amount) })),
+      agents: a.agents.map((g) => ({ key: g.key, feeSol: String(g.feeSol) })),
+      trades: valued.map((v) => ({
+        signature: v.signature,
+        slot: v.slot,
+        spent: { mint: v.spent.mint, amount: String(v.spent.amount) },
+        received: { mint: v.received.mint, amount: String(v.received.amount) },
+        worthNow: v.worthNow === null ? null : String(v.worthNow),
+        pnl: v.pnl === null ? null : String(v.pnl),
+        explorer: explorer('tx', v.signature),
+      })),
+      pnl: total === null ? null : String(total),
+      pnlNote:
+        valued.length === 0
+          ? '0 trades from this vault yet, so there is no P&L.'
+          : total !== null
+            ? "In wSOL base units: each trade's received tokens valued at a live Jupiter quote now, " +
+              'less the wSOL it spent. Arithmetic only.'
+            : `No total: ${noQuote ?? 'a trade was not paid in wSOL, so it has no P&L in wSOL.'}`,
+      explorer: explorer('address', a.vault),
+      dataSlot: a.slot,
+    }
+  },
+
+  // Fork only, never a restart or a reset of a vault (T-C25).
+  sync_fork: async (input: unknown, io: ToolIo) => {
+    const { inputMint, outputMint } = toolContracts.sync_fork.input.parse(input)
+    return io.syncFork([inputMint ?? WSOL_MINT, outputMint ?? USDC_MINT])
+  },
 } satisfies Record<ToolName, Handler>
 
 /**
@@ -406,6 +476,19 @@ const DESCRIPTIONS: Record<ToolName, string> = {
     'first reason, no-trading-history, says so, and the transaction is cleared to sign; tell the ' +
     'user before signing. A refusal means no transaction ' +
     'exists: never build one another way, and never suggest a real mainnet trade to create history.',
+  vault_status:
+    'What an armed vault holds and how its trades are doing, read from the chain. Pass the ' +
+    "owner's wallet (list_rules gives it as owner). Returns balances by mint in base units (wSOL " +
+    "is what trades), each agent key's SOL for its fees, the vault's trades newest first (spent and " +
+    'received by mint), P&L per trade and in total in wSOL base units, valued at a live Jupiter ' +
+    'quote, and explorer links for the vault and each trade. Mints only, never token names. With ' +
+    'no live quote the P&L is null and pnlNote says why; repeat pnlNote with any P&L you quote.',
+  sync_fork:
+    'Practice fork only. Use it when swaps keep failing simulation or prices look stale: it moves ' +
+    "the fork's clock to real time (it lags by tens of seconds) and copies from mainnet again the " +
+    "accounts a pair's route reads (wSOL to USDC unless you pass inputMint and outputMint). It never " +
+    'restarts the fork or resets a vault, so nothing armed is lost. Returns the clock lag before and ' +
+    'after, the accounts refreshed, and a note to read to the user.',
 }
 
 /**

@@ -30,16 +30,27 @@ import {
   agentCannotPay,
   noOutputPocket,
   noVault,
+  syncForkOffFork,
   quoteNotRead,
   quoteUnavailable,
   Refusal,
   type JupiterQuote,
   type PrepareSwapInput,
 } from '@agon/core'
-import { Connection, PublicKey, TransactionInstruction } from '@solana/web3.js'
+import {
+  Connection,
+  Keypair,
+  PublicKey,
+  SYSVAR_CLOCK_PUBKEY,
+  TransactionInstruction,
+} from '@solana/web3.js'
 import { fetchNullableSwig } from '@swig-wallet/classic/dist/index.js'
 import { fromEnhanced, type EnhancedTransaction, type RawTransaction } from '@agon/decoder'
 import { categoriesOf, checkMints, type MintCheck, type TokenCategory } from '@agon/guard'
+
+/** The 2 SPL token programs a vault's token accounts can belong to. Pinned, never read from input. */
+const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
+const TOKEN_2022_PROGRAM_ID = new PublicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb')
 
 /** Helius returns newest first and one page is 100, which is enough to mine a habit from. */
 const PAGE = 100
@@ -67,6 +78,12 @@ export interface ToolIo {
   loadVaultRules(wallet: string): Promise<VaultRules>
   /** Every wallet whose vault hires this agent key, found from the payers in the key's history. */
   findHirers(agent: string): Promise<VaultRules[]>
+  /** The owner's vault: its holdings, its agents' fee SOL and its trades, read from the chain. */
+  loadVaultActivity(owner: string): Promise<VaultActivity>
+  /** What `amount` base units of `mint` fetch in wSOL base units at a live quote. */
+  loadWorth(mint: string, amount: string): Promise<bigint>
+  /** Fork only: the clock to real time and the pair's route copied from mainnet again. */
+  syncFork(pair: [string, string]): Promise<ForkSync>
   /** The token category of each mint, for the wallet's category mix. A mint it cannot place is left out. */
   loadCategories(mints: string[], slot?: number): Promise<ReadonlyMap<string, TokenCategory>>
   /**
@@ -169,6 +186,129 @@ interface JupiterInstruction {
   data: string
   accounts: { pubkey: string; isSigner: boolean; isWritable: boolean }[]
 }
+
+// ---- vault_status and sync_fork (T-C25): the arithmetic, kept pure so a test can hand it data. ----
+
+interface TokenBalance {
+  mint: string
+  owner?: string
+  uiTokenAmount: { amount: string }
+}
+
+/** Just the parts of a parsed transaction `tradesFrom` reads. */
+interface ParsedVaultTx {
+  slot: number
+  transaction: { signatures: string[] }
+  meta: {
+    err: unknown
+    preTokenBalances?: TokenBalance[] | null
+    postTokenBalances?: TokenBalance[] | null
+  } | null
+}
+
+/** What sync_fork did, in plain strings; the tool's contract checks it on the way out. */
+interface ForkSync {
+  clockLagBeforeMs: number
+  clockLagAfterMs: number
+  clockMoved: boolean
+  refreshedAccounts: number
+  pair: [string, string]
+  note: string
+}
+
+interface VaultActivity {
+  vault: string
+  nativeSol: bigint
+  balances: Array<{ mint: string; amount: bigint }>
+  agents: Array<{ key: string; feeSol: bigint }>
+  /** Newest first, at most 20. */
+  trades: VaultTrade[]
+  slot: number
+}
+
+interface VaultTrade {
+  signature: string
+  slot: number
+  spent: { mint: string; amount: bigint }
+  received: { mint: string; amount: bigint }
+}
+
+/**
+ * A token account as `getParsedTokenAccountsByOwner` returns it: `tokenAmount`, unlike a
+ * transaction's balances, which call it `uiTokenAmount`. Mixing the two crashed on the fork.
+ */
+export function balancesFrom(
+  accounts: ReadonlyArray<unknown>,
+): Array<{ mint: string; amount: bigint }> {
+  return accounts
+    .map((data) => {
+      const info = (data as { parsed: { info: { mint: string; tokenAmount: { amount: string } } } })
+        .parsed.info
+      return { mint: info.mint, amount: BigInt(info.tokenAmount.amount) }
+    })
+    .filter((b) => b.amount > 0n)
+}
+
+/**
+ * The vault's trades, in the order given: a successful transaction in which exactly 1 of the
+ * vault's own token balances fell and exactly 1 rose. A deposit only rises, a fee moves no token,
+ * and a failed transaction moved nothing, so none of them counts.
+ */
+export function tradesFrom(txs: ReadonlyArray<ParsedVaultTx | null>, vault: string): VaultTrade[] {
+  const trades: VaultTrade[] = []
+  for (const tx of txs) {
+    if (tx?.meta == null || tx.meta.err != null) continue
+    const delta = new Map<string, bigint>()
+    const add = (list: TokenBalance[] | null | undefined, sign: bigint) => {
+      for (const b of list ?? []) {
+        if (b.owner === vault) {
+          delta.set(b.mint, (delta.get(b.mint) ?? 0n) + sign * BigInt(b.uiTokenAmount.amount))
+        }
+      }
+    }
+    add(tx.meta.preTokenBalances, -1n)
+    add(tx.meta.postTokenBalances, 1n)
+    const out = [...delta].filter(([, d]) => d < 0n)
+    const into = [...delta].filter(([, d]) => d > 0n)
+    const [spent] = out
+    const [received] = into
+    const signature = tx.transaction.signatures[0]
+    if (out.length === 1 && into.length === 1 && spent && received && signature) {
+      trades.push({
+        signature,
+        slot: tx.slot,
+        spent: { mint: spent[0], amount: -spent[1] },
+        received: { mint: received[0], amount: received[1] },
+      })
+    }
+  }
+  return trades
+}
+
+/**
+ * Each trade valued in wSOL base units, by arithmetic only: its received amount's share of 1 live
+ * quote for everything received of that mint (so 1 quote per mint, not per trade), less the wSOL it
+ * spent. A trade not paid in wSOL gets no P&L, and a mint with no quote gets no worth: never a guess.
+ */
+export function valueTrades(
+  trades: readonly VaultTrade[],
+  worth: ReadonlyMap<string, { amount: bigint; worth: bigint }>,
+): Array<VaultTrade & { worthNow: bigint | null; pnl: bigint | null }> {
+  return trades.map((t) => {
+    const quoted = worth.get(t.received.mint)
+    const worthNow =
+      t.received.mint === WSOL_MINT
+        ? t.received.amount
+        : quoted !== undefined && quoted.amount > 0n
+          ? (quoted.worth * t.received.amount) / quoted.amount
+          : null
+    const pnl = worthNow !== null && t.spent.mint === WSOL_MINT ? worthNow - t.spent.amount : null
+    return { ...t, worthNow, pnl }
+  })
+}
+
+/** Time travel only goes forward, and under 2 s of lag is not worth a jump. */
+export const clockNeedsMove = (lagMs: number): boolean => lagMs > 2000
 
 /** The mints Agon arms, so these are the ones a vault is read for. */
 const ARMED_MINTS = [WSOL_MINT, USDC_MINT] as const
@@ -292,6 +432,145 @@ export const liveIo = (): ToolIo => {
         }
       }
       return hirers
+    },
+
+    async loadVaultActivity(owner: string): Promise<VaultActivity> {
+      const connection = await chainFor(owner)
+      const resolved = await resolveVault(
+        (address) => fetchNullableSwig(connection, address),
+        new PublicKey(owner),
+      )
+      if (resolved.existing === null) throw new Refusal(noVault({ owner }))
+      const vault = vaultAddress(resolved.swigId)
+      const slot = await connection.getSlot()
+      const tokens = (
+        await Promise.all(
+          [TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID].map((programId) =>
+            connection.getParsedTokenAccountsByOwner(vault, { programId }),
+          ),
+        )
+      ).flatMap((r) => r.value)
+      const balances = balancesFrom(tokens.map((t) => t.account.data))
+      const keys = [
+        ...new Set(
+          agentRulesOf(
+            resolved.existing.roles as unknown as ChainRole[],
+            ARMED_MINTS,
+            BigInt(slot),
+          ).map((r) => r.authority),
+        ),
+      ]
+      const agents = await Promise.all(
+        keys.map(async (key) => ({
+          key,
+          feeSol: BigInt(await connection.getBalance(new PublicKey(key))),
+        })),
+      )
+      // ponytail: the 50 most recent signatures, enough for 20 trades beside deposits and hires.
+      const signatures = await connection.getSignaturesForAddress(vault, { limit: 50 })
+      const txs = await Promise.all(
+        signatures.map((s) =>
+          connection.getParsedTransaction(s.signature, { maxSupportedTransactionVersion: 0 }),
+        ),
+      )
+      return {
+        vault: vault.toBase58(),
+        nativeSol: BigInt(await connection.getBalance(vault)),
+        balances,
+        agents,
+        trades: tradesFrom(
+          txs as unknown as ReadonlyArray<ParsedVaultTx | null>,
+          vault.toBase58(),
+        ).slice(0, 20),
+        slot,
+      }
+    },
+
+    async loadWorth(mint: string, amount: string): Promise<bigint> {
+      const res = await jupiter(jupiterQuote(mint, WSOL_MINT, amount, 50))
+      if (res.status !== 200) throw new Refusal(quoteUnavailable({ status: res.status }))
+      const out = (res.body as { outAmount?: unknown }).outAmount
+      if (typeof out !== 'string' || !/^[0-9]+$/.test(out)) {
+        throw new Refusal(quoteUnavailable({ status: res.status }))
+      }
+      return BigInt(out)
+    },
+
+    async syncFork([inputMint, outputMint]: [string, string]): Promise<ForkSync> {
+      const net = network(process.env['AGON_NETWORK'])
+      if (net.id !== 'fork') throw new Refusal(syncForkOffFork({ network: net.short }))
+      // chainFor proves the chain is a Surfpool fork before any cheatcode is sent to it.
+      const connection = await chainFor('the practice fork')
+      const cheat = (method: string, params: unknown[]) =>
+        fetch(connection.rpcEndpoint, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+        })
+      const clock = async () => {
+        const info = (await connection.getParsedAccountInfo(SYSVAR_CLOCK_PUBKEY)).value
+        const parsed = (info?.data as { parsed: { info: { slot: number; unixTimestamp: number } } })
+          .parsed.info
+        return { slot: parsed.slot, lagMs: Date.now() - parsed.unixTimestamp * 1000 }
+      }
+      const before = await clock()
+      let moved = false
+      let settled = true
+      if (clockNeedsMove(before.lagMs)) {
+        await cheat('surfnet_timeTravel', [{ absoluteTimestamp: Date.now() }])
+        moved = true
+        // Surfpool 1.6.0 leaves the Clock sysvar's slot at the slot within the epoch for about a
+        // block after a jump (solana-foundation/surfpool#843). Return only once it is absolute
+        // again, so no program this tool hands back to reads the wrong slot.
+        settled = false
+        for (let i = 0; i < 20 && !settled; i++) {
+          await new Promise((r) => setTimeout(r, 500))
+          const epoch = await connection.getEpochInfo()
+          settled = (await clock()).slot >= epoch.absoluteSlot - epoch.slotIndex
+        }
+      }
+      const after = await clock()
+      // The pair's route, for a throwaway user: only the pools and their accounts matter here, and
+      // no vault is in it, so nothing holding practice funds is reset.
+      let refreshed = 0
+      let routeNote = ''
+      try {
+        const quote = (await this.loadQuote({
+          inputMint,
+          outputMint,
+          amount: '10000000',
+          slippageBps: 100,
+        } as QuoteAsk)) as Record<string, unknown> | undefined
+        const res = await jupiter(
+          jupiterSwapInstructions(quote, Keypair.generate().publicKey.toBase58()),
+        )
+        const accounts =
+          (res.body as { swapInstruction?: JupiterInstruction }).swapInstruction?.accounts ?? []
+        const unique = [...new Set(accounts.map((a) => a.pubkey))]
+        const results = await Promise.allSettled(
+          unique.map((k) => cheat('surfnet_resetAccount', [k])),
+        )
+        refreshed = results.filter((r) => r.status === 'fulfilled').length
+      } catch (error) {
+        routeNote = ` The route was not refreshed: ${error instanceof Error ? error.message : String(error)}`
+      }
+      const s = (ms: number) => `${Math.round(ms / 100) / 10} s`
+      const clockNote = moved
+        ? `The fork's clock was ${s(before.lagMs)} behind real time and is now ${s(after.lagMs)} behind` +
+          (settled
+            ? '.'
+            : ', and its slot had not settled after 10 s: wait a moment before trading.')
+        : before.lagMs < 0
+          ? `The fork's clock is ${s(-before.lagMs)} ahead of real time; it only moves forward, so it was left alone.`
+          : `The fork's clock is ${s(before.lagMs)} behind real time, close enough to leave alone.`
+      return {
+        clockLagBeforeMs: Math.round(before.lagMs),
+        clockLagAfterMs: Math.round(after.lagMs),
+        clockMoved: moved,
+        refreshedAccounts: refreshed,
+        pair: [inputMint, outputMint],
+        note: `${clockNote} ${refreshed} accounts the route reads were copied from mainnet again. No vault was touched.${routeNote}`,
+      }
     },
 
     async loadTransactions(wallet: string): Promise<RawTransaction[]> {

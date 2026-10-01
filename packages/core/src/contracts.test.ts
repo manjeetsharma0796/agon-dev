@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   ArmedRule,
+  SyncForkResult,
+  VaultStatus,
   ArmRequest,
   PrepareSwapInput,
   PreparedSwap,
@@ -48,6 +50,18 @@ describe('examples parse against their contract', () => {
 
   it('armed rule', () => {
     expect(() => ArmedRule.parse(example('armed-rule'))).not.toThrow()
+  })
+
+  // T-C25: 2 tools appended after prepare_swap, by a recorded decision.
+  it('vault status, with a P&L that can be negative and never a bare null', () => {
+    const status = example('vault-status')
+    expect(() => VaultStatus.parse(status)).not.toThrow()
+    expect(status.trades.some((t: { pnl: string | null }) => t.pnl?.startsWith('-'))).toBe(true)
+    expect(() => VaultStatus.parse({ ...status, pnl: null, pnlNote: '' })).toThrow()
+  })
+
+  it('sync fork result', () => {
+    expect(() => SyncForkResult.parse(example('sync-fork-result'))).not.toThrow()
   })
 
   it('arming link, which is what arm_rule returns', () => {
@@ -109,6 +123,8 @@ describe('the tool list is the stable four', () => {
       'arm_rule',
       'list_rules',
       'prepare_swap',
+      'vault_status',
+      'sync_fork',
     ])
   })
 

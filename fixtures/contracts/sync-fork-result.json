@@ -1,0 +1,12 @@
+{
+  "synthetic": true,
+  "clockLagBeforeMs": 41000,
+  "clockLagAfterMs": 800,
+  "clockMoved": true,
+  "refreshedAccounts": 14,
+  "pair": [
+    "So11111111111111111111111111111111111111112",
+    "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+  ],
+  "note": "The fork's clock was 41 s behind real time and is now 0.8 s behind; 14 accounts the SOL to USDC route reads were copied from mainnet again. No vault was touched."
+}
