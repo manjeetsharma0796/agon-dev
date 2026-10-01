@@ -709,7 +709,7 @@ const activity = (trades: Array<[string, bigint, string, bigint]>) => ({
     vault: VAULT_,
     nativeSol: 2_000_000n,
     balances: [{ mint: USDC_, amount: 588572n }],
-    agents: [{ key: '1HVWcU6i42t4hCuAUgHtoizLpXxsPxmsZnqxiTB5jYU', feeSol: 9_000_000n }],
+    agents: [{ address: '1HVWcU6i42t4hCuAUgHtoizLpXxsPxmsZnqxiTB5jYU', feeSol: 9_000_000n }],
     trades: trades.map(([sm, s, rm, r], i) => ({
       signature: `sig${i}`,
       slot: 100 + i,

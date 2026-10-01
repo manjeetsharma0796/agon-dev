@@ -19,7 +19,7 @@ export const VaultStatus = z.object({
   nativeSol: BaseUnits,
   balances: z.array(Amount),
   /** Each agent key the vault hires, with the SOL it holds to pay its own fees. */
-  agents: z.array(z.object({ key: Address, feeSol: BaseUnits })),
+  agents: z.array(z.object({ address: Address, feeSol: BaseUnits })),
   /** The vault's trades, newest first: what left it and what arrived, by mint. */
   trades: z.array(
     z.object({

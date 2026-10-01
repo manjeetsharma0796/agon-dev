@@ -220,7 +220,7 @@ interface VaultActivity {
   vault: string
   nativeSol: bigint
   balances: Array<{ mint: string; amount: bigint }>
-  agents: Array<{ key: string; feeSol: bigint }>
+  agents: Array<{ address: string; feeSol: bigint }>
   /** Newest first, at most 20. */
   trades: VaultTrade[]
   slot: number
@@ -462,7 +462,7 @@ export const liveIo = (): ToolIo => {
       ]
       const agents = await Promise.all(
         keys.map(async (key) => ({
-          key,
+          address: key,
           feeSol: BigInt(await connection.getBalance(new PublicKey(key))),
         })),
       )

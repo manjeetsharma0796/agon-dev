@@ -344,7 +344,7 @@ const handlers = {
       owner: wallet,
       nativeSol: String(a.nativeSol),
       balances: a.balances.map((b) => ({ mint: b.mint, amount: String(b.amount) })),
-      agents: a.agents.map((g) => ({ key: g.key, feeSol: String(g.feeSol) })),
+      agents: a.agents.map((g) => ({ address: g.address, feeSol: String(g.feeSol) })),
       trades: valued.map((v) => ({
         signature: v.signature,
         slot: v.slot,
