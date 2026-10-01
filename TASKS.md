@@ -2714,6 +2714,67 @@ _(empty)_
 - Kill criterion: if the clock cannot be moved without a wrong Clock slot reaching a program, sync_fork
   refreshes pools only and says the clock was left alone, with the lag it measured
 
+### T-C27, Vault P&L that survives a sell: FIFO over every trade, in SOL and USD, from more than 1 price source
+- Status: claimed 2026-10-02 | Owner: manjeetsharma0796 | Branch: feature/t-c27-vault-pnl
+- Depends-on: T-C25
+- Touches: packages/core/src/vault.ts, packages/core/src/net/index.ts, packages/core/src/net/record.ts,
+  fixtures/contracts/, fixtures/recorded/, packages/decoder/src/pnl.ts, packages/decoder/src/pnl.test.ts,
+  packages/mcp/src/index.ts, packages/mcp/src/io.ts, packages/mcp/src/mcp.test.ts,
+  packages/mcp/src/token-budget.token.test.ts, docs/public/agent-setup.md, docs/public/mcp-tools.md,
+  DECISIONS.md
+- Serves: Functionality (judged) ; UX (judged) ; a trader asks "how am I doing" and gets every trade,
+  realised and open P&L, in SOL and dollars, with where each price came from
+- Acceptance: `vault_status` runs the existing `fifoLedger` over every vault trade with wSOL as the
+  only quote, so a buy opens a lot, a sell closes lots first in first out, and USDC is a position
+  like any other. It reads the vault's whole history (signatures paged with `before`, finalized
+  transactions cached for the process), not the last 50. Realised P&L is exact chain arithmetic and
+  needs no price. Open positions are valued at what selling them would fetch now: a Jupiter sell
+  quote, else Jupiter's price API, else DexScreener, each value stamped with its source; a position no
+  source can price is listed as unpriced with the reasons, and the totals say they leave it out,
+  instead of the whole total going null. Dollars are SOL figures times SOL/USD, read from Pyth and
+  from Jupiter, both reported with their spread. Every amount carries base units, a decimal string and
+  its unit; a symbol comes only from the pinned list, any other mint is shown as its short address,
+  never a token's own name. The result leads with summary lines a person can read as they are, and
+  lists the latest trades within the token budget while the totals cover all of them. Tests first on
+  the ledger: buy then sell, partial sell, sell with no buy recorded, 2 positions. Measured on the
+  fork: a buy and a sell from 1 vault give a realised P&L equal to the hand arithmetic, and the
+  totals still come back with the quote provider blocked
+- Evidence: <PR link, the hand arithmetic for the buy and sell, the answer with Jupiter blocked>
+- Why it is its own row: asked for 2026-10-02 by manjeetsharma0796 after T-C25. Its P&L valued
+  only buys at 1 live quote: 1 sell made the total null, nothing was realised, amounts were bare
+  base units an agent read with the wrong decimals, only the last 20 trades counted, and 1 quote
+  provider decided everything
+- Kill criterion: none
+
+### T-C28, The owner's own wallet P&L beside the vault's, from its mainnet history
+- Status: open
+- Depends-on: T-C27
+- Touches: packages/core/src/vault.ts, fixtures/contracts/, packages/mcp/src/index.ts,
+  packages/mcp/src/io.ts, packages/mcp/src/mcp.test.ts, docs/public/agent-setup.md,
+  docs/public/mcp-tools.md
+- Serves: Functionality (judged) ; a trader sees the trades they made themselves, not only the agent's
+- Acceptance: `vault_status` gains a section for the owner's own wallet, labelled as mainnet history
+  and never mixed into the vault's totals: the same `fifoLedger` over the trades `check_trade`
+  decodes, with the history paged past 100 transactions up to a cap the answer states, realised P&L
+  per quote currency and open positions valued as in T-C27. Measured against a recorded wallet's
+  ledger by hand
+- Evidence: <PR link>
+- Kill criterion: none
+
+### T-E20, A vault page a person reads without asking the agent
+- Status: open
+- Depends-on: T-C27
+- Touches: apps/web/app/vault/, apps/web/src/routes.ts, apps/web/app/arm/ArmClient.tsx, compose.yaml,
+  packages/mcp/src/index.ts
+- Serves: UX (judged) ; the numbers do not depend on an agent repeating them right
+- Acceptance: the Docker web app has `/vault?wallet=<address>`, showing what `vault_status` returns:
+  the summary, totals in SOL and dollars, open positions with their price source, every trade with
+  its explorer link, and when it was read. It gets the numbers from the MCP server in the same
+  compose, so there is 1 implementation. `vault_status` returns the page's link, and the arming page
+  links to it once a vault is armed. Seen at 1280 and 375 px, light and dark
+- Evidence: <PR link, screenshots>
+- Kill criterion: none
+
 ### T-C22, check_trade screens tokens deterministically, and token text never reaches the agent
 - Status: done 2026-09-29 | Owner: Jishnu | PR: #223
 - Depends-on: T-C05, T-C12, OP-38
