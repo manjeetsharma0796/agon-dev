@@ -2673,7 +2673,7 @@ _(empty)_
 - Kill criterion: none; retired when T-C08 signs trades and `@agon/cli` installs
 
 ### T-C29, list_rules answers inside 4 s: a slow history read times out by name, an empty one says so
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/265 | Owner: jishnu-baruah | Branch: feature/t-c29-list-rules-deadline
+- Status: done
 - Depends-on: T-C24
 - Touches: packages/mcp/src/index.ts, packages/mcp/src/io.ts, packages/mcp/src/mcp.test.ts, packages/core/src/messages.ts
 - Note: index.ts and io.ts also sit in T-C21, T-C26 and T-C27's `Touches:`. This row is narrower
