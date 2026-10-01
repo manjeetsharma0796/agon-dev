@@ -476,6 +476,15 @@ export const agentCannotPay = (a: {
   systemDoes: 'Builds nothing the chain would refuse before any program runs.',
 })
 
+export const syncForkOffFork = (a: { network: string }): FailureMessage => ({
+  id: 'sync-fork-off-fork',
+  text:
+    `0 accounts were refreshed and no clock was moved, because this deployment is on ${a.network} ` +
+    `and sync_fork only runs on the practice fork. There is nothing to resync on a real network.`,
+  mode: 'closed',
+  systemDoes: 'Touches nothing: a real network has no copy to refresh and no clock to move.',
+})
+
 export const simulationFailed = (a: { program: string; detail: string }): FailureMessage => ({
   id: 'simulation-failed',
   text:
@@ -567,4 +576,5 @@ export const AGENT_SURFACE_MESSAGES = [
   }),
   outputNotToVault({ gained: '0', promised: '11928632' }),
   agentCannotPay({ agent: SAMPLE_WALLET, held: 0, needed: 895880 }),
+  syncForkOffFork({ network: 'mainnet, real funds' }),
 ] as const

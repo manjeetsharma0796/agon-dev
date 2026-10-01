@@ -859,6 +859,301 @@ Lists the caps currently armed for a wallet.
 }
 ```
 
+## `vault_status`
+
+
+
+**Input**
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "wallet": {
+      "type": "string",
+      "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+    }
+  },
+  "required": [
+    "wallet"
+  ]
+}
+```
+
+**Output**
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "vault": {
+      "type": "string",
+      "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+    },
+    "owner": {
+      "type": "string",
+      "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+    },
+    "nativeSol": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$"
+    },
+    "balances": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "mint": {
+            "type": "string",
+            "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$"
+          }
+        },
+        "required": [
+          "mint",
+          "amount"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "agents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+          },
+          "feeSol": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$"
+          }
+        },
+        "required": [
+          "address",
+          "feeSol"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "trades": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "signature": {
+            "type": "string",
+            "minLength": 1
+          },
+          "slot": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "spent": {
+            "type": "object",
+            "properties": {
+              "mint": {
+                "type": "string",
+                "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+              },
+              "amount": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)$"
+              }
+            },
+            "required": [
+              "mint",
+              "amount"
+            ],
+            "additionalProperties": false
+          },
+          "received": {
+            "type": "object",
+            "properties": {
+              "mint": {
+                "type": "string",
+                "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+              },
+              "amount": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)$"
+              }
+            },
+            "required": [
+              "mint",
+              "amount"
+            ],
+            "additionalProperties": false
+          },
+          "worthNow": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pnl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^-?(0|[1-9][0-9]*)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "explorer": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "signature",
+          "slot",
+          "spent",
+          "received",
+          "worthNow",
+          "pnl",
+          "explorer"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "pnl": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]*)$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "pnlNote": {
+      "type": "string",
+      "minLength": 1
+    },
+    "explorer": {
+      "type": "string",
+      "format": "uri"
+    },
+    "dataSlot": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    }
+  },
+  "required": [
+    "vault",
+    "owner",
+    "nativeSol",
+    "balances",
+    "agents",
+    "trades",
+    "pnl",
+    "pnlNote",
+    "explorer",
+    "dataSlot"
+  ],
+  "additionalProperties": false
+}
+```
+
+## `sync_fork`
+
+
+
+**Input**
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "inputMint": {
+      "type": "string",
+      "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+    },
+    "outputMint": {
+      "type": "string",
+      "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+    }
+  },
+  "additionalProperties": false
+}
+```
+
+**Output**
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "clockLagBeforeMs": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    },
+    "clockLagAfterMs": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    },
+    "clockMoved": {
+      "type": "boolean"
+    },
+    "refreshedAccounts": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "pair": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "string",
+          "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+        },
+        {
+          "type": "string",
+          "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+        }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "note": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "clockLagBeforeMs",
+    "clockLagAfterMs",
+    "clockMoved",
+    "refreshedAccounts",
+    "pair",
+    "note"
+  ],
+  "additionalProperties": false
+}
+```
+
 ## What the schemas do not say
 
 Some rules are cross-field and JSON Schema cannot express them, so they are enforced when the

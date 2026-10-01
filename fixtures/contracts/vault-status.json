@@ -1,0 +1,43 @@
+{
+  "synthetic": true,
+  "vault": "6L3SNQ1UJmDm7FfjnfRvwXj1ECyEciSAQsk2hndTqNye",
+  "owner": "Arp9sY4pxiaFKJsQAAQWbyKCX5Pym7Br7Ni7myNkjpJU",
+  "nativeSol": "0",
+  "balances": [
+    {
+      "mint": "So11111111111111111111111111111111111111112",
+      "amount": "995000000"
+    },
+    {
+      "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "amount": "588572"
+    }
+  ],
+  "agents": [
+    {
+      "address": "BB5TkjmSNwx8DTHEDdxEFipaQY98Tcn4rg5LfvptWcVb",
+      "feeSol": "9995000"
+    }
+  ],
+  "trades": [
+    {
+      "signature": "4U14XhPXHKDfhL3ZHXCDRmCSPKqoQRQdWYizyNti7c433sFcdJQUPXixin3DCw65eC2fBuoJ8CwQiC9tgPgMDzsm",
+      "slot": 452066271,
+      "spent": {
+        "mint": "So11111111111111111111111111111111111111112",
+        "amount": "5000000"
+      },
+      "received": {
+        "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "amount": "588572"
+      },
+      "worthNow": "4980000",
+      "pnl": "-20000",
+      "explorer": "https://explorer.solana.com/tx/4U14XhPXHKDfhL3ZHXCDRmCSPKqoQRQdWYizyNti7c433sFcdJQUPXixin3DCw65eC2fBuoJ8CwQiC9tgPgMDzsm?cluster=custom&customUrl=http%3A%2F%2F127.0.0.1%3A8899"
+    }
+  ],
+  "pnl": "-20000",
+  "pnlNote": "In wSOL base units: each trade's received tokens valued at a live Jupiter quote, less the wSOL spent.",
+  "explorer": "https://explorer.solana.com/address/6L3SNQ1UJmDm7FfjnfRvwXj1ECyEciSAQsk2hndTqNye?cluster=custom&customUrl=http%3A%2F%2F127.0.0.1%3A8899",
+  "dataSlot": 452066400
+}
