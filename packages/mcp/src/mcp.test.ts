@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { TOOLS } from '@agon/core'
+import { TOOLS, VaultStatus } from '@agon/core'
 import { FIXTURE_NOTE, reportRoute } from '@agon/web'
 import { callAsTool, callTool, isTool } from './index.js'
 import { PublicKey } from '@solana/web3.js'
@@ -10,8 +10,10 @@ import {
   clockNeedsMove,
   payersTo,
   balancesFrom,
-  tradesFrom,
-  valueTrades,
+  dexPairFor,
+  liveIo,
+  pythSolUsd,
+  type ToolIo,
 } from './io.js'
 import {
   POOL,
@@ -655,116 +657,124 @@ test('list_rules answers inside 5 s when the agent key history read never answer
 
 const VAULT_ = '6L3SNQ1UJmDm7FfjnfRvwXj1ECyEciSAQsk2hndTqNye'
 const USDC_ = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
-const bal = (accountIndex: number, mint: string, amount: string, owner = VAULT_) => ({
-  accountIndex,
-  mint,
-  owner,
-  uiTokenAmount: { amount },
-})
-const txOf = (
-  signature: string,
-  slot: number,
-  pre: ReturnType<typeof bal>[],
-  post: ReturnType<typeof bal>[],
-  err: unknown = null,
-) => ({
-  slot,
-  transaction: { signatures: [signature] },
-  meta: { err, preTokenBalances: pre, postTokenBalances: post },
-})
-
-test('the vault history reads as trades: one mint out, one in, successful, and the vault only', () => {
-  const deposit = txOf('dep', 10, [], [bal(1, WSOL_, '1000000000')])
-  const trade = txOf(
-    'swap',
-    20,
-    [bal(1, WSOL_, '1000000000'), bal(2, USDC_, '0'), bal(3, USDC_, '999', 'someone-else')],
-    [bal(1, WSOL_, '995000000'), bal(2, USDC_, '588572'), bal(3, USDC_, '0', 'someone-else')],
-  )
-  const failed = txOf('fail', 30, [bal(1, WSOL_, '995000000')], [bal(1, WSOL_, '1')], { Custom: 1 })
-  expect(tradesFrom([trade, deposit, failed, null], VAULT_)).toEqual([
-    {
-      signature: 'swap',
-      slot: 20,
-      spent: { mint: WSOL_, amount: 5000000n },
-      received: { mint: USDC_, amount: 588572n },
-    },
-  ])
-})
-
-test('P&L is arithmetic: each trade gets its share of 1 quote per mint, less the wSOL it spent', () => {
-  const t = (spentMint: string, spent: bigint, received: bigint) => ({
-    signature: 's',
-    slot: 1,
-    spent: { mint: spentMint, amount: spent },
-    received: { mint: USDC_, amount: received },
-  })
-  // 400 USDC is worth 40 lamports at the quote, so 100 is worth 10 and 300 is worth 30.
-  const worth = new Map([[USDC_, { amount: 400n, worth: 40n }]])
-  const valued = valueTrades([t(WSOL_, 12n, 100n), t(WSOL_, 25n, 300n), t(USDC_, 5n, 50n)], worth)
-  expect(valued.map((v) => [v.worthNow, v.pnl])).toEqual([
-    [10n, -2n],
-    [30n, 5n],
-    [5n, null], // not bought with wSOL, so no P&L in wSOL
-  ])
-})
-
 test('sync_fork only moves the clock forward, and only when it lags by more than 2 s', () => {
   expect(clockNeedsMove(41000)).toBe(true)
   expect(clockNeedsMove(1500)).toBe(false)
   expect(clockNeedsMove(-60000)).toBe(false) // ahead: time travel cannot go back
 })
 
-const activity = (trades: Array<[string, bigint, string, bigint]>) => ({
-  ...withChain({ owner: null, vault: null, rules: [] }),
-  loadVaultActivity: async () => ({
-    vault: VAULT_,
-    nativeSol: 2_000_000n,
-    balances: [{ mint: USDC_, amount: 588572n }],
-    agents: [{ address: '1HVWcU6i42t4hCuAUgHtoizLpXxsPxmsZnqxiTB5jYU', feeSol: 9_000_000n }],
-    trades: trades.map(([sm, s, rm, r], i) => ({
-      signature: `sig${i}`,
-      slot: 100 + i,
-      spent: { mint: sm, amount: s },
-      received: { mint: rm, amount: r },
-    })),
-    slot: 200,
-  }),
-})
+const WSOL__ = 'So11111111111111111111111111111111111111112'
 
-test('vault_status: P&L from 1 quote per mint, explorer links, and every amount a string', async () => {
-  const io = {
-    ...activity([[WSOL_, 5_000_000n, USDC_, 588_572n]]),
-    loadWorth: async () => 6_000_000n,
+test('vault_status reads, values each open mint with its own decimals, and answers under its contract', async () => {
+  const asked: Array<[string, bigint, number]> = []
+  const io: ToolIo = {
+    ...withChain({ owner: null, vault: null, rules: [] }),
+    loadVaultActivity: async () => ({
+      vault: VAULT_,
+      nativeSol: 890_880n,
+      balances: [{ mint: USDC_, amount: 50_000_000n }],
+      agents: [],
+      // Newest first, as the chain lists them: the sell, then the buy.
+      decoded: [
+        {
+          d: {
+            kind: 'swap',
+            signature: 'sell',
+            slot: 2,
+            side: 'sell',
+            soldMint: USDC_,
+            soldAmount: '50000000',
+            boughtMint: WSOL__,
+            boughtAmount: '600000000',
+          },
+          time: 1_790_000_002,
+        },
+        {
+          d: {
+            kind: 'swap',
+            signature: 'buy',
+            slot: 1,
+            side: 'buy',
+            soldMint: WSOL__,
+            soldAmount: '1000000000',
+            boughtMint: USDC_,
+            boughtAmount: '100000000',
+          },
+          time: 1_790_000_001,
+        },
+      ],
+      decimals: new Map([[USDC_, 6]]),
+      signaturesRead: 2,
+      incomplete: null,
+      slot: 200,
+    }),
+    loadPrices: async () => ({ sol: [{ name: 'Pyth', usd: 100 }], usd: new Map(), errors: [] }),
+    valueInSol: async (mint, amount, decimals) => {
+      asked.push([mint, amount, decimals])
+      return { value: 550_000_000n, source: 'Jupiter sell quote' }
+    },
   }
-  const out = (await callTool('vault_status', { wallet: VAULT_ }, io)) as {
-    pnl: string | null
-    trades: Array<{ pnl: string | null; explorer: string }>
-    dataSlot: number
-  }
-  expect(out.pnl).toBe('1000000')
-  expect(out.trades[0]?.pnl).toBe('1000000')
-  expect(out.trades[0]?.explorer).toContain('sig0')
+  const out = VaultStatus.parse(await callTool('vault_status', { wallet: VAULT_ }, io))
+  expect(asked).toEqual([[USDC_, 50_000_000n, 6]])
+  expect(out.totals.realised.sol.ui).toBe('0.1')
+  expect(out.totals.total.usd).toBe('15.00')
+  expect(out.trades[0]?.explorer).toContain('sell')
   expect(out.dataSlot).toBe(200)
 })
 
-test('vault_status: with no quote the total is null and says why, never a guess', async () => {
-  const io = {
-    ...activity([[WSOL_, 5_000_000n, USDC_, 588_572n]]),
-    loadWorth: async () => {
-      throw new Error('Jupiter answered 429.')
-    },
+test('in replay mode the price reads say so, and never hand the agent a fixture path or a setting', async () => {
+  // Replay is the default when AGON_NET_MODE is unset, as in the Docker image; no price is recorded.
+  const prices = await liveIo().loadPrices([USDC_], 1)
+  const value = await liveIo().valueInSol(USDC_, 1_000_000n, 6, prices, 1)
+  const text = JSON.stringify({ prices: prices.errors, value })
+  expect(prices.sol).toEqual([])
+  expect(text).toContain('this server replays recordings and has none for it')
+  expect(text).not.toMatch(/fixtures|AGON_|_API_KEY|record it|no transaction was built/i)
+})
+
+test('DexScreener pairs are outside data: unusable numbers are dropped, the most liquid is kept', () => {
+  const pair = (quote: string, priceNative: string, liquidity: unknown) => ({
+    chainId: 'solana',
+    baseToken: { address: USDC_ },
+    quoteToken: { address: quote },
+    priceNative,
+    priceUsd: '1',
+    liquidity: { usd: liquidity },
+  })
+  expect(
+    dexPairFor(
+      [pair(WSOL__, '0.5', 10), pair(WSOL__, '0.9', 'n/a'), pair(WSOL__, '0.0001', 5e6)],
+      USDC_,
+    ),
+  ).toMatchObject({ quoteIsSol: true, priceNative: 0.0001 })
+  expect(dexPairFor([pair(WSOL__, '0.9', 'n/a')], USDC_)).toBeNull()
+  expect(dexPairFor({ error: 'rate limited' }, USDC_)).toBeNull()
+})
+
+test("Pyth's SOL/USD is read only from Pyth, for SOL/USD, fresh, positive and tight", () => {
+  const RECEIVER = 'rec5EKMGg6MxZYaMdyBfgwp4d5rB9T1VQH5pJv5LtFJ'
+  const FEED = 'ef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d'
+  // 8 discriminator, 32 authority, Full (1 byte), feed, price i64, conf u64, exponent i32, time i64.
+  const account = (feed: string, publishTime: number, price = 11869008811n, conf = 1069614n) => {
+    const b = Buffer.alloc(134)
+    b[40] = 1
+    Buffer.from(feed, 'hex').copy(b, 41)
+    b.writeBigInt64LE(price, 73)
+    b.writeBigUInt64LE(conf, 81)
+    b.writeInt32LE(-8, 89)
+    b.writeBigInt64LE(BigInt(publishTime), 93)
+    return b
   }
-  const out = (await callTool('vault_status', { wallet: VAULT_ }, io)) as {
-    pnl: string | null
-    pnlNote: string
-  }
-  expect(out.pnl).toBeNull()
-  expect(out.pnlNote).toContain('Jupiter answered 429.')
-  const none = (await callTool('vault_status', { wallet: VAULT_ }, activity([]))) as {
-    pnlNote: string
-  }
-  expect(none.pnlNote).toMatch(/^0 trades/)
+  expect(pythSolUsd(RECEIVER, account(FEED, 1000), 1030)).toBeCloseTo(118.69008811, 8)
+  expect(pythSolUsd('someone', account(FEED, 1000), 1030)).toMatch(/not Pyth/)
+  expect(pythSolUsd(RECEIVER, account('00'.repeat(32), 1000), 1030)).toMatch(/not SOL\/USD/)
+  expect(pythSolUsd(RECEIVER, account(FEED, 1000), 2000.4)).toBe(
+    "Pyth's SOL/USD is 1000 s old, over 120",
+  )
+  expect(pythSolUsd(RECEIVER, account(FEED, 1000, 0n), 1030)).toMatch(/not a price/)
+  expect(pythSolUsd(RECEIVER, account(FEED, 1000, 11869008811n, 500000000n), 1030)).toMatch(
+    /wider than 1%/,
+  )
 })
 
 test('sync_fork refuses off the fork and touches nothing', async () => {
@@ -782,6 +792,6 @@ test('vault balances read the shape getParsedTokenAccountsByOwner really returns
     },
   })
   expect(balancesFrom([account(USDC_, '11801342'), account(WSOL_, '0')])).toEqual([
-    { mint: USDC_, amount: 11801342n },
+    { mint: USDC_, amount: 11801342n, decimals: 6 },
   ])
 })

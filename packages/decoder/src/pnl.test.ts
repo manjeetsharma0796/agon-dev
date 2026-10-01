@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import type { Swap } from './index.js'
-import { fifoLedger } from './pnl.js'
+import { fifoLedger, openPositions } from './pnl.js'
 
 // monad T3.7 shipped "positions" that were trade flow, off by 67x, which is this task's kill
 // criterion. So these tests are as much about what each number is called as what it equals: a
@@ -193,4 +193,63 @@ test('a lot bought in another currency does not freeze the rest of the mint fore
   const mismatch = led.exceptions.find((e) => e.kind === 'quote-mismatch')
   expect(mismatch?.detail).toContain('bought with')
   expect(led.exceptions.some((e) => e.kind === 'sold-more-than-held')).toBe(false)
+})
+
+// ---- A vault's P&L: wSOL is the only quote, so USDC is a position like any other. ----
+
+describe('a vault ledger in SOL, where USDC is a position like any other', () => {
+  const ONLY_SOL = [SOL]
+
+  test('a buy then a partial sell: realised is exact, the rest stays open at its cost', () => {
+    // 1 SOL buys 100 USDC; 50 USDC sells for 0.6 SOL, so the 50 sold cost 0.5 and realised 0.1.
+    const ledger = fifoLedger(
+      [buy(USDC, '100000000', SOL, '1000000000'), sell(USDC, '50000000', SOL, '600000000')],
+      ONLY_SOL,
+    )
+    expect(ledger.realisedPnlByQuote[SOL]).toBe('100000000')
+    expect(openPositions(ledger.openLots)).toEqual([
+      { mint: USDC, quoteMint: SOL, amount: '50000000', costBasis: '500000000' },
+    ])
+  })
+
+  test('a sell with no buy recorded counts nothing it cannot match, and says so', () => {
+    const ledger = fifoLedger([sell(BONK, '1000', SOL, '5000')], ONLY_SOL)
+    expect(ledger.realisedPnlByQuote[SOL] ?? '0').toBe('0')
+    expect(ledger.exceptions.map((e) => e.kind)).toEqual(['sold-more-than-held'])
+  })
+
+  test('lots of 1 mint add up into 1 position, and 2 mints stay 2', () => {
+    const ledger = fifoLedger(
+      [
+        buy(USDC, '10000000', SOL, '100000000'),
+        buy(USDC, '30000000', SOL, '250000000'),
+        buy(WIF, '7000', SOL, '20000000'),
+      ],
+      ONLY_SOL,
+    )
+    expect(openPositions(ledger.openLots).map((p) => [p.mint, p.amount, p.costBasis])).toEqual([
+      [USDC, '40000000', '350000000'],
+      [WIF, '7000', '20000000'],
+    ])
+  })
+
+  test('the same mint against 2 quotes is 2 positions, never 1 sum of 2 currencies', () => {
+    const ledger = fifoLedger([
+      buy(BONK, '1000', SOL, '1000000000'),
+      buy(BONK, '500', USDC, '2000000'),
+    ])
+    expect(openPositions(ledger.openLots).map((p) => [p.quoteMint, p.amount])).toEqual([
+      [SOL, '1000'],
+      [USDC, '500'],
+    ])
+  })
+
+  test('a loss is negative, never clamped', () => {
+    const ledger = fifoLedger(
+      [buy(BONK, '1000', SOL, '1000000000'), sell(BONK, '1000', SOL, '400000000')],
+      ONLY_SOL,
+    )
+    expect(ledger.realisedPnlByQuote[SOL]).toBe('-600000000')
+    expect(openPositions(ledger.openLots)).toEqual([])
+  })
 })

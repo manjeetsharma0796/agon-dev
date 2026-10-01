@@ -55,11 +55,15 @@ describe('examples parse against their contract', () => {
   })
 
   // T-C25: 2 tools appended after prepare_swap, by a recorded decision.
-  it('vault status, with a P&L that can be negative and never a bare null', () => {
+  it('vault status: every amount 3 ways, signed, never a float, and a note never blank', () => {
     const status = example('vault-status')
     expect(() => VaultStatus.parse(status)).not.toThrow()
-    expect(status.trades.some((t: { pnl: string | null }) => t.pnl?.startsWith('-'))).toBe(true)
-    expect(() => VaultStatus.parse({ ...status, pnl: null, pnlNote: '' })).toThrow()
+    const bad = (sol: object) =>
+      VaultStatus.parse({ ...status, totals: { ...status.totals, realised: { sol, usd: null } } })
+    expect(() => bad({ amount: '-100000000', ui: '-0.1', unit: 'SOL' })).not.toThrow()
+    expect(() => bad({ amount: '0.1', ui: '0.1', unit: 'SOL' })).toThrow()
+    expect(() => bad({ amount: '100000000', ui: '1e-1', unit: 'SOL' })).toThrow()
+    expect(() => VaultStatus.parse({ ...status, totals: { ...status.totals, note: '' } })).toThrow()
   })
 
   it('sync fork result', () => {

@@ -129,3 +129,100 @@ test('get_activity stays inside the 4,000 token budget at 10 full rows and 5 fai
     `get_activity was ~${Math.round(tokens)} tokens against a 4,000 budget`,
   ).toBeLessThanOrEqual(4000)
 })
+
+test('vault_status stays inside the 2,000 token budget at 20 open mints, half unpriced, history cut', async () => {
+  const VAULT = '6L3SNQ1UJmDm7FfjnfRvwXj1ECyEciSAQsk2hndTqNye'
+  const WSOL = 'So11111111111111111111111111111111111111112'
+  const BONK = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263'
+  // 20 mints, each bought twice; 12 sells with no buy recorded; deposits, hires and 1 ambiguous swap.
+  const mints = Array.from({ length: 20 }, (_, i) => `${'ABCDEFGHJKLMNPQRSTUV'[i]}${BONK.slice(1)}`)
+  const sig = (i: number) =>
+    `5vGJ8Rk2sNw1ZbqYhTqzD4x1n7cQfLp3oE9uA6tWmVyXk2HjB8dRsP4nC7fGqL1aZ3eT9wU5yI6oP2m${i}`
+  const decoded = [
+    ...mints.flatMap((m, i) =>
+      [0, 1].map((k) => ({
+        d: {
+          kind: 'swap' as const,
+          signature: sig(i * 2 + k),
+          slot: 1000 + i * 2 + k,
+          side: 'buy' as const,
+          soldMint: WSOL,
+          soldAmount: '987654321',
+          boughtMint: m,
+          boughtAmount: '234567890',
+        },
+        time: 1_791_000_000,
+      })),
+    ),
+    ...Array.from({ length: 12 }, (_, i) => ({
+      d: {
+        kind: 'swap' as const,
+        signature: sig(100 + i),
+        slot: 2000 + i,
+        side: 'sell' as const,
+        soldMint: BONK,
+        soldAmount: '123456789',
+        boughtMint: WSOL,
+        boughtAmount: '876543210',
+      },
+      time: 1_791_000_100,
+    })),
+    ...Array.from({ length: 6 }, (_, i) => ({
+      d: {
+        kind: 'not-a-swap' as const,
+        signature: sig(200 + i),
+        slot: 10 + i,
+        reason: 'value only arrived the wallet, which is a transfer and not a swap',
+      },
+      time: 1_790_000_000,
+    })),
+    {
+      d: {
+        kind: 'undecoded' as const,
+        signature: sig(300),
+        slot: 3000,
+        programId: 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4',
+        reason: '2 mints left and 1 arrived, so the pairing is ambiguous',
+      },
+      time: 1_791_000_200,
+    },
+  ].reverse()
+  const io = {
+    ...swapIo(0n).io,
+    loadVaultActivity: async () => ({
+      vault: VAULT,
+      nativeSol: 890880n,
+      balances: [WSOL, ...mints].map((mint) => ({ mint, amount: 123456789012n })),
+      agents: [
+        { address: 'BB5TkjmSNwx8DTHEDdxEFipaQY98Tcn4rg5LfvptWcVb', feeSol: 9990000n },
+        { address: '1HVWcU6i42t4hCuAUgHtoizLpXxsPxmsZnqxiTB5jYU', feeSol: 8990000n },
+      ],
+      decoded,
+      decimals: new Map(mints.map((m) => [m, 6])),
+      signaturesRead: 2000,
+      incomplete: 'only the newest 2000 transactions were read; older trades are not counted',
+      slot: 452371600,
+    }),
+    loadPrices: async () => ({
+      sol: [
+        { name: 'Pyth', usd: 118.69008811 },
+        { name: 'Jupiter', usd: 118.643194773806 },
+      ],
+      usd: new Map(),
+      errors: [],
+    }),
+    valueInSol: async (mint: string) =>
+      mints.indexOf(mint) % 2 === 0
+        ? {
+            why: 'Jupiter quote answered 429; Jupiter price has none; DexScreener lists no Solana pair for it',
+          }
+        : { value: 1234567890n, source: 'Jupiter sell quote' },
+  }
+  const result = await callAsTool('vault_status', { wallet: VAULT }, io)
+  expect(result.isError, textOf(result)).not.toBe(true)
+  const tokens = approxTokens(textOf(result))
+  expect(
+    tokens,
+    `vault_status was ~${Math.round(tokens)} tokens against a 2,000 budget`,
+  ).toBeLessThanOrEqual(2000)
+})
