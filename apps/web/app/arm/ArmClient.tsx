@@ -162,80 +162,120 @@ export default function ArmClient({ rpcUrl }: { rpcUrl: string }) {
     }
   })()
 
+  const vaultExplorer =
+    view?.kind === 'vault'
+      ? `https://explorer.solana.com/address/${view.vault}?cluster=custom&customUrl=${encodeURIComponent(rpcUrl)}`
+      : null
+
+  const practice = () => {
+    const kp = Keypair.generate()
+    setAgent(kp.publicKey.toBase58())
+    setPracticeSecret(JSON.stringify(Array.from(kp.secretKey)))
+  }
+
   return (
-    <main
-      style={{
-        maxWidth: 720,
-        margin: '2rem auto',
-        padding: '0 1rem',
-        font: '16px/1.5 system-ui, sans-serif',
-      }}
-    >
-      <h1>Your agent's vault</h1>
-      <p>
-        A vault is a separate account your wallet controls. Your agent can trade from it through
-        Jupiter only, up to the limit you set, and you can take that away at any time from your own
-        wallet. Agon never holds a key.
-      </p>
+    <main className="shell shell--narrow">
+      <header className="head">
+        <p className="eyebrow">
+          <span className="dot" /> Practice fork
+        </p>
+        <h1 className="h2">Your agent&apos;s vault</h1>
+        <p className="lede">
+          A vault is a separate account your wallet controls. Your agent can trade from it through
+          Jupiter only, up to the limit you set, and you can take that away at any time from your
+          own wallet. Agon never holds a key.
+        </p>
+      </header>
 
       {problem && (
-        <p role="alert" style={{ color: 'var(--bad)' }}>
+        <p role="alert" className="note note--alert">
           {problem}
         </p>
       )}
-      {done && <p role="status">{done}</p>}
-      {busy && <p role="status">{busy}: waiting for your wallet and the chain…</p>}
+      {done && (
+        <p role="status" className="note note--ok">
+          {done}
+        </p>
+      )}
+      {busy && (
+        <p role="status" className="note">
+          {busy}: waiting for your wallet and the chain…
+        </p>
+      )}
 
       {!who && (
-        <section aria-labelledby="connect">
-          <h2 id="connect">1. Connect your wallet</h2>
+        <section className="card step" aria-labelledby="connect">
+          <div className="step__head">
+            <span className="step__n">Step 1</span>
+            <h2 id="connect" className="h2 h2--sm">
+              Connect your wallet
+            </h2>
+          </div>
           {wallets.length === 0 && (
             <p>
               No Solana wallet found. Install Phantom or Backpack, and in Phantom turn on Developer
               Settings, Testnet Mode, Solana Localnet.
             </p>
           )}
-          {wallets.map((w) => (
-            <button key={w.name} type="button" onClick={() => connect(w)} disabled={busy !== null}>
-              Connect {w.name}
-            </button>
-          ))}
+          <div className="actions">
+            {wallets.map((w) => (
+              <button
+                key={w.name}
+                type="button"
+                className="btn btn--solid"
+                onClick={() => connect(w)}
+                disabled={busy !== null}
+              >
+                <img className="btn__ico" src={w.icon} alt="" width={16} height={16} />
+                Connect {w.name}
+              </button>
+            ))}
+          </div>
         </section>
       )}
 
       {who && owner && (
-        <p>
-          Connected: <code style={{ overflowWrap: 'anywhere' }}>{owner.toBase58()}</code> through{' '}
-          {who.wallet.name}
-          {sol !== null && (
-            <>
-              , holding <strong>{formatSol(sol)} SOL</strong>
-            </>
-          )}
-          .{' '}
-          <button type="button" onClick={() => reload()} disabled={busy !== null}>
-            Refresh
-          </button>{' '}
-          {/* This page only runs on the practice fork, so this is free test SOL there and nowhere else. */}
-          <button
-            type="button"
-            disabled={busy !== null}
-            onClick={() =>
-              void run('Getting practice SOL', async () => {
-                const signature = await conn.requestAirdrop(owner, 5_000_000_000)
-                await conn.confirmTransaction(signature, 'confirmed')
-                await reload()
-                return `5 practice SOL arrived in ${signature}. It exists on this fork only.`
-              })
-            }
-          >
-            Get 5 practice SOL
-          </button>
-        </p>
+        <section className="card step" aria-label="Connected wallet">
+          <div className="form__wallet">
+            <img className="form__wallet-ico" src={who.wallet.icon} alt="" />
+            <span className="form__wallet-addr">{owner.toBase58()}</span>
+            <span className="form__wallet-tag">
+              {who.wallet.name}
+              {sol !== null && `, ${formatSol(sol)} SOL`}
+            </span>
+            <button
+              type="button"
+              className="form__wallet-change"
+              onClick={() => reload()}
+              disabled={busy !== null}
+            >
+              Refresh
+            </button>
+          </div>
+          <div className="actions">
+            {/* This page only runs on the practice fork, so this is free test SOL there and nowhere else. */}
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm"
+              disabled={busy !== null}
+              onClick={() =>
+                void run('Getting practice SOL', async () => {
+                  const signature = await conn.requestAirdrop(owner, 5_000_000_000)
+                  await conn.confirmTransaction(signature, 'confirmed')
+                  await reload()
+                  return `5 practice SOL arrived in ${signature}. It exists on this fork only.`
+                })
+              }
+            >
+              Get 5 practice SOL
+            </button>
+            <span className="field__hint">Free on the fork. Nothing here is real money.</span>
+          </div>
+        </section>
       )}
 
       {who && linkedFor !== null && linkedFor !== who.account.address && (
-        <p role="alert">
+        <p role="alert" className="note note--alert">
           This link was made for {linkedFor}, and the wallet you connected is {who.account.address}.
           Anything you do here acts on the connected wallet. Switch wallets in {who.wallet.name} if
           that is not the one you meant.
@@ -243,7 +283,7 @@ export default function ArmClient({ rpcUrl }: { rpcUrl: string }) {
       )}
 
       {view && view.squatted > 0 && (
-        <p role="alert">
+        <p role="alert" className="note note--alert">
           {view.squatted} of your vault addresses already held an account your wallet does not
           control. Someone created it first. It was skipped and never used; your vault is at the
           next one.
@@ -251,8 +291,13 @@ export default function ArmClient({ rpcUrl }: { rpcUrl: string }) {
       )}
 
       {who && view?.kind === 'none' && sign && owner && (
-        <section aria-labelledby="create">
-          <h2 id="create">2. Create and fund your vault</h2>
+        <section className="card step" aria-labelledby="create">
+          <div className="step__head">
+            <span className="step__n">Step 2</span>
+            <h2 id="create" className="h2 h2--sm">
+              Create and fund your vault
+            </h2>
+          </div>
           <p>
             Your wallet asks you to approve 2 transactions: one creates and funds the vault, one
             lets the agent trade and sends its key 0.01 SOL for its fees.
@@ -268,19 +313,26 @@ export default function ArmClient({ rpcUrl }: { rpcUrl: string }) {
               })
             }}
           >
-            <label>
-              Deposit, in SOL{' '}
-              <input
-                value={deposit}
-                onChange={(e) => setDeposit(e.target.value)}
-                inputMode="decimal"
-                required
-              />
-            </label>
-            <p>
-              This is the most the agent can ever trade with. The rest of your wallet is out of its
-              reach.
-            </p>
+            <div className="fields">
+              <div className="field">
+                <label htmlFor="deposit" className="field__label">
+                  Deposit, in SOL
+                </label>
+                <input
+                  id="deposit"
+                  className="form__input"
+                  value={deposit}
+                  onChange={(e) => setDeposit(e.target.value)}
+                  inputMode="decimal"
+                  required
+                  aria-describedby="deposit-hint"
+                />
+                <p id="deposit-hint" className="field__hint">
+                  This is the most the agent can ever trade with. The rest of your wallet is out of
+                  its reach.
+                </p>
+              </div>
+            </div>
             <AgentFields
               cap={cap}
               setCap={setCap}
@@ -289,58 +341,80 @@ export default function ArmClient({ rpcUrl }: { rpcUrl: string }) {
               agent={agent}
               setAgent={setAgent}
               capLamports={capLamports}
-              onPractice={() => {
-                const kp = Keypair.generate()
-                setAgent(kp.publicKey.toBase58())
-                setPracticeSecret(JSON.stringify(Array.from(kp.secretKey)))
-              }}
+              onPractice={practice}
             />
-            <button type="submit" disabled={busy !== null}>
-              Create vault and add agent
-            </button>
+            <div className="actions">
+              <button type="submit" className="btn btn--solid" disabled={busy !== null}>
+                Create vault and add agent
+              </button>
+            </div>
           </form>
         </section>
       )}
 
       {practiceSecret && (
-        <section aria-labelledby="secret">
-          <h2 id="secret">Your practice agent key</h2>
-          <p role="alert">
-            This key exists only on this page and is shown once. Copy it into your agent's config
-            now; reloading loses it. It is a practice key for the fork only: never use a key made in
-            a web page for real funds.
+        <section className="card step" aria-labelledby="secret">
+          <div className="step__head">
+            <span className="step__n">Once</span>
+            <h2 id="secret" className="h2 h2--sm">
+              Your practice agent key
+            </h2>
+          </div>
+          <p role="alert" className="note note--alert">
+            This key exists only on this page and is shown once. Copy it into your agent&apos;s
+            config now; reloading loses it. It is a practice key for the fork only: never use a key
+            made in a web page for real funds.
           </p>
-          <textarea
-            readOnly
-            rows={3}
-            style={{ width: '100%' }}
-            value={practiceSecret}
-            aria-label="Practice agent secret key"
-          />
-          <button type="button" onClick={() => setPracticeSecret(null)}>
-            I have copied it, hide it
-          </button>
+          <div className="fields">
+            <textarea
+              className="form__input form__input--area"
+              readOnly
+              rows={3}
+              value={practiceSecret}
+              aria-label="Practice agent secret key"
+            />
+          </div>
+          <div className="actions">
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={() => setPracticeSecret(null)}
+            >
+              I have copied it, hide it
+            </button>
+          </div>
         </section>
       )}
 
-      {who && view?.kind === 'vault' && sign && owner && (
-        <section aria-labelledby="vault">
-          <h2 id="vault">Your vault</h2>
-          <p>
-            Address <code>{view.vault}</code> (
-            <a
-              href={`https://explorer.solana.com/address/${view.vault}?cluster=custom&customUrl=${encodeURIComponent(rpcUrl)}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              see it in the explorer
-            </a>
-            )
-          </p>
-          <p>
-            Holds <strong>{formatSol(view.wsol)} wSOL</strong> and{' '}
-            <strong>{formatUnits(view.usdc, 6)} USDC</strong>. Shown here because Phantom's own
-            balance screen does not work on the practice network.
+      {who && view?.kind === 'vault' && sign && owner && vaultExplorer && (
+        <section className="card step" aria-labelledby="vault">
+          <div className="step__head">
+            <span className="step__n">Armed</span>
+            <h2 id="vault" className="h2 h2--sm">
+              Your vault
+            </h2>
+          </div>
+          <dl className="ledger" style={{ marginTop: 18 }}>
+            <div className="ledger__row">
+              <dt className="ledger__k">Address</dt>
+              <dd className="ledger__v">
+                <code>{view.vault}</code>{' '}
+                <a href={vaultExplorer} target="_blank" rel="noreferrer">
+                  see it in the explorer
+                </a>
+              </dd>
+            </div>
+            <div className="ledger__row">
+              <dt className="ledger__k">Holds</dt>
+              <dd className="ledger__v">
+                <strong>{formatSol(view.wsol)} wSOL</strong> and{' '}
+                <strong>{formatUnits(view.usdc, 6)} USDC</strong>
+              </dd>
+            </div>
+          </dl>
+          <p className="field__hint" style={{ marginTop: 10 }}>
+            Shown here because Phantom&apos;s own balance screen does not work on the practice
+            network.
           </p>
 
           {view.agents.length === 0 ? (
@@ -364,61 +438,48 @@ export default function ArmClient({ rpcUrl }: { rpcUrl: string }) {
                   agent={agent}
                   setAgent={setAgent}
                   capLamports={capLamports}
-                  onPractice={() => {
-                    const kp = Keypair.generate()
-                    setAgent(kp.publicKey.toBase58())
-                    setPracticeSecret(JSON.stringify(Array.from(kp.secretKey)))
-                  }}
+                  onPractice={practice}
                 />
-                <button type="submit" disabled={busy !== null}>
-                  Add agent
-                </button>
+                <div className="actions">
+                  <button type="submit" className="btn btn--solid" disabled={busy !== null}>
+                    Add agent
+                  </button>
+                </div>
               </form>
             </>
           ) : (
             <>
-              <ul>
-                {view.agents.map((a) => (
-                  <li key={`${a.roleId}-${a.mint}`}>
-                    Agent role {a.roleId}: up to{' '}
-                    <strong>
-                      {formatSol(a.cap)} wSOL per {a.window.toString()} slots
-                    </strong>
-                    , and up to {formatSol(a.rollingWorstCase)} in a short burst across a window
-                    edge. Stored allowance{' '}
-                    {a.storedRemaining === null
-                      ? 'unreadable'
-                      : `${formatSol(a.storedRemaining)} wSOL`}
-                    , which is only updated when the agent trades, so after a quiet window it reads
-                    low.
-                  </li>
-                ))}
-              </ul>
-              <button
-                type="button"
-                disabled={busy !== null}
-                onClick={() =>
-                  void run('Revoking', async () => {
-                    const r = await revoke(conn, owner, sign)
-                    // A role the kill switch keeps is one it could not confirm is Agon's. Saying
-                    // "the agent can no longer trade" while one remains would be a claim the chain
-                    // does not back, so every kept role is named with its reason.
-                    const kept = r.kept
-                      .map((k) => `role ${k.id} was left in place because it is ${k.reason}`)
-                      .join(' ')
-                    if (r.signature === null) {
+              {view.agents.map((a) => (
+                <AgentRole key={`${a.roleId}-${a.mint}`} role={a} held={view.wsol} />
+              ))}
+              <div className="actions">
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  disabled={busy !== null}
+                  onClick={() =>
+                    void run('Revoking', async () => {
+                      const r = await revoke(conn, owner, sign)
+                      // A role the kill switch keeps is one it could not confirm is Agon's. Saying
+                      // "the agent can no longer trade" while one remains would be a claim the chain
+                      // does not back, so every kept role is named with its reason.
+                      const kept = r.kept
+                        .map((k) => `role ${k.id} was left in place because it is ${k.reason}`)
+                        .join(' ')
+                      if (r.signature === null) {
+                        return kept === ''
+                          ? 'There was no agent to revoke.'
+                          : `Nothing was revoked: ${kept}`
+                      }
                       return kept === ''
-                        ? 'There was no agent to revoke.'
-                        : `Nothing was revoked: ${kept}`
-                    }
-                    return kept === ''
-                      ? `Revoked in ${r.signature}. The agent can no longer trade. Your funds stayed in the vault.`
-                      : `Revoked ${r.removed.length} agent role(s) in ${r.signature}. Your funds stayed in the vault. But ${kept}`
-                  })
-                }
-              >
-                Revoke the agent
-              </button>
+                        ? `Revoked in ${r.signature}. The agent can no longer trade. Your funds stayed in the vault.`
+                        : `Revoked ${r.removed.length} agent role(s) in ${r.signature}. Your funds stayed in the vault. But ${kept}`
+                    })
+                  }
+                >
+                  Revoke the agent
+                </button>
+              </div>
               <p>
                 Revoking needs no help from Agon: your wallet signs it and the chain enforces it,
                 whether or not this site is up. Funds stay in the vault.
@@ -428,6 +489,47 @@ export default function ArmClient({ rpcUrl }: { rpcUrl: string }) {
         </section>
       )}
     </main>
+  )
+}
+
+/** One armed role: the cap drawn against what the vault holds, then the numbers behind it. */
+type AgentView = Extract<VaultView, { kind: 'vault' }>['agents'][number]
+
+function AgentRole({ role: a, held }: { role: AgentView; held: bigint }) {
+  // The bar is the cap as a share of the vault's wSOL, capped at full width when the cap exceeds it.
+  const share = held > 0n ? Math.min(100, Number((a.cap * 100n) / held)) : 100
+  return (
+    <div className="ledger" style={{ marginTop: 22 }}>
+      <p className="num">
+        <span className="num__n">{formatSol(a.cap)} wSOL</span>
+        <span className="num__of">per {a.window.toString()} slots</span>
+      </p>
+      <span className="ledger__bar" aria-hidden="true">
+        <span className="ledger__fill" style={{ width: `${share}%` }} />
+        <span className="ledger__cap" style={{ left: `${share}%` }}>
+          <span>cap</span>
+        </span>
+      </span>
+      <dl className="ledger">
+        <div className="ledger__row">
+          <dt className="ledger__k">Agent role</dt>
+          <dd className="ledger__v">{a.roleId}</dd>
+        </div>
+        <div className="ledger__row">
+          <dt className="ledger__k">Short burst</dt>
+          <dd className="ledger__v">
+            up to <strong>{formatSol(a.rollingWorstCase)} wSOL</strong> across a window edge
+          </dd>
+        </div>
+        <div className="ledger__row">
+          <dt className="ledger__k">Stored allowance</dt>
+          <dd className="ledger__v">
+            {a.storedRemaining === null ? 'unreadable' : `${formatSol(a.storedRemaining)} wSOL`},
+            only updated when the agent trades, so after a quiet window it reads low
+          </dd>
+        </div>
+      </dl>
+    </div>
   )
 }
 
@@ -444,46 +546,66 @@ function AgentFields(p: {
   return (
     // A fieldset will not shrink below its widest child by default, which pushed a phone screen
     // sideways; letting it shrink, with the key input capped at its width, keeps 375 px readable.
-    <fieldset style={{ minInlineSize: 0 }}>
+    <fieldset className="fields">
       <legend>What the agent may do</legend>
-      <label>
-        Limit per window, in wSOL{' '}
+      <div className="field__row">
+        <div className="field">
+          <label htmlFor="cap" className="field__label">
+            Limit per window, in wSOL
+          </label>
+          <input
+            id="cap"
+            className="form__input"
+            value={p.cap}
+            onChange={(e) => p.setCap(e.target.value)}
+            inputMode="decimal"
+            required
+            aria-describedby="cap-hint"
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="slots" className="field__label">
+            Window, in slots
+          </label>
+          <input
+            id="slots"
+            className="form__input"
+            value={p.slots}
+            onChange={(e) => p.setSlots(e.target.value)}
+            inputMode="numeric"
+            required
+            aria-describedby="slots-hint"
+          />
+        </div>
+      </div>
+      <p id="cap-hint" className="field__hint">
+        {p.capLamports !== null
+          ? `Up to ${formatSol(p.capLamports)} per window, and up to ${formatSol(2n * p.capLamports)} in a short burst across a window edge, because windows follow the chain's clock.`
+          : 'The most the agent may spend in 1 window.'}
+      </p>
+      <p id="slots-hint" className="field__hint">
+        About 400 ms per slot, so 150 is about a minute.
+      </p>
+      <div className="field">
+        <label htmlFor="agent" className="field__label">
+          Agent public key
+        </label>
         <input
-          value={p.cap}
-          onChange={(e) => p.setCap(e.target.value)}
-          inputMode="decimal"
-          required
-        />
-      </label>
-      {p.capLamports !== null && (
-        <p>
-          Up to {formatSol(p.capLamports)} per window, and up to {formatSol(2n * p.capLamports)} in
-          a short burst across a window edge, because windows follow the chain's clock.
-        </p>
-      )}
-      <label>
-        Window, in slots{' '}
-        <input
-          value={p.slots}
-          onChange={(e) => p.setSlots(e.target.value)}
-          inputMode="numeric"
-          required
-        />
-      </label>
-      <p>About 400 ms per slot, so 150 is about a minute.</p>
-      <label>
-        Agent public key{' '}
-        <input
+          id="agent"
+          className="form__input form__input--mono"
           value={p.agent}
           onChange={(e) => p.setAgent(e.target.value)}
           required
-          size={48}
-          style={{ maxWidth: '100%' }}
+          spellCheck={false}
+          autoCapitalize="off"
+          autoComplete="off"
         />
-      </label>{' '}
-      <button type="button" onClick={p.onPractice}>
-        Make a practice agent key
-      </button>
+      </div>
+      <div className="actions" style={{ marginTop: 0 }}>
+        <button type="button" className="btn btn--ghost btn--sm" onClick={p.onPractice}>
+          Make a practice agent key
+        </button>
+      </div>
     </fieldset>
   )
 }
