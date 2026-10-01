@@ -2953,5 +2953,32 @@ _(empty)_
   fixed or rejected with a reason; the setup page is shown with a real armed rule, not only an
   empty list
 - Evidence: <the person's list, screenshots before and after>
+- Evidence, agent pass on 2026-10-02, before the person: 6 agents audited the plugin on OpenTUI
+  0.4.5, the version inside opencode 1.18.33, each rendering a real screen with live Jupiter data
+  and a stand-in for opencode's plugin API: cards, table and detail pane at 80x24 to 220x55, the
+  setup page against a mock MCP server in 5 answers plus a slow and a malformed one, the sidebar
+  and contrast in opencode's default dark and light themes, every key and click, and a static
+  review. 39 findings in round 1 and 18 more in round 2 after the fixes; every one is fixed except
+  3 left on purpose (each refresh rebuilds rows by object identity, logo edges blend against the
+  page background rather than the panel, the setup amount's width estimate is up to 5 columns
+  short on a 15-character USDC figure). Measured after: no line overprints at any size; light
+  theme text 4.63 to 16.67 to 1, gains still green at 4.97 and losses red at 4.63; ctrl+c, ctrl+x,
+  ctrl+p and ctrl+w do nothing; the selection stayed on the same token through 4 refreshes and 2
+  watch toggles while its row moved from line 16 to line 10; the 3 hand-off prompts carry the mint
+  and never the token's symbol or name
+- Finding: a token's symbol reached the agent's prompt in Buy, Sell and Check. A symbol is
+  outside text with no length limit, so it could carry an instruction to the agent inside text the
+  user is asked to send. Only the mint is handed over now, and a token whose mint is not a Solana
+  address is dropped
+- Finding 2: the selection was a row number, and the list re-sorts every 15 s, so Check could hand
+  off a token the user never picked. It is a token now; one that leaves the list stays in the
+  detail pane, marked as having left, until the user moves
+- Finding 3: GeckoTerminal allows about 30 calls a minute, and the sidebar asked for every
+  sparkline at once, so 12 of 12 got 429, and a failed pool lookup was cached for the session as
+  "no pool". Calls now go through 1 queue 2.1 s apart, with the detail chart first, and a failure
+  is asked again after 15 s
+- Finding 4: on opencode's default light theme, accent, warning, success and muted text read at
+  2.6 to 3.4 to 1. Each colour is now moved toward black or white until it reads at 4.5, so
+  gains stay green and losses red
 - Kill criterion: none. Kept open on purpose: T-E18 was tested in a test renderer and against a
   running server, never by a person clicking through opencode

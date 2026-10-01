@@ -7,7 +7,8 @@
 //   a large logo and a braille price chart for the selected token. The sidebar has 24h sparklines.
 // - Quick actions that hand an instruction to the opencode agent: b buy, x sell, c check. They
 //   only ever fill the chat box. You read it and press Enter; the agent then runs Agon's check_trade
-//   before anything is built, and your wallet signs. This plugin never signs, sends or reads keys.
+//   before anything is built, and your wallet signs. This plugin never signs, sends or reads keys,
+//   and the only token field it hands the agent is the mint, never a token's own name or symbol.
 //
 // - Mouse: click a row to select it, the wheel scrolls the list, column titles sort, and the chips
 //   and buttons do what their keys do. Clicking a sidebar token opens the page on it.
@@ -34,7 +35,7 @@ import {
   onCleanup,
   Show,
 } from 'solid-js'
-import { useKeyboard } from '@opentui/solid'
+import { useKeyboard, useTerminalDimensions } from '@opentui/solid'
 import { inflateSync } from 'node:zlib'
 import { spawn } from 'node:child_process'
 import type { TuiPlugin, TuiPluginApi, TuiPluginModule } from '@opencode-ai/plugin/tui'
@@ -43,6 +44,8 @@ const ID = 'agon-discovery'
 const ROUTE = 'agon.discovery'
 const JUP = 'https://lite-api.jup.ag/tokens/v2'
 const WATCH_KEY = 'agon.discovery.watchlist'
+const VIEW_KEY = 'agon.discovery.view'
+const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/
 
 const DEFAULT_WATCHLIST = [
   'So11111111111111111111111111111111111111112',
@@ -141,11 +144,18 @@ const toToken = (t: Record<string, any>): Token => {
 }
 
 async function getTokens(url: string): Promise<Token[]> {
-  const res = await fetch(url)
+  let res: Response
+  try {
+    res = await fetch(url, { signal: AbortSignal.timeout(10_000) })
+  } catch (e) {
+    throw new Error(`Jupiter unreachable (${e instanceof Error ? e.message : String(e)})`)
+  }
   if (!res.ok) throw new Error(`Jupiter answered ${res.status}`)
   const body = (await res.json()) as unknown
   if (!Array.isArray(body)) throw new Error('Jupiter answered something that is not a token list')
-  return body.map((t) => toToken(t as Record<string, any>))
+  // The mint is the only token field that reaches the agent, so a row whose mint is not a Solana
+  // address is dropped rather than carried.
+  return body.map((t) => toToken(t as Record<string, any>)).filter((t) => BASE58.test(t.mint))
 }
 
 type Source = { label: string; path: string; interval: boolean }
@@ -301,10 +311,43 @@ const RANGES: Range[] = [
 
 type Series = { closes: number[]; volumes: number[] }
 
-async function topPool(mint: string): Promise<string | null> {
-  const res = await fetch(`${GT}/tokens/${mint}/pools?page=1`)
-  if (!res.ok) throw new Error(`GeckoTerminal answered ${res.status}`)
-  const body = (await res.json()) as { data?: Array<{ attributes?: Record<string, any> }> }
+// Every GeckoTerminal call goes through 1 queue, about 2 s apart, because its free tier allows
+// about 30 a minute: a watchlist asking for 10 sparklines at once got 429 on every one. The detail
+// chart jumps the queue, so the token being looked at is never behind the sidebar.
+type Job = { url: string; resolve: (v: unknown) => void; reject: (e: unknown) => void }
+const gtQueue: Job[] = []
+let gtBusy = false
+const gtGet = (url: string, urgent: boolean) =>
+  new Promise<unknown>((resolve, reject) => {
+    const job = { url, resolve, reject }
+    if (urgent) gtQueue.unshift(job)
+    else gtQueue.push(job)
+    void pump()
+  })
+async function pump() {
+  if (gtBusy) return
+  gtBusy = true
+  while (gtQueue.length) {
+    const job = gtQueue.shift()!
+    try {
+      const res = await fetch(job.url, { signal: AbortSignal.timeout(10_000) })
+      if (!res.ok)
+        throw new Error(
+          `GeckoTerminal answered ${res.status}${res.status === 429 ? ', its limit of about 30 calls a minute' : ''}`,
+        )
+      job.resolve(await res.json())
+    } catch (e) {
+      job.reject(e)
+    }
+    await new Promise((r) => setTimeout(r, 2_100))
+  }
+  gtBusy = false
+}
+
+async function topPool(mint: string, urgent: boolean): Promise<string | null> {
+  const body = (await gtGet(`${GT}/tokens/${mint}/pools?page=1`, urgent)) as {
+    data?: Array<{ attributes?: Record<string, any> }>
+  }
   const pools = (body.data ?? [])
     .map((p) => p.attributes ?? {})
     .filter((a) => typeof a.address === 'string')
@@ -312,14 +355,17 @@ async function topPool(mint: string): Promise<string | null> {
   return pools[0]?.address ?? null
 }
 
-async function candles(pool: string, range: Range): Promise<Series> {
+async function candles(pool: string, range: Range, urgent: boolean): Promise<Series> {
   const url = `${GT}/pools/${pool}/ohlcv/${range.path}?aggregate=${range.aggregate}&limit=${range.limit}&token=base`
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`GeckoTerminal answered ${res.status}`)
-  const body = (await res.json()) as { data?: { attributes?: { ohlcv_list?: number[][] } } }
-  // Newest first from the API; charts read oldest first.
-  const list = [...(body.data?.attributes?.ohlcv_list ?? [])].reverse()
-  return { closes: list.map((c) => c[4]!), volumes: list.map((c) => c[5]!) }
+  const body = (await gtGet(url, urgent)) as {
+    data?: { attributes?: { ohlcv_list?: unknown[][] } }
+  }
+  // Newest first from the API; charts read oldest first. A candle without a finite close is
+  // dropped, because 1 NaN reaching the braille grid throws inside the renderer.
+  const list = [...(body.data?.attributes?.ohlcv_list ?? [])]
+    .reverse()
+    .filter((c) => Array.isArray(c) && num(c[4]) !== null)
+  return { closes: list.map((c) => num(c[4])!), volumes: list.map((c) => num(c[5]) ?? 0) }
 }
 
 // Braille: each cell is a 2 by 4 dot grid, so a W by H cell chart has 2W by 4H dots.
@@ -387,7 +433,16 @@ const pct = (c: number | null) => {
 }
 const compact = (v: number | null, dollar = true) => {
   if (v === null) return '-'
-  const [d, s] = v >= 1e9 ? [1e9, 'B'] : v >= 1e6 ? [1e6, 'M'] : v >= 1e3 ? [1e3, 'K'] : [1, '']
+  const [d, s] =
+    v >= 1e12
+      ? [1e12, 'T']
+      : v >= 1e9
+        ? [1e9, 'B']
+        : v >= 1e6
+          ? [1e6, 'M']
+          : v >= 1e3
+            ? [1e3, 'K']
+            : [1, '']
   return `${dollar ? '$' : ''}${(v / d).toFixed(v >= 1e3 ? 1 : 0)}${s}`
 }
 const short = (mint: string) => `${mint.slice(0, 4)}...${mint.slice(-4)}`
@@ -410,8 +465,11 @@ const SORTS: SortKey[] = [
 /* ---------------------------------------------------------------------------------------------- */
 
 function createModel(api: TuiPluginApi, options: Options) {
+  const stored = api.kv.get<unknown>(WATCH_KEY, DEFAULT_WATCHLIST)
   const [watchMints, setWatchMints] = createSignal<string[]>(
-    api.kv.get<string[]>(WATCH_KEY, DEFAULT_WATCHLIST),
+    Array.isArray(stored)
+      ? stored.filter((m) => typeof m === 'string' && BASE58.test(m))
+      : DEFAULT_WATCHLIST,
   )
   const [watchlist, setWatchlist] = createSignal<Token[]>([])
   const [list, setList] = createSignal<Token[]>([])
@@ -458,21 +516,30 @@ function createModel(api: TuiPluginApi, options: Options) {
   )
   const pools = new Map<string, Promise<string | null>>()
   const loadingSeries = new Set<string>()
-  const chart = (mint: string, range: number, maxAgeMs = 60_000) => {
+  const chart = (mint: string, range: number, maxAgeMs = 60_000, urgent = false) => {
     const key = `${mint}:${range}`
     const have = series().get(key)
-    if ((have && Date.now() - have.at < maxAgeMs) || loadingSeries.has(key)) return have
+    // A failure is asked again after 15 s, not cached for the session.
+    const fresh = have && Date.now() - have.at < (have.data ? maxAgeMs : 15_000)
+    if (fresh || loadingSeries.has(key)) return have
     loadingSeries.add(key)
     if (!pools.has(mint))
       pools.set(
         mint,
-        topPool(mint).catch(() => null),
+        topPool(mint, urgent).catch((e) => {
+          pools.delete(mint)
+          throw e
+        }),
       )
     void pools
       .get(mint)!
       .then(async (pool) => {
-        if (!pool) return { data: null, error: 'no pool with a price history' }
-        return { data: await candles(pool, RANGES[range]!), error: null }
+        if (!pool) {
+          // Asked again later: a new token usually gets its first pool minutes after launch.
+          pools.delete(mint)
+          return { data: null, error: 'GeckoTerminal lists no pool for this token yet' }
+        }
+        return { data: await candles(pool, RANGES[range]!, urgent), error: null }
       })
       .catch((e) => ({ data: null, error: e instanceof Error ? e.message : String(e) }))
       .then((r) => {
@@ -488,13 +555,22 @@ function createModel(api: TuiPluginApi, options: Options) {
     return `${JUP}/${s.path}${i}?limit=${options.limit}`
   }
 
+  // Only the latest refresh writes, so a slow answer for the list the user just left cannot land
+  // under the new list's heading.
+  // A poll waits for a refresh still in flight instead of superseding it, or a Jupiter slower than
+  // the poll would never land a list and never show an error.
+  let run = 0
+  let busy = false
   const refresh = async () => {
+    const mine = ++run
+    busy = true
     try {
       const mints = watchMints()
       const [w, l] = await Promise.all([
         mints.length ? getTokens(`${JUP}/search?query=${mints.join(',')}`) : Promise.resolve([]),
         getTokens(listUrl()),
       ])
+      if (mine !== run) return
       const byMint = new Map(w.map((t) => [t.mint, t]))
       setWatchlist(mints.flatMap((m) => (byMint.has(m) ? [byMint.get(m)!] : [])))
       setList(l)
@@ -502,14 +578,19 @@ function createModel(api: TuiPluginApi, options: Options) {
       setError(null)
     } catch (e) {
       // The last good rows stay on screen, and the reason they are not moving is said.
+      if (mine !== run) return
       setError(
-        `${e instanceof Error ? e.message : String(e)}, retrying in ${options.refreshMs / 1000}s`,
+        `${e instanceof Error ? e.message : String(e)}. ${updatedAt() === null ? 'No data yet' : `Showing data from ${age()}`}, retrying in ${options.refreshMs / 1000}s`,
       )
+    } finally {
+      if (mine === run) busy = false
     }
   }
   // A new list or watchlist is fetched at once rather than on the next poll.
   createEffect(on([source, interval, watchMints], () => void refresh()))
-  const poll = setInterval(() => void refresh(), options.refreshMs)
+  const poll = setInterval(() => {
+    if (!busy) void refresh()
+  }, options.refreshMs)
   const tick = setInterval(() => setNow(Date.now()), 1_000)
 
   const toggleWatch = (mint: string) => {
@@ -563,7 +644,9 @@ function Logo(props: { model: Model; token: Token; size: number }) {
       <Show
         when={cells()}
         fallback={
-          <text fg={theme()?.accent}>{pad(props.token.symbol.slice(0, 1), props.size)}</text>
+          <text fg={ink(props.model.api, theme()?.accent)}>
+            {pad(props.token.symbol.slice(0, 1), props.size)}
+          </text>
         }
       >
         <For each={cells()!}>
@@ -606,39 +689,96 @@ function Button(props: { model: Model; label: string; active?: boolean; onPress:
         props.onPress()
       }}
     >
-      <text fg={props.active ? theme()?.primary : theme()?.accent} wrapMode="none">
+      <text
+        fg={ink(
+          api,
+          props.active ? theme()?.primary : theme()?.accent,
+          hover() || props.active ? theme()?.backgroundElement : undefined,
+        )}
+        wrapMode="none"
+      >
         {props.label}
       </text>
     </box>
   )
 }
 
-const colourOf = (api: TuiPluginApi, c: number | null) =>
-  c === null
-    ? api.theme.current?.textMuted
-    : c >= 0
-      ? api.theme.current?.success
-      : api.theme.current?.error
+type Colour = NonNullable<TuiPluginApi['theme']['current']>['text']
+const luminance = (rgb: number[]) => {
+  const [r, g, b] = rgb.map((v) => {
+    const x = v / 255
+    return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4
+  })
+  return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!
+}
+const ratio = (a: number[], b: number[]) => {
+  const [x, y] = [luminance(a), luminance(b)]
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05)
+}
+const inked = new Map<string, Colour | string>()
+// A theme colour that reads at 4.5 to 1 or better on its background: unchanged when it already
+// does, otherwise moved toward black on a light background or white on a dark one, a tenth at a
+// time, so a gain stays green and a loss stays red. Measured on opencode's default light theme:
+// accent, warning, success and textMuted all fell under 4.5, between 2.6 and 3.4.
+const ink = (
+  api: TuiPluginApi,
+  fg: Colour | undefined,
+  bg?: Colour,
+): Colour | string | undefined => {
+  const back = bg ?? api.theme.current?.background
+  if (!fg || !back) return fg
+  const b = back.toInts()
+  if (b[3]! < 128) return fg
+  const f = fg.toInts().slice(0, 3)
+  const key = `${f}|${b}`
+  const hit = inked.get(key)
+  if (hit) return hit
+  const target = luminance(b) > 0.18 ? 0 : 255
+  let rgb = f
+  for (let k = 1; k <= 10 && ratio(rgb, b) < 4.5; k++)
+    rgb = f.map((v) => Math.round(v + (target - v) * (k / 10)))
+  const out = rgb === f ? fg : '#' + rgb.map((v) => v.toString(16).padStart(2, '0')).join('')
+  inked.set(key, out)
+  return out
+}
+
+// A move that rounds to 0.00% is neither green nor red.
+const colourOf = (api: TuiPluginApi, c: number | null, bg?: Colour) =>
+  ink(
+    api,
+    c === null || Math.abs(c) < 0.005
+      ? api.theme.current?.textMuted
+      : c > 0
+        ? api.theme.current?.success
+        : api.theme.current?.error,
+    bg,
+  )
+
+// At most this many tokens in the sidebar, so a long watchlist does not push opencode's own panels
+// (MCP, LSP, todo, files) off the screen; the rest are a line that opens the page.
+const SIDEBAR_ROWS = 5
 
 function Sidebar(props: { model: Model; open: () => void; openSetup: () => void }) {
   const api = props.model.api
   const theme = () => api.theme.current
+  const shown = () => props.model.watchlist().slice(0, SIDEBAR_ROWS)
+  const more = () => props.model.watchlist().length - shown().length
   return (
     <box flexDirection="column" gap={0}>
       <box flexDirection="row" gap={1} height={1}>
         <text fg={theme()?.text}>
           <b>Agon watchlist</b>
         </text>
-        <text fg={theme()?.textMuted}>{props.model.age()}</text>
+        <text fg={ink(api, theme()?.textMuted, theme()?.backgroundPanel)}>{props.model.age()}</text>
       </box>
-      <For each={props.model.watchlist()}>
+      <For each={shown()}>
         {(t) => (
           <box
             flexDirection="row"
             gap={1}
             height={3}
             onMouseDown={(e) => {
-              if (e.button !== 0) return
+              if (e.button !== 0 || api.ui.dialog.open) return
               props.model.setFocus(t.mint)
               props.open()
             }}
@@ -646,13 +786,16 @@ function Sidebar(props: { model: Model; open: () => void; openSetup: () => void 
             <Logo model={props.model} token={t} size={6} />
             <box flexDirection="column">
               <text fg={theme()?.text} wrapMode="none">
-                {pad(t.symbol, 8) + lpad(price(t.price), 11)}
+                {pad(t.symbol, 7) + ' ' + lpad(price(t.price), 11)}
               </text>
               <box flexDirection="row" gap={1} height={1}>
-                <text fg={colourOf(api, t.change24h)} wrapMode="none">
-                  {sparkline(props.model.chart(t.mint, 1, 300_000)?.data?.closes ?? [], 10)}
+                <text fg={colourOf(api, t.change24h, theme()?.backgroundPanel)} wrapMode="none">
+                  {pad(
+                    sparkline(props.model.chart(t.mint, 1, 300_000)?.data?.closes ?? [], 10),
+                    10,
+                  )}
                 </text>
-                <text fg={colourOf(api, t.change5m)} wrapMode="none">
+                <text fg={colourOf(api, t.change5m, theme()?.backgroundPanel)} wrapMode="none">
                   {`5m ${pct(t.change5m)}`}
                 </text>
               </box>
@@ -660,12 +803,17 @@ function Sidebar(props: { model: Model; open: () => void; openSetup: () => void 
           </box>
         )}
       </For>
+      <Show when={more() > 0}>
+        <text fg={ink(api, theme()?.textMuted, theme()?.backgroundPanel)}>
+          {`+${more()} more on the discovery page`}
+        </text>
+      </Show>
       <box flexDirection="row" height={1}>
         <Button model={props.model} label="open discovery" onPress={props.open} />
         <Button model={props.model} label="setup" onPress={props.openSetup} />
       </box>
       <Show when={props.model.error()}>
-        <text fg={theme()?.warning}>{props.model.error()}</text>
+        <text fg={ink(api, theme()?.error)}>{props.model.error()}</text>
       </Show>
     </box>
   )
@@ -676,6 +824,8 @@ function Chart(props: {
   token: Token
   range: number
   setRange: (r: number) => void
+  rows: number
+  compact: boolean
 }) {
   const api = props.model.api
   const theme = () => api.theme.current
@@ -691,13 +841,14 @@ function Chart(props: {
       },
     ),
   )
-  const entry = () => (settled() ? props.model.chart(props.token.mint, props.range) : undefined)
+  const entry = () =>
+    settled() ? props.model.chart(props.token.mint, props.range, 60_000, true) : undefined
   const data = () => entry()?.data ?? null
   const first = () => data()?.closes[0] ?? null
   const last = () => data()?.closes.at(-1) ?? null
   const change = () => (first() && last() ? ((last()! - first()!) / first()!) * 100 : null)
   return (
-    <box flexDirection="column" gap={0}>
+    <box flexDirection="column" gap={0} flexShrink={0}>
       <box flexDirection="row" height={1}>
         <For each={RANGES}>
           {(r, i) => (
@@ -714,24 +865,26 @@ function Chart(props: {
       <Show
         when={data() && data()!.closes.length > 1}
         fallback={
-          <text fg={theme()?.textMuted}>
+          <text fg={ink(api, theme()?.textMuted)}>
             {entry()?.error ? `no chart: ${entry()!.error}` : 'loading chart'}
           </text>
         }
       >
-        <For each={brailleLine(data()!.closes, 36, 8)}>
+        <For each={brailleLine(data()!.closes, 36, props.rows)}>
           {(line) => (
             <text fg={colourOf(api, change())} wrapMode="none">
               {line}
             </text>
           )}
         </For>
-        <text fg={theme()?.textMuted} wrapMode="none">
-          {sparkline(data()!.volumes, 36)}
-        </text>
-        <text fg={theme()?.textMuted} wrapMode="none">
-          {`hi ${price(Math.max(...data()!.closes))}  lo ${price(Math.min(...data()!.closes))}  last ${price(last())}`}
-        </text>
+        <Show when={!props.compact}>
+          <text fg={ink(api, theme()?.textMuted)} wrapMode="none">
+            {sparkline(data()!.volumes, 36)}
+          </text>
+          <text fg={ink(api, theme()?.textMuted)} wrapMode="none">
+            {`hi ${price(Math.max(...data()!.closes))}  lo ${price(Math.min(...data()!.closes))}  last ${price(last())}`}
+          </text>
+        </Show>
       </Show>
     </box>
   )
@@ -751,27 +904,39 @@ function Detail(props: {
   range: number
   setRange: (r: number) => void
   actions: Actions
+  compact: boolean
+  note?: string
 }) {
   const api = props.model.api
   const theme = () => api.theme.current
+  const muted = () => ink(api, theme()?.textMuted)
   const yes = (v: boolean | null, good: string, bad: string) =>
     v === null ? 'unknown' : v ? good : bad
+  const live = (off: boolean | null) => (off === false ? ink(api, theme()?.error) : theme()?.text)
+  // The pane is taller than a short terminal, so it clips at its bottom edge instead of squeezing
+  // its lines on top of each other, and the safety lines come right after the buttons, where a
+  // short screen still shows them. Below 46 rows the logo and chart shrink.
   return (
-    <box flexDirection="column" width={42} paddingLeft={2} gap={0}>
-      <Show when={props.token} fallback={<text fg={theme()?.textMuted}>no token selected</text>}>
+    <box flexDirection="column" width={42} paddingLeft={2} gap={0} overflow="hidden">
+      <Show when={props.token} fallback={<text fg={muted()}>no token selected</text>}>
         {(t) => (
           <>
-            <box flexDirection="row" gap={2}>
-              <Logo model={props.model} token={t()} size={20} />
+            <box flexDirection="row" gap={2} flexShrink={0}>
+              <Logo model={props.model} token={t()} size={props.compact ? 8 : 20} />
               <box flexDirection="column">
-                <text fg={theme()?.text}>
-                  <b>{t().symbol}</b>
+                <text fg={theme()?.text} wrapMode="none">
+                  <b>{t().symbol.slice(0, 18)}</b>
                 </text>
                 <text fg={theme()?.text}>{price(t().price)}</text>
                 <text fg={colourOf(api, t().change24h)}>{`24h ${pct(t().change24h)}`}</text>
               </box>
             </box>
-            <box flexDirection="row" height={1}>
+            <Show when={props.note}>
+              <text fg={ink(api, theme()?.warning)} flexShrink={0}>
+                {props.note}
+              </text>
+            </Show>
+            <box flexDirection="row" height={1} flexShrink={0}>
               <Button model={props.model} label="Buy" onPress={() => props.actions.buy(t())} />
               <Button model={props.model} label="Sell" onPress={() => props.actions.sell(t())} />
               <Button model={props.model} label="Check" onPress={() => props.actions.check(t())} />
@@ -782,49 +947,108 @@ function Detail(props: {
               />
               <Button model={props.model} label="Copy" onPress={() => props.actions.copy(t())} />
             </box>
-            <Chart model={props.model} token={t()} range={props.range} setRange={props.setRange} />
-            <text fg={theme()?.textMuted} wrapMode="none">
-              {pad(t().name, 36)}
-            </text>
-            <text fg={theme()?.textMuted}>{short(t().mint)}</text>
-            <text fg={theme()?.text}>{`${price(t().price)}  mcap ${compact(t().mcap)}`}</text>
-            <text fg={colourOf(api, t().change24h)}>
-              {`5m ${pct(t().change5m)}  1h ${pct(t().change1h)}  24h ${pct(t().change24h)}`}
-            </text>
-            <text fg={theme()?.text}>
-              {`1h: ${compact(t().buys1h, false)} buys, ${compact(t().sells1h, false)} sells, ${compact(t().traders1h, false)} traders`}
-            </text>
-            <text fg={theme()?.text}>
-              {`holders ${compact(t().holders, false)} (${pct(t().holderChange1h)} 1h)`}
-            </text>
-            <text fg={theme()?.text}>{`liquidity ${compact(t().liquidity)}`}</text>
-            <text fg={t().mintAuthorityOff === false ? theme()?.warning : theme()?.text}>
+            <text fg={live(t().mintAuthorityOff)} flexShrink={0}>
               {`mint authority ${yes(t().mintAuthorityOff, 'disabled', 'LIVE')}`}
             </text>
-            <text fg={t().freezeAuthorityOff === false ? theme()?.warning : theme()?.text}>
+            <text fg={live(t().freezeAuthorityOff)} flexShrink={0}>
               {`freeze authority ${yes(t().freezeAuthorityOff, 'disabled', 'LIVE')}`}
             </text>
-            <text fg={theme()?.text}>
+            <text fg={theme()?.text} flexShrink={0}>
               {`top holders ${t().topHoldersPct === null ? '-' : t().topHoldersPct!.toFixed(1) + '%'}, dev ${t().devPct === null ? '-' : t().devPct!.toFixed(2) + '%'}`}
             </text>
-            <text fg={theme()?.text}>
+            <Chart
+              model={props.model}
+              token={t()}
+              range={props.range}
+              setRange={props.setRange}
+              rows={props.compact ? 4 : 8}
+              compact={props.compact}
+            />
+            <text fg={muted()} wrapMode="none" flexShrink={0}>
+              {t().name.length > 36 ? t().name.slice(0, 35) + '~' : t().name}
+            </text>
+            <text fg={muted()} flexShrink={0}>
+              {short(t().mint)}
+            </text>
+            <text fg={theme()?.text} flexShrink={0}>
+              {`${price(t().price)}  mcap ${compact(t().mcap)}  liq ${compact(t().liquidity)}`}
+            </text>
+            <text fg={colourOf(api, t().change24h)} flexShrink={0}>
+              {`5m ${pct(t().change5m)}  1h ${pct(t().change1h)}  24h ${pct(t().change24h)}`}
+            </text>
+            <text fg={theme()?.text} flexShrink={0}>
+              {`1h ${compact(t().buys1h, false)} buys ${compact(t().sells1h, false)} sells ${compact(t().traders1h, false)} traders`}
+            </text>
+            <text fg={theme()?.text} flexShrink={0}>
+              {`holders ${compact(t().holders, false)} (${pct(t().holderChange1h)} 1h)`}
+            </text>
+            <text fg={theme()?.text} flexShrink={0}>
               {`organic ${t().organic === null ? '-' : t().organic!.toFixed(0)} ${t().organicLabel ?? ''}${t().verified ? ', verified' : ''}`}
             </text>
-            <text fg={theme()?.textMuted} wrapMode="word">
-              {t().tags.slice(0, 6).join(', ')}
-            </text>
-            <text
-              fg={
-                props.model.watchMints().includes(t().mint) ? theme()?.success : theme()?.textMuted
-              }
-            >
-              {props.model.watchMints().includes(t().mint)
-                ? 'on your watchlist'
-                : 'w to add to watchlist'}
+            <text fg={muted()} wrapMode="none" flexShrink={0}>
+              {t().tags.reduce((line, tag) => {
+                const next = line ? `${line} ${tag}` : tag
+                return next.length <= 40 ? next : line
+              }, '')}
             </text>
           </>
         )}
       </Show>
+    </box>
+  )
+}
+
+// A token as a card: logo, price, volume and liquidity, and the 24h change in a 2-line font.
+// Fixed size, so a grid of them lines up and the page can work out how many fit.
+const CARD_W = 30
+const CARD_H = 7
+
+function Card(props: {
+  model: Model
+  token: Token
+  width: number
+  selected: boolean
+  watched: boolean
+  onSelect: () => void
+}) {
+  const api = props.model.api
+  const theme = () => api.theme.current
+  const t = () => props.token
+  const bg = () => (props.selected ? theme()?.backgroundElement : undefined)
+  return (
+    <box
+      border
+      borderStyle="rounded"
+      width={props.width}
+      height={CARD_H}
+      borderColor={props.selected ? ink(api, theme()?.primary) : colourOf(api, t().change24h)}
+      backgroundColor={bg()}
+      title={` ${props.selected ? '> ' : ''}${props.watched ? '*' : ''}${t().symbol.slice(0, 18)} `}
+      paddingLeft={1}
+      flexDirection="column"
+      onMouseDown={(e) => {
+        if (e.button === 0 && !api.ui.dialog.open) props.onSelect()
+      }}
+    >
+      <box flexDirection="row" gap={1} height={3}>
+        <Logo model={props.model} token={t()} size={6} />
+        <box flexDirection="column">
+          <text fg={theme()?.text} wrapMode="none">
+            {price(t().price)}
+          </text>
+          <text fg={ink(api, theme()?.textMuted, bg())} wrapMode="none">
+            {`vol ${compact(t().volume24h)}`}
+          </text>
+          <text fg={ink(api, theme()?.textMuted, bg())} wrapMode="none">
+            {`liq ${compact(t().liquidity)}`}
+          </text>
+        </box>
+      </box>
+      <ascii_font
+        text={pct(t().change24h)}
+        font="tiny"
+        color={colourOf(api, t().change24h, bg())}
+      />
     </box>
   )
 }
@@ -840,10 +1064,39 @@ function Page(props: { model: Model; back: () => void }) {
   const [search, setSearch] = createSignal('')
   const [auditedOnly, setAuditedOnly] = createSignal(false)
   const [range, setRange] = createSignal(1)
+  const [view, setView] = createSignal<'table' | 'cards'>(
+    api.kv.get<unknown>(VIEW_KEY, 'table') === 'cards' ? 'cards' : 'table',
+  )
+  const dims = useTerminalDimensions()
+  const toggleView = () => {
+    const next = view() === 'table' ? 'cards' : 'table'
+    setView(next)
+    api.kv.set(VIEW_KEY, next)
+    reset()
+  }
 
-  // Each row is 2 lines tall for a 4 by 4 pixel logo. Header, filters, column titles and key hints
-  // take 8 lines, so what is left decides how many rows fit.
-  const visible = () => Math.max(3, Math.floor(((api.renderer.height ?? 40) - 8) / 2))
+  // The list gets the width left beside the 42-column detail pane and the page's padding. Cards
+  // stretch to fill it, so a wide screen has no gap the size of a missing card.
+  const listWidth = () => Math.max(20, dims().width - 44)
+  const cols = () => Math.max(1, Math.floor(listWidth() / CARD_W))
+  const cardWidth = () => Math.floor(listWidth() / cols())
+  const compactDetail = () => dims().height < 46
+  const hint = () =>
+    view() === 'cards'
+      ? 'arrows or h/j/k/l move  click, wheel  m table  s sort  r order  t list  i interval  v chart  / search  a audited  w watch  y copy  b buy  x sell  c check  esc back'
+      : 'j/k move  click, wheel  click a title to sort  m cards  s sort  r order  t list  i interval  v chart  / search  a audited  w watch  y copy  b buy  x sell  c check  esc back'
+  // Lines the list does not get: padding 2, the 2 header rows, the hint as it wraps, the error line
+  // when there is one, and in the table the column titles.
+  const chrome = () =>
+    4 +
+    Math.ceil(hint().length / Math.max(20, dims().width - 2)) +
+    (model.error() ? 1 : 0) +
+    (view() === 'table' ? 1 : 0)
+  // Table rows are 2 lines tall for a 4 by 4 pixel logo; cards fill whole rows of cards.
+  const visible = () =>
+    view() === 'cards'
+      ? cols() * Math.max(1, Math.floor((dims().height - chrome()) / CARD_H))
+      : Math.max(3, Math.floor((dims().height - chrome()) / 2))
 
   const rows = createMemo(() => {
     const key = SORTS[sort()]!
@@ -866,13 +1119,29 @@ function Page(props: { model: Model; back: () => void }) {
       })
   })
 
+  // The selection is a token, not a position: every refresh re-sorts the list, and a position would
+  // hand Check or Buy a token the user never picked.
+  const [selMint, setSelMint] = createSignal<string | null>(null)
+  const [selToken, setSelToken] = createSignal<Token | null>(null)
+  // The selected token after a refresh dropped it from the list: still shown and still what the
+  // buttons act on, until the user moves.
+  const [gone, setGone] = createSignal<Token | null>(null)
+  // Cards scroll a whole row of cards at a time, so the grid does not reflow under the cursor.
+  const scroll = (i: number) => {
+    const step = view() === 'cards' ? cols() : 1
+    const rowStart = i - (i % step)
+    if (i < offset()) setOffset(rowStart)
+    else if (i >= offset() + visible()) setOffset(rowStart - visible() + step)
+  }
   const move = (to: number) => {
     model.setFocus(null)
+    setGone(null)
     const n = rows().length
     const i = n === 0 ? 0 : Math.max(0, Math.min(n - 1, to))
     setSelected(i)
-    if (i < offset()) setOffset(i)
-    else if (i >= offset() + visible()) setOffset(i - visible() + 1)
+    setSelMint(rows()[i]?.mint ?? null)
+    setSelToken(rows()[i] ?? null)
+    scroll(i)
   }
   const reset = () => {
     setOffset(0)
@@ -890,11 +1159,24 @@ function Page(props: { model: Model; back: () => void }) {
   createEffect(
     on(rows, (list) => {
       const m = model.focus()
-      const i = m ? list.findIndex((t) => t.mint === m) : -1
-      if (i >= 0) move(i)
+      if (m) {
+        const i = list.findIndex((t) => t.mint === m)
+        if (i >= 0) move(i)
+        return
+      }
+      const i = list.findIndex((t) => t.mint === selMint())
+      if (i >= 0) {
+        setSelected(i)
+        setSelToken(list[i]!)
+        scroll(i)
+      } else if (selToken() && !gone()) setGone(selToken())
+      else if (!selToken()) move(selected())
     }),
   )
-  const current = () => focused() ?? rows()[selected()]
+  // A resize, an error line or a view change alters how many rows or cards fit, so the window is
+  // worked out again around the selection, without dropping a token opened from the sidebar.
+  createEffect(on(visible, () => scroll(selected()), { defer: true }))
+  const current = () => focused() ?? gone() ?? rows()[selected()]
   const [hovered, setHovered] = createSignal<string | null>(null)
 
   // Hands the instruction to the agent's chat box and goes back to the session. It is never
@@ -918,7 +1200,7 @@ function Page(props: { model: Model; back: () => void }) {
   const askAmount = (side: 'buy' | 'sell', t: Token) => {
     api.ui.dialog.replace(() => (
       <api.ui.DialogPrompt
-        title={side === 'buy' ? `Buy ${t.symbol}` : `Sell ${t.symbol}`}
+        title={side === 'buy' ? `Buy ${t.symbol.slice(0, 20)}` : `Sell ${t.symbol.slice(0, 20)}`}
         placeholder={
           side === 'buy' ? 'amount of SOL to spend, e.g. 0.1' : "amount to sell, or 'all'"
         }
@@ -927,10 +1209,12 @@ function Page(props: { model: Model; back: () => void }) {
           api.ui.dialog.clear()
           const amount = value.trim()
           if (!amount) return
+          // Only the mint goes into the prompt. A token's symbol and name are outside text, and a
+          // symbol can say anything, including an instruction to the agent.
           void handOff(
             side === 'buy'
-              ? `Buy ${amount} SOL of ${t.symbol} (mint ${t.mint}). Run Agon check_trade on it first and show me the verdict with its reasons. Build nothing unless it passes, and let me sign.`
-              : `Sell ${amount} of ${t.symbol} (mint ${t.mint}) for SOL. Run Agon check_trade on it first and show me the verdict with its reasons. Build nothing unless it passes, and let me sign.`,
+              ? `Buy ${amount} SOL of the token with mint ${t.mint}. Run Agon check_trade on it first and show me the verdict with its reasons. Build nothing unless it passes, and let me sign.`
+              : `Sell ${amount} of the token with mint ${t.mint} for SOL. Run Agon check_trade on it first and show me the verdict with its reasons. Build nothing unless it passes, and let me sign.`,
           )
         }}
       />
@@ -958,7 +1242,7 @@ function Page(props: { model: Model; back: () => void }) {
     sell: (t) => askAmount('sell', t),
     check: (t) =>
       void handOff(
-        `Run Agon check_trade for a buy of ${t.symbol} (mint ${t.mint}) at my usual size and explain the verdict. Do not trade.`,
+        `Run Agon check_trade for a buy of the token with mint ${t.mint} at my usual size and explain the verdict. Do not trade.`,
       ),
     watch: (t) => {
       const on = model.toggleWatch(t.mint)
@@ -977,13 +1261,20 @@ function Page(props: { model: Model; back: () => void }) {
       })
     },
   }
+  // A different list is a fresh start: the first token of the new list is selected when it arrives,
+  // rather than the old token being kept as one that left.
+  const freshList = () => {
+    reset()
+    setSelMint(null)
+    setSelToken(null)
+  }
   const nextSource = () => {
     model.setSource((model.source() + 1) % SOURCES.length)
-    reset()
+    freshList()
   }
   const nextInterval = () => {
     model.setInterval((model.interval() + 1) % INTERVALS.length)
-    reset()
+    freshList()
   }
   const nextSort = () => {
     setSort((sort() + 1) % SORTS.length)
@@ -1008,13 +1299,17 @@ function Page(props: { model: Model; back: () => void }) {
   }
 
   useKeyboard((key) => {
-    // A dialog owns the keyboard while it is open.
-    if (api.ui.dialog.open) return
+    // A dialog owns the keyboard while it is open, and a Ctrl or Meta combination belongs to
+    // opencode (ctrl+x is its leader key, ctrl+p its palette), never to this page.
+    if (api.ui.dialog.open || key.ctrl || key.meta) return
     const k = key.name
     const t = current()
     if (k === 'escape' || k === 'q') props.back()
-    else if (k === 'down' || k === 'j') move(selected() + 1)
-    else if (k === 'up' || k === 'k') move(selected() - 1)
+    else if (k === 'down' || k === 'j') move(selected() + (view() === 'cards' ? cols() : 1))
+    else if (k === 'up' || k === 'k') move(selected() - (view() === 'cards' ? cols() : 1))
+    else if (view() === 'cards' && (k === 'right' || k === 'l')) move(selected() + 1)
+    else if (view() === 'cards' && (k === 'left' || k === 'h')) move(selected() - 1)
+    else if (k === 'm') toggleView()
     else if (k === 'pagedown') move(selected() + visible())
     else if (k === 'pageup') move(selected() - visible())
     else if (k === 'home' || k === 'g') move(0)
@@ -1036,20 +1331,64 @@ function Page(props: { model: Model; back: () => void }) {
 
   const window = () => rows().slice(offset(), offset() + visible())
   const src = () => SOURCES[model.source()]!
-  // Column titles: label, width, and the SORTS index a click sorts by (null for none).
-  const columns: [string, number, number | null][] = [
-    ['', 5, null],
-    ['token', 10, null],
-    ['price', 11, null],
-    ['5m', 9, 1],
-    ['1h', 9, 2],
-    ['24h', 9, 3],
-    ['vol 24h', 10, 0],
-    ['liq', 10, 5],
-    ['mcap', 10, 4],
-    ['holders', 9, 6],
-    ['org', 5, 7],
+  // Optional columns after logo, token and price (26 columns), in screen order. `keep` is the order
+  // they are kept in when the list is narrow: 24h first, organic score last.
+  type Column = {
+    label: string
+    width: number
+    sort: number
+    keep: number
+    value: (t: Token) => string
+    change?: (t: Token) => number | null
+  }
+  const columns: Column[] = [
+    {
+      label: '5m',
+      width: 9,
+      sort: 1,
+      keep: 4,
+      value: (t) => pct(t.change5m),
+      change: (t) => t.change5m,
+    },
+    {
+      label: '1h',
+      width: 9,
+      sort: 2,
+      keep: 2,
+      value: (t) => pct(t.change1h),
+      change: (t) => t.change1h,
+    },
+    {
+      label: '24h',
+      width: 9,
+      sort: 3,
+      keep: 0,
+      value: (t) => pct(t.change24h),
+      change: (t) => t.change24h,
+    },
+    { label: 'vol 24h', width: 10, sort: 0, keep: 1, value: (t) => compact(t.volume24h) },
+    { label: 'liq', width: 10, sort: 5, keep: 3, value: (t) => compact(t.liquidity) },
+    { label: 'mcap', width: 10, sort: 4, keep: 5, value: (t) => compact(t.mcap) },
+    { label: 'holders', width: 9, sort: 6, keep: 6, value: (t) => compact(t.holders, false) },
+    {
+      label: 'org',
+      width: 5,
+      sort: 7,
+      keep: 7,
+      value: (t) => (t.organic === null ? '-' : t.organic.toFixed(0)),
+    },
   ]
+  const shownColumns = createMemo(() => {
+    let room = listWidth() - 26
+    const kept = new Set<Column>()
+    const rank = (c: Column) => (c.sort === sort() ? -1 : c.keep)
+    for (const c of [...columns].sort((a, b) => rank(a) - rank(b))) {
+      if (c.width > room) break
+      kept.add(c)
+      room -= c.width
+    }
+    return columns.filter((c) => kept.has(c))
+  })
 
   return (
     <box flexDirection="column" padding={1} gap={0} flexGrow={1}>
@@ -1066,11 +1405,12 @@ function Page(props: { model: Model; back: () => void }) {
             onPress={nextInterval}
           />
         </Show>
-        <text fg={theme()?.textMuted}>{`${rows().length} tokens, ${model.age()}`}</text>
+        <text fg={ink(api, theme()?.textMuted)}>{`${rows().length} tokens, ${model.age()}`}</text>
       </box>
       <box flexDirection="row" gap={1} height={1}>
         <Button model={model} label={`sort: ${SORTS[sort()]!.label}`} onPress={nextSort} />
         <Button model={model} label={desc() ? 'high to low' : 'low to high'} onPress={reverse} />
+        <Button model={model} label={`view: ${view()}`} onPress={toggleView} />
         <Button
           model={model}
           label={search() ? `search: "${search()}"` : 'search'}
@@ -1078,7 +1418,7 @@ function Page(props: { model: Model; back: () => void }) {
         />
         <Button
           model={model}
-          label={auditedOnly() ? 'authorities disabled only' : 'all tokens'}
+          label={auditedOnly() ? 'audited only' : 'all tokens'}
           active={auditedOnly()}
           onPress={toggleAudited}
         />
@@ -1087,80 +1427,111 @@ function Page(props: { model: Model; back: () => void }) {
         <box
           flexDirection="column"
           flexGrow={1}
+          overflow="hidden"
           onMouseScroll={(e) => {
+            if (api.ui.dialog.open) return
             const d = e.scroll?.direction
             if (d === 'down') move(selected() + 1)
             else if (d === 'up') move(selected() - 1)
           }}
         >
-          <box flexDirection="row" height={1}>
-            <For each={columns}>
-              {([label, width, key]) => {
-                const active = () => key !== null && sort() === key
-                const text = () => (active() ? (desc() ? 'v ' : '^ ') : '') + label
+          <Show when={rows().length === 0}>
+            <text fg={ink(api, theme()?.textMuted)} wrapMode="word">
+              {model.list().length === 0
+                ? `no tokens yet: ${model.error() ?? 'loading from Jupiter'}`
+                : `no tokens match ${search() ? `"${search()}"` : 'these filters'}${auditedOnly() ? ' with authorities disabled' : ''}. / changes the search${auditedOnly() ? ', a shows all tokens' : ''}`}
+            </text>
+          </Show>
+          <Show
+            when={view() === 'table'}
+            fallback={
+              <box flexDirection="row" flexWrap="wrap">
+                <For each={window()}>
+                  {(t, i) => (
+                    <Card
+                      model={model}
+                      token={t}
+                      width={cardWidth()}
+                      selected={current()?.mint === t.mint}
+                      watched={model.watchMints().includes(t.mint)}
+                      onSelect={() => move(offset() + i())}
+                    />
+                  )}
+                </For>
+              </box>
+            }
+          >
+            <box flexDirection="row" height={1} flexShrink={0}>
+              <text fg={ink(api, theme()?.textMuted)} wrapMode="none">
+                {pad('', 5) + pad('token', 10) + lpad('price', 11)}
+              </text>
+              <For each={shownColumns()}>
+                {(c) => {
+                  const active = () => sort() === c.sort
+                  return (
+                    <box
+                      width={c.width}
+                      height={1}
+                      onMouseDown={(e) => {
+                        if (e.button === 0 && !api.ui.dialog.open) sortBy(c.sort)
+                      }}
+                    >
+                      <text
+                        fg={ink(api, active() ? theme()?.primary : theme()?.textMuted)}
+                        wrapMode="none"
+                      >
+                        {lpad((active() ? (desc() ? '\u25bc' : '\u25b2') : '') + c.label, c.width)}
+                      </text>
+                    </box>
+                  )
+                }}
+              </For>
+            </box>
+            <For each={window()}>
+              {(t, i) => {
+                const isSel = () => current()?.mint === t.mint
+                const bg = () =>
+                  isSel()
+                    ? theme()?.backgroundElement
+                    : hovered() === t.mint
+                      ? theme()?.backgroundPanel
+                      : undefined
+                const watched = () => model.watchMints().includes(t.mint)
                 return (
                   <box
-                    width={width}
-                    height={1}
+                    flexDirection="row"
+                    height={2}
+                    flexShrink={0}
+                    backgroundColor={bg()}
+                    onMouseOver={() => setHovered(t.mint)}
+                    onMouseOut={() => setHovered((h) => (h === t.mint ? null : h))}
                     onMouseDown={(e) => {
-                      if (e.button === 0 && key !== null) sortBy(key)
+                      if (e.button === 0 && !api.ui.dialog.open) move(offset() + i())
                     }}
                   >
-                    <text fg={active() ? theme()?.primary : theme()?.textMuted} wrapMode="none">
-                      {label === 'token' ? pad(text(), width) : lpad(text(), width)}
+                    <box width={5} flexShrink={0}>
+                      <Logo model={model} token={t} size={4} />
+                    </box>
+                    <text fg={theme()?.text} wrapMode="none">
+                      {pad((isSel() ? '>' : '') + (watched() ? '*' : '') + t.symbol, 9) +
+                        ' ' +
+                        lpad(price(t.price), 11)}
                     </text>
+                    <For each={shownColumns()}>
+                      {(c) => (
+                        <text
+                          fg={c.change ? colourOf(api, c.change(t), bg()) : theme()?.text}
+                          wrapMode="none"
+                        >
+                          {lpad(c.value(t), c.width)}
+                        </text>
+                      )}
+                    </For>
                   </box>
                 )
               }}
             </For>
-          </box>
-          <For each={window()}>
-            {(t, i) => {
-              const isSel = () => current()?.mint === t.mint
-              const base = () => (isSel() ? theme()?.primary : theme()?.text)
-              const watched = () => model.watchMints().includes(t.mint)
-              return (
-                <box
-                  flexDirection="row"
-                  height={2}
-                  gap={1}
-                  backgroundColor={
-                    isSel()
-                      ? theme()?.backgroundElement
-                      : hovered() === t.mint
-                        ? theme()?.backgroundPanel
-                        : undefined
-                  }
-                  onMouseOver={() => setHovered(t.mint)}
-                  onMouseOut={() => setHovered((h) => (h === t.mint ? null : h))}
-                  onMouseDown={(e) => {
-                    if (e.button === 0) move(offset() + i())
-                  }}
-                >
-                  <Logo model={model} token={t} size={4} />
-                  <text fg={base()} wrapMode="none">
-                    {pad((watched() ? '*' : '') + t.symbol, 10) + lpad(price(t.price), 11)}
-                  </text>
-                  <text fg={colourOf(api, t.change5m)} wrapMode="none">
-                    {lpad(pct(t.change5m), 8)}
-                  </text>
-                  <text fg={colourOf(api, t.change1h)} wrapMode="none">
-                    {lpad(pct(t.change1h), 8)}
-                  </text>
-                  <text fg={colourOf(api, t.change24h)} wrapMode="none">
-                    {lpad(pct(t.change24h), 8)}
-                  </text>
-                  <text fg={base()} wrapMode="none">
-                    {lpad(compact(t.volume24h), 9) +
-                      lpad(compact(t.liquidity), 10) +
-                      lpad(compact(t.mcap), 10) +
-                      lpad(compact(t.holders, false), 9) +
-                      lpad(t.organic === null ? '-' : t.organic.toFixed(0), 5)}
-                  </text>
-                </box>
-              )
-            }}
-          </For>
+          </Show>
         </box>
         <Detail
           model={model}
@@ -1168,13 +1539,17 @@ function Page(props: { model: Model; back: () => void }) {
           range={range()}
           setRange={setRange}
           actions={actions}
+          compact={compactDetail()}
+          note={gone() && !model.focus() ? 'left this list on the last refresh' : undefined}
         />
       </box>
       <Show when={model.error()}>
-        <text fg={theme()?.warning}>{model.error()}</text>
+        <text fg={ink(api, theme()?.error)} flexShrink={0} wrapMode="none">
+          {model.error()}
+        </text>
       </Show>
-      <text fg={theme()?.textMuted} wrapMode="word">
-        {`click or j/k select, wheel scrolls, click a column to sort  s sort  r reverse  t list  i interval  v chart  / search  a audited  w watch  y copy  b buy  x sell  c check  esc back`}
+      <text fg={ink(api, theme()?.textMuted)} wrapMode="word" flexShrink={0}>
+        {hint()}
       </text>
     </box>
   )
@@ -1186,7 +1561,6 @@ function Page(props: { model: Model; back: () => void }) {
 
 const SETUP_ROUTE = 'agon.setup'
 const WALLET_KEY = 'agon.setup.wallet'
-const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/
 
 // 1 MCP tool call over Streamable HTTP. The server answers as JSON or as 1 server-sent event.
 async function mcpCall(
@@ -1246,14 +1620,33 @@ type Rule = {
   }
 }
 
-function openInBrowser(url: string) {
+function openInBrowser(url: string, failed: (cause: string) => void) {
   const [cmd, args] =
     process.platform === 'win32'
       ? ['rundll32', ['url.dll,FileProtocolHandler', url]]
       : [process.platform === 'darwin' ? 'open' : 'xdg-open', [url]]
   const child = spawn(cmd, args as string[], { detached: true, stdio: 'ignore' })
-  child.on('error', () => {})
+  child.on('error', (e) => failed(`${cmd}: ${e.message}`))
+  // xdg-open with no browser installed exits non-zero instead of failing to start.
+  child.on('exit', (code) => {
+    if (code) failed(`${cmd} exited with code ${code}`)
+  })
   child.unref()
+}
+
+// A rule as the server sent it is outside data: each field is checked before it is drawn.
+const isRule = (r: unknown): r is Rule => {
+  const x = r as Rule
+  return (
+    !!x &&
+    typeof x.vault === 'string' &&
+    typeof x.effectiveRemaining === 'string' &&
+    typeof x.rollingWorstCase === 'string' &&
+    typeof x.swigRole?.authority === 'string' &&
+    typeof x.swigRole?.tokenRecurringLimit?.mint === 'string' &&
+    typeof x.swigRole?.tokenRecurringLimit?.amount === 'string' &&
+    typeof x.swigRole?.tokenRecurringLimit?.windowSlots === 'number'
+  )
 }
 
 function Setup(props: { model: Model; options: Options; back: () => void }) {
@@ -1264,13 +1657,17 @@ function Setup(props: { model: Model; options: Options; back: () => void }) {
   const [network, setNetwork] = createSignal<string | null>(null)
   const [rules, setRules] = createSignal<Rule[] | null>(null)
   const [refusal, setRefusal] = createSignal<string | null>(null)
+  const [loading, setLoading] = createSignal(false)
+  const dims = useTerminalDimensions()
 
   // Only the latest run writes: a slow answer for a wallet the user has since changed is dropped,
-  // rather than shown under the new address.
+  // rather than shown under the new address. The last answer stays on screen until the new one
+  // lands, so the page does not blank out every 30 s, unless the server or the wallet changed.
   let run = 0
+  let readFor = ''
   const refresh = async () => {
     const mine = ++run
-    setServer('checking')
+    if (server() !== 'up') setServer('checking')
     let up: string
     try {
       const res = await fetch(`${props.options.mcpUrl}/health`, {
@@ -1282,19 +1679,39 @@ function Setup(props: { model: Model; options: Options; back: () => void }) {
     }
     if (mine !== run) return
     setServer(up)
-    setRules(null)
-    setRefusal(null)
-    setNetwork(null)
+    if (up !== 'up' || !wallet() || readFor !== wallet()) {
+      setRules(null)
+      setRefusal(null)
+      setNetwork(null)
+    }
     if (up !== 'up' || !wallet()) return
+    setLoading(true)
     try {
       const r = await mcpCall(props.options.mcpUrl, 'list_rules', { wallet: wallet() })
       if (mine !== run) return
-      if (!r.ok) return setRefusal(r.text.split('\n')[0] ?? r.text)
-      const body = JSON.parse(r.text) as { network?: string; rules?: Rule[] }
-      setNetwork(body.network ?? null)
-      setRules(body.rules ?? [])
+      readFor = wallet()
+      if (!r.ok) {
+        setRules(null)
+        return setRefusal(r.text.trim().slice(0, 400))
+      }
+      const body = JSON.parse(r.text) as { network?: unknown; rules?: unknown }
+      if (!Array.isArray(body.rules) || !body.rules.every(isRule)) {
+        setRules(null)
+        return setRefusal(
+          'the server answered list_rules without a list of rules in the expected shape, so nothing is shown rather than a guess. Check that the Agon server is current, or rebuild it with docker compose up -d --build',
+        )
+      }
+      setNetwork(typeof body.network === 'string' ? body.network : null)
+      setRefusal(null)
+      setRules(body.rules)
     } catch (e) {
-      if (mine === run) setRefusal(e instanceof Error ? e.message : String(e))
+      // A failed read clears the rules, so an old "can spend now" is never shown as current.
+      if (mine === run) {
+        setRules(null)
+        setRefusal(e instanceof Error ? e.message : String(e))
+      }
+    } finally {
+      if (mine === run) setLoading(false)
     }
   }
   void refresh()
@@ -1326,7 +1743,12 @@ function Setup(props: { model: Model; options: Options; back: () => void }) {
     ))
   }
   const openArm = () => {
-    openInBrowser(props.options.armUrl)
+    openInBrowser(props.options.armUrl, (cause) =>
+      api.ui.toast({
+        variant: 'error',
+        message: `Could not open a browser (${cause}). Open ${props.options.armUrl} yourself.`,
+      }),
+    )
     api.ui.toast({
       variant: 'info',
       message: `Opening ${props.options.armUrl}. Your wallet signs there, not here.`,
@@ -1349,7 +1771,7 @@ function Setup(props: { model: Model; options: Options; back: () => void }) {
   }
 
   useKeyboard((key) => {
-    if (api.ui.dialog.open) return
+    if (api.ui.dialog.open || key.ctrl || key.meta) return
     const k = key.name
     if (k === 'escape' || k === 'q') props.back()
     else if (k === 'w') askWallet()
@@ -1360,15 +1782,36 @@ function Setup(props: { model: Model; options: Options; back: () => void }) {
 
   const mark = (ok: boolean | null) => (ok === null ? '[ ]' : ok ? '[x]' : '[!]')
   const colour = (ok: boolean | null) =>
-    ok === null ? theme()?.textMuted : ok ? theme()?.success : theme()?.warning
+    ink(api, ok === null ? theme()?.textMuted : ok ? theme()?.success : theme()?.error)
+  // Padding on a text does nothing in this OpenTUI, so the detail is indented by a box.
   const Step = (p: { ok: boolean | null; title: string; detail: string }) => (
-    <box flexDirection="column">
+    <box flexDirection="column" flexShrink={0}>
       <text fg={colour(p.ok)}>{`${mark(p.ok)} ${p.title}`}</text>
-      <text fg={theme()?.textMuted} wrapMode="word" paddingLeft={4}>
-        {p.detail}
-      </text>
+      <box paddingLeft={4}>
+        <text fg={ink(api, theme()?.textMuted)} wrapMode="word">
+          {p.detail}
+        </text>
+      </box>
     </box>
   )
+  // The number that matters, as large as the width allows: 6 lines when it fits, 2 when not, and
+  // plain text for a mint whose decimals are not pinned, which also names the mint.
+  const Remaining = (p: { amount: string; mint: string }) => {
+    const text = () => units(p.amount, p.mint)
+    const room = () => dims().width - 10
+    return (
+      <Show
+        when={DECIMALS[p.mint] && text().length * 4 <= room()}
+        fallback={<text fg={ink(api, theme()?.success)}>{`${text()} of ${short(p.mint)}`}</text>}
+      >
+        <ascii_font
+          text={text()}
+          font={text().length * 8 <= room() ? 'block' : 'tiny'}
+          color={ink(api, theme()?.success)}
+        />
+      </Show>
+    )
+  }
 
   return (
     <box flexDirection="column" padding={1} gap={1} flexGrow={1}>
@@ -1376,71 +1819,83 @@ function Setup(props: { model: Model; options: Options; back: () => void }) {
         <text fg={theme()?.text}>
           <b>Agon setup</b>
         </text>
-        <text fg={theme()?.textMuted}>
+        <text fg={ink(api, theme()?.textMuted)}>
           {network() ? `network: ${network()}` : 'network: not read yet'}
         </text>
       </box>
-      <Step
-        ok={server() === 'checking' ? null : server() === 'up'}
-        title="Agon server"
-        detail={
-          server() === 'up'
-            ? `answering at ${props.options.mcpUrl}`
-            : server() === 'checking'
-              ? `checking ${props.options.mcpUrl}`
-              : `not answering at ${props.options.mcpUrl} (${server()}). Start it with: docker compose up -d --build`
-        }
-      />
-      <Step
-        ok={wallet() ? true : null}
-        title="Your wallet"
-        detail={
-          wallet()
-            ? `${wallet()} (public address only, stored in opencode)`
-            : 'not set. Press w or the button below'
-        }
-      />
-      <Step
-        ok={rules() ? rules()!.length > 0 : refusal() ? false : null}
-        title="Vault and agent role"
-        detail={
-          refusal()
-            ? `not read: ${refusal()}`
-            : !rules()
-              ? 'needs the server and your wallet'
-              : rules()!.length === 0
-                ? 'no agent role is armed on this wallet. Arm one on the web screen'
-                : `${rules()!.length} armed`
-        }
-      />
-      <For each={rules() ?? []}>
-        {(r) => {
-          const lim = r.swigRole.tokenRecurringLimit
-          return (
-            <box flexDirection="column" paddingLeft={4}>
-              <text
-                fg={theme()?.text}
-              >{`vault ${short(r.vault)}   agent ${short(r.swigRole.authority)}`}</text>
-              <text
-                fg={theme()?.text}
-              >{`cap ${units(lim.amount, lim.mint)} per ${lim.windowSlots} slots`}</text>
-              <text
-                fg={theme()?.success}
-              >{`can spend now ${units(r.effectiveRemaining, lim.mint)}`}</text>
-              <text fg={theme()?.textMuted}>
-                {`most that can go out across a window edge ${units(r.rollingWorstCase, lim.mint)}`}
-              </text>
-            </box>
-          )
-        }}
-      </For>
-      <box flexDirection="row" gap={1} height={1}>
+      <scrollbox flexGrow={1}>
+        <Step
+          ok={server() === 'checking' ? null : server() === 'up'}
+          title="Agon server"
+          detail={
+            server() === 'up'
+              ? `answering at ${props.options.mcpUrl}`
+              : server() === 'checking'
+                ? `checking ${props.options.mcpUrl}`
+                : `not answering at ${props.options.mcpUrl} (${server()}). Start it with:`
+          }
+        />
+        <Show when={server() !== 'up' && server() !== 'checking'}>
+          <box paddingLeft={4} flexShrink={0}>
+            <text fg={theme()?.text} wrapMode="none">
+              docker compose up -d --build
+            </text>
+          </box>
+        </Show>
+        <Step
+          ok={wallet() ? true : null}
+          title="Your wallet"
+          detail={
+            wallet()
+              ? `${wallet()} (public address only, stored in opencode)`
+              : 'not set. Press w or the button below'
+          }
+        />
+        <Step
+          ok={rules() ? rules()!.length > 0 : refusal() ? false : null}
+          title="Vault and agent role"
+          detail={
+            refusal()
+              ? `not read: ${refusal()}`
+              : !rules()
+                ? server() === 'up' && wallet()
+                  ? loading()
+                    ? `reading list_rules from ${props.options.mcpUrl}`
+                    : 'not read yet'
+                  : `needs ${[server() === 'up' ? '' : 'the server', wallet() ? '' : 'your wallet'].filter(Boolean).join(' and ')}`
+                : rules()!.length === 0
+                  ? 'no agent role is armed on this wallet. Arm one on the web screen'
+                  : `${rules()!.length} armed`
+          }
+        />
+        <For each={rules() ?? []}>
+          {(r) => {
+            const lim = r.swigRole.tokenRecurringLimit
+            return (
+              <box flexDirection="column" paddingLeft={4} flexShrink={0}>
+                <text
+                  fg={theme()?.text}
+                >{`vault ${short(r.vault)}   agent ${short(r.swigRole.authority)}`}</text>
+                <text
+                  fg={theme()?.text}
+                >{`cap ${units(lim.amount, lim.mint)} per ${lim.windowSlots} slots`}</text>
+                <text fg={ink(api, theme()?.success)}>can spend now</text>
+                <Remaining amount={r.effectiveRemaining} mint={lim.mint} />
+                <text fg={ink(api, theme()?.textMuted)} wrapMode="word">
+                  {`most that can go out across a window edge ${units(r.rollingWorstCase, lim.mint)}`}
+                </text>
+              </box>
+            )
+          }}
+        </For>
+      </scrollbox>
+      <box flexDirection="row" gap={1} height={1} flexShrink={0}>
         <Button model={props.model} label="w wallet" onPress={askWallet} />
         <Button model={props.model} label="o open arming screen" onPress={openArm} />
         <Button model={props.model} label="p onboard me in chat" onPress={() => void onboard()} />
         <Button model={props.model} label="r refresh" onPress={() => void refresh()} />
       </box>
-      <text fg={theme()?.textMuted} wrapMode="word">
+      <text fg={ink(api, theme()?.textMuted)} wrapMode="word" flexShrink={0}>
         {
           'Arming, funding and revoking happen on the web screen, signed by your own wallet. This page only reads. esc back'
         }
