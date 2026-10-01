@@ -2717,11 +2717,12 @@ _(empty)_
 ### T-C27, Vault P&L that survives a sell: FIFO over every trade, in SOL and USD, from more than 1 price source
 - Status: claimed 2026-10-02 | Owner: manjeetsharma0796 | Branch: feature/t-c27-vault-pnl
 - Depends-on: T-C25
-- Touches: packages/core/src/vault.ts, packages/core/src/net/index.ts, packages/core/src/net/record.ts,
-  fixtures/contracts/, fixtures/recorded/, packages/decoder/src/pnl.ts, packages/decoder/src/pnl.test.ts,
-  packages/mcp/src/index.ts, packages/mcp/src/io.ts, packages/mcp/src/mcp.test.ts,
-  packages/mcp/src/token-budget.token.test.ts, docs/public/agent-setup.md, docs/public/mcp-tools.md,
-  DECISIONS.md
+- Touches: packages/core/src/vault.ts, packages/core/src/index.ts, packages/core/src/contracts.test.ts,
+  packages/core/src/net/index.ts, packages/core/src/net/record.ts, fixtures/contracts/,
+  packages/decoder/src/pnl.ts, packages/decoder/src/pnl.test.ts, packages/mcp/src/index.ts,
+  packages/mcp/src/io.ts, packages/mcp/src/vault-report.ts, packages/mcp/src/vault-report.test.ts,
+  packages/mcp/src/mcp.test.ts, packages/mcp/src/token-budget.token.test.ts,
+  docs/public/agent-setup.md, docs/public/mcp-tools.md, docs/public/quickstart.md, DECISIONS.md
 - Serves: Functionality (judged) ; UX (judged) ; a trader asks "how am I doing" and gets every trade,
   realised and open P&L, in SOL and dollars, with where each price came from
 - Acceptance: `vault_status` runs the existing `fifoLedger` over every vault trade with wSOL as the
