@@ -2942,7 +2942,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-E19, Polish, test and fix the onboarding UI in opencode and on the web, with a person
-- Status: open
+- Status: claimed 2026-10-02 | Owner: Jishnu | Branch: feature/t-e19-tui-polish
 - Depends-on: T-E18
 - Touches: .opencode/tui/, tui.json, apps/web/app/globals.css
 - Serves: UX (judged)
