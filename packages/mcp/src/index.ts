@@ -9,6 +9,7 @@ import { FIXTURE_NOTE, armRule, formatUnits, report } from '@agon/web'
 import {
   innermostFailure,
   noAgentRole,
+  historyTimedOut,
   noHistory,
   noVault,
   outputNotToVault,
@@ -47,6 +48,24 @@ type Handler = (input: unknown, io: ToolIo) => unknown | Promise<unknown>
 
 /** The widest slippage prepare_swap builds with, in bps. */
 const MAX_SLIPPAGE_BPS = 100
+
+/**
+ * Seconds an agent key's history scan may take. Under opencode's 5 s MCP client timeout, so the
+ * agent reads our reason rather than a bare "Request timed out". The scan is not cancelled, only
+ * no longer waited for.
+ */
+const HISTORY_DEADLINE_S = 4
+
+const withinHistoryDeadline = <T>(scan: Promise<T>, agent: string): Promise<T> => {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const late = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Refusal(historyTimedOut({ agent, seconds: HISTORY_DEADLINE_S }))),
+      HISTORY_DEADLINE_S * 1000,
+    )
+  })
+  return Promise.race([scan, late]).finally(() => clearTimeout(timer))
+}
 
 /** The mints an agent role can spend, with what a refusal calls them. */
 const ARMED: Record<string, { unit: string; decimals: number }> = {
@@ -119,11 +138,13 @@ const handlers = {
   // list_rules reads the wallet's vault from chain (T-C17). The chain stores the role, not
   // the spec, the order id or a window in seconds, so those are null or slots rather than guesses.
   // An empty list now means the chain holds no agent role for this wallet.
+  // An agent key's scan has a deadline (T-C29): the agent gets our reason, not a client timeout.
   list_rules: async (input: unknown, io: ToolIo) => {
     const { wallet } = input as { wallet: string }
     // The owner's own vault, or else every wallet that hired this key when it is an agent's (T-C24).
     const own = await io.loadVaultRules(wallet)
-    const found = own.vault !== null ? [own] : await io.findHirers(wallet)
+    const found =
+      own.vault !== null ? [own] : await withinHistoryDeadline(io.findHirers(wallet), wallet)
     return found.flatMap(({ owner, vault, rules }) =>
       owner === null || vault === null
         ? []
@@ -454,7 +475,7 @@ const DESCRIPTIONS: Record<ToolName, string> = {
     'link, they can take free practice SOL, pick a deposit and a cap, and approve 2 transactions ' +
     'that also send your key 0.01 SOL for fees; the same link resumes if they stop halfway. Pass ' +
     'agent (your public key), and wallet only if they gave it; mints ' +
-    '["So11111111111111111111111111111111111111112"], triggerType "stop", expiresAt null. You never name the limit, and a request that carries one is refused. Practice ' +
+    '["So11111111111111111111111111111111111111112"], triggerType "stop", expiresAt null (JSON null, not the string "null"). You never name the limit, and a request that carries one is refused. Practice ' +
     'fork only; elsewhere it refuses with the reason, which is the answer, not an error to retry.',
   list_rules:
     "The agent rules armed on a wallet's vault, read from the chain. Pass the owner's wallet, or " +

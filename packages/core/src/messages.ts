@@ -377,6 +377,26 @@ export const noVault = (a: { owner: string }): FailureMessage => ({
   systemDoes: 'Builds nothing. A swap from the wallet itself would spend with no limit at all.',
 })
 
+// T-C29. list_rules with an agent key scans that key's history for the wallets that hired it.
+export const noAgentHistory = (a: { agent: string }): FailureMessage => ({
+  id: 'no-agent-history',
+  text:
+    `No history found for ${a.agent}: 0 transactions on this chain, so it owns no vault and no ` +
+    `wallet has hired it as an agent. Arm one first: arm_rule returns the link.`,
+  mode: 'closed',
+  systemDoes: 'Returns no list. An empty one would not say whether the scan saw anything at all.',
+})
+
+export const historyTimedOut = (a: { agent: string; seconds: number }): FailureMessage => ({
+  id: 'history-timed-out',
+  text:
+    `The chain gave no answer in ${a.seconds} s while reading the history of ${a.agent}, so which ` +
+    `wallets hired this key is unknown, not none. Call list_rules with the owner's wallet ` +
+    `instead, or retry in a minute.`,
+  mode: 'closed',
+  systemDoes: 'Returns no list. An empty one would read as "nobody hired this key".',
+})
+
 export const noAgentRole = (a: { agent: string; vault: string; mint: string }): FailureMessage => ({
   id: 'no-agent-role',
   text:
@@ -555,6 +575,8 @@ export const AGENT_SURFACE_MESSAGES = [
     outputMint: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263',
   }),
   noVault({ owner: SAMPLE_WALLET }),
+  noAgentHistory({ agent: SAMPLE_WALLET }),
+  historyTimedOut({ agent: SAMPLE_WALLET, seconds: 4 }),
   noAgentRole({
     agent: SAMPLE_WALLET,
     vault: 'C7Bz4nps2z1NDftJUBzXQyeR2iDE5j5ztad5q1k4iA8R',

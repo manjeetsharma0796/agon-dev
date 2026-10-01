@@ -639,6 +639,18 @@ test('list_rules with an agent key lists every wallet that hires it, each rule w
   expect(rules.map((r) => r.owner)).toEqual([stranger.owner, WALLET])
 })
 
+// T-C29. Measured on the fork: getSignaturesForAddress gave no answer in 40 s, and opencode's MCP
+// client gives up at 5 s, so a scan with no deadline left the agent with a bare "Request timed out".
+test('list_rules answers inside 5 s when the agent key history read never answers, and names why', async () => {
+  const agent = 'DNDYmqxubRKmMtnq88AW4aUHreu88XrrGijAKpUojw1A'
+  const io = { ...NO_VAULT, findHirers: () => new Promise<never>(() => {}) }
+  const started = Date.now()
+  await expect(callTool('list_rules', { wallet: agent }, io)).rejects.toThrow(
+    new RegExp(`no answer in 4 s.*${agent}`),
+  )
+  expect(Date.now() - started).toBeLessThan(5_000)
+}, 10_000)
+
 // ---- T-C25: vault_status and sync_fork. ----
 
 const VAULT_ = '6L3SNQ1UJmDm7FfjnfRvwXj1ECyEciSAQsk2hndTqNye'
