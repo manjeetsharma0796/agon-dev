@@ -2839,7 +2839,7 @@ _(empty)_
   transactions inside a page, where they cannot be tested without a browser
 
 ### T-E16, Polish the vault screen, with a person in the loop
-- Status: open
+- Status: claimed 2026-10-02 | Owner: prithwish122 | Branch: feature/t-e16-waitlist-design
 - Depends-on: T-E06
 - Touches: apps/web/app/arm/
 - Serves: UX (judged)
