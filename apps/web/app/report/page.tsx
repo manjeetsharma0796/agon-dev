@@ -113,8 +113,8 @@ function Report() {
         </p>
       </header>
 
-      <form onSubmit={submit} className="form" style={{ marginTop: 0, justifyContent: 'start' }}>
-        <div className="form__field" style={{ flex: '1 1 320px' }}>
+      <form onSubmit={submit} className="form form--wide">
+        <div className="form__field">
           <label htmlFor="wallet" className="sr-only">
             Solana address
           </label>
