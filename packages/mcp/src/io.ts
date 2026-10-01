@@ -29,6 +29,7 @@ import {
   noChainConfigured,
   agentCannotPay,
   noOutputPocket,
+  noAgentHistory,
   noVault,
   syncForkOffFork,
   quoteNotRead,
@@ -405,6 +406,7 @@ export const liveIo = (): ToolIo => {
           limit: 100,
           before,
         })
+        if (page === 0 && signatures.length === 0) throw new Refusal(noAgentHistory({ agent }))
         txs.push(
           ...((await Promise.all(
             signatures.map((s) =>
