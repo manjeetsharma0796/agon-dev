@@ -2672,6 +2672,26 @@ _(empty)_
   signing slice is not done and whose package is private; this kit bridges until it lands, then goes
 - Kill criterion: none; retired when T-C08 signs trades and `@agon/cli` installs
 
+### T-C29, list_rules answers inside 4 s: a slow history read times out by name, an empty one says so
+- Status: open
+- Depends-on: T-C24
+- Touches: packages/mcp/src/index.ts, packages/mcp/src/io.ts, packages/mcp/src/mcp.test.ts, packages/core/src/messages.ts
+- Note: index.ts and io.ts also sit in T-C21, T-C26 and T-C27's `Touches:`. This row is narrower
+  than any of them: 1 deadline around the agent-key history scan, 1 refusal for an empty history,
+  2 catalogue rows, and the `expiresAt` wording. 0 changes to what a found rule looks like.
+- Serves: Functionality (judged) ; agent onboarding latency
+- Acceptance: found 2026-10-02 driving opencode 1.18.34 with MiMo v2.6 Flash against the compose
+  stack: `list_rules` for an agent key sent only keepalives for 150 s, because the fork's
+  `getSignaturesForAddress` gave no answer in 40 s while `getAccountInfo` answered in 0.28 s, and
+  the 4-page history scan has no deadline. opencode's MCP client gives up at 5 s, so the agent saw a
+  bare "Request timed out" and retried 2 times. After this row: with a history read that never
+  answers, `list_rules` returns an error naming the 4 s deadline, the key and what to do next, in
+  under 5 s; with 0 signatures it returns a "no history found" refusal, never an empty list; with
+  history but no hirer it still returns `rules: []`; and the arm_rule wording says `expiresAt` is JSON
+  null, because the same session sent the string "null" 2 times and was refused 2 times
+- Evidence: <PR link, with the opencode run before and after>
+- Kill criterion: none. An agent that waits forever on onboarding step 4 never reaches a trade
+
 ### T-C25, 2 more tools: vault_status for balances, trades and P&L, and sync_fork for a fork out of step
 - Status: in-review 2026-10-01 | Owner: manjeetsharma0796 | Branch: feature/t-c25-vault-status-sync-fork
 - Depends-on: T-C21, T-C24
