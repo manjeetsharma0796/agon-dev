@@ -771,13 +771,15 @@ textarea {
 .ledger__row {
   display: grid;
   grid-template-columns: minmax(96px, 0.55fr) minmax(0, 1fr);
-  align-items: center;
+  align-items: start;
   gap: 14px;
   padding-top: 14px;
   border-top: 1px solid var(--hairline);
 }
 .ledger__k {
   margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
   color: var(--fg-dim);
   font-size: 11px;
   letter-spacing: 0.14em;
