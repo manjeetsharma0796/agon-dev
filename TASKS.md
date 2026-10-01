@@ -2673,7 +2673,7 @@ _(empty)_
 - Kill criterion: none; retired when T-C08 signs trades and `@agon/cli` installs
 
 ### T-C29, list_rules answers inside 4 s: a slow history read times out by name, an empty one says so
-- Status: claimed 2026-10-02 | Owner: jishnu-baruah | Branch: feature/t-c29-list-rules-deadline
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/265 | Owner: jishnu-baruah | Branch: feature/t-c29-list-rules-deadline
 - Depends-on: T-C24
 - Touches: packages/mcp/src/index.ts, packages/mcp/src/io.ts, packages/mcp/src/mcp.test.ts, packages/core/src/messages.ts
 - Note: index.ts and io.ts also sit in T-C21, T-C26 and T-C27's `Touches:`. This row is narrower
@@ -2689,7 +2689,13 @@ _(empty)_
   under 5 s; with 0 signatures it returns a "no history found" refusal, never an empty list; with
   history but no hirer it still returns `rules: []`; and the arm_rule wording says `expiresAt` is JSON
   null, because the same session sent the string "null" 2 times and was refused 2 times
-- Evidence: <PR link, with the opencode run before and after>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/265. Before: no answer in 150 s, and
+  opencode exited 124 on its own timeout. After: the named refusal in 4.54 s, and opencode exits 0
+  with the agent repeating the reason
+- Finding: the 4 s deadline leaves 0.46 s under opencode's 5 s client limit, because the vault
+  lookup runs first and outside it. And 34 characters of `expiresAt` wording took the onboarding
+  instructions from 2,019 to 2,053 against the 2,028 cap Claude Code keeps, so the wording lives in
+  the arm_rule tool description only
 - Kill criterion: none. An agent that waits forever on onboarding step 4 never reaches a trade
 
 ### T-C25, 2 more tools: vault_status for balances, trades and P&L, and sync_fork for a fork out of step
