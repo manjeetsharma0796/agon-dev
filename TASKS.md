@@ -2875,8 +2875,8 @@ _(empty)_
   `quote-missing` and `text-not-screened`, which fire on every token: T-C22 and OP-38. An issuer
   list is still useful for impersonation, where Jev called the genuine USDC an imitation at 0.97,
   so it moves to OP-38's measurement
-### T-C24, check_trade agrees with prepare_swap on the fork: no history is judged unchecked, not refused
-- Status: claimed 2026-10-01 | Owner: prithwish122 | Branch: feature/t-c24-check-trade-no-history
+### T-C36, check_trade agrees with prepare_swap on the fork: no history is judged unchecked, not refused
+- Status: claimed 2026-10-01 | Owner: prithwish122 | Branch: feature/t-c36-check-trade-no-history
 - Depends-on: T-C21
 - Touches: packages/mcp/src/index.ts, packages/mcp/src/mcp.test.ts
 - Serves: Functionality (judged) ; a first-time trader can try the fork through an agent that
@@ -3089,3 +3089,123 @@ _(empty)_
   gains stay green and losses red
 - Kill criterion: none. Kept open on purpose: T-E18 was tested in a test renderer and against a
   running server, never by a person clicking through opencode
+
+### T-C30, The journal: every verdict and every action, with who did it, read only by the owner or a hired key
+- Status: open
+- Depends-on: none
+- Touches: packages/core/src/journal.ts, packages/core/src/index.ts, packages/core/src/contracts.test.ts,
+  fixtures/contracts/, packages/mcp/src/journal.ts, packages/mcp/src/journal.test.ts,
+  packages/mcp/src/index.ts, packages/mcp/src/serve.ts, packages/mcp/src/mcp.test.ts,
+  packages/mcp/src/token-budget.token.test.ts, packages/mcp/package.json, pnpm-lock.yaml,
+  docs/public/mcp-tools.md, docs/plans/agon-terminal.md, DECISIONS.md
+- Serves: Functionality (judged) ; UX (judged) ; the person and the agent read the same record of what
+  each of them did (docs/plans/agon-terminal.md section 4)
+- Acceptance: every `check_trade` call writes 1 row to Neon (time, slot, network, wallet, actor and its
+  key, mint, amounts in base units, verdict, reasons, rule version); a test that feeds a token name
+  through the call finds it in 0 rows; a failed write leaves the verdict byte for byte the same and
+  the next read names the failure; `get_activity` is appended to the tool list so the first tools keep
+  their order, inside a token budget set in the same PR; `GET /activity?wallet=` answers rows only to a
+  signature over a server nonce by the vault's owner or a hired agent key, and 401 with the reason to
+  anything else; database tests run against a local Postgres or skip by name, never against Neon from
+  CI; measured on Neon from this machine: write and read p50 over 20 calls
+- Evidence: <PR link>
+- Kill criterion: write p50 above 1 s, so the write goes off the answer's path and the read says the
+  log can lag by the measured number
+
+### T-C31, /overview: return against holding SOL, the equity curve and the cap meter, from 1 place
+- Status: open
+- Depends-on: T-C27
+- Touches: packages/mcp/src/overview.ts, packages/mcp/src/overview.test.ts, packages/mcp/src/serve.ts,
+  packages/core/src/overview.ts, packages/core/src/index.ts, fixtures/contracts/
+- Serves: Functionality (judged) ; UX (judged) ; every surface shows the same number for the same slot
+- Acceptance: `GET /overview?wallet=` returns T-C27's report plus 3 numbers built by arithmetic, each
+  test-first against a hand calculation on a recorded vault: the time-weighted return in SOL with 2
+  deposits and 1 withdrawal revalued at their own slots; the equity curve, where a missing candle is a
+  gap with its reason and never a joined line; cap used, left and refill slot per role and mint across
+  a window edge, with the burst worst case of 2 times the cap; the method line printed with each; 0
+  floats in any amount; every answer stamped with network, slot, rule version and each price's source
+  and time
+- Evidence: <PR link>
+- Kill criterion: none
+
+### T-C32, The action layer: 1 function per action, whoever presses it
+- Status: open
+- Depends-on: T-C30
+- Touches: packages/mcp/src/actions.ts, packages/mcp/src/actions.test.ts, packages/mcp/src/index.ts,
+  packages/mcp/src/serve.ts, packages/cli/src/daemon/sign.ts, packages/cli/src/daemon/submit.ts
+- Serves: Functionality (judged) ; every surface works with 0 LLM calls and every trade passes 1 guard
+- Acceptance: buy, sell, cancel and pause are each 1 function that runs `check_trade` first, refuses on
+  block, stops on unsure unless the caller confirms, signs with the agent key only inside its cap and
+  otherwise returns the owner link, and writes the journal row; a proposal unanswered for 120 s becomes
+  expired and does nothing; a sent trade with an unknown result is uncertain and never retried; tests on
+  the fork drive each action from a plain HTTP call with 0 LLM calls; fork only until T-D04
+- Evidence: <PR link, plus /security-review>
+- Kill criterion: none
+
+### T-C33, /market: candles, indicators, recent trades and 24h stats, cached for every client
+- Status: open
+- Depends-on: none
+- Touches: packages/mcp/src/market.ts, packages/mcp/src/market.test.ts, packages/mcp/src/indicators.ts,
+  packages/mcp/src/indicators.test.ts, packages/mcp/src/serve.ts
+- Serves: UX (judged) ; the trade view a trader expects, honest about where each number came from
+- Acceptance: `GET /market?mint=&range=` returns GeckoTerminal candles from 1m to 1d, recent trades and
+  24h price, change, high, low and volume, each stamped with its pool and time; MA, EMA, Bollinger, RSI,
+  MACD and volume come from 1 pure module, each tested against hand values on a 30-candle fixture; 1
+  server cache keyed by pool and range, so 10 clients polling 1 mint make at most 30 upstream calls a
+  minute, measured
+- Evidence: <PR link>
+- Kill criterion: none
+
+### T-C34, /stream and the status bar: live slot, ping, fees and connection state
+- Status: open
+- Depends-on: none
+- Touches: packages/mcp/src/stream.ts, packages/mcp/src/stream.test.ts, packages/mcp/src/serve.ts
+- Serves: UX (judged) ; a trader sees whether the data is live and how fast the chain is answering
+- Acceptance: `GET /stream` (server-sent events) carries slot from a Helius `slotSubscribe` held on the
+  server, and `GET /status` returns RPC ping as a timed `getSlot` every 5 s, slot lag, TPS from
+  `getRecentPerformanceSamples`, priority fee levels for given accounts, the Jito tip floor and SOL
+  price, each with its age; after a dropped upstream it reconnects with backoff and reports
+  reconnecting with the attempt count; a test scans every response for the Helius key and finds it 0
+  times; measured from this machine: ping p50 and slot event delay
+- Evidence: <PR link>
+- Kill criterion: none
+
+### T-C35, The order book, or the honest depth, for every pool type
+- Status: open
+- Depends-on: T-C33
+- Touches: packages/mcp/src/depth.ts, packages/mcp/src/depth.test.ts, packages/mcp/src/market.ts,
+  packages/mcp/package.json, pnpm-lock.yaml
+- Serves: UX (judged) ; order book visibility without inventing resting orders that do not exist
+- Acceptance: `/market` gains a book: Manifest's real bids and asks; Meteora DLMM bins; Raydium CLMM
+  liquidity from its position line converted to token amounts; constant product and bonding curves as
+  the cost to move the price 1, 2, 5 and 10% from the reserves; each labelled with its kind and slot,
+  and AMM depth worded "AMM liquidity, not resting orders"; the constant product arithmetic tested
+  against x times y equals k by hand; checked on 1 live pool of each kind
+- Evidence: <PR link>
+- Kill criterion: none
+
+### T-E21, Portfolio in opencode
+- Status: open
+- Depends-on: T-C31, T-C34
+- Touches: .opencode/tui/agon-portfolio.tsx, .opencode/tui/agon-discovery.tsx
+- Serves: UX (judged) ; the portfolio with no browser and no LLM
+- Acceptance: the plugin draws `/overview` and `/status` with 0 arithmetic of its own: status bar, cap
+  meter, return against holding SOL with its method line, balances, activity, a half-block candle chart
+  with trades marked and a hover crosshair, the equity curve; the keys of docs/plans/agon-terminal.md
+  section 7b, none of which opencode already uses; read at 80 and 140 columns with no overprinted line
+  and every number equal to the one `/overview` gives for the same slot
+- Evidence: <PR link, screenshots>
+- Kill criterion: none
+
+### T-E22, Portfolio in Claude Code, and the plugin moves into the repo
+- Status: open
+- Depends-on: T-C31, T-C34
+- Touches: plugins/claude-code/
+- Serves: UX (judged) ; the same portfolio in Claude Code's terminal and desktop app
+- Acceptance: the Claude Code plugin lives in the repo and passes `claude plugin validate` and its own
+  tests; it draws `/overview` and `/status` with 0 arithmetic: the band shows connection, ping, cap
+  used and return; the pane shows the rest, braille and half-block on the terminal, SVG on the
+  desktop; read at 60, 80 and 140 columns; every number equal to the one `/overview` gives for the
+  same slot
+- Evidence: <PR link, screenshots>
+- Kill criterion: none
