@@ -226,6 +226,13 @@ const iso = (t: number): string => new Date(t).toISOString()
 
 export const assembleStatus = (s: Snapshot, now: number) => ({
   network: s.network,
+  // `rpcCall` only knows mainnet, and a fork or devnet has no live feed of its own here.
+  readsFrom: 'mainnet',
+  ...(s.network !== 'mainnet'
+    ? {
+        networkNote: `This server is on ${s.network}, but every reading below is from mainnet through Helius. Use it for how the real chain is doing, not for ${s.network}.`,
+      }
+    : {}),
   at: iso(now),
   dataSlot: s.slot.value?.slot ?? null,
   upstream: { ...s.upstream, since: iso(s.upstream.since) },
@@ -535,6 +542,9 @@ export const createStream = (deps: StreamDeps) => {
     }
     attempt = 0
     s.upstream = { state: 'connecting', since: Date.now() }
+    // A slot kept from before an idle stop would make the first lag hours wrong and look fresh.
+    s.slot = { error: 'waiting for the first slotSubscribe event' }
+    s.slotLag = { error: 'needs 1 getSlot answer and 1 slot event' }
     connect()
     timers = [
       setInterval(tick, PING_EVERY_MS),

@@ -328,3 +328,23 @@ test('bad accounts are a 400 that names the position and the fix', async () => {
   expect(code).toBe(400)
   expect(JSON.parse(body)).toEqual({ error: expect.stringMatching(/account 1 .*comma separated/) })
 })
+
+test('after an idle stop, the first lag is not taken against a slot from before it', async () => {
+  const hub = createStream({ ...deps(), network: 'fork' })
+  const unsubscribe = hub.subscribe(() => {})
+  FakeSocket.last!.onopen?.()
+  FakeSocket.last!.slot(300_000_000)
+  unsubscribe()
+  // 2 idle minutes stop the hub; an hour later somebody asks again.
+  await vi.advanceTimersByTimeAsync(3_600_000)
+  const s = JSON.parse((await hub.statusBody(new URL('http://x/status'))).body) as {
+    slotLag: { value?: unknown }
+    dataSlot: unknown
+    networkNote: string
+  }
+  hub.stop()
+  expect(s.slotLag.value).toBeUndefined()
+  expect(s.dataSlot).toBeNull()
+  // The readings are mainnet whatever this server runs on, and the answer says so.
+  expect(s.networkNote).toMatch(/on fork, but every reading below is from mainnet/)
+})
