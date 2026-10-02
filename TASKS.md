@@ -3157,7 +3157,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-C34, /stream and the status bar: live slot, ping, fees and connection state
-- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-c34-stream
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/272 | Owner: jishnu-baruah | Branch: feature/t-c34-stream
 - Depends-on: none
 - Touches: packages/mcp/src/stream.ts, packages/mcp/src/stream.test.ts, packages/mcp/src/serve.ts
 - Serves: UX (judged) ; a trader sees whether the data is live and how fast the chain is answering
@@ -3167,7 +3167,17 @@ _(empty)_
   price, each with its age; after a dropped upstream it reconnects with backoff and reports
   reconnecting with the attempt count; a test scans every response for the Helius key and finds it 0
   times; measured from this machine: ping p50 and slot event delay
-- Evidence: <PR link>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/272, measured from India on
+  2026-10-03 with the real key over 110 s: ping p50 251 ms over 20 samples (p95 281, min 206, max
+  286); 413 slot events for 412 slots, 0 missed, event gap p50 263 ms, p95 388, max 583; slot lag
+  against `getSlot` (processed) 0 in 13 of 21 samples and the stream 1 slot ahead in 8, never behind;
+  the Helius key found 0 times in every frame and body, live and in the unit test
+- Finding: slots are 266 ms apart on mainnet now, not the 400 ms everyone quotes, measured 2 ways
+  (412 slot events in 110 s; 220 to 230 slots per 60 s in `getRecentPerformanceSamples`), so the
+  10 s stall threshold is about 37 missed slots. With no accounts `getRecentPrioritizationFees` read 0
+  in 150 of 150 slots at every level, while the Raydium SOL/USDC pool read p50 10,000 micro-lamports
+  per CU and max 1,000,000, so the answer warns when no accounts are passed. A 5 s ping alone is
+  17,280 Helius calls a day, so the hub starts on the first request and stops after 2 idle minutes
 - Kill criterion: none
 
 ### T-C35, The order book, or the honest depth, for every pool type
