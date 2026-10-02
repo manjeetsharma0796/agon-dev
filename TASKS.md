@@ -3143,7 +3143,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-C33, /market: candles, indicators, recent trades and 24h stats, cached for every client
-- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-c33-market
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/273 | Owner: jishnu-baruah | Branch: feature/t-c33-market
 - Depends-on: none
 - Touches: packages/mcp/src/market.ts, packages/mcp/src/market.test.ts, packages/mcp/src/indicators.ts,
   packages/mcp/src/indicators.test.ts, packages/mcp/src/serve.ts
@@ -3153,7 +3153,7 @@ _(empty)_
   MACD and volume come from 1 pure module, each tested against hand values on a 30-candle fixture; 1
   server cache keyed by pool and range, so 10 clients polling 1 mint make at most 30 upstream calls a
   minute, measured
-- Evidence: this PR (feature/t-c33-market). Measured from this machine 2026-10-03 against real
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/273. Measured from this machine 2026-10-03 against real
   GeckoTerminal, twice: 10 concurrent pollers on SOL (So111...112), range 1m, each polling every 1 s
   for 180 s through the built server. Final build: 1,640 answers, all 200; 13 upstream calls (1
   pool, 6 candles, 6 trades), at most 5 in any 60 s window against a budget of 30; cache hit rate
