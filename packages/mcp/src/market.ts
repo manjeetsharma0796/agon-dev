@@ -10,9 +10,9 @@
 // flight, so 10 clients asking at once cost 1 call. Lessons from .opencode/tui/agon-discovery.tsx,
 // where 10 sparklines asked at once got 429 on every one.
 //
-// Outside text is data (CLAUDE.md, OP-38): GeckoTerminal sends pool and token names, and none of
-// them is returned here. The T-C33 row does not ask for a name, so the answer carries the mint and
-// pool addresses only. Every address read from GeckoTerminal is checked as base58 before it goes
+// Outside text is data, and token names reach no agent: GeckoTerminal sends pool and token
+// names, and none of them is returned here. The T-C33 row does not ask for a name, so the answer
+// carries the mint and pool addresses only. Every address read from GeckoTerminal is checked as base58 before it goes
 // into a URL or the answer.
 
 import type { ServerResponse } from 'node:http'
