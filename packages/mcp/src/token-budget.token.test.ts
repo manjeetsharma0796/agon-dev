@@ -1,5 +1,9 @@
+import { generateKeyPairSync, sign } from 'node:crypto'
+import { PublicKey } from '@solana/web3.js'
 import { expect, test } from 'vitest'
-import { callAsTool } from './index.js'
+import { callAsTool, callTool } from './index.js'
+import { liveIo } from './io.js'
+import { activityMessage, checkTradeRow, createJournal } from './journal.js'
 import { SWAP, SWAP_VAULT, swapIo, textOf } from './test-support.js'
 
 // CI budgets, enforced by the `token-budget` vitest project: get_report 2,000 tokens, check_trade
@@ -71,4 +75,57 @@ test('prepare_swap stays inside the 700 token budget at the largest legal transa
     tokens,
     `prepare_swap was ~${Math.round(tokens)} tokens against a 700 budget`,
   ).toBeLessThanOrEqual(700)
+})
+
+// get_activity (T-C30), budget 4,000, set with the tool; 3,478 measured on 2026-10-03. Measured at its largest legal answer: the
+// 10-row limit, every row a real check_trade verdict over the recorded wallet (the longest reasons we
+// produce), plus the 5 write failures an answer lists. The journal is read to answer "why did I
+// sell", so it carries whole verdicts; 10 of them is what that costs.
+test('get_activity stays inside the 4,000 token budget at 10 full rows and 5 failures', async () => {
+  const { publicKey, privateKey } = generateKeyPairSync('ed25519')
+  const owner = new PublicKey(
+    Buffer.from(publicKey.export({ format: 'jwk' }).x ?? '', 'base64url'),
+  ).toBase58()
+  const verdict = (await callTool('check_trade', TRADE)) as never
+  const failing = { up: true }
+  const rows: unknown[] = []
+  const journal = createJournal({
+    insert: async (row) => {
+      if (!failing.up) throw Object.assign(new Error('x'), { code: 'ECONNREFUSED' })
+      rows.unshift(row)
+    },
+    list: async () => rows as never,
+  })
+  for (let i = 0; i < 10; i++) {
+    await journal.record(checkTradeRow({ ...TRADE, wallet: owner } as never, { verdict }))
+  }
+  failing.up = false
+  for (let i = 0; i < 7; i++) {
+    await journal.record(checkTradeRow({ ...TRADE, wallet: owner } as never, { verdict }))
+  }
+
+  const challenge = textOf(await callAsTool('get_activity', { wallet: owner }, liveIo(), journal))
+  const nonce = /Nonce ([0-9a-f]{64})/.exec(challenge)?.[1] ?? ''
+  const raw = sign(null, Buffer.from(activityMessage(owner, nonce), 'utf8'), privateKey)
+  const B58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+  let signature = ''
+  for (let n = BigInt('0x' + raw.toString('hex')); n > 0n; n /= 58n) {
+    signature = B58[Number(n % 58n)] + signature
+  }
+  for (let i = 0; raw[i] === 0; i++) signature = '1' + signature
+  const result = await callAsTool(
+    'get_activity',
+    { wallet: owner, signer: owner, nonce, signature },
+    liveIo(),
+    journal,
+  )
+  expect(result.isError).not.toBe(true)
+  const answer = JSON.parse(textOf(result)) as { rows: unknown[]; writeFailures: unknown[] }
+  expect(answer.rows).toHaveLength(10)
+  expect(answer.writeFailures).toHaveLength(5)
+  const tokens = approxTokens(textOf(result))
+  expect(
+    tokens,
+    `get_activity was ~${Math.round(tokens)} tokens against a 4,000 budget`,
+  ).toBeLessThanOrEqual(4000)
 })

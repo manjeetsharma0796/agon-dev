@@ -34,6 +34,7 @@ import { assessTrade, DEFAULT_QUOTE, tradedMints, type Quote } from '@agon/guard
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import { liveIo, valueTrades, type ToolIo } from './io.js'
+import { checkTradeRow, journalFor, readActivity, type Journal } from './journal.js'
 
 export { TOOLS, type ToolName }
 
@@ -44,7 +45,14 @@ export interface ToolRefusal {
   message: string
 }
 
-type Handler = (input: unknown, io: ToolIo) => unknown | Promise<unknown>
+type Handler = (input: unknown, io: ToolIo, journal: Journal) => unknown | Promise<unknown>
+
+/**
+ * The journal a caller gets when it names none: no database, so every write is a named failure and
+ * every read is refused. Only serve.ts opens the real one, so no test or library caller can write
+ * to Neon by accident.
+ */
+const NO_JOURNAL = journalFor(undefined)
 
 /** The widest slippage prepare_swap builds with, in bps. */
 const MAX_SLIPPAGE_BPS = 100
@@ -127,8 +135,20 @@ const handlers = {
 
   // Real. Reads this wallet's own history and this mint's own authorities, then runs the same
   // `assessTrade` the CLI runs, so the agent and the terminal cannot answer differently.
-  check_trade: async (input: unknown, io: ToolIo) =>
-    (await judge(io, toolContracts.check_trade.input.parse(input), null)).verdict,
+  // Every call writes 1 journal row, verdict or refusal (T-C30). `record` never throws and the verdict
+  // is returned as judged, so a database that is down changes nothing the caller reads.
+  check_trade: async (input: unknown, io: ToolIo, journal: Journal) => {
+    const trade = toolContracts.check_trade.input.parse(input)
+    let verdict
+    try {
+      verdict = (await judge(io, trade, null)).verdict
+    } catch (error) {
+      await journal.record(checkTradeRow(trade, { error }))
+      throw error
+    }
+    await journal.record(checkTradeRow(trade, { verdict }))
+    return verdict
+  },
 
   arm_rule: (input: unknown) =>
     armRule(input, {
@@ -393,6 +413,10 @@ const handlers = {
     const { inputMint, outputMint } = toolContracts.sync_fork.input.parse(input)
     return io.syncFork([inputMint ?? WSOL_MINT, outputMint ?? USDC_MINT])
   },
+
+  // The journal, read only with a signature by the wallet or a key its vault hires (T-C30).
+  get_activity: (input: unknown, io: ToolIo, journal: Journal) =>
+    readActivity(toolContracts.get_activity.input.parse(input), io, journal),
 } satisfies Record<ToolName, Handler>
 
 /**
@@ -413,10 +437,11 @@ export const callTool = async (
   name: ToolName,
   input: unknown,
   io: ToolIo = liveIo(),
+  journal: Journal = NO_JOURNAL,
 ): Promise<unknown> => {
   const contract = toolContracts[name]
   const parsed = contract.input.parse(input)
-  return contract.output.parse(await handlers[name](parsed, io))
+  return contract.output.parse(await handlers[name](parsed, io, journal))
 }
 
 export const isTool = (name: string): name is ToolName =>
@@ -510,6 +535,13 @@ const DESCRIPTIONS: Record<ToolName, string> = {
     "accounts a pair's route reads (wSOL to USDC unless you pass inputMint and outputMint). It never " +
     'restarts the fork or resets a vault, so nothing armed is lost. Returns the clock lag before and ' +
     'after, the accounts refreshed, and a note to read to the user.',
+  get_activity:
+    "The vault's journal: every check_trade verdict and every action, newest first, with who did " +
+    'it (owner-web, owner-terminal or agent) and its key, by mint, amounts in base units. Call it ' +
+    'with wallet alone: it refuses with a nonce and the exact text to sign. Sign that text with the ' +
+    "owner's key or an agent key the vault hires, then call again with signer, nonce and signature " +
+    '(base58) within 60 s; limit is 1 to 10, default 10. writeFailures lists writes that did not ' +
+    'land, so a missing row is never silent. Mints only, never token names.',
 }
 
 /**
@@ -524,10 +556,11 @@ export const callAsTool = async (
   name: ToolName,
   input: unknown,
   io: ToolIo = liveIo(),
+  journal: Journal = NO_JOURNAL,
 ): Promise<CallToolResult> => {
   const net = network(process.env['AGON_NETWORK'])
   try {
-    const result = await callTool(name, input ?? {}, io)
+    const result = await callTool(name, input ?? {}, io, journal)
     // A fixture-backed number goes out wearing the label. An agent repeating a figure it was given
     // cannot know it was an example unless the payload says so.
     //
@@ -572,6 +605,7 @@ export const callAsTool = async (
 export const createServer = (
   makeIo: () => ToolIo = liveIo,
   kit = 'http://127.0.0.1:8787/kit.mjs',
+  journal: Journal = NO_JOURNAL,
 ): McpServer => {
   const server = new McpServer(
     { name: 'agon', version: '0.0.0' },
@@ -584,7 +618,7 @@ export const createServer = (
       { title: name, description: DESCRIPTIONS[name], inputSchema: toolContracts[name].input },
       // A fresh io per call, not per server: the fixture flag is per request, and a server that
       // outlives one request would otherwise carry the first answer's flag onto every later one.
-      (args: unknown) => callAsTool(name, args, makeIo()),
+      (args: unknown) => callAsTool(name, args, makeIo(), journal),
     )
   }
 

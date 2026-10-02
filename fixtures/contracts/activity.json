@@ -1,0 +1,66 @@
+{
+  "synthetic": true,
+  "wallet": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+  "rows": [
+    {
+      "id": "6f1c2a4e-8b3d-4c5e-9f70-1a2b3c4d5e6f",
+      "time": "2026-10-03T09:41:07.000Z",
+      "slot": 312904411,
+      "network": "fork",
+      "wallet": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+      "actor": "agent",
+      "actorKey": null,
+      "action": "check_trade",
+      "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "side": "buy",
+      "size": "3200000000",
+      "received": null,
+      "verdict": "block",
+      "reasons": [
+        {
+          "rule": "size-vs-median",
+          "message": "4.1x your median size of 0.8 SOL. Stopped.",
+          "observed": 4.1,
+          "limit": 2,
+          "unit": "x-median"
+        }
+      ],
+      "ruleVersion": "profile-2026-09-24-a",
+      "signature": null,
+      "status": "checked"
+    },
+    {
+      "id": "0b9e8d7c-6a5b-4f3e-8d2c-1b0a9f8e7d6c",
+      "time": "2026-10-03T09:40:51.000Z",
+      "slot": null,
+      "network": "fork",
+      "wallet": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+      "actor": "agent",
+      "actorKey": null,
+      "action": "check_trade",
+      "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "side": "buy",
+      "size": "0",
+      "received": null,
+      "verdict": null,
+      "reasons": [
+        {
+          "rule": "zero-size-trade",
+          "message": "A size of 0 is not a trade, so there is nothing to check."
+        }
+      ],
+      "ruleVersion": null,
+      "signature": null,
+      "status": "refused"
+    }
+  ],
+  "writeFailures": [
+    {
+      "time": "2026-10-03T09:39:12.000Z",
+      "wallet": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+      "action": "check_trade",
+      "cause": "ECONNREFUSED"
+    }
+  ],
+  "basis": "Newest first, 2 rows of this wallet's journal on fork. 1 write failed and is listed in writeFailures, so that check_trade has no row."
+}
