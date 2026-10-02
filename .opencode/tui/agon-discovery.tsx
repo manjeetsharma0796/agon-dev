@@ -309,7 +309,7 @@ const RANGES: Range[] = [
   { label: '30d', path: 'day', aggregate: 1, limit: 30 },
 ]
 
-type Series = { closes: number[]; volumes: number[] }
+type Series = { closes: number[]; volumes: number[]; times: number[] }
 
 // Every GeckoTerminal call goes through 1 queue, about 2 s apart, because its free tier allows
 // about 30 a minute: a watchlist asking for 10 sparklines at once got 429 on every one. The detail
@@ -365,7 +365,11 @@ async function candles(pool: string, range: Range, urgent: boolean): Promise<Ser
   const list = [...(body.data?.attributes?.ohlcv_list ?? [])]
     .reverse()
     .filter((c) => Array.isArray(c) && num(c[4]) !== null)
-  return { closes: list.map((c) => num(c[4])!), volumes: list.map((c) => num(c[5]) ?? 0) }
+  return {
+    closes: list.map((c) => num(c[4])!),
+    volumes: list.map((c) => num(c[5]) ?? 0),
+    times: list.map((c) => num(c[0]) ?? 0),
+  }
 }
 
 // Braille: each cell is a 2 by 4 dot grid, so a W by H cell chart has 2W by 4H dots.
@@ -847,6 +851,19 @@ function Chart(props: {
   const first = () => data()?.closes[0] ?? null
   const last = () => data()?.closes.at(-1) ?? null
   const change = () => (first() && last() ? ((last()! - first()!) / first()!) * 100 : null)
+  // Hovering the chart reads it: the column under the mouse, its price and its time.
+  const W = 36
+  let area: { x: number } | undefined
+  const [hover, setHover] = createSignal<number | null>(null)
+  const at = () => {
+    const h = hover()
+    const d = data()
+    if (h === null || !d || d.closes.length < 2) return null
+    const i = Math.round((h / (W - 1)) * (d.closes.length - 1))
+    const t = d.times[i]
+    const when = t ? new Date(t * 1000).toISOString().slice(5, 16).replace('T', ' ') + ' UTC' : ''
+    return { col: h, text: `${price(d.closes[i]!)}  ${when}` }
+  }
   return (
     <box flexDirection="column" gap={0} flexShrink={0}>
       <box flexDirection="row" height={1}>
@@ -870,13 +887,32 @@ function Chart(props: {
           </text>
         }
       >
-        <For each={brailleLine(data()!.closes, 36, props.rows)}>
-          {(line) => (
-            <text fg={colourOf(api, change())} wrapMode="none">
-              {line}
-            </text>
+        <box
+          flexDirection="column"
+          ref={(r: { x: number }) => (area = r)}
+          onMouseMove={(e) => area && setHover(Math.max(0, Math.min(W - 1, e.x - area.x)))}
+          onMouseOut={() => setHover(null)}
+        >
+          <For each={brailleLine(data()!.closes, W, props.rows)}>
+            {(line) => (
+              <text fg={colourOf(api, change())} wrapMode="none">
+                {line}
+              </text>
+            )}
+          </For>
+        </box>
+        <Show when={at()}>
+          {(a) => (
+            <>
+              <text fg={theme()?.text} wrapMode="none">
+                {' '.repeat(a().col) + '^'}
+              </text>
+              <text fg={theme()?.text} wrapMode="none">
+                {a().text}
+              </text>
+            </>
           )}
-        </For>
+        </Show>
         <Show when={!props.compact}>
           <text fg={ink(api, theme()?.textMuted)} wrapMode="none">
             {sparkline(data()!.volumes, 36)}
