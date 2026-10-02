@@ -45,7 +45,10 @@ export const SPACING_MS = 2_100
 const MAX_WAITING = 30
 const TIMEOUT_MS = 10_000
 
-/** Fetches 1 URL and returns its parsed JSON, or throws an UpstreamError. Swapped out in tests. */
+/**
+ * Fetches 1 URL and returns its parsed JSON, or throws an error carrying the HTTP `status` when
+ * there was one. Swapped out in tests.
+ */
 export type Upstream = (url: string) => Promise<unknown>
 
 class UpstreamError extends Error {
@@ -77,9 +80,12 @@ const httpGet: Upstream = async (url) => {
 }
 
 /** A failure with its cause, its number and what to do next, never a bare "failed". */
+const statusOf = (e: unknown) =>
+  e && typeof e === 'object' && 'status' in e && typeof e.status === 'number' ? e.status : null
+
 const failure = (what: string, e: unknown): string => {
   const retry = `This server asks again after ${TTL.failure / 1000} s, so retry then.`
-  if (e instanceof UpstreamError && e.status === 429)
+  if (statusOf(e) === 429)
     return `${what}: GeckoTerminal answered 429, its free limit of about 30 calls a minute was hit. ${retry}`
   return `${what}: ${e instanceof Error ? e.message : String(e)}. ${retry}`
 }
@@ -256,7 +262,9 @@ export function readTrades(raw: unknown, mint: string) {
   }
 }
 
-type Entry = { at: number; settled: boolean; failed: boolean; promise: Promise<unknown> }
+type Entry = { at: number; ttl: number; settled: boolean; promise: Promise<unknown> }
+/** Entries kept. 4 per mint, so about 250 mints on screen at once before the oldest go. */
+const MAX_ENTRIES = 1_000
 
 export function createMarket(upstream: Upstream = httpGet, spacingMs = SPACING_MS) {
   // 1 queue: calls start 1 at a time, at least `spacingMs` apart.
@@ -287,14 +295,17 @@ export function createMarket(upstream: Upstream = httpGet, spacingMs = SPACING_M
   const cached = <T>(key: string, ttl: number, load: () => Promise<T>): Promise<T> => {
     const now = Date.now()
     const hit = cache.get(key)
-    if (hit && (!hit.settled || now - hit.at < (hit.failed ? TTL.failure : ttl)))
-      return hit.promise as Promise<T>
-    if (cache.size > 1_000)
-      for (const [k, e] of cache) if (e.settled && now - e.at > TTL.pool) cache.delete(k)
-    const entry: Entry = { at: now, settled: false, failed: false, promise: load() }
+    if (hit && (!hit.settled || now - hit.at < hit.ttl)) return hit.promise as Promise<T>
+    // Bounded, so a loop asking for random mints cannot grow it: expired entries go first, then
+    // the oldest. Map keeps insertion order, so the first keys are the oldest.
+    if (cache.size >= MAX_ENTRIES) {
+      for (const [k, e] of cache) if (e.settled && now - e.at >= e.ttl) cache.delete(k)
+      for (const k of cache.keys()) if (cache.size >= MAX_ENTRIES) cache.delete(k)
+    }
+    const entry: Entry = { at: now, ttl, settled: false, promise: load() }
     entry.promise.then(
       () => Object.assign(entry, { at: Date.now(), settled: true }),
-      () => Object.assign(entry, { at: Date.now(), settled: true, failed: true }),
+      () => Object.assign(entry, { at: Date.now(), settled: true, ttl: TTL.failure }),
     )
     cache.set(key, entry)
     return entry.promise as Promise<T>
@@ -303,7 +314,10 @@ export function createMarket(upstream: Upstream = httpGet, spacingMs = SPACING_M
 
   const pool = (mint: string) =>
     cached(`pool:${mint}`, TTL.pool, async () => {
-      const body = await queued(`${GT}/tokens/${mint}/pools?page=1`)
+      // GeckoTerminal answers 404 for a mint it does not list, which is "no pool", not an outage.
+      const body = await queued(`${GT}/tokens/${mint}/pools?page=1`).catch((e: unknown) => {
+        throw statusOf(e) === 404 ? new NoPool(mint) : e
+      })
       const data = obj(body)['data']
       // Ranked by 24h volume, not reserve. Measured 2026-10-03: SOL's largest reserve was a pumpswap
       // pool reporting $217.9M against $0.72M of volume, whose 1m candles were 21 h old. A pool

@@ -201,7 +201,7 @@ describe('the answer', () => {
     await vi.advanceTimersByTimeAsync(10_000)
     const a = await pending
     expect('error' in a.trades && a.trades.error).toMatch(
-      /^Recent trades: GeckoTerminal answered 429.*15 s/,
+      /^Recent trades: GeckoTerminal answered 429, its free limit of about 30 calls a minute.*15 s/,
     )
     expect('list' in a.candles).toBe(true)
   })
@@ -304,6 +304,17 @@ test('trades from the other side, or malformed, are counted out loud', () => {
   )
   expect(t.list).toEqual([])
   expect(t.leftOut).toMatch(/^2 of 2 trades from GeckoTerminal were left out/)
+})
+
+test('a mint GeckoTerminal does not list is a 404 that says so, not an outage', async () => {
+  const market = createMarket(async () => {
+    throw Object.assign(new Error('GeckoTerminal answered 404'), { status: 404 })
+  })
+  const pending = serve(`?mint=${SOL}`, market)
+  await vi.advanceTimersByTimeAsync(5_000)
+  const r = await pending
+  expect(r.status).toBe(404)
+  expect(r.body.error).toMatch(/lists no pool .* try again in 15 s/)
 })
 
 describe('GET /market at the trust boundary', () => {
