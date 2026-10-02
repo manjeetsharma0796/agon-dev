@@ -3157,7 +3157,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-C34, /stream and the status bar: live slot, ping, fees and connection state
-- Status: open
+- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-c34-stream
 - Depends-on: none
 - Touches: packages/mcp/src/stream.ts, packages/mcp/src/stream.test.ts, packages/mcp/src/serve.ts
 - Serves: UX (judged) ; a trader sees whether the data is live and how fast the chain is answering
