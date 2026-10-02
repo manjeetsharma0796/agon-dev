@@ -2992,6 +2992,10 @@ _(empty)_
   ctrl+p and ctrl+w do nothing; the selection stayed on the same token through 4 refreshes and 2
   watch toggles while its row moved from line 16 to line 10; the 3 hand-off prompts carry the mint
   and never the token's symbol or name
+- Evidence, 2026-10-02: the chart reads under the mouse. Hovering a column marks it and shows that
+  candle's price and time, for example "$1.44  09-22 02:28 UTC" on a fake series on OpenTUI 0.4.5,
+  and the readout goes when the mouse leaves; GeckoTerminal's candle times now travel with the
+  closes
 - Finding: a token's symbol reached the agent's prompt in Buy, Sell and Check. A symbol is
   outside text with no length limit, so it could carry an instruction to the agent inside text the
   user is asked to send. Only the mint is handed over now, and a token whose mint is not a Solana
