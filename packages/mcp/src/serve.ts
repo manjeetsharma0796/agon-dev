@@ -19,6 +19,7 @@ import {
 } from 'node:http'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { createServer } from './index.js'
+import { routeStream } from './stream.js'
 
 const PORT = Number(process.env['PORT'] ?? 8787)
 /** Loopback by default. Binding 0.0.0.0 exposes an unauthenticated server to the whole network. */
@@ -51,6 +52,7 @@ const handle = async (req: IncomingMessage, res: ServerResponse): Promise<void> 
     res.end(req.method === 'HEAD' ? undefined : KIT)
     return
   }
+  if (routeStream(req, res)) return
   if (!(req.url ?? '').startsWith('/mcp')) {
     res.writeHead(404, { 'content-type': 'application/json' })
     res.end(
