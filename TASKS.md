@@ -3091,7 +3091,7 @@ _(empty)_
   running server, never by a person clicking through opencode
 
 ### T-C30, The journal: every verdict and every action, with who did it, read only by the owner or a hired key
-- Status: open
+- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-c30-journal
 - Depends-on: none
 - Touches: packages/core/src/journal.ts, packages/core/src/index.ts, packages/core/src/contracts.test.ts,
   fixtures/contracts/, packages/mcp/src/journal.ts, packages/mcp/src/journal.test.ts,
