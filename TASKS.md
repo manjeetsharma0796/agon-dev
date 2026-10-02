@@ -2927,17 +2927,25 @@ _(empty)_
   transactions inside a page, where they cannot be tested without a browser
 
 ### T-E16, Polish the vault screen, with a person in the loop
-- Status: open
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/260 | Owner: prithwish122 | Branch: feature/t-e16-waitlist-design
 - Depends-on: T-E06
 - Touches: apps/web/app/arm/
+- Touches widened 2026-10-02 to apps/web/app/ and apps/web/public/fonts/: the frame, the landing
+  page and the report share the 1 stylesheet the vault screen uses, so restyling the vault alone
+  would have shipped 2 looks
 - Serves: UX (judged)
 - Acceptance: a person, not an agent, uses T-E06's screen end to end on the fork with Phantom and
   lists what is confusing, ugly or slow; each item is fixed or rejected with a reason; the layout
   works at 375 px wide; every control is reachable by keyboard and has a label a screen reader
   announces; 0 changes to what the screen does, only to how it looks and reads
-- Evidence: <the person's list, and a screenshot before and after>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/260, with before and after
+  screenshots at 1440 and 375 px for /, /arm and /report; the person's list is still owed
 - Kill criterion: none. Kept separate from T-E06 on purpose, so polish is judged by someone looking
   at it and cannot quietly change the behaviour T-E06 measured
+- Finding 2026-10-02: the waitlist page's own stylesheet carried over as it is, 14 component
+  classes and the tokens, and only 9 screen classes were new; both layout defects the screenshots
+  caught were in the 9, 0 in the 14. Nothing in CI renders a page or runs `next build`, only the
+  Docker image does, so the build and the screenshots were run by hand
 
 ### T-B17, The board lint refuses 2 rows on 1 branch, whatever their status
 - Status: done

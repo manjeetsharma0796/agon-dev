@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import Mark from '../Mark'
 import ConnectWallet from '../wallet/ConnectWallet'
 
 // The landing page, at /. A route group so the URL stays bare.
@@ -9,6 +10,8 @@ import ConnectWallet from '../wallet/ConnectWallet'
 // T-E08 budgets 3 steps from here to a report. There are 2: paste an address, press the button.
 // The report page reads the address off the query string and starts on its own, so arriving there
 // is not a third thing the user has to do. Everything else on this page is reading, not steps.
+//
+// The shape is the waitlist's hero: badge, headline, 1 glass panel holding the form.
 
 export default function Landing() {
   const router = useRouter()
@@ -16,73 +19,68 @@ export default function Landing() {
   const read = (address: string) => router.push(`/report?wallet=${encodeURIComponent(address)}`)
 
   return (
-    <main
-      style={{
-        maxWidth: '38rem',
-        margin: '0 auto',
-        padding: '3rem 1rem 4rem',
-        font: '16px/1.6 ui-sans-serif, system-ui, sans-serif',
-      }}
-    >
-      <h1 style={{ fontSize: '2rem', lineHeight: 1.15, margin: '0 0 0.75rem' }}>
-        Your own trading history, as a limit your agent has to trade inside
+    <main className="hero">
+      <span className="badge">
+        <Mark className="badge__mark" id="badge" />
+        Read only. No account, no signature.
+      </span>
+      <h1 className="headline">
+        Your own trading history, as a limit your agent has to{' '}
+        <span className="ember">trade inside</span>
       </h1>
-      <p style={{ color: 'var(--muted)', fontSize: '1.05rem', marginTop: 0 }}>
+      <p className="lede" style={{ textAlign: 'center' }}>
         Agon reads what you already do, finds the rules you actually follow, and can turn them into
         a cap enforced on Solana. Start by looking at your own history.
       </p>
 
-      {/* Connecting is optional: the paste field below still works for a visitor with no wallet. */}
-      <ConnectWallet onRead={read} />
+      <section className="glass" aria-labelledby="start">
+        <h2 id="start" className="glass__title">
+          Start with the wallet that trades
+        </h2>
+        <p className="glass__copy">
+          Connect it to read its address, or paste any Solana address. Nothing is signed either way.
+        </p>
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          read(wallet.trim())
-        }}
-        style={{ margin: '2rem 0' }}
-      >
-        <label
-          htmlFor="wallet"
-          style={{ display: 'block', fontWeight: 600, marginBottom: '0.3rem' }}
+        {/* Connecting is optional: the paste field below still works for a visitor with no wallet. */}
+        <ConnectWallet onRead={read} />
+
+        <form
+          className="form"
+          onSubmit={(e) => {
+            e.preventDefault()
+            read(wallet.trim())
+          }}
         >
-          Or paste a Solana address
-        </label>
-        <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-          <input
-            id="wallet"
-            value={wallet}
-            onChange={(e) => setWallet(e.target.value)}
-            placeholder="Paste an address"
-            spellCheck={false}
-            autoCapitalize="off"
-            autoComplete="off"
-            style={{ flex: '1 1 20rem', padding: '0.7rem', font: 'inherit' }}
-          />
-          <button
-            type="submit"
-            disabled={wallet.trim() === ''}
-            style={{ padding: '0.7rem 1.4rem', font: 'inherit', fontWeight: 600 }}
-          >
+          <div className="form__field">
+            <label htmlFor="wallet" className="sr-only">
+              Or paste a Solana address
+            </label>
+            <input
+              id="wallet"
+              className="form__input form__input--mono"
+              value={wallet}
+              onChange={(e) => setWallet(e.target.value)}
+              placeholder="Or paste a Solana address"
+              spellCheck={false}
+              autoCapitalize="off"
+              autoComplete="off"
+            />
+          </div>
+          <button type="submit" className="form__submit" disabled={wallet.trim() === ''}>
             Read my history
           </button>
-        </div>
-      </form>
+        </form>
 
-      {/* The three things a stranger needs to believe before pasting an address. */}
-      <ul style={{ listStyle: 'none', padding: 0, color: 'var(--muted)' }}>
-        <li>No account and no login. Nothing to sign up for.</li>
-        <li>
-          Read only. Connecting a wallet only reads its address. Nothing is ever signed, and your
-          key is never involved.
-        </li>
-        <li>
-          An address is public. Pasting one here tells us nothing the chain does not already say.
-        </li>
-      </ul>
+        {/* The three things a stranger needs to believe before pasting an address. */}
+        <p className="form__fine">
+          No account and no login. Connecting a wallet only reads its address: nothing is ever
+          signed, and your key is never involved. An address is public, so pasting one here tells us
+          nothing the chain does not already say.
+        </p>
+      </section>
 
-      <p style={{ marginTop: '2rem' }}>
-        Driving an agent instead? The four MCP tools are documented in{' '}
+      <p className="form__fine" style={{ marginTop: 28 }}>
+        Driving an agent instead? The MCP tools are documented in{' '}
         <code>docs/public/mcp-tools.md</code>, generated from the same contracts the server
         validates against.
       </p>

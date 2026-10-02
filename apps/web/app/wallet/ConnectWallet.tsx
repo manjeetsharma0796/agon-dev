@@ -25,8 +25,6 @@ interface EventsFeature {
   ): () => void
 }
 
-const buttonStyle = { padding: '0.7rem 1.4rem', font: 'inherit', fontWeight: 600 } as const
-
 export default function ConnectWallet({ onRead }: { onRead: (address: string) => void }) {
   // null until the browser has been asked, so a server render never claims "no wallet found".
   const [wallets, setWallets] = useState<Wallet[] | null>(null)
@@ -100,62 +98,49 @@ export default function ConnectWallet({ onRead }: { onRead: (address: string) =>
   if (wallets === null) return null
 
   if (connected) {
+    // The waitlist's wallet pill: icon, address, which wallet, and a change button at the end.
     return (
-      <section aria-label="Connected wallet" style={{ margin: '2rem 0' }}>
-        <p style={{ margin: '0 0 0.3rem', fontWeight: 600 }}>
-          Address from {connected.wallet.name}
-        </p>
-        <p
-          style={{
-            margin: '0 0 0.8rem',
-            fontFamily: 'ui-monospace, monospace',
-            wordBreak: 'break-all',
-          }}
-        >
-          {connected.address}
-        </p>
-        <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-          <button type="button" onClick={() => onRead(connected.address)} style={buttonStyle}>
-            Read my history
-          </button>
-          <button type="button" onClick={disconnect} style={{ ...buttonStyle, fontWeight: 400 }}>
+      <section aria-label="Connected wallet" className="form" style={{ marginTop: 24 }}>
+        <div className="form__wallet">
+          <img className="form__wallet-ico" src={connected.wallet.icon} alt="" />
+          <span className="form__wallet-addr">{connected.address}</span>
+          <span className="form__wallet-tag">{connected.wallet.name}</span>
+          <button type="button" className="form__wallet-change" onClick={disconnect}>
             Disconnect
           </button>
         </div>
+        <button type="button" className="form__submit" onClick={() => onRead(connected.address)}>
+          Read my history
+        </button>
       </section>
     )
   }
 
   return (
-    <section aria-label="Connect a wallet" style={{ margin: '2rem 0' }}>
+    <section aria-label="Connect a wallet">
       {wallets.length === 0 ? (
-        <p style={{ margin: 0 }}>
+        <p className="form__fine">
           No Solana wallet found in this browser. Install Phantom or Backpack to connect one, or
           paste an address below.
         </p>
       ) : (
-        <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+        <div className="wallets">
           {wallets.map((wallet) => (
             <button
               key={wallet.name}
               type="button"
+              className="btn btn--ghost"
               disabled={busy}
               onClick={() => connect(wallet)}
-              style={{
-                ...buttonStyle,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-              }}
             >
-              <img src={wallet.icon} alt="" width={20} height={20} />
+              <img className="btn__ico" src={wallet.icon} alt="" width={16} height={16} />
               Connect {wallet.name}
             </button>
           ))}
         </div>
       )}
       {problem && (
-        <p role="alert" style={{ margin: '0.8rem 0 0' }}>
+        <p role="alert" className="form__status form__status--error">
           {problem}
         </p>
       )}
