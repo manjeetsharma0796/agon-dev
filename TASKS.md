@@ -3143,7 +3143,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-C33, /market: candles, indicators, recent trades and 24h stats, cached for every client
-- Status: open
+- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-c33-market
 - Depends-on: none
 - Touches: packages/mcp/src/market.ts, packages/mcp/src/market.test.ts, packages/mcp/src/indicators.ts,
   packages/mcp/src/indicators.test.ts, packages/mcp/src/serve.ts
