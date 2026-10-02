@@ -5,7 +5,14 @@
 // what failed is kept and named on the next read. And a row is built field by field from our own
 // values, never spread from an input, so a token's name has no way in.
 
-import { createPublicKey, randomBytes, randomUUID, verify } from 'node:crypto'
+import {
+  createHmac,
+  createPublicKey,
+  randomBytes,
+  randomUUID,
+  timingSafeEqual,
+  verify,
+} from 'node:crypto'
 import {
   Activity,
   GetActivityInput,
@@ -244,22 +251,41 @@ export const checkTradeRow = (
 }
 
 // The signed read. A nonce is issued for 1 wallet, works once, and lives NONCE_TTL_S.
+//
+// Stateless until used: a nonce is its expiry, 8 random bytes and an HMAC over those and the wallet,
+// under a key made at start. Issuing stores nothing, so asking for nonces in a loop cannot fill a
+// table and lock real readers out. Only a nonce that opened the journal is remembered, until it
+// expires, so it cannot open it twice.
 
 const NONCE_TTL_S = 60
-/** Outstanding nonces at most, so asking for nonces in a loop cannot grow memory without bound. */
-const MAX_NONCES = 10_000
-const nonces = new Map<string, { wallet: string; expires: number }>()
+const NONCE_KEY = randomBytes(32)
+const used = new Map<string, number>()
+
+const nonceMac = (wallet: string, head: Buffer): Buffer =>
+  createHmac('sha256', NONCE_KEY).update(head).update(wallet).digest().subarray(0, 16)
 
 /** The exact text the owner or the hired key signs. Says plainly that signing it moves nothing. */
 export const activityMessage = (wallet: string, nonce: string): string =>
   `Agon: show the journal of ${wallet}. Nonce ${nonce}. Signing this moves no funds.`
 
 const issueNonce = (wallet: string, now: number): string => {
-  for (const [n, v] of nonces) if (v.expires <= now) nonces.delete(n)
-  if (nonces.size >= MAX_NONCES) throw new Refusal(tooManyNonces({ max: MAX_NONCES }))
-  const nonce = randomBytes(32).toString('hex')
-  nonces.set(nonce, { wallet, expires: now + NONCE_TTL_S * 1000 })
-  return nonce
+  const head = Buffer.alloc(16)
+  head.writeBigUInt64BE(BigInt(now + NONCE_TTL_S * 1000))
+  randomBytes(8).copy(head, 8)
+  return Buffer.concat([head, nonceMac(wallet, head)]).toString('hex')
+}
+
+/** Why this nonce cannot open this wallet's journal now, or null when it can. */
+const nonceProblem = (wallet: string, nonce: string, now: number): string | null => {
+  const bytes = Buffer.from(nonce, 'hex')
+  const head = bytes.subarray(0, 16)
+  if (!timingSafeEqual(bytes.subarray(16), nonceMac(wallet, head))) {
+    return 'That nonce was not issued by this server for this wallet, or the server restarted since.'
+  }
+  const expires = Number(head.readBigUInt64BE(0))
+  if (expires <= now) return `That nonce expired ${Math.ceil((now - expires) / 1000)} s ago.`
+  if (used.has(nonce)) return 'That nonce was already used.'
+  return null
 }
 
 const B58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
@@ -328,19 +354,8 @@ export const readActivity = async (
     })
   }
 
-  // Spent on any attempt, right or wrong, so a nonce cannot be tried twice.
-  const issued = nonces.get(nonce)
-  nonces.delete(nonce)
-  if (issued === undefined) {
-    throw new Unauthorized(nonceRejected({ why: 'That nonce was never issued here or was used.' }))
-  }
-  if (issued.expires <= now) {
-    const late = Math.ceil((now - issued.expires) / 1000)
-    throw new Unauthorized(nonceRejected({ why: `That nonce expired ${late} s ago.` }))
-  }
-  if (issued.wallet !== wallet) {
-    throw new Unauthorized(nonceRejected({ why: `That nonce was issued for ${issued.wallet}.` }))
-  }
+  const problem = nonceProblem(wallet, nonce, now)
+  if (problem !== null) throw new Unauthorized(nonceRejected({ why: problem }))
   if (!signedBy(signer, activityMessage(wallet, nonce), signature)) {
     throw new Unauthorized(badSignature({ signer }))
   }
@@ -358,6 +373,13 @@ export const readActivity = async (
       throw new Unauthorized(notHired({ wallet, signer, vault, hired: new Set(hired).size }))
     }
   }
+  // Spent only once it has opened the journal, so a wrong attempt cannot burn a reader's nonce and
+  // only an authorised reader adds to this map. 2 concurrent reads with 1 nonce by the same reader
+  // can both pass the check above; each shows that reader what they may read anyway.
+  if (used.has(nonce))
+    throw new Unauthorized(nonceRejected({ why: 'That nonce was already used.' }))
+  for (const [n, expires] of used) if (expires <= now) used.delete(n)
+  used.set(nonce, Number(Buffer.from(nonce, 'hex').readBigUInt64BE(0)))
 
   const limit = input.limit ?? 10
   const { rows, failures } = await journal.read(wallet, limit)
@@ -445,7 +467,7 @@ const nonceRejected = (a: { why: string }): FailureMessage => ({
     `${a.why} A nonce works once, for ${NONCE_TTL_S} s, for the wallet it was issued for. Call ` +
     'again with the wallet alone for a new one.',
   mode: 'closed',
-  systemDoes: 'Spends the nonce and shows no rows.',
+  systemDoes: 'Shows no rows.',
 })
 
 const badSignature = (a: { signer: string }): FailureMessage => ({
@@ -454,7 +476,7 @@ const badSignature = (a: { signer: string }): FailureMessage => ({
     `The signature does not verify for ${a.signer} over the text this nonce was issued with, so ` +
     'no rows are shown. Sign that exact text, as UTF-8, with the ed25519 key of the signer you name.',
   mode: 'closed',
-  systemDoes: 'Spends the nonce and shows no rows.',
+  systemDoes: 'Shows no rows. The nonce is not spent, so the right signature can still use it.',
 })
 
 const notHired = (a: {
@@ -482,15 +504,6 @@ const hiringUnread = (a: { wallet: string; signer: string; cause: string }): Fai
     'itself, which needs no chain read.',
   mode: 'closed',
   systemDoes: 'Fails closed: an unverified key is never treated as hired.',
-})
-
-const tooManyNonces = (a: { max: number }): FailureMessage => ({
-  id: 'activity-too-many-nonces',
-  text:
-    `${a.max} nonces are outstanding, the most this server holds, so no new one was issued. Each ` +
-    `expires within ${NONCE_TTL_S} s; try again then.`,
-  mode: 'closed',
-  systemDoes: 'Issues no nonce until expired ones are dropped.',
 })
 
 const journalUnreadable = (a: { cause: string }): FailureMessage => ({

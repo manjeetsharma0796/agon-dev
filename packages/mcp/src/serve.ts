@@ -63,9 +63,10 @@ const handle = async (req: IncomingMessage, res: ServerResponse): Promise<void> 
     return
   }
   // The journal's signed read (T-C30): 401 with the reason unless signed by the owner or a hired key.
-  const path = new URL(req.url ?? '/', 'http://local')
-  if (req.method === 'GET' && path.pathname === '/activity') {
-    const { status, body } = await activityRoute(path, liveIo(), JOURNAL)
+  // Matched as a string first: `new URL` throws on some request targets, and nothing catches here.
+  const url = req.url ?? '/'
+  if (req.method === 'GET' && (url === '/activity' || url.startsWith('/activity?'))) {
+    const { status, body } = await activityRoute(new URL(url, 'http://local'), liveIo(), JOURNAL)
     res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store' })
     res.end(JSON.stringify(body))
     return

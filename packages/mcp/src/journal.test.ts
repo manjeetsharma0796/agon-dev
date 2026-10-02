@@ -289,19 +289,33 @@ describe('GET /activity and get_activity answer only the wallet or a key its vau
     const proof = await signedRead(owner.address, owner, io, journal)
     await readActivity({ wallet: owner.address, ...proof }, io, journal)
     await expect(readActivity({ wallet: owner.address, ...proof }, io, journal)).rejects.toThrow(
-      /never issued here or was used/,
+      /already used/,
     )
   })
 
-  test('a failed attempt spends the nonce too, so it cannot be tried twice', async () => {
+  test('a failed attempt does not spend the nonce, so a wrong guess cannot lock the reader out', async () => {
     const { owner, stranger, io, journal } = setup()
     const proof = await signedRead(owner.address, owner, io, journal)
     await expect(
       readActivity({ wallet: owner.address, ...proof, signer: stranger.address }, io, journal),
     ).rejects.toThrow(/does not verify/)
-    await expect(readActivity({ wallet: owner.address, ...proof }, io, journal)).rejects.toThrow(
-      /never issued here or was used/,
-    )
+    const activity = await readActivity({ wallet: owner.address, ...proof }, io, journal)
+    expect(activity.rows).toEqual([])
+  })
+
+  test('asking for nonces in a loop stores nothing, so it locks no reader out', async () => {
+    const { owner, stranger, io, journal } = setup()
+    for (let i = 0; i < 20_000; i++) {
+      await readActivity({ wallet: owner.address }, io, journal).catch(() => undefined)
+    }
+    const proof = await signedRead(owner.address, owner, io, journal)
+    expect((await readActivity({ wallet: owner.address, ...proof }, io, journal)).rows).toEqual([])
+    // And a nonce this server never issued is refused, whoever signs it.
+    const forged = { signer: stranger.address, nonce: 'ab'.repeat(32) }
+    const signature = stranger.sign(activityMessage(owner.address, forged.nonce))
+    await expect(
+      readActivity({ wallet: owner.address, ...forged, signature }, io, journal),
+    ).rejects.toThrow(/not issued by this server for this wallet/)
   })
 
   test('a nonce expires after 60 s', async () => {
@@ -318,7 +332,7 @@ describe('GET /activity and get_activity answer only the wallet or a key its vau
     // The stranger asks for a nonce for their own wallet, then presents it for the owner's.
     const proof = await signedRead(stranger.address, stranger, io, journal)
     await expect(readActivity({ wallet: owner.address, ...proof }, io, journal)).rejects.toThrow(
-      new RegExp(`issued for ${stranger.address}`),
+      /not issued by this server for this wallet/,
     )
   })
 
