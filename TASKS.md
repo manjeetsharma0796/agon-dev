@@ -3154,11 +3154,12 @@ _(empty)_
   server cache keyed by pool and range, so 10 clients polling 1 mint make at most 30 upstream calls a
   minute, measured
 - Evidence: this PR (feature/t-c33-market). Measured from this machine 2026-10-03 against real
-  GeckoTerminal: 10 concurrent pollers on SOL (So111...112), range 1m, each polling every 1 s for
-  180 s through the built server: 1,630 answers, all 200; 13 upstream calls (1 pool, 6 candles, 6
-  trades), at most 5 in any 60 s window against a budget of 30; cache hit rate 99.8% (13 calls for
-  6,520 lookups); answer p50 13 ms, p95 456 ms, max 7.5 s (the cold start through the 2.1 s queue);
-  0 upstream 429s. Indicator tests: hand arithmetic on a 30-candle fixture, 10 tests
+  GeckoTerminal, twice: 10 concurrent pollers on SOL (So111...112), range 1m, each polling every 1 s
+  for 180 s through the built server. Final build: 1,640 answers, all 200; 13 upstream calls (1
+  pool, 6 candles, 6 trades), at most 5 in any 60 s window against a budget of 30; cache hit rate
+  99.8% (13 calls for 6,560 lookups); answer p50 12 ms, p95 557 ms, max 6.8 s (the cold start
+  through the 2.1 s queue); 0 upstream 429s. The earlier run: 1,630 answers, the same 13 calls and
+  5 a minute. Indicator tests: hand arithmetic on a 30-candle fixture, 10 tests
 - Finding: ranking pools by reserve, as the opencode chart does, picked the wrong pool for SOL. The
   largest reserve GeckoTerminal listed was a pumpswap pool reporting $217.9M against $0.72M of 24h
   volume, and its 1m candles ended 21 h earlier (a gap of 1,249 buckets, named, not drawn). A pool
