@@ -13,6 +13,10 @@
 // - Mouse: click a row to select it, the wheel scrolls the list, column titles sort, and the chips
 //   and buttons do what their keys do. Clicking a sidebar token opens the page on it.
 //
+// - A trade view (`/trade`, Enter on a token, or "Agon trade") drawn from the Agon server's
+//   /market, /status and /stream: candles, MA and EMA, the book or depth, recent trades and a
+//   status line. It lives in agon-trade.tsx.
+//
 // - A setup page (`/agon-setup`, or "Agon setup") that shows where onboarding stands: whether the
 //   Agon server answers, and what the wallet's vault holds through `list_rules`. It reads only
 //   public data. Arming, funding and revoking stay on the web screen, where the wallet signs; the
@@ -45,7 +49,7 @@ const ROUTE = 'agon.discovery'
 const JUP = 'https://lite-api.jup.ag/tokens/v2'
 const WATCH_KEY = 'agon.discovery.watchlist'
 const VIEW_KEY = 'agon.discovery.view'
-const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/
+export const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/
 
 const DEFAULT_WATCHLIST = [
   'So11111111111111111111111111111111111111112',
@@ -422,8 +426,9 @@ function sparkline(values: number[], w: number): string {
 /* formatting                                                                                      */
 /* ---------------------------------------------------------------------------------------------- */
 
-const pad = (s: string, n: number) => (s.length >= n ? s.slice(0, n) : s + ' '.repeat(n - s.length))
-const lpad = (s: string, n: number) =>
+export const pad = (s: string, n: number) =>
+  s.length >= n ? s.slice(0, n) : s + ' '.repeat(n - s.length)
+export const lpad = (s: string, n: number) =>
   s.length >= n ? s.slice(0, n) : ' '.repeat(n - s.length) + s
 const price = (p: number | null) =>
   p === null ? '-' : p >= 1 ? `$${p.toFixed(2)}` : `$${p.toPrecision(3)}`
@@ -449,7 +454,7 @@ const compact = (v: number | null, dollar = true) => {
             : [1, '']
   return `${dollar ? '$' : ''}${(v / d).toFixed(v >= 1e3 ? 1 : 0)}${s}`
 }
-const short = (mint: string) => `${mint.slice(0, 4)}...${mint.slice(-4)}`
+export const short = (mint: string) => `${mint.slice(0, 4)}...${mint.slice(-4)}`
 
 type SortKey = { label: string; get: (t: Token) => number | null }
 const SORTS: SortKey[] = [
@@ -724,7 +729,7 @@ const inked = new Map<string, Colour | string>()
 // does, otherwise moved toward black on a light background or white on a dark one, a tenth at a
 // time, so a gain stays green and a loss stays red. Measured on opencode's default light theme:
 // accent, warning, success and textMuted all fell under 4.5, between 2.6 and 3.4.
-const ink = (
+export const ink = (
   api: TuiPluginApi,
   fg: Colour | undefined,
   bg?: Colour,
@@ -927,6 +932,7 @@ function Chart(props: {
 }
 
 type Actions = {
+  trade: (t: Token) => void
   buy: (t: Token) => void
   sell: (t: Token) => void
   check: (t: Token) => void
@@ -973,6 +979,7 @@ function Detail(props: {
               </text>
             </Show>
             <box flexDirection="row" height={1} flexShrink={0}>
+              <Button model={props.model} label="Trade" onPress={() => props.actions.trade(t())} />
               <Button model={props.model} label="Buy" onPress={() => props.actions.buy(t())} />
               <Button model={props.model} label="Sell" onPress={() => props.actions.sell(t())} />
               <Button model={props.model} label="Check" onPress={() => props.actions.check(t())} />
@@ -1089,7 +1096,11 @@ function Card(props: {
   )
 }
 
-function Page(props: { model: Model; back: () => void }) {
+function Page(props: {
+  model: Model
+  back: () => void
+  trade: (mint: string, label: string) => void
+}) {
   const model = props.model
   const api = model.api
   const theme = () => api.theme.current
@@ -1119,8 +1130,8 @@ function Page(props: { model: Model; back: () => void }) {
   const compactDetail = () => dims().height < 46
   const hint = () =>
     view() === 'cards'
-      ? 'arrows or h/j/k/l move  click, wheel  m table  s sort  r order  t list  i interval  v chart  / search  a audited  w watch  y copy  b buy  x sell  c check  esc back'
-      : 'j/k move  click, wheel  click a title to sort  m cards  s sort  r order  t list  i interval  v chart  / search  a audited  w watch  y copy  b buy  x sell  c check  esc back'
+      ? 'arrows or h/j/k/l move  click, wheel  enter trade view  m table  s sort  r order  t list  i interval  v chart  / search  a audited  w watch  y copy  b buy  x sell  c check  esc back'
+      : 'j/k move  click, wheel  enter trade view  click a title to sort  m cards  s sort  r order  t list  i interval  v chart  / search  a audited  w watch  y copy  b buy  x sell  c check  esc back'
   // Lines the list does not get: padding 2, the 2 header rows, the hint as it wraps, the error line
   // when there is one, and in the table the column titles.
   const chrome = () =>
@@ -1274,6 +1285,7 @@ function Page(props: { model: Model; back: () => void }) {
   }
 
   const actions: Actions = {
+    trade: (t) => props.trade(t.mint, t.symbol),
     buy: (t) => askAmount('buy', t),
     sell: (t) => askAmount('sell', t),
     check: (t) =>
@@ -1358,6 +1370,7 @@ function Page(props: { model: Model; back: () => void }) {
     else if (k === 'a') toggleAudited()
     else if (k === '/') askSearch()
     else if (!t) return
+    else if (k === 'return' || k === 'enter') actions.trade(t)
     else if (k === 'w') actions.watch(t)
     else if (k === 'y') actions.copy(t)
     else if (k === 'b') actions.buy(t)
@@ -1958,24 +1971,35 @@ const tui: TuiPlugin = async (api, rawOptions) => {
   })
   api.lifecycle.onDispose(dispose)
 
+  // Loaded here rather than at the top: agon-trade.tsx imports helpers from this file, and by now
+  // this module has finished evaluating, so the cycle is harmless.
+  const { TRADE_ROUTE, createTrade } = await import('./agon-trade.tsx')
+  const trade = createTrade(api, options.mcpUrl)
+  const ours = new Set([ROUTE, SETUP_ROUTE, TRADE_ROUTE])
+
   // Where to return to when the page closes: the route that was open when it was entered.
   let previous: { name: string; params?: Record<string, unknown> } = { name: 'home' }
-  const open = () => {
+  const enter = (name: string) => {
     const cur = api.route.current as { name: string; params?: Record<string, unknown> }
-    if (cur.name !== ROUTE && cur.name !== SETUP_ROUTE) previous = cur
-    api.route.navigate(ROUTE)
+    if (!ours.has(cur.name)) previous = cur
+    api.route.navigate(name)
   }
+  const open = () => enter(ROUTE)
   const back = () => api.route.navigate(previous.name, previous.params)
-
-  const openSetup = () => {
-    const cur = api.route.current as { name: string; params?: Record<string, unknown> }
-    if (cur.name !== ROUTE && cur.name !== SETUP_ROUTE) previous = cur
-    api.route.navigate(SETUP_ROUTE)
+  const openSetup = () => enter(SETUP_ROUTE)
+  // The trade view goes back to discovery when it was opened from there.
+  let tradeFromDiscovery = false
+  const openTrade = (mint?: string, label?: string) => {
+    if (mint && !trade.show(mint, label ?? null)) return
+    tradeFromDiscovery = api.route.current.name === ROUTE
+    enter(TRADE_ROUTE)
   }
+  const tradeBack = () => (tradeFromDiscovery ? api.route.navigate(ROUTE) : back())
 
   api.route.register([
-    { name: ROUTE, render: () => <Page model={model} back={back} /> },
+    { name: ROUTE, render: () => <Page model={model} back={back} trade={openTrade} /> },
     { name: SETUP_ROUTE, render: () => <Setup model={model} options={options} back={back} /> },
+    { name: TRADE_ROUTE, render: () => trade.render(tradeBack, back) },
   ])
 
   api.command?.register(() => [
@@ -1994,6 +2018,14 @@ const tui: TuiPlugin = async (api, rawOptions) => {
       category: 'Agon',
       slash: { name: 'agon-setup' },
       onSelect: openSetup,
+    },
+    {
+      title: 'Agon trade',
+      value: TRADE_ROUTE,
+      description: 'Candles, book or depth, recent trades and the status line for the last token',
+      category: 'Agon',
+      slash: { name: 'trade' },
+      onSelect: () => openTrade(),
     },
   ])
 
