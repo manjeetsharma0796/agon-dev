@@ -3374,7 +3374,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-E26, The opencode views read /discover and show liquidity
-- Status: open
+- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-e26-discover-feed
 - Depends-on: T-C38
 - Touches: .opencode/tui/agon-discovery.tsx, .opencode/tui/agon-trade.tsx
 - Serves: UX (judged) ; 1 source for the list on every surface, and no "not sent" left in the header
