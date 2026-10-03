@@ -3458,7 +3458,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-E28, Ask the agent from the terminal: the screen's context in the prompt, mints only
-- Status: open
+- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-e28-ask-agent
 - Depends-on: T-E26, T-E27
 - Touches: .opencode/tui/agon-discovery.tsx, .opencode/tui/agon-trade.tsx, plugins/claude-code/
 - Serves: UX (judged) ; the copilot sees what the person sees without the person retyping it
