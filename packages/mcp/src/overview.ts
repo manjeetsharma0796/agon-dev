@@ -57,6 +57,8 @@ interface HistoryEvent {
   deltas: ReadonlyMap<string, bigint>
   /** Lamports paid in fees by one of the vault's agent keys, 0 when someone else paid. */
   agentFee: bigint
+  /** The owner paid for it. Only the owner deposits and withdraws; a keeper's fill is a return. */
+  byOwner: boolean
 }
 
 /** 1 mint's hourly closes in USD, each an exact decimal, with the holes GeckoTerminal left named. */
@@ -239,10 +241,14 @@ function rebuild(h: VaultHistory) {
   return { before, after }
 }
 
-/** Value that only arrived or only left: a deposit or a withdrawal, which is not the agent's doing. */
+/**
+ * A deposit or a withdrawal: the owner's own transaction, value only arriving or only leaving. A
+ * Jupiter Trigger order is 2 one-way transactions too (the agent's placement into escrow, a
+ * keeper's fill back), and cutting the return at both would erase that trade's result.
+ */
 const isFlow = (e: HistoryEvent) => {
   const moved = [...e.deltas.values()].filter((d) => d !== 0n)
-  return moved.length > 0 && (moved.every((d) => d > 0n) || moved.every((d) => d < 0n))
+  return e.byOwner && moved.length > 0 && (moved.every((d) => d > 0n) || moved.every((d) => d < 0n))
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -441,9 +447,17 @@ const CAP_METHOD =
 // ---------------------------------------------------------------------------------------------
 // Reads
 
-/** A finalized transaction never changes, so each is fetched once per process. */
-const rawOnce = new Map<string, RawTransaction & { blockTime?: number | null }>()
-const RAW_CAP = 50_000
+/** What /overview keeps of 1 transaction: what it moved, who paid and the fee. About 200 bytes. */
+interface Moved {
+  deltas: Map<string, bigint>
+  payer: string | null
+  fee: bigint
+}
+/** A finalized transaction never changes, so each is read once per process, and only what is used. */
+const movedOnce = new Map<string, Moved>()
+const MOVED_CAP = 50_000
+/** The same budget vault_status's own read has, so a busy vault answers rather than hangs. */
+const READ_BUDGET_MS = 20_000
 
 /** What 1 transaction moved for `vault`: its token rows and its own lamports, signed. */
 function deltasOf(tx: RawTransaction, vault: string): Map<string, bigint> {
@@ -468,12 +482,20 @@ function deltasOf(tx: RawTransaction, vault: string): Map<string, bigint> {
   return out
 }
 
-async function readRaw(connection: Connection, signatures: string[], finalized: number) {
-  const out = new Map<string, (RawTransaction & { blockTime?: number | null }) | null>()
+/** What each signature moved for `vault`; a signature left out was not read within the budget. */
+async function readMoved(
+  connection: Connection,
+  vault: string,
+  signatures: string[],
+  finalized: number,
+) {
+  const out = new Map<string, Moved | null>()
+  const started = Date.now()
   for (let i = 0; i < signatures.length; i += 20) {
+    if (Date.now() - started > READ_BUDGET_MS) break
     await Promise.all(
       signatures.slice(i, i + 20).map(async (sig) => {
-        const hit = rawOnce.get(sig)
+        const hit = movedOnce.get(`${vault}:${sig}`)
         if (hit) return out.set(sig, hit)
         const res = await fetch(connection.rpcEndpoint, {
           method: 'POST',
@@ -489,11 +511,18 @@ async function readRaw(connection: Connection, signatures: string[], finalized: 
           }),
         })
         const tx = ((await res.json()) as { result?: RawTransaction | null }).result ?? null
-        if (tx && tx.slot <= finalized) {
-          if (rawOnce.size >= RAW_CAP) rawOnce.delete(rawOnce.keys().next().value as string)
-          rawOnce.set(sig, tx)
+        if (!tx) return out.set(sig, null)
+        const first = tx.transaction.message.accountKeys?.[0]
+        const moved: Moved = {
+          deltas: deltasOf(tx, vault),
+          payer: (typeof first === 'string' ? first : first?.pubkey) ?? null,
+          fee: BigInt(tx.meta?.fee ?? 0),
         }
-        return out.set(sig, tx)
+        if (tx.slot <= finalized) {
+          if (movedOnce.size >= MOVED_CAP) movedOnce.delete(movedOnce.keys().next().value as string)
+          movedOnce.set(`${vault}:${sig}`, moved)
+        }
+        return out.set(sig, moved)
       }),
     )
   }
@@ -591,24 +620,27 @@ async function readOverview(wallet: string, io: ToolIo = liveIo()): Promise<Over
   const agents = new Set(a.agents.map((g) => g.address))
   const finalized = await connection.getSlot('finalized')
   const oldestFirst = [...a.decoded].reverse()
-  const raw = await readRaw(
+  const read = await readMoved(
     connection,
+    a.vault,
     oldestFirst.map((x) => x.d.signature),
     finalized,
   )
-  const missing = oldestFirst.filter((x) => !raw.get(x.d.signature)).length
+  const unread = oldestFirst.filter((x) => !read.has(x.d.signature)).length
+  const missing = oldestFirst.filter((x) => read.get(x.d.signature) === null).length
   const events: HistoryEvent[] = oldestFirst.flatMap(({ d, time }) => {
-    const tx = raw.get(d.signature)
-    if (!tx) return []
-    const payer = tx.transaction.message.accountKeys?.[0]
-    const payerKey = typeof payer === 'string' ? payer : payer?.pubkey
+    const m = read.get(d.signature)
+    if (!m) return []
     return [
       {
         signature: d.signature,
         slot: d.slot,
         time,
-        deltas: deltasOf(tx, a.vault),
-        agentFee: payerKey && agents.has(payerKey) ? BigInt(tx.meta?.fee ?? 0) : 0n,
+        deltas: m.deltas,
+        agentFee: m.payer !== null && agents.has(m.payer) ? m.fee : 0n,
+        // A deposit or a withdrawal is the owner's own transaction; value a keeper's fill or an
+        // agent's order sends is the strategy's, not a flow.
+        byOwner: m.payer === wallet,
       },
     ]
   })
@@ -628,9 +660,14 @@ async function readOverview(wallet: string, io: ToolIo = liveIo()): Promise<Over
   }
   const incomplete =
     a.incomplete ??
-    (missing > 0
-      ? `${missing} transaction(s) were not returned by the chain yet; ask again in a minute`
-      : null)
+    (unread > 0
+      ? `the read stopped after ${READ_BUDGET_MS / 1000} s with ${unread} of ${oldestFirst.length} transactions left; ask again to continue from what was read`
+      : missing > 0
+        ? `${missing} transaction(s) were not returned by the chain yet; ask again in a minute`
+        : null)
+  const partial = incomplete
+    ? `Not every transaction was read (${incomplete}), so holdings rebuilt from them would be wrong.`
+    : null
 
   const twr = timeWeightedReturn(history)
   const curve = equityCurve(history)
@@ -644,13 +681,16 @@ async function readOverview(wallet: string, io: ToolIo = liveIo()): Promise<Over
     returnInSol: {
       ...stamp(a.slot),
       ...twr,
-      pct: incomplete ? null : twr.pct,
-      why: incomplete
-        ? `Not every transaction was read (${incomplete}), so a return would leave some out.`
-        : twr.why,
+      pct: partial ? null : twr.pct,
+      why: partial ?? twr.why,
       method: twr.method + forkNote,
     },
-    equityCurve: { ...stamp(a.slot), ...curve, method: curve.method + forkNote },
+    equityCurve: {
+      ...stamp(a.slot),
+      ...curve,
+      ...(partial ? { points: [], gaps: 0, why: partial } : {}),
+      method: curve.method + forkNote,
+    },
     capMeter: { ...stamp(cap.slot), roles: cap.roles, method: CAP_METHOD, why: cap.why },
   })
 }
