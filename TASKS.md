@@ -3504,7 +3504,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-C40, Move the token lookups off lite-api.jup.ag before Jupiter retires it, and fail closed on it
-- Status: open
+- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-c40-jupiter-api-host
 - Depends-on: T-C04, T-C22, T-C38
 - Touches: packages/core/src/net/record.ts, packages/core/src/net/net.test.ts,
   packages/guard/src/mint-check.ts, packages/guard/src/mint-check.test.ts,
