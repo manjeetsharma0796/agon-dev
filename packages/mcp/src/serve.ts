@@ -25,6 +25,7 @@ import { createDiscover, serveDiscover } from './discover.js'
 import { createLogos, serveLogo } from './logo.js'
 import { liveIo } from './io.js'
 import { activityRoute, journalFor } from './journal.js'
+import { overviewRoute } from './overview.js'
 
 const PORT = Number(process.env['PORT'] ?? 8787)
 /** Loopback by default. Binding 0.0.0.0 exposes an unauthenticated server to the whole network. */
@@ -79,6 +80,13 @@ const handle = async (req: IncomingMessage, res: ServerResponse): Promise<void> 
   const url = req.url ?? '/'
   if (req.method === 'GET' && (url === '/activity' || url.startsWith('/activity?'))) {
     const { status, body } = await activityRoute(new URL(url, 'http://local'), liveIo(), JOURNAL)
+    res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store' })
+    res.end(JSON.stringify(body))
+    return
+  }
+  // T-C31: the report plus the return in SOL, the equity curve and the cap meter, all reads.
+  if (req.method === 'GET' && (url === '/overview' || url.startsWith('/overview?'))) {
+    const { status, body } = await overviewRoute(new URL(url, 'http://local'))
     res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store' })
     res.end(JSON.stringify(body))
     return

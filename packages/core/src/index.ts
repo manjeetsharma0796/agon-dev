@@ -20,6 +20,7 @@ export * from './rule.js'
 export * from './trade.js'
 export * from './vault.js'
 export * from './journal.js'
+export * from './overview.js'
 
 // The failure-message catalogue, T-E10. Every message a user ever sees when something did not
 // work lives here, so "something went wrong" has nowhere to be written.
