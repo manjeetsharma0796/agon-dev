@@ -3409,7 +3409,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-E27, The market list in Claude Code, from /discover
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/293 | Owner: jishnu-baruah | Branch: feature/t-e27-claude-markets
+- Status: done
 - Depends-on: T-C38, T-E25
 - Touches: plugins/claude-code/
 - Serves: UX (judged) ; the same market list in Claude Code as in opencode, from 1 source
@@ -3444,4 +3444,19 @@ _(empty)_
   `check_trade`, measured on 3 tokens; 0 token names or symbols, asserted by a test that injects a
   name into every field the server sends; the packet's numbers equal the screen's
 - Evidence: <PR link>
+- Kill criterion: none
+
+### T-C39, The server serves token logos, so both terminals show them by default with 0 outside calls
+- Status: open
+- Depends-on: T-C38, T-E26, T-E27
+- Touches: packages/mcp/src/logo.ts, packages/mcp/src/logo.test.ts, packages/mcp/src/serve.ts,
+  .opencode/tui/agon-discovery.tsx, plugins/claude-code/
+- Serves: UX (judged) ; logos back on by default, without the plugins calling an outside image host
+- Acceptance: `GET /logo?mint=&size=` returns a small PNG for a mint whose icon URL `/discover` already
+  holds, fetched once through 1 image proxy and cached by mint (a logo changes rarely), at most 64 by 64,
+  https only, at most 256 KB upstream, content type checked as an image before it is served; an unknown
+  mint or a failed fetch answers 404 with the reason and the client draws the first letter; both
+  plugins turn logos on by default and read them only from `/logo`, asserted by the 0-outside-call
+  tests already in T-E26 and T-E27; seen live in both terminals
+- Evidence: <PR link, screenshots>
 - Kill criterion: none
