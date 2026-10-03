@@ -109,7 +109,15 @@ const CURVE = {
   basis: 'Constant product from the reserves.',
   ttlSeconds: 10,
 }
-const market = (book: unknown) => ({
+const LIQ = {
+  value: 4823456.78,
+  unit: 'USD',
+  pool: POOL,
+  source: 'GeckoTerminal reserve_in_usd for this pool',
+  fetchedAt: '2026-10-03T11:59:00.000Z',
+  flag: null,
+}
+const market = (book: unknown, liq: unknown = LIQ) => ({
   mint: BONK,
   range: '1h',
   source: 'GeckoTerminal, Solana mainnet',
@@ -135,6 +143,7 @@ const market = (book: unknown) => ({
     high: 0.0000225123,
     low: 0.00002012345,
     volumeUsd: 165217658.2824979,
+    liquidityUsd: liq,
   },
   trades: { pool: POOL, fetchedAt: '2026-10-03T11:59:45.000Z', list: TRADES, leftOut: null },
   ...(book === undefined ? {} : { book }),
@@ -176,14 +185,61 @@ const shown = async (ui: { findAll: (q: { type: string }) => Promise<{ text: str
 // A raw float leaking through: 7 or more significant digits after the point, or an exponent.
 const RAW = /\.\d*[1-9]\d{6,}|\de-\d/
 
-type Server = { book: unknown; urls: string[]; down: boolean; upstream: string }
+// The drawing laid out as the terminal would: rows side by side with their gaps, columns stacked,
+// a Button as `[ label ]` (plain: `label`, with a hotkey `k: label`), a Raster as its cells. Lines are
+// never wrapped here, so a line the plugin made too wide shows as too wide.
+const cellsOf = (s: string) => [...s].length
+function lay(el: any): string[] {
+  if (el == null || el === false) return []
+  if (typeof el === 'string') return el.split('\n')
+  const { type, props = {}, children = [] } = el
+  if (type === 'Text')
+    return children
+      .flat()
+      .map((c: any) => (typeof c === 'string' ? c : lay(c).join('')))
+      .join('')
+      .split('\n')
+  if (type === 'Button') {
+    const label = `${props.hotkey ? `${props.hotkey}: ` : ''}${props.label}`
+    return [props.plain ? label : `[ ${label} ]`]
+  }
+  if (type === 'Input') return [`> ${props.placeholder}`]
+  if (type === 'Raster') return Array.from({ length: props.rows }, () => ' '.repeat(props.columns))
+  if (type === 'Svg') return []
+  const kids = children.flat().filter((c: any) => c != null && c !== false)
+  const gap = props.gap ?? 0
+  if (props.flexDirection === 'row') {
+    const blocks = kids.map((k: any) => {
+      const ls = lay(k)
+      const w = Math.max(
+        typeof k === 'object' && k.props?.width ? k.props.width : 0,
+        ...ls.map(cellsOf),
+      )
+      return { ls, w }
+    })
+    const h = Math.max(0, ...blocks.map((b: { ls: string[] }) => b.ls.length))
+    return Array.from({ length: h }, (_, i) =>
+      blocks
+        .map((b: { ls: string[]; w: number }) => (b.ls[i] ?? '').padEnd(b.w))
+        .join(' '.repeat(gap))
+        .trimEnd(),
+    )
+  }
+  return kids.flatMap((k: any, i: number) => (i && gap ? ['', ...lay(k)] : lay(k)))
+}
+const widest = async (ui: { drawn: () => Promise<unknown> }) =>
+  Math.max(...lay(await ui.drawn()).map(cellsOf))
+
+type Server = { book: unknown; urls: string[]; down: boolean; upstream: string; liq?: unknown }
 function stub(on: On, server: Server, filled: string[]) {
   mock.store(on)
   on('command.register', async (_$, e) => ({ value: { command: e.name } }))
   on('http.fetch', async (_$, e) => {
     server.urls.push(e.url)
     if (server.down) throw new Error('connect ECONNREFUSED 127.0.0.1:8787')
-    const body = e.url.includes('/status') ? status(server.upstream) : market(server.book)
+    const body = e.url.includes('/status')
+      ? status(server.upstream)
+      : market(server.book, server.liq ?? LIQ)
     return { value: { status: 200, ok: true, headers: {}, text: JSON.stringify(body) } }
   })
   on('prompt.fill', async (_$, e) => {
@@ -209,10 +265,12 @@ test('band and pane at 60, 80 and 140 columns show every number rounded from /st
       const band = await $.ui.mount(BAND(surface, width))
       const b = await shown(band)
       // 119.44073547737729 has 14 decimals: 6 significant digits on screen.
-      for (const want of ['● live', 'ping 41 ms', 'SOL $119.441', 'BONK $0.00002113', '▼ -2.16%'])
-        expect(b).toContain(want)
+      for (const want of ['● live', 'BONK $0.00002113', '▼ -2.16%']) expect(b).toContain(want)
+      // From 80 columns the band has room for the feed's SOL price and the ping too.
+      if (width >= 80) for (const want of ['ping 41 ms', 'SOL $119.441']) expect(b).toContain(want)
       expect(b).not.toMatch(RAW)
       expect(await band.find({ key: 'pane' })).toBeDefined()
+      expect(await widest(band)).toBeLessThanOrEqual(width)
       await band.press({ key: 'toggle' })
       expect(await shown(band)).not.toContain('119.441')
       await band.press({ key: 'toggle' })
@@ -233,9 +291,12 @@ test('band and pane at 60, 80 and 140 columns show every number rounded from /st
         'H $0.00002251',
         'L $0.00002012',
         'vol $165.2M',
-        'liquidity: /market sends none',
+        'liq $4.8M',
         // the axis and the latest candle with MA20 and EMA20
-        'O $0.00002040 H $0.00002140 L $0.00002030 C $0.00002113',
+        'O $0.00002040',
+        'H $0.00002140',
+        'L $0.00002030',
+        'C $0.00002113',
         '▲ up',
         'vol $41.0K',
         'MA20 $0.00002110',
@@ -249,7 +310,8 @@ test('band and pane at 60, 80 and 140 columns show every number rounded from /st
         '$4.9K',
         // the book, labelled, asks above the mid, bids below
         'Order book',
-        'Manifest  Gu8R..Sn5o  slot 371234555',
+        'Manifest',
+        'slot 371234555',
         '$0.00002114',
         '$0.00002117',
         '250.0K',
@@ -262,10 +324,16 @@ test('band and pane at 60, 80 and 140 columns show every number rounded from /st
         expect(p).toContain(want)
       expect(p).not.toMatch(RAW)
       expect(p).not.toContain('unset')
+      // Every line fits the body, less the scrollbar column and 1 to spare.
+      expect(await widest(pane)).toBeLessThanOrEqual(width - 2)
       // Asks above the mid, highest first, then bids below it.
-      const at = ['$0.00002117', '$0.00002114', '\nmid\n', '$0.00002110\n300000'].map((s) =>
-        p.indexOf(s),
-      )
+      const rows = p.split('\n')
+      const at = [
+        /^ask +\$0\.00002117 /,
+        /^ask +\$0\.00002114 /,
+        /^mid +\$0\.00002112$/,
+        /^bid +\$0\.00002110 +300000/,
+      ].map((re) => rows.findIndex((l) => re.test(l)))
       expect(at[0]!).toBeGreaterThanOrEqual(0)
       for (let i = 1; i < at.length; i++) expect(at[i]!).toBeGreaterThan(at[i - 1]!)
       if (surface === 'terminal') {
@@ -340,15 +408,16 @@ test('the book is honest when missing, failed or a curve; a bad mint and a down 
     await pane.press({ key: 'refresh' })
     const p = await shown(pane)
     for (const want of [
-      'Cost to move the price',
-      'Raydium CPMM  Gu8R..Sn5o  slot 371234556',
-      '1%\n▲ buy\n$1.2K\n56.7M',
+      /Cost to move the price/,
+      /Raydium CPMM/,
+      /slot 371234556/,
+      /1% +▲ buy +\$1\.2K +56\.7M/,
       // A sell pays base units and gets USD; 9 characters fit the column, so shown as sent.
-      '5%\n▼ sell\n281200000\n$6.4K',
-      '10%\n▲ buy\n$12.50\n0.001235',
-      'a buy pays USD and gets base token units, a sell the reverse',
+      /5% +▼ sell +281200000 +\$6\.4K/,
+      /10% +▲ buy +\$12\.50 +0\.001235/,
+      /a buy pays USD and gets base token units, a sell the reverse/,
     ])
-      expect(p).toContain(want)
+      expect(p.replace(/\n/g, ' ')).toMatch(want)
 
     // A pasted value that is not a mint is refused before any request carries it.
     const before = server.urls.length
@@ -362,8 +431,46 @@ test('the book is honest when missing, failed or a curve; a bad mint and a down 
   const band = await $.ui.mount(BAND('terminal', 80))
   const pane = await $.ui.mount(PANE('terminal', 80))
   await pane.press({ key: 'refresh' })
-  expect(await shown(band)).toContain(
+  expect(await shown(band)).toContain('○ server offline')
+  const flat = (await shown(pane)).replace(/\n/g, ' ')
+  expect(flat).toContain(
     '○ server offline: the Agon server is not answering at http://127.0.0.1:8787',
   )
-  expect(await shown(pane)).toContain('/market not answering at http://127.0.0.1:8787')
+  expect(flat).toContain('/market not answering at http://127.0.0.1:8787')
+})
+
+test('SOL is shown once when it is the selected token; a flagged or missing liquidity says why', async ($, on) => {
+  const server: Server = { book: ORDERBOOK, urls: [], down: false, upstream: 'live' }
+  stub(on, server, [])
+  for (const surface of ['terminal', 'desktop'] as const) {
+    server.liq = undefined
+    const band = await $.ui.mount(BAND(surface, 80))
+    const pane = await $.ui.mount(PANE(surface, 80))
+    await pane.press({ key: 'pick-SOL' })
+    await pane.press({ key: 'refresh' })
+    // The stub answers the same stats for any mint: what matters is 1 SOL price, not 2.
+    expect((await shown(band)).match(/SOL \$/g)).toHaveLength(1)
+    expect((await shown(pane)).match(/SOL \$/g) ?? []).toHaveLength(0)
+    expect(await shown(pane)).toContain('SOL  $0.00002113')
+    await pane.press({ key: 'pick-BONK' })
+    expect((await shown(band)).match(/SOL \$/g)).toHaveLength(1)
+    expect(await shown(band)).toContain('BONK $0.00002113')
+
+    server.liq = {
+      ...LIQ,
+      flag: 'Pool Gu8R: reserve $4,823,457 is 2,630.1 times its 24h volume of $1,834, more than 100 times. Check the book before sizing on it.',
+    }
+    await pane.press({ key: 'refresh' })
+    let flat = (await shown(pane)).replace(/\n/g, ' ')
+    expect(flat).toContain('liq $4.8M (see note)')
+    expect(flat).toContain('reserve $4,823,457 is 2,630.1 times its 24h volume')
+
+    server.liq = { pool: POOL, error: 'GeckoTerminal sent no usable reserve_in_usd for pool Gu8R.' }
+    await pane.press({ key: 'refresh' })
+    flat = (await shown(pane)).replace(/\n/g, ' ')
+    expect(flat).toContain('liq not shown (see note)')
+    expect(flat).toContain('GeckoTerminal sent no usable reserve_in_usd')
+    await band.unmount()
+    await pane.unmount()
+  }
 })

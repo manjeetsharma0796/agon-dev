@@ -61,6 +61,8 @@ export type Market = {
     high?: number
     low?: number
     volumeUsd?: number
+    // T-C37: the chosen pool's reserve in USD, flagged when over 100 times its 24h volume.
+    liquidityUsd?: { value?: number; flag?: string | null; fetchedAt?: string; error?: string }
     fetchedAt?: string
     error?: string
   }

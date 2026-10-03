@@ -211,6 +211,9 @@ async function togglePane($: Dollar) {
     title: 'Agon trade',
     focus: true,
     closeOnEscape: true,
+    // The dock's width when docked: room for the chart, its axis and the book. A width the person
+    // dragged the dock to wins.
+    columns: 84,
   })
   void refreshAll($)
   return opened.isPlaced
@@ -292,7 +295,12 @@ const ping = (s: Status) => {
   const ms = num(s.ping?.value?.ms)
   return ms === null ? `ping ${s.ping?.error ?? 'none yet'}` : `ping ${ms} ms`
 }
-const sol = (s: Status) => `SOL ${usd(s.solPrice?.value?.usd) ?? s.solPrice?.error ?? 'none yet'}`
+// The status feed's SOL price, from Jupiter. Left out where SOL is the selected token, whose price
+// from /market's pool is already on screen: never 2 numbers for 1 asset.
+const sol = (s: Status, mint: string) =>
+  mint === PICKS[0]![1]
+    ? null
+    : `SOL ${usd(s.solPrice?.value?.usd) ?? s.solPrice?.error ?? 'none yet'}`
 // "fork, feed from mainnet" when the server says its readings come from another network.
 const network = (s: Status) => {
   const name = !s.network
@@ -303,15 +311,121 @@ const network = (s: Status) => {
   return s.networkNote ? `${name}, feed from ${s.readsFrom ?? 'mainnet'}` : name
 }
 
+// ---- layout: every line is laid out to a known width, never left to the surface to wrap ----
+
+type Part = { text: string; prio: number; color?: string; bold?: boolean; dim?: boolean }
+const cells = (s: string) => [...s].length
+// The parts that fit `width`, lowest `prio` first, kept in their order, 2 spaces apart.
+function fit(parts: Part[], width: number) {
+  const keep = new Set<Part>()
+  let used = 0
+  for (const p of [...parts].sort((a, b) => a.prio - b.prio)) {
+    const add = cells(p.text) + (keep.size ? 2 : 0)
+    if (used + add > width) continue
+    keep.add(p)
+    used += add
+  }
+  return parts.filter((p) => keep.has(p))
+}
+// Parts over at most 2 lines: what does not fit the first goes to the second.
+function fit2(parts: Part[], width: number) {
+  const first = fit(parts, width)
+  const rest = fit(
+    parts.filter((p) => !first.includes(p)),
+    width,
+  )
+  return rest.length ? [first, rest] : [first]
+}
+/** Greedy word wrap into at most `max` lines; a word longer than the width is split. */
+function wrap(t: string, width: number, max = 4): string[] {
+  const lines: string[] = []
+  let line = ''
+  for (const word of t.split(' ')) {
+    const next = line ? `${line} ${word}` : word
+    if (cells(next) <= width) line = next
+    else {
+      if (line) lines.push(line)
+      line = word
+      while (cells(line) > width) {
+        lines.push([...line].slice(0, width).join(''))
+        line = [...line].slice(width).join('')
+      }
+    }
+  }
+  if (line) lines.push(line)
+  return lines.slice(0, max)
+}
+// Table columns, 1 space apart; a negative width aligns right.
+const row = (cols: [string, number][]) =>
+  cols
+    .map(([v, n]) => {
+      const w = Math.abs(n)
+      const pad = ' '.repeat(Math.max(0, w - cells(v)))
+      return n < 0 ? pad + v : v + pad
+    })
+    .join(' ')
+    .trimEnd()
+// How wide the terminal draws a Button: `[ label ]`, plain `label`, a hotkey as `k: label`.
+const buttonCells = (label: string, plain: boolean, hotkey?: string) =>
+  cells(label) + (hotkey ? 3 : 0) + (plain ? 0 : 4)
+
+type Els = ReturnType<Dollar['ui']['resolve']>
+function line(els: Els, key: string, parts: Part[]) {
+  const { Box, Text } = els
+  return (
+    <Box key={key} flexDirection="row" gap={2} flexWrap="nowrap">
+      {parts.map((p, i) => (
+        <Text
+          key={`${key}-${i}`}
+          color={p.color}
+          bold={p.bold}
+          dimColor={p.dim}
+          wrap="truncate-end"
+        >
+          {p.text}
+        </Text>
+      ))}
+    </Box>
+  )
+}
+function lines(els: Els, key: string, list: string[], color?: string, dim?: boolean) {
+  const { Text } = els
+  return list.map((l, i) => (
+    <Text key={`${key}-${i}`} color={color} dimColor={dim} wrap="truncate-end">
+      {l}
+    </Text>
+  ))
+}
+
+// The transcript's width, which the band is given while the pane is docked beside it. Kept to check
+// the pane's own width against the terminal's: live on Windows Terminal the pane drew past its
+// visible edge, so the narrower of the two is used.
+let transcriptColumns: number | null = null
+function usable(e: Site, body: number) {
+  let w = body
+  const vp = e.viewport?.columns
+  const docked = (e.props as { placement?: string }).placement === 'dock'
+  if (e.surface === 'terminal' && docked && vp && transcriptColumns) {
+    const room = vp - transcriptColumns - 2
+    if (room >= 30 && room < w) w = room
+  }
+  // A column for the scrollbar a tall pane draws, and 1 to spare.
+  return Math.max(30, w - 2)
+}
+
 // The band: connection, RPC ping, SOL, the selected token's price and change, the pane's toggle.
 async function band($: Dollar, e: RenderInput<'AbovePrompt'>) {
-  const { Box, Text, Button } = $.ui.resolve(e)
+  const els = $.ui.resolve(e)
+  const { Box, Button } = els
+  const width = e.props.bodyColumns ?? 80
+  transcriptColumns = width
   const mode = (await $.state.get(MODE)).value ?? 'line'
+  const toggleLabel = mode === 'collapsed' ? 'Agon >' : 'Agon v'
   const toggle = (
     <Button
       key="toggle"
       plain
-      label={mode === 'collapsed' ? 'Agon >' : 'Agon v'}
+      label={toggleLabel}
       onPress={async () => {
         const m: BandMode = mode === 'collapsed' ? 'line' : 'collapsed'
         await $.state.set(MODE, m)
@@ -331,24 +445,33 @@ async function band($: Dollar, e: RenderInput<'AbovePrompt'>) {
   const [conn, connTone] = link(st)
   const s = st?.body ?? null
   const price = usd(stats?.price)
+  const room = width - buttonCells(toggleLabel, true) - buttonCells('trade', false) - 4
+  const solText = s ? sol(s, mint) : null
+  const parts = fit(
+    [
+      {
+        text: cells(conn) > 40 ? `${[...conn].slice(0, 38).join('')}..` : conn,
+        prio: 0,
+        color: connTone,
+      },
+      ...(s ? [{ text: ping(s), prio: 4 }] : []),
+      ...(solText ? [{ text: solText, prio: 3 }] : []),
+      {
+        text: price
+          ? `${labelOf(mint)} ${price}`
+          : `${labelOf(mint)}: ${current?.error ? 'not loaded, open the trade view' : 'loading'}`,
+        prio: 1,
+      },
+      ...(price && move(stats?.changePct)
+        ? [{ text: move(stats?.changePct)!, prio: 2, color: tone(stats?.changePct) }]
+        : []),
+    ],
+    room,
+  )
   return (
     <Box flexDirection="row" gap={2} alignItems="center" flexWrap="nowrap" overflow="hidden">
       {toggle}
-      <Box key="b-conn" flexShrink={1} minWidth={6}>
-        <Text color={connTone} wrap="truncate-end">
-          {conn}
-        </Text>
-      </Box>
-      {s && <Text key="b-ping">{ping(s)}</Text>}
-      {s && <Text key="b-sol">{sol(s)}</Text>}
-      <Box key="b-token" flexShrink={1} minWidth={4} flexDirection="row" gap={1}>
-        <Text wrap="truncate-end">
-          {price
-            ? `${labelOf(mint)} ${price}`
-            : `${labelOf(mint)}: ${current?.error ?? stats?.error ?? 'loading from /market'}`}
-        </Text>
-        {price && <Text color={tone(stats?.changePct)}>{move(stats?.changePct) ?? ''}</Text>}
-      </Box>
+      {line(els, 'b-line', parts)}
       <Button key="pane" label="trade" onPress={() => togglePane($)} />
     </Box>
   )
@@ -366,7 +489,6 @@ const WICK = { both: '│', top: '╵', bottom: '╷' }
 const MA_DOT = '•'
 const EMA_DOT = '◦'
 const BARS = '▁▂▃▄▅▆▇█'
-const AXIS = 12
 type Dir = 'up' | 'down' | 'flat'
 const dirOf = (c: Candle): Dir => (c.close > c.open ? 'up' : c.close < c.open ? 'down' : 'flat')
 
@@ -393,7 +515,7 @@ function candleCells(
   list: Candle[],
   w: ReturnType<typeof buckets>,
   rows: number,
-  lines: { values: (number | null)[]; dot: string; colour: number }[],
+  overlays: { values: (number | null)[]; dot: string; colour: number }[],
 ) {
   const { index, hi, lo } = w
   const cols = index.length
@@ -429,12 +551,12 @@ function candleCells(
       if (ch) grid[r]![x] = [ch, COLOUR[d]]
     }
   })
-  for (const l of lines)
+  for (const o of overlays)
     index.forEach((i, x) => {
-      const v = i === undefined ? null : (l.values[i] ?? null)
+      const v = i === undefined ? null : (o.values[i] ?? null)
       if (v === null || v > hi || v < lo) return
       const r = Math.floor(pxOf(v) / 2)
-      if (!grid[r]![x]) grid[r]![x] = [l.dot, l.colour]
+      if (!grid[r]![x]) grid[r]![x] = [o.dot, o.colour]
     })
   const vols = index.map((i) => (i === undefined ? null : list[i]!.volume))
   const top = Math.max(0, ...vols.map((v) => v ?? 0))
@@ -455,10 +577,10 @@ function candleSvg(
   w: ReturnType<typeof buckets>,
   width: number,
   height: number,
-  lines: { values: (number | null)[]; colour: string; dash: boolean }[],
+  overlays: { values: (number | null)[]; colour: string; dash: boolean }[],
 ) {
   const { index, hi, lo } = w
-  const plotW = width - 84
+  const plotW = width - 96
   const volH = 24
   const plotH = height - volH - 8
   const y = (v: number) => (hi === lo ? plotH / 2 : ((hi - v) / (hi - lo)) * (plotH - 8) + 4)
@@ -486,14 +608,14 @@ function candleSvg(
       )
     }
   })
-  for (const l of lines) {
+  for (const o of overlays) {
     const pts = index.flatMap((i, x) => {
-      const v = i === undefined ? null : (l.values[i] ?? null)
+      const v = i === undefined ? null : (o.values[i] ?? null)
       return v === null || v > hi || v < lo ? [] : [`${f(x * slot + slot / 2)},${f(y(v))}`]
     })
     if (pts.length > 1)
       parts.push(
-        `<polyline points="${pts.join(' ')}" fill="none" stroke="${l.colour}" stroke-width="1.2"${l.dash ? ' stroke-dasharray="4 3"' : ''}/>`,
+        `<polyline points="${pts.join(' ')}" fill="none" stroke="${o.colour}" stroke-width="1.2"${o.dash ? ' stroke-dasharray="4 3"' : ''}/>`,
       )
   }
   const last = list[index.filter((i) => i !== undefined).at(-1)!]!
@@ -510,33 +632,11 @@ function candleSvg(
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${parts.join('')}</svg>`
 }
 
-type Els = ReturnType<Dollar['ui']['resolve']>
+// ---- the trade view ----
 
-// A row of fixed-width columns; a negative width right-aligns.
-function cols(els: Els, key: string, parts: [string, number][], color?: string, bold?: boolean) {
-  const { Box, Text } = els
-  return (
-    <Box key={key} flexDirection="row" gap={1}>
-      {parts.map(([t, w], i) => (
-        <Box
-          key={`${key}-${i}`}
-          width={Math.abs(w)}
-          flexShrink={0}
-          justifyContent={w < 0 ? 'flex-end' : 'flex-start'}
-        >
-          <Text color={color} bold={bold} dimColor={bold} wrap="truncate-end">
-            {t}
-          </Text>
-        </Box>
-      ))}
-    </Box>
-  )
-}
-
-// The trade view: status line, header, range buttons, candles, the book and recent trades.
 async function pane($: Dollar, e: Site) {
   const els = $.ui.resolve(e)
-  const { Box, Text, Button } = els
+  const { Box, Button } = els
   // Read by name, and chosen by surface: the terminal's table answers Svg with an empty box.
   const { Input, Svg, Raster } = els as unknown as {
     Input?: ElementConstructor<InputProps>
@@ -544,8 +644,8 @@ async function pane($: Dollar, e: Site) {
     Raster?: ElementConstructor<RasterProps>
   }
   const props = e.props as { bodyColumns?: number; scroll?: { bodyRows?: number } }
-  const width = props.bodyColumns ?? 80
-  const wide = width >= 110
+  const width = usable(e, props.bodyColumns ?? 80)
+  const wide = width >= 108
   const st = (await $.state.get(STATUS)).value ?? null
   const mk = (await $.state.get(MARKET)).value ?? null
   const mint = (await $.state.get(SELECTED)).value ?? PICKS[0]![1]
@@ -564,25 +664,54 @@ async function pane($: Dollar, e: Site) {
       onPress={press}
     />
   )
-  const [conn, connTone] = link(st)
 
-  const top = (
-    <Box key="top" flexDirection="column">
-      <Box flexDirection="row" gap={2} flexWrap="wrap" alignItems="center">
-        <Text bold>{`Agon trade  ${labelOf(mint)}  ${short(mint)}`}</Text>
-        {PICKS.map(([label, pm]) => tab(`pick-${label}`, label, pm === mint, () => choose($, pm)))}
-        <Button key="refresh" plain hotkey="r" label="refresh" onPress={() => refreshAll($)} />
+  // Title, quick picks and refresh: on 1 row where they fit, else 2.
+  const title = `Agon trade  ${labelOf(mint)}  ${short(mint)}`
+  const picks = [
+    ...PICKS.map(([label, pm]) => tab(`pick-${label}`, label, pm === mint, () => choose($, pm))),
+    <Button key="refresh" plain hotkey="r" label="refresh" onPress={() => refreshAll($)} />,
+  ]
+  const picksCells =
+    PICKS.reduce((n, [label, pm]) => n + cells(label) + (pm === mint ? 2 : 0) + 2, 0) +
+    buttonCells('refresh', true, 'r')
+  const head =
+    cells(title) + 2 + picksCells <= width ? (
+      <Box key="title" flexDirection="row" gap={2} flexWrap="nowrap">
+        {line(els, 'title-text', [{ text: title, prio: 0, bold: true }])}
+        {picks}
       </Box>
-      <Box key="status" flexDirection="row" gap={2} flexWrap="wrap">
-        <Text color={connTone}>{conn}</Text>
-        {s && <Text>{ping(s)}</Text>}
-        {s && <Text>{`slot ${num(s.dataSlot) ?? 'none yet'}`}</Text>}
-        {s && (
-          <Text>{`data ${m?.candles?.fetchedAt ? age(m.candles.fetchedAt) : 'none yet'}`}</Text>
-        )}
-        {s && <Text>{sol(s)}</Text>}
-        {s && <Text dimColor>{network(s)}</Text>}
+    ) : (
+      <Box key="title" flexDirection="column">
+        {line(els, 'title-text', fit([{ text: title, prio: 0, bold: true }], width))}
+        <Box flexDirection="row" gap={2} flexWrap="nowrap">
+          {picks}
+        </Box>
       </Box>
+    )
+
+  // Status: the connection, then ping, slot, data age, SOL and network over at most 2 lines. A long
+  // connection message (offline, with its cause) gets its own wrapped lines.
+  const [conn, connTone] = link(st)
+  const solText = s ? sol(s, mint) : null
+  const statusParts: Part[] = [
+    ...(cells(conn) <= 24 ? [{ text: conn, prio: 0, color: connTone }] : []),
+    ...(s
+      ? [
+          { text: ping(s), prio: 1 },
+          { text: `slot ${num(s.dataSlot) ?? 'none yet'}`, prio: 3 },
+          {
+            text: `data ${m?.candles?.fetchedAt ? age(m.candles.fetchedAt) : 'none yet'}`,
+            prio: 4,
+          },
+          ...(solText ? [{ text: solText, prio: 2 }] : []),
+          { text: network(s), prio: 5, dim: true },
+        ]
+      : []),
+  ]
+  const status = (
+    <Box key="status" flexDirection="column">
+      {cells(conn) > 24 && lines(els, 'conn', wrap(conn, width), connTone)}
+      {fit2(statusParts, width).map((p, i) => line(els, `status-${i}`, p))}
       {Input && (
         <Input
           key="mint"
@@ -597,39 +726,85 @@ async function pane($: Dollar, e: Site) {
           }}
         />
       )}
-      {note && <Text color="yellow">{note}</Text>}
+      {note && lines(els, 'note', wrap(note, width), 'yellow')}
     </Box>
   )
 
+  // Header: price and 24h change, then high, low, volume, liquidity and pool.
   const stats = m?.stats24h
+  const liq = stats?.liquidityUsd
+  const liqText =
+    liq && num(liq.value) !== null
+      ? `liq ${big(liq.value)}${liq.flag ? ' (see note)' : ''}`
+      : liq?.error
+        ? 'liq not shown (see note)'
+        : 'liq not sent'
+  const liqNote = liq?.flag ?? liq?.error ?? null
   const header =
     stats && !stats.error ? (
       <Box key="header" flexDirection="column">
-        <Box flexDirection="row" gap={2} flexWrap="wrap">
-          <Text bold>{`${labelOf(mint)}  ${usd(stats.price) ?? 'price not sent'}`}</Text>
-          <Text bold color={tone(stats.changePct)}>
-            {`${move(stats.changePct) ?? 'change not sent'} 24h`}
-          </Text>
-        </Box>
-        <Box flexDirection="row" gap={2} flexWrap="wrap">
-          <Text>{`H ${usd(stats.high) ?? 'not sent'}`}</Text>
-          <Text>{`L ${usd(stats.low) ?? 'not sent'}`}</Text>
-          <Text>{`vol ${big(stats.volumeUsd) ?? 'not sent'}`}</Text>
-          <Text dimColor>{`pool ${m?.pool?.address ? short(m.pool.address) : 'none'}`}</Text>
-          <Text dimColor>liquidity: /market sends none</Text>
-        </Box>
+        {line(
+          els,
+          'h1',
+          fit(
+            [
+              {
+                text: `${labelOf(mint)}  ${usd(stats.price) ?? 'price not sent'}`,
+                prio: 0,
+                bold: true,
+              },
+              {
+                text: `${move(stats.changePct) ?? 'change not sent'} 24h`,
+                prio: 1,
+                bold: true,
+                color: tone(stats.changePct),
+              },
+            ],
+            width,
+          ),
+        )}
+        {fit2(
+          [
+            { text: `H ${usd(stats.high) ?? 'not sent'}`, prio: 2 },
+            { text: `L ${usd(stats.low) ?? 'not sent'}`, prio: 3 },
+            { text: `vol ${big(stats.volumeUsd) ?? 'not sent'}`, prio: 0 },
+            { text: liqText, prio: 1, color: liq?.flag ? 'yellow' : undefined },
+            {
+              text: `pool ${m?.pool?.address ? short(m.pool.address) : 'none'}`,
+              prio: 4,
+              dim: true,
+            },
+          ],
+          width,
+        ).map((p, i) => line(els, `h2-${i}`, p))}
+        {liqNote &&
+          lines(
+            els,
+            'liq-note',
+            wrap(liqNote, width, 3),
+            liq?.flag ? 'yellow' : undefined,
+            !liq?.flag,
+          )}
       </Box>
     ) : (
-      <Text key="header" color={marketError || stats?.error ? 'yellow' : undefined} wrap="wrap">
-        {marketError ??
-          stats?.error ??
-          m?.error ??
-          `loading ${server}/market for ${short(mint)} ${range}`}
-      </Text>
+      <Box key="header" flexDirection="column">
+        {lines(
+          els,
+          'header',
+          wrap(
+            marketError ??
+              stats?.error ??
+              m?.error ??
+              `loading ${server}/market for ${short(mint)} ${range}`,
+            width,
+          ),
+          marketError || stats?.error ? 'yellow' : undefined,
+        )}
+      </Box>
     )
 
   const ranges = (
-    <Box key="ranges" flexDirection="row" gap={1} flexWrap="wrap">
+    <Box key="ranges" flexDirection="row" gap={1} flexWrap="nowrap">
       {RANGES.map((r) =>
         tab(`range-${r}`, r, r === range, async () => {
           await $.state.set(RANGE, r)
@@ -640,75 +815,85 @@ async function pane($: Dollar, e: Site) {
   )
 
   const chart = chartBlock(els, Svg, Raster, e.surface !== 'terminal', m, range, width, props)
-  const book = bookPanel(els, m, width)
-  const trades = tradesPanel(els, m, wide ? Math.floor(width / 2) : width)
+  const side = wide ? Math.floor((width - 2) / 2) : width
+  const book = bookPanel(els, m, side)
+  const trades = tradesPanel(els, m, side)
 
   const actions = (
-    <Box key="actions" flexDirection="row" gap={1} flexWrap="wrap">
-      <Button
-        key="buy"
-        hotkey="b"
-        variant="primary"
-        label="Buy"
-        onPress={() =>
-          draft(
-            `Buy 0.01 SOL of the token with mint ${mint}. Run Agon check_trade on it first and show me the verdict with its reasons. Build nothing unless it passes, and let me sign.`,
-          )
-        }
-      />
-      <Button
-        key="sell"
-        hotkey="s"
-        label="Sell"
-        onPress={() =>
-          draft(
-            `Sell all of the token with mint ${mint} for SOL. Run Agon check_trade on it first and show me the verdict with its reasons. Build nothing unless it passes, and let me sign.`,
-          )
-        }
-      />
-      <Button
-        key="check"
-        hotkey="c"
-        label="Check"
-        onPress={() =>
-          draft(
-            `Run Agon check_trade for a buy of 0.01 SOL of the token with mint ${mint} and explain the verdict. Do not trade.`,
-          )
-        }
-      />
-      <Text dimColor>buttons only fill your prompt, never send</Text>
+    <Box key="actions" flexDirection="column">
+      <Box flexDirection="row" gap={1} flexWrap="nowrap">
+        <Button
+          key="buy"
+          hotkey="b"
+          variant="primary"
+          label="Buy"
+          onPress={() =>
+            draft(
+              `Buy 0.01 SOL of the token with mint ${mint}. Run Agon check_trade on it first and show me the verdict with its reasons. Build nothing unless it passes, and let me sign.`,
+            )
+          }
+        />
+        <Button
+          key="sell"
+          hotkey="s"
+          label="Sell"
+          onPress={() =>
+            draft(
+              `Sell all of the token with mint ${mint} for SOL. Run Agon check_trade on it first and show me the verdict with its reasons. Build nothing unless it passes, and let me sign.`,
+            )
+          }
+        />
+        <Button
+          key="check"
+          hotkey="c"
+          label="Check"
+          onPress={() =>
+            draft(
+              `Run Agon check_trade for a buy of 0.01 SOL of the token with mint ${mint} and explain the verdict. Do not trade.`,
+            )
+          }
+        />
+      </Box>
+      {lines(
+        els,
+        'act-note',
+        wrap('buttons only fill your prompt, never send', width),
+        undefined,
+        true,
+      )}
+      {lines(els, 'mint', wrap(mint, width), undefined, true)}
     </Box>
   )
 
   return (
-    <Box flexDirection="column" gap={1}>
-      {top}
+    <Box flexDirection="column">
+      {head}
+      {status}
       {header}
       {ranges}
       {chart}
       {wide ? (
-        <Box flexDirection="row" gap={2}>
-          <Box flexDirection="column" width={Math.floor(width / 2) - 1}>
+        <Box flexDirection="row" gap={2} flexWrap="nowrap">
+          <Box flexDirection="column" width={side}>
             {book}
           </Box>
-          <Box flexDirection="column" flexGrow={1}>
+          <Box flexDirection="column" width={side}>
             {trades}
           </Box>
         </Box>
       ) : (
-        <Box flexDirection="column" gap={1}>
+        <Box flexDirection="column">
           {book}
           {trades}
         </Box>
       )}
       {actions}
-      <Text dimColor>{mint}</Text>
     </Box>
   )
 }
 
 // Candles, the price axis with a last-price marker, a volume strip, and the latest candle's OHLC
-// with MA and EMA as /market's indicators sent them.
+// with MA and EMA as /market's indicators sent them. The chart leaves room for the axis labels.
 function chartBlock(
   els: Els,
   Svg: ElementConstructor<SvgProps> | undefined,
@@ -724,9 +909,18 @@ function chartBlock(
   const list = c?.list ?? []
   if (!m || c?.error || list.length === 0)
     return (
-      <Text key="chart" color={c?.error ? 'yellow' : undefined} dimColor={!c?.error} wrap="wrap">
-        {c?.error ?? (m ? `/market sent 0 candles for ${range}` : 'candles load with /market')}
-      </Text>
+      <Box key="chart" flexDirection="column">
+        {lines(
+          els,
+          'chart-msg',
+          wrap(
+            c?.error ?? (m ? `/market sent 0 candles for ${range}` : 'candles load with /market'),
+            width,
+          ),
+          c?.error ? 'yellow' : undefined,
+          !c?.error,
+        )}
+      </Box>
     )
   const ind = m.indicators && !m.indicators.error ? m.indicators : null
   const ma: Line | undefined = ind?.ma
@@ -734,16 +928,22 @@ function chartBlock(
   const maName = `MA${ma?.params?.period ?? ''}`
   const emaName = `EMA${ema?.params?.period ?? ''}`
   const rows = Math.max(12, Math.min(30, Math.floor((props.scroll?.bodyRows ?? 40) * 0.4)))
-  const w = buckets(list, num(c?.stepSeconds) ?? 0, Math.max(10, width - AXIS - 3))
   const lastI = list.length - 1
   const last = list[lastI]!
+  // The axis column is as wide as its widest label, and the candles take the rest.
+  const step = num(c?.stepSeconds) ?? 0
+  const guess = buckets(list, step, Math.max(10, width - 16))
+  const axisCells = Math.max(
+    ...[usd(guess.hi)!, usd(guess.lo)!, `◀${usd(last.close)}`, 'vol'].map(cells),
+  )
+  const w = buckets(list, step, Math.max(10, width - axisCells - 1))
   const d = dirOf(last)
   const maV = ma?.values?.[lastI] ?? null
   const emaV = ema?.values?.[lastI] ?? null
 
   let drawing
   if (svg && Svg) {
-    const pxW = Math.max(320, (width - 2) * 7)
+    const pxW = Math.max(320, width * 7)
     const pxH = rows * 14
     drawing = (
       <Svg
@@ -773,7 +973,7 @@ function chartBlock(
               : ' ',
     )
     drawing = (
-      <Box key="candles" flexDirection="row" gap={1}>
+      <Box key="candles" flexDirection="row" gap={1} flexWrap="nowrap">
         <Raster
           key="raster"
           columns={w.index.length}
@@ -783,7 +983,7 @@ function chartBlock(
             { values: ema?.values ?? [], dot: EMA_DOT, colour: COLOUR.ema },
           ])}
         />
-        <Box flexDirection="column" width={AXIS} flexShrink={0}>
+        <Box flexDirection="column" width={axisCells} flexShrink={0}>
           {axis.map((t, r) => (
             <Text key={`ax-${r}`} dimColor={r !== lastRow} wrap="truncate-end">
               {t}
@@ -793,16 +993,57 @@ function chartBlock(
       </Box>
     )
   }
-  const missing = (c?.gaps ?? []).reduce((n, g) => n + (num(g.missing) ?? 0), 0)
+  const gaps = c?.gaps ?? []
+  const missing = gaps.reduce((n, g) => n + (num(g.missing) ?? 0), 0)
+  const readout = fit2(
+    [
+      { text: `last ${utc(last.t)} UTC`, prio: 6, dim: true },
+      { text: `O ${usd(last.open)}`, prio: 2 },
+      { text: `H ${usd(last.high)}`, prio: 3 },
+      { text: `L ${usd(last.low)}`, prio: 4 },
+      { text: `C ${usd(last.close)}`, prio: 0 },
+      {
+        text: d === 'up' ? '▲ up' : d === 'down' ? '▼ down' : '= flat',
+        prio: 1,
+        color: d === 'up' ? 'green' : d === 'down' ? 'red' : undefined,
+      },
+      { text: `vol ${big(last.volume)}`, prio: 5 },
+      { text: `${maName} ${usd(maV) ?? 'warming up'}`, prio: 2 },
+      { text: `${emaName} ${usd(emaV) ?? 'warming up'}`, prio: 3 },
+    ],
+    width,
+  )
+  const legend = fit(
+    [
+      {
+        text: svg ? 'hollow up, filled down' : `${UP.both} up ${DOWN.both} down`,
+        prio: 0,
+        dim: true,
+      },
+      {
+        text: svg
+          ? `${maName} solid, ${emaName} dashed`
+          : `${MA_DOT} ${maName} ${EMA_DOT} ${emaName}`,
+        prio: 1,
+        dim: true,
+      },
+      {
+        text: gaps.length ? `${gaps.length} gaps, ${missing} buckets empty` : 'no gaps',
+        prio: 2,
+        dim: true,
+      },
+      { text: `candles ${age(c?.fetchedAt)} old`, prio: 3, dim: true },
+      ...(ind
+        ? []
+        : [{ text: `indicators: ${m.indicators?.error ?? 'not sent'}`, prio: 4, dim: true }]),
+    ],
+    width,
+  )
   return (
     <Box key="chart" flexDirection="column">
       {drawing}
-      <Text wrap="wrap">
-        {`last ${utc(last.t)} UTC  O ${usd(last.open)} H ${usd(last.high)} L ${usd(last.low)} C ${usd(last.close)}  ${d === 'up' ? '▲ up' : d === 'down' ? '▼ down' : '= flat'}  vol ${big(last.volume)}  ${maName} ${usd(maV) ?? 'warming up'}  ${emaName} ${usd(emaV) ?? 'warming up'}`}
-      </Text>
-      <Text dimColor wrap="wrap">
-        {`${svg ? 'hollow up, filled down' : `${UP.both} up ${DOWN.both} down`}  ${svg ? `${maName} solid, ${emaName} dashed` : `${MA_DOT} ${maName} ${EMA_DOT} ${emaName}`}  ${(c?.gaps ?? []).length ? `${c!.gaps!.length} gaps, ${missing} buckets with no candle, drawn empty` : 'no gaps'}  candles ${age(c?.fetchedAt)} old${ind ? '' : `  indicators: ${m.indicators?.error ?? 'not sent'}`}`}
-      </Text>
+      {readout.map((p, i) => line(els, `readout-${i}`, p))}
+      {line(els, 'legend', legend)}
     </Box>
   )
 }
@@ -817,69 +1058,78 @@ function bookPanel(els: Els, m: Market | null, width: number) {
       Order book / depth
     </Text>
   )
-  if (!m)
+  if (!m || !b || 'error' in b)
     return (
       <Box key="book" flexDirection="column">
         {title}
-        <Text dimColor>waiting for /market</Text>
+        {lines(
+          els,
+          'book-msg',
+          wrap(
+            !m
+              ? 'waiting for /market'
+              : b
+                ? `not shown: ${(b as { error: string }).error}`
+                : "this Agon server's /market sends no book, so none is drawn rather than a made-up ladder. Update the server.",
+            width,
+          ),
+          b ? 'yellow' : undefined,
+          !b,
+        )}
       </Box>
     )
-  if (!b || 'error' in b)
-    return (
-      <Box key="book" flexDirection="column">
-        {title}
-        <Text color={b ? 'yellow' : undefined} dimColor={!b} wrap="wrap">
-          {b
-            ? `not shown: ${b.error}`
-            : "this Agon server's /market sends no book, so none is drawn rather than a made-up ladder. Update the server."}
-        </Text>
-      </Box>
-    )
-  const depth = width >= 110 ? 10 : width >= 80 ? 6 : 4
-  const line = (
+  const depth = width >= 50 ? 10 : width >= 40 ? 6 : 4
+  const asks = b.asks.slice(0, depth).reverse()
+  const bids = b.bids.slice(0, depth)
+  const priceCells = Math.max(
+    5,
+    ...[...asks, ...bids].map((l) => cells(usd(l.price) ?? 'none')),
+    cells(usd(b.mid) ?? 'none'),
+  )
+  const level = (
     side: 'ask' | 'bid',
     l: { price: number; size: number; total: number },
     i: number,
-  ) =>
-    cols(
-      els,
-      `${side}-${i}`,
-      [
+  ) => (
+    <Text key={`${side}-${i}`} color={side === 'ask' ? 'red' : 'green'} wrap="truncate-end">
+      {row([
         [side, 3],
-        [usd(l.price) ?? 'none', -13],
+        [usd(l.price) ?? 'none', -priceCells],
         [cell(l.size, 9), -9],
         [cell(l.total, 9), -9],
-      ],
-      side === 'ask' ? 'red' : 'green',
-    )
+      ])}
+    </Text>
+  )
   return (
     <Box key="book" flexDirection="column">
       {title}
-      <Text color="yellow" wrap="wrap">
-        {b.label}
-      </Text>
-      <Text dimColor wrap="wrap">
-        {`${b.venue}  ${b.pool ? short(b.pool) : 'pool not named'}  slot ${num(b.slot) ?? 'none'}  ${age(b.fetchedAt)} old`}
-      </Text>
+      {lines(els, 'book-label', wrap(b.label, width, 2), 'yellow')}
+      {line(
+        els,
+        'book-meta',
+        fit(
+          [
+            { text: b.venue, prio: 0, dim: true },
+            { text: b.pool ? short(b.pool) : 'pool not named', prio: 2, dim: true },
+            { text: `slot ${num(b.slot) ?? 'none'}`, prio: 1, dim: true },
+            { text: `${age(b.fetchedAt)} old`, prio: 3, dim: true },
+          ],
+          width,
+        ),
+      )}
       {b.kind === 'amm-curve' ? (
         <Box flexDirection="column">
-          {cols(
-            els,
-            'mv-head',
-            [
+          <Text key="mv-head" dimColor bold>
+            {row([
               ['move', 5],
               ['side', 6],
               ['pay', -9],
               ['get', -9],
-            ],
-            undefined,
-            true,
-          )}
-          {b.moves.slice(0, depth * 2).map((mv, i) =>
-            cols(
-              els,
-              `move-${i}`,
-              [
+            ])}
+          </Text>
+          {b.moves.slice(0, depth * 2).map((mv, i) => (
+            <Text key={`move-${i}`} color={mv.side === 'buy' ? 'green' : 'red'} wrap="truncate-end">
+              {row([
                 [`${num(mv.pct) ?? 'none'}%`, 5],
                 [
                   mv.side === 'buy' ? '▲ buy' : mv.side === 'sell' ? '▼ sell' : mv.side.slice(0, 6),
@@ -895,98 +1145,104 @@ function bookPanel(els: Els, m: Market | null, width: number) {
                       [big(mv.quoteIn) ?? 'none', -9],
                       [cell(mv.baseOut, 9), -9],
                     ]) as [string, number][]),
-              ],
-              mv.side === 'buy' ? 'green' : 'red',
-            ),
-          )}
-          <Text dimColor wrap="wrap">
-            a buy pays USD and gets base token units, a sell the reverse; before the pool fee
-          </Text>
-        </Box>
-      ) : (
-        <Box flexDirection="column">
-          {cols(
+              ])}
+            </Text>
+          ))}
+          {lines(
             els,
-            'lv-head',
-            [
-              ['', 3],
-              ['price', -13],
-              ['size', -9],
-              ['total', -9],
-            ],
+            'mv-note',
+            wrap(
+              'a buy pays USD and gets base token units, a sell the reverse; before the pool fee',
+              width,
+            ),
             undefined,
             true,
           )}
-          {b.asks
-            .slice(0, depth)
-            .reverse()
-            .map((l, i) => line('ask', l, i))}
-          {cols(els, 'mid', [
-            ['mid', 3],
-            [usd(b.mid) ?? 'none', -13],
-          ])}
-          {b.bids.slice(0, depth).map((l, i) => line('bid', l, i))}
+        </Box>
+      ) : (
+        <Box flexDirection="column">
+          <Text key="lv-head" dimColor bold>
+            {row([
+              ['', 3],
+              ['price', -priceCells],
+              ['size', -9],
+              ['total', -9],
+            ])}
+          </Text>
+          {asks.map((l, i) => level('ask', l, i))}
+          <Text key="mid">
+            {row([
+              ['mid', 3],
+              [usd(b.mid) ?? 'none', -priceCells],
+            ])}
+          </Text>
+          {bids.map((l, i) => level('bid', l, i))}
         </Box>
       )}
     </Box>
   )
 }
 
-// Recent trades, newest first, the side as a word and an arrow. Narrow panes drop the wallet.
+// Recent trades, newest first, the side as a word and an arrow. The wallet shows where it fits.
 function tradesPanel(els: Els, m: Market | null, width: number) {
   const { Box, Text } = els
   const t = m?.trades
-  if (!m)
+  if (!m || !t || t.error)
     return (
-      <Text key="trades" dimColor>
-        recent trades load with /market
-      </Text>
+      <Box key="trades" flexDirection="column">
+        {lines(
+          els,
+          'trades-msg',
+          wrap(
+            !m
+              ? 'recent trades load with /market'
+              : `Recent trades: ${t?.error ?? '/market sent no trades block'}`,
+            width,
+          ),
+          m ? 'yellow' : undefined,
+          !m,
+        )}
+      </Box>
     )
-  if (!t || t.error)
-    return (
-      <Text key="trades" color="yellow" wrap="wrap">
-        {`Recent trades: ${t?.error ?? '/market sent no trades block'}`}
-      </Text>
-    )
-  const all = t.list ?? []
-  const list = all.slice(0, 10)
-  const wallet = width >= 50
+  const list = (t.list ?? []).slice(0, 10)
+  const priceCells = Math.max(5, ...list.map((x) => cells(usd(x.priceUsd) ?? 'none')))
+  const base = 8 + 1 + 6 + 1 + priceCells + 1 + 8
+  const wallet = base + 11 <= width
+  const cols = (x: [string, string, string, string, string]): [string, number][] => [
+    [x[0], 8],
+    [x[1], 6],
+    [x[2], -priceCells],
+    [x[3], -8],
+    ...(wallet ? ([[x[4], 10]] as [string, number][]) : []),
+  ]
   return (
     <Box key="trades" flexDirection="column">
       <Text bold>{`Recent trades, ${age(t.fetchedAt)} old`}</Text>
-      {cols(
-        els,
-        'tr-head',
-        [
-          ['time', 8],
-          ['side', 6],
-          ['price', -13],
-          ['usd', -8],
-          ...(wallet ? ([['wallet', 10]] as [string, number][]) : []),
-        ],
-        undefined,
-        true,
-      )}
-      {list.length === 0 && <Text dimColor>0 trades in the answer. The pool may be quiet.</Text>}
-      {list.map((x, i) =>
-        cols(
+      <Text dimColor bold>
+        {row(cols(['time', 'side', 'price', 'usd', 'wallet']))}
+      </Text>
+      {list.length === 0 &&
+        lines(
           els,
-          `trade-${i}`,
-          [
-            [clock(x.time), 8],
-            [x.side === 'buy' ? '▲ buy' : '▼ sell', 6],
-            [usd(x.priceUsd) ?? 'none', -13],
-            [big(x.volumeUsd) ?? 'none', -8],
-            ...(wallet ? ([[short(x.wallet), 10]] as [string, number][]) : []),
-          ],
-          x.side === 'buy' ? 'green' : 'red',
-        ),
-      )}
-      {t.leftOut && (
-        <Text dimColor wrap="wrap">
-          {t.leftOut}
+          'tr-none',
+          wrap('0 trades in the answer. The pool may be quiet.', width),
+          undefined,
+          true,
+        )}
+      {list.map((x, i) => (
+        <Text key={`trade-${i}`} color={x.side === 'buy' ? 'green' : 'red'} wrap="truncate-end">
+          {row(
+            cols([
+              clock(x.time),
+              x.side === 'buy' ? '▲ buy' : '▼ sell',
+              usd(x.priceUsd) ?? 'none',
+              big(x.volumeUsd) ?? 'none',
+              short(x.wallet),
+            ]),
+          )}
         </Text>
-      )}
+      ))}
+      {t.leftOut && lines(els, 'tr-left', wrap(t.leftOut, width, 2), undefined, true)}
     </Box>
   )
 }
