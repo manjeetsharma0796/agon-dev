@@ -29,8 +29,8 @@ import type { ServerResponse } from 'node:http'
 import { Address } from '@agon/core'
 import { PublicKey } from '@solana/web3.js'
 
-const KEYED = 'https://api.jup.ag/tokens/v2'
-const KEYLESS = 'https://lite-api.jup.ag/tokens/v2'
+const API_HOST = 'https://api.jup.ag/tokens/v2'
+const LITE_HOST = 'https://lite-api.jup.ag/tokens/v2'
 const GEMS = 'https://datapi.jup.ag/v1/pools/gems'
 const LIMIT = 50
 /** Lists change by the second, but 30 s is 2 calls a minute a list however many screens poll. */
@@ -324,7 +324,7 @@ export function createDiscover({
   upstream = httpGet,
   key = process.env['JUPITER_API_KEY'] ?? '',
 }: { upstream?: Upstream; key?: string } = {}) {
-  const base = key ? KEYED : KEYLESS
+  const base = key ? API_HOST : LITE_HOST
   const host = key
     ? 'api.jup.ag with the JUPITER_API_KEY header, free plan 1 request a second'
     : 'lite-api.jup.ag keyless, 0.5 requests a second, because JUPITER_API_KEY is not set; set it to use api.jup.ag'
