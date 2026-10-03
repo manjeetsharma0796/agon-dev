@@ -3524,7 +3524,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-C41, /market stops a 429 storm: 1 cool-down for the whole queue, last good data while it lasts
-- Status: open
+- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-c41-cooldown
 - Depends-on: T-C33
 - Touches: packages/mcp/src/market.ts, packages/mcp/src/market.test.ts
 - Serves: UX (judged) ; the trade view keeps showing numbers when GeckoTerminal rate-limits this IP
