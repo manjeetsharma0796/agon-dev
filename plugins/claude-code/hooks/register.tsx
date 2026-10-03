@@ -96,11 +96,13 @@ const move = (v: unknown) => {
   if (c === null) return null
   return `${c > 0 ? '▲ +' : c < 0 ? '▼ ' : '= '}${c.toFixed(2)}%`
 }
-// A book size as sent when it fits its column, compacted when it would not.
+// A book size as sent when it fits its column; otherwise compact from 1,000 and 4 significant
+// digits below, so a small size never prints as 0.00.
 const cell = (v: unknown, width: number) => {
   const n = num(v)
   if (n === null) return 'none'
-  return String(n).length <= width ? String(n) : big(n, false)!
+  if (String(n).length <= width) return String(n)
+  return Math.abs(n) >= 1000 ? big(n, false)! : decimals(n.toPrecision(4))
 }
 const tone = (v: unknown) => {
   const n = num(v)
@@ -147,7 +149,9 @@ async function refreshStatus($: Dollar) {
       error: `the Agon server is not answering at ${server} (${why(e)}). Start it as docs/public/agent-setup.md says, or set this plugin's serverUrl.`,
     })
   }
-  // The band and the pane draw from this one value; both are asked to redraw with it.
+  // The band and the pane draw from this one value. The write alone should redraw both, but live on
+  // 2.1.288's desktop the band kept "Connecting" while the pane showed "Live", so this plugin's own
+  // instances are asked to redraw too (at most once per poll).
   $.ui.invalidate('ui.render')
 }
 
@@ -881,14 +885,22 @@ function bookPanel(els: Els, m: Market | null, width: number) {
                   mv.side === 'buy' ? '▲ buy' : mv.side === 'sell' ? '▼ sell' : mv.side.slice(0, 6),
                   6,
                 ],
-                [big(mv.quoteIn) ?? 'none', -9],
-                [cell(mv.baseOut, 9), -9],
+                // depth.ts: a buy pays quoteIn (USD) for baseOut; a sell pays baseOut for quoteIn.
+                ...((mv.side === 'sell'
+                  ? [
+                      [cell(mv.baseOut, 9), -9],
+                      [big(mv.quoteIn) ?? 'none', -9],
+                    ]
+                  : [
+                      [big(mv.quoteIn) ?? 'none', -9],
+                      [cell(mv.baseOut, 9), -9],
+                    ]) as [string, number][]),
               ],
               mv.side === 'buy' ? 'green' : 'red',
             ),
           )}
           <Text dimColor wrap="wrap">
-            pay in USD, get in base token units, before the pool fee
+            a buy pays USD and gets base token units, a sell the reverse; before the pool fee
           </Text>
         </Box>
       ) : (

@@ -103,6 +103,8 @@ const CURVE = {
   moves: [
     { pct: 1, side: 'buy', quoteIn: 1204.7512, baseOut: 56713000.5 },
     { pct: 5, side: 'sell', quoteIn: 6400, baseOut: 281200000 },
+    // A size too wide for its column and under 1: 4 significant digits, never 0.00.
+    { pct: 10, side: 'buy', quoteIn: 12.5, baseOut: 0.00123456789 },
   ],
   basis: 'Constant product from the reserves.',
   ttlSeconds: 10,
@@ -341,9 +343,10 @@ test('the book is honest when missing, failed or a curve; a bad mint and a down 
       'Cost to move the price',
       'Raydium CPMM  Gu8R..Sn5o  slot 371234556',
       '1%\n▲ buy\n$1.2K\n56.7M',
-      // 9 characters fit the column, so the size is shown as sent.
-      '5%\n▼ sell\n$6.4K\n281200000',
-      'pay in USD, get in base token units',
+      // A sell pays base units and gets USD; 9 characters fit the column, so shown as sent.
+      '5%\n▼ sell\n281200000\n$6.4K',
+      '10%\n▲ buy\n$12.50\n0.001235',
+      'a buy pays USD and gets base token units, a sell the reverse',
     ])
       expect(p).toContain(want)
 

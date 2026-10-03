@@ -3317,9 +3317,12 @@ _(empty)_
   both run with an empty `CLAUDE_CONFIG_DIR` and no API key in 0.6 s, so CI could run them with no secret,
   but no workflow installs `claude` and workflows are outside Touches: skipped by name. The terminal's
   element table answers `'Svg' in els` as true and draws it as an empty box, which drew 0 candles while
-  every text check passed; the chart is chosen by surface. `String(n)` writes 2.11e-7 below 1e-6, shown as
-  0.000000211 by moving digits. `/market` sends no liquidity, so the header says so. Terminal candles are
-  half-block only. The book panel is tested against T-C35's contract until its `book` field merges.
+  every text check passed; the chart is chosen by surface. A live server sends 14 to 16 digit floats
+  ("SOL $119.44073547737729"); they are now rounded by the opencode trade view's rules ($119.441, $165.2M,
+  2 decimal percents), and toPrecision's 2.110e-7 below 1e-6 is shown as 0.0000002110. Live on desktop the
+  band read "Connecting" while the pane read "Live" from the same value; both now share 1 reading and
+  redraw on each poll. `/market` sends no liquidity, so the header says so. Terminal candles are half-block
+  only, at least 12 rows. T-C35's book is drawn as a ladder of up to 10 a side, or a curve's move table.
 - Kill criterion: none
 
 ### T-C37, /market sends liquidity, and /status says plainly when the network is not set
