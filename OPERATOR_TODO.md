@@ -1109,3 +1109,34 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   needs its branch renamed to `feature/t-c36-check-trade-no-history` after T-C24's duplicate id was
   renumbered to T-C36 in #268
 - Done when: #260 is merged into dev
+
+### OP-41, A second person reviews the action layer, #284
+- Status: open
+- Owner: manjeetsharma0796 or prithwish122
+- Needed by: before any order entry screen (Part 4 of docs/plans/agon-terminal.md) is built on it
+- Unblocks: T-C32, and order entry on the web, in opencode and in Claude Code
+- What exactly: #284 builds and sends transactions, so TASKS.md section 2 asks a second human to read
+  it; CI and an agent review do not count. Its measured run on the fork: a buy at exactly the 400000
+  lamport cap confirmed as 5DUXWhRg9Di3sxDPVFaPkvNoAeThQrM1T3iTYUJg7EjPkRj9Y9aPjapf9D7EUdTf4hpkjVamzmWM9KFvJbhnsYqo,
+  1 lamport over returned the owner link and sent nothing, a repeat send was refused. Read actions.ts
+  for the cap boundary, the owner-only powers and the sent-then-failed rows
+- Done when: a person other than the author approves #284 on GitHub
+
+### OP-42, Rebase the vault P&L PR, #262, so the Portfolio screens can start
+- Status: open
+- Owner: manjeetsharma0796
+- Needed by: before T-C31, T-E20, T-E21 and T-E22 start
+- Unblocks: Part 2 of the Agon terminal, the Portfolio, on every surface
+- What exactly: #262 (T-C27) conflicts with dev since 2026-10-02 and has not moved since 2026-10-01.
+  T-C31 builds the return against holding SOL, the equity curve and the cap meter on its report
+- Done when: #262 is merged
+
+### OP-43, Mark GitGuardian's 4 hits on #281 as false positives
+- Status: open
+- Owner: whoever holds the GitGuardian dashboard
+- Needed by: no date; it only keeps a red mark on a merged PR
+- Unblocks: nothing on the board
+- What exactly: the 4 hits are the public SPL Token program id assigned to a constant named TOKEN in
+  T-C35's first 2 commits (renamed to SPL before the merge). It is a public program address, not a secret
+- Done when: the 4 incidents are resolved as false positives
+

@@ -3315,7 +3315,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-C37, /market sends liquidity, and /status says plainly when the network is not set
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/286 | Owner: jishnu-baruah | Branch: feature/t-c37-liquidity
+- Status: done
 - Depends-on: T-C33, T-C34
 - Touches: packages/mcp/src/market.ts, packages/mcp/src/market.test.ts, packages/mcp/src/stream.ts,
   packages/mcp/src/stream.test.ts
@@ -3341,4 +3341,32 @@ _(empty)_
   returns 'unset' for a typo as well as a missing value, so the note says "not set, or not 1 of fork,
   devnet or mainnet". The trade view in `.opencode/tui/agon-trade.tsx` (outside Touches) still prints
   "liquidity: /market sends none" and should now read `stats24h.liquidityUsd`
+- Kill criterion: none
+
+### T-C38, /discover: the market list and its safety numbers, computed once for every surface
+- Status: open
+- Depends-on: T-C33
+- Touches: packages/mcp/src/discover.ts, packages/mcp/src/discover.test.ts, packages/mcp/src/serve.ts
+- Serves: UX (judged) ; the market list a trader expects, the same on the web, in opencode and in
+  Claude Code
+- Acceptance: `GET /discover?list=&sort=` returns up to 50 tokens for trending, most traded, top
+  organic, new, about to graduate and graduated, each with mint, price, change by window, volume,
+  market cap, liquidity, holders, top 10 holders %, dev %, mint and freeze authority, bonding curve %
+  where it applies, age, and the source and time of every figure; token names and symbols are labelled
+  as untrusted display text and are never part of anything handed to an agent; mints validated at the
+  boundary; 1 cache and 1 queue per upstream, with the measured upstream calls a minute for 10 clients
+  under the provider's free limit; a figure the source does not send is named as not sent, never 0
+- Evidence: <PR link>
+- Kill criterion: none
+
+### T-E26, The opencode views read /discover and show liquidity
+- Status: open
+- Depends-on: T-C38
+- Touches: .opencode/tui/agon-discovery.tsx, .opencode/tui/agon-trade.tsx
+- Serves: UX (judged) ; 1 source for the list on every surface, and no "not sent" left in the header
+- Acceptance: discovery reads its lists from `/discover` instead of calling Jupiter and GeckoTerminal
+  itself, so the plugin makes 0 direct upstream calls; the trade view header shows `/market`'s
+  liquidity with its reserve-to-volume flag (T-C37) instead of "liquidity: /market sends none"; every
+  number equal to the server's; read at 80 and 140 columns with no overprinted line
+- Evidence: <PR link, screens>
 - Kill criterion: none
