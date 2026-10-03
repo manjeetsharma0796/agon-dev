@@ -3409,7 +3409,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-E27, The market list in Claude Code, from /discover
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/293
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/293 | Owner: jishnu-baruah | Branch: feature/t-e27-claude-markets
 - Depends-on: T-C38, T-E25
 - Touches: plugins/claude-code/
 - Serves: UX (judged) ; the same market list in Claude Code as in opencode, from 1 source
