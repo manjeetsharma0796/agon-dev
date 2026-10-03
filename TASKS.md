@@ -3311,9 +3311,17 @@ _(empty)_
   (braille and half-block on the terminal, SVG on the desktop), the book or depth labelled by kind and
   recent trades; read at 60, 80 and 140 columns; every number equal to `/market`'s; mints only reach the
   prompt, never a token's name
-- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/280 ; `claude plugin validate` passes and
-  `claude plugin test` 5 pass on Claude Code 2.1.288; the coordinator ran it live against a real server
-- Finding: 3 upstream hosts became 1 (the Agon server). `claude plugin validate` and `claude plugin test`
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/280 ; 2 live runs on 2026-10-03, Claude
+  Code 2.1.288 in Windows Terminal against a real server on fork with T-C35 and T-C37 merged (normal
+  window: whole pane fits, header with liq and pool, status, axis, volume, OHLC with MA20 and EMA20;
+  window launched maximized: right side clipped); `claude plugin validate` passes, `claude plugin test` 5
+  pass 0 fail, both locally since CI has no `claude` CLI
+- Finding: the clipping is the host's, measured with a temporary width readout (laid out, body,
+  viewport, transcript, placement): a normal window read "w72 b74 v45 t45 dock" and the 72-column layout
+  fit on screen; the same window launched maximized read "w72 b74 v81 t81 dock" and only about 45 of the
+  74 body columns were visible. The host reports the same 74-column body both times and a viewport equal
+  to the transcript's width, so the plugin cannot see the lost columns; the fallback to the terminal less
+  the transcript stays for hosts whose viewport is the whole terminal. Before that: 3 upstream hosts became 1 (the Agon server). `claude plugin validate` and `claude plugin test`
   both run with an empty `CLAUDE_CONFIG_DIR` and no API key in 0.6 s, so CI could run them with no secret,
   but no workflow installs `claude` and workflows are outside Touches: skipped by name. The terminal's
   element table answers `'Svg' in els` as true and draws it as an empty box, which drew 0 candles while

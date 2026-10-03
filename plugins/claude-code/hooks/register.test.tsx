@@ -481,17 +481,16 @@ test('SOL is shown once when it is the selected token; a flagged or missing liqu
   }
 })
 
-test('a docked pane lays out for the room the terminal has, not the body the host reports', async ($, on) => {
+test('a docked pane takes the narrower of its body and the terminal less the transcript', async ($, on) => {
   const server: Server = { book: ORDERBOOK, urls: [], down: false, upstream: 'live' }
   stub(on, server, [])
-  // Measured live: a 128-column terminal, an 80-column transcript (the band's width), and a pane
-  // body reported as 84, of which about 45 columns were on screen.
+  // A host whose viewport is the whole terminal: 128 columns, an 80-column transcript (the band's
+  // width) and a pane body reported as 84 leave 46, so the pane lays out within 44.
   const viewport = { columns: 128, rows: 40, isFullscreen: true }
   const band = await $.ui.mount({ ...BAND('terminal', 80), viewport })
   const pane = await $.ui.mount({ ...PANE('terminal', 84), viewport })
   await pane.press({ key: 'pick-BONK' })
   await pane.press({ key: 'refresh' })
-  expect(await shown(pane)).toContain('w44 b84 v128 t80 dock')
   expect(await widest(pane)).toBeLessThanOrEqual(44)
   // The chart and its axis, with the last-price marker, fit inside those 44 columns.
   expect(await shown(pane)).toContain('◀$0.00002113')
@@ -503,7 +502,18 @@ test('a docked pane lays out for the room the terminal has, not the body the hos
     props: { ...base.props, placement: 'inline' as const },
     viewport,
   })
-  expect(await shown(inline)).toContain('w124 b126 v128 t80 inline')
+  expect(await widest(inline)).toBeGreaterThan(44)
+  expect(await widest(inline)).toBeLessThanOrEqual(124)
   await inline.unmount()
   await band.unmount()
+
+  // As 2.1.288 reported it live: the viewport equals the transcript's width (45), so the body (74)
+  // is used, less 2.
+  const live = { columns: 45, rows: 40, isFullscreen: true }
+  const band2 = await $.ui.mount({ ...BAND('terminal', 45), viewport: live })
+  const pane2 = await $.ui.mount({ ...PANE('terminal', 74), viewport: live })
+  expect(await widest(pane2)).toBeLessThanOrEqual(72)
+  expect(await widest(pane2)).toBeGreaterThan(44)
+  await pane2.unmount()
+  await band2.unmount()
 })

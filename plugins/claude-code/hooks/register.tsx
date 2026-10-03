@@ -397,11 +397,13 @@ function lines(els: Els, key: string, list: string[], color?: string, dim?: bool
   ))
 }
 
-// The transcript's width, which the band is given while the pane is docked beside it. Live on a
-// 128-column Windows Terminal (2.1.288) the host laid the docked pane out wider than the room left
-// beside an 82-column transcript, so about half of it drew past the screen's edge. The pane takes
-// the narrower of its reported body and the terminal less the transcript, so the width it lays out
-// for is one it can see; `diag` says which numbers it had (temporary, for the live check).
+// The transcript's width, which the band is given while the pane is docked beside it. A fallback:
+// a docked pane takes the narrower of its reported body and the terminal less the transcript.
+// Measured live on 2.1.288 (2026-10-03): a normal Windows Terminal window gave body 74 with viewport
+// and transcript both 45, and the pane fit; launched maximized it gave body 74 with viewport and
+// transcript both 81, and only about 45 of the 74 columns were on screen. The viewport there equals
+// the transcript's width, so this check does not engage; the clipping is the host's idea of the
+// terminal's size when launched maximized, not something the plugin can see.
 let transcriptColumns: number | null = null
 function usable(e: Site, body: number) {
   let w = body
@@ -419,11 +421,7 @@ function usable(e: Site, body: number) {
     if (room >= 30 && room < w) w = room
   }
   // A column for the scrollbar a tall pane draws, and 1 to spare.
-  const width = Math.max(30, w - 2)
-  return {
-    width,
-    diag: `w${width} b${body} v${vp ?? '-'} t${transcriptColumns ?? '-'} ${placement ?? '-'}`,
-  }
+  return Math.max(30, w - 2)
 }
 
 // The band: connection, RPC ping, SOL, the selected token's price and change, the pane's toggle.
@@ -665,7 +663,7 @@ async function pane($: Dollar, e: Site) {
     Raster?: ElementConstructor<RasterProps>
   }
   const props = e.props as { bodyColumns?: number; scroll?: { bodyRows?: number } }
-  const { width, diag } = usable(e, props.bodyColumns ?? 80)
+  const width = usable(e, props.bodyColumns ?? 80)
   const wide = width >= 108
   const st = (await $.state.get(STATUS)).value ?? null
   const mk = (await $.state.get(MARKET)).value ?? null
@@ -733,8 +731,6 @@ async function pane($: Dollar, e: Site) {
     <Box key="status" flexDirection="column">
       {cells(conn) > 24 && lines(els, 'conn', wrap(conn, width), connTone)}
       {fit2(statusParts, width).map((p, i) => line(els, `status-${i}`, p))}
-      {/* Temporary, for the live check: the width laid out for and the numbers it came from. */}
-      {line(els, 'diag', [{ text: diag, prio: 0, dim: true }])}
       {Input && (
         <Input
           key="mint"
