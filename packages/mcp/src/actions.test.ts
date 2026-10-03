@@ -398,6 +398,30 @@ test('a journal that cannot record the send stops the trade before the chain see
   expect(sent).toHaveLength(0)
 })
 
+// From /code-review: a `sent` row that missed its deadline can still land, which would leave a
+// trade that looks in flight forever. A `failed` row with the same signature follows it.
+test('a sent row that lands after its deadline is followed by a row saying it never went', async () => {
+  const { io } = vaultIo(500000000n)
+  const { chain, sent } = fakeChain('lands')
+  const m = memory()
+  wire(io, chain, m, {
+    sentRowMs: 50,
+    mustRecord: async (row) => {
+      await sleep(200)
+      await m.store.insert(row)
+    },
+  })
+  const out = await signAndSend((await buy(MEDIAN)).body)
+  expect(out.body['outcome']).toBe('refused')
+  await sleep(400)
+  expect(sent).toHaveLength(0)
+  expect(m.rows.slice(-2).map((r) => [r.status, r.reasons[0]?.rule])).toEqual([
+    ['sent', 'sent'],
+    ['failed', 'not-sent'],
+  ])
+  expect(m.rows.at(-1)?.signature).toBe(m.rows.at(-2)?.signature)
+})
+
 // ---- Proposals, pause, cancel. ----
 
 test('an agent proposal expires unanswered and does nothing; approve runs the same buy; decline is a row', async () => {
@@ -484,6 +508,10 @@ test('only a fresh signature by the owner or a hired key acts: stranger, stale, 
   wire(io, fakeChain('lands').chain)
   expect((await buy(MEDIAN, {}, stranger, 'agent')).status).toBe(401)
   expect((await buy(MEDIAN, {}, agent, 'owner-web')).status).toBe(401)
+  // From /code-review: the daemon and the agent hold the same hired key, so a hired key calling
+  // itself the owner would confirm its own unsure and lift its own pause. Powers follow the key.
+  expect((await buy(MEDIAN, { confirmUnsure: true }, agent, 'owner-terminal')).status).toBe(401)
+  expect((await act('pause', { paused: false }, agent, 'owner-terminal')).status).toBe(401)
   const stale = new Date(Date.now() - 61_000).toISOString()
   expect((await act('pause', { paused: true }, owner, 'owner-terminal', stale)).status).toBe(401)
 

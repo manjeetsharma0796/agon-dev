@@ -68,6 +68,7 @@ export interface ActionDeps {
   watchMs?: number
   pollMs?: number
   proposalMs?: number
+  sentRowMs?: number
 }
 
 const ACTIONS = ['buy', 'sell', 'cancel', 'pause', 'approve', 'decline'] as const
@@ -92,7 +93,7 @@ const WAIT_MS = 30_000
 const WATCH_MS = 180_000
 const POLL_MS = 500
 /** How long the `sent` row may take. Neon's cold first write measured 4,657 ms (T-C30). */
-const SENT_ROW_MS = 6_000
+const SENT_ROW_MS = 10_000
 const BODY_LIMIT = 16_384
 const DEFAULT_SLIPPAGE_BPS = 50
 const MAX_SLIPPAGE_BPS = 100
@@ -388,9 +389,11 @@ const swapOf = (owner: string, side: 'buy' | 'sell', ask: TradeAsk) =>
 // ---- Step 1: who pressed, then the action. ----
 
 /**
- * Proof of who pressed: a fresh ed25519 signature over the action's text by the owner (any actor)
- * or by a key the owner's vault hires on chain now (the terminal and the agent). The web proves the
- * owner's own key, since only Phantom signs there. A signature works once.
+ * Proof of who pressed: a fresh ed25519 signature over the action's text. An owner actor, on the web
+ * or in the terminal, proves the owner's own wallet key; the agent proves a key the owner's vault
+ * hires on chain now. Powers follow the key, never the label: the terminal's daemon and the agent
+ * hold the same hired key, so a hired key claiming to be the owner could confirm its own unsure,
+ * approve its own proposal and lift its own pause. A signature works once.
  */
 async function authorize(
   p: Parsed,
@@ -434,20 +437,15 @@ async function authorize(
   }
   if (vault.vault === null) return error(404, noVault({ owner: p.owner }).text)
   const hired = vault.rules.map((r) => r.authority)
-  const allowed =
-    p.actor === 'owner-web'
-      ? p.actorKey === p.owner
-      : p.actor === 'owner-terminal'
-        ? p.actorKey === p.owner || hired.includes(p.actorKey)
-        : hired.includes(p.actorKey)
+  const allowed = p.actor === 'agent' ? hired.includes(p.actorKey) : p.actorKey === p.owner
   if (!allowed) {
     return error(
       401,
-      p.actor === 'owner-web'
-        ? `On the web only the owner's own wallet ${p.owner} signs, and ${p.actorKey} is not it, ` +
-            'so nothing was done.'
-        : `${p.actorKey} is not ${p.owner} and not among the ${new Set(hired).size} agent keys its ` +
-            `vault ${vault.vault} hires on chain now, so nothing was done.`,
+      p.actor === 'agent'
+        ? `${p.actorKey} is not among the ${new Set(hired).size} agent keys the vault ` +
+            `${vault.vault} hires on chain now, so nothing was done.`
+        : `As ${p.actor} only the owner's own wallet ${p.owner} signs, and ${p.actorKey} is not ` +
+            'it, so nothing was done. A hired key acts as agent.',
     )
   }
   // Checked again after the read, so 2 concurrent requests with 1 signature cannot both act.
@@ -529,11 +527,7 @@ async function trade(
   // Who would sign inside the cap: never on the web, where only the owner's wallet signs.
   const hired = vault.rules.map((r) => r.authority)
   const signer =
-    who.actor === 'owner-web'
-      ? null
-      : who.actor === 'agent'
-        ? who.actorKey
-        : (ask.agent ?? (who.actorKey !== who.owner ? who.actorKey : null))
+    who.actor === 'owner-web' ? null : who.actor === 'agent' ? who.actorKey : (ask.agent ?? null)
   if (signer !== null && !hired.includes(signer)) {
     return refuse(
       `Agent key ${signer} is not hired by the vault ${vault.vault} on chain now, so nothing was ` +
@@ -1060,38 +1054,52 @@ async function sendCleared(raw: unknown, deps: ActionDeps): Promise<Answer> {
   }
 
   const signature = toBase58(sig)
+  const sentRowMs = deps.sentRowMs ?? SENT_ROW_MS
+  const write = deps.mustRecord(
+    rowOf(c.who, c.side, 'sent', {
+      ...facts,
+      signature,
+      reasons: [
+        {
+          rule: 'sent',
+          message: `Signed by agent key ${c.signer} and sent once as ${signature}. Agon never sends it again.`,
+        },
+      ],
+    }),
+  )
+  let timer: ReturnType<typeof setTimeout> | undefined
   try {
-    let timer: ReturnType<typeof setTimeout> | undefined
     await Promise.race([
-      deps.mustRecord(
-        rowOf(c.who, c.side, 'sent', {
-          ...facts,
-          signature,
-          reasons: [
-            {
-              rule: 'sent',
-              message: `Signed by agent key ${c.signer} and sent once as ${signature}. Agon never sends it again.`,
-            },
-          ],
-        }),
-      ),
+      write,
       new Promise((_, reject) => {
-        timer = setTimeout(() => reject(new Error('write-timeout')), SENT_ROW_MS)
+        timer = setTimeout(() => reject(new Error('write-timeout')), sentRowMs)
       }),
-    ]).finally(() => clearTimeout(timer))
+    ])
   } catch (e) {
     // The `sent` row carries the signature an uncertain trade is found by later. Without it the
-    // journal could not say what went out, so nothing goes out.
+    // journal could not say what went out, so nothing goes out. A write that timed out may still
+    // land, so once it settles either way a `failed` row with the same signature says it never went.
     const cause =
       e instanceof Error && e.message === 'write-timeout'
-        ? `no answer in ${SENT_ROW_MS} ms`
+        ? `no answer in ${sentRowMs} ms`
         : causeOf(e)
-    return answer({
-      outcome: 'refused',
-      message:
-        `The send could not be journaled (${cause}), so nothing was sent: a trade the journal ` +
-        'cannot account for does not go out. Try again once the journal is back.',
-    })
+    const message =
+      `The send could not be journaled (${cause}), so nothing was sent: a trade the journal ` +
+      'cannot account for does not go out. Try again once the journal is back.'
+    void write
+      .catch(() => undefined)
+      .then(() =>
+        deps.journal.record(
+          rowOf(c.who, c.side, 'failed', {
+            ...facts,
+            signature,
+            reasons: [{ rule: 'not-sent', message }],
+          }),
+        ),
+      )
+    return answer({ outcome: 'refused', message })
+  } finally {
+    clearTimeout(timer)
   }
 
   // 1 send. The RPC's own rebroadcast of these same bytes cannot land them twice; Agon never sends
