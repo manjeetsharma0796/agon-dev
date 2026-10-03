@@ -3458,7 +3458,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-E28, Ask the agent from the terminal: the screen's context in the prompt, mints only
-- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-e28-ask-agent
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/297 | Owner: jishnu-baruah | Branch: feature/t-e28-ask-agent
 - Depends-on: T-E26, T-E27
 - Touches: .opencode/tui/agon-discovery.tsx, .opencode/tui/agon-trade.tsx, plugins/claude-code/
 - Serves: UX (judged) ; the copilot sees what the person sees without the person retyping it
@@ -3467,7 +3467,7 @@ _(empty)_
   latest candle, the book's kind and best levels, and the selected trade if any; under 400 tokens like
   `check_trade`, measured on 3 tokens; 0 token names or symbols, asserted by a test that injects a
   name into every field the server sends; the packet's numbers equal the screen's
-- Evidence: PRLINK. opencode: `a` on the trade page (opencode 1.18.34 binds no bare `a`: of its 153
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/297. opencode: `a` on the trade page (opencode 1.18.34 binds no bare `a`: of its 153
   default keys only the diff viewer's take bare letters). Claude Code: an Ask button with hotkey `a`.
   Both fill, never send, with 1 packet shape whose builder is byte-identical in both plugins and
   checked against the same expected text. Measured by packages/mcp's counter (characters / 4) on
