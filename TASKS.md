@@ -3263,7 +3263,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-E25, The Claude Code plugin in the repo, with the trade view and the status band
-- Status: open
+- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-e25-claude-code
 - Depends-on: T-C33, T-C34
 - Touches: plugins/claude-code/
 - Serves: UX (judged) ; the same trade view in Claude Code's terminal and desktop app
