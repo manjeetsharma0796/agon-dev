@@ -1138,5 +1138,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
 - Unblocks: nothing on the board
 - What exactly: the 4 hits are the public SPL Token program id assigned to a constant named TOKEN in
   T-C35's first 2 commits (renamed to SPL before the merge). It is a public program address, not a secret
-- Done when: the 4 incidents are resolved as false positives
+- Also: 1 more on #289 (T-C38), a public Solana address in a test constant in its first commit,
+  renamed before the merge
+- Done when: the 5 incidents are resolved as false positives
 
