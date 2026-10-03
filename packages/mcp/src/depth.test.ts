@@ -141,7 +141,10 @@ describe('concentrated liquidity to token amounts', () => {
     })
     expect(ladder.mid).toBeCloseTo(100, 9)
     // 1e12 (1/sqrt(0.1) - 1/sqrt(0.101)) raw lamports, over 10^9.
-    expect(ladder.asks[0]!.size).toBeCloseTo((1e12 * (1 / Math.sqrt(0.1) - 1 / Math.sqrt(0.101))) / 1e9, 6)
+    expect(ladder.asks[0]!.size).toBeCloseTo(
+      (1e12 * (1 / Math.sqrt(0.1) - 1 / Math.sqrt(0.101))) / 1e9,
+      6,
+    )
   })
 })
 
@@ -230,10 +233,10 @@ describe('order ladders', () => {
     const l = ordersLadder(orders, 100, 2, 0.005)
     expect(l.mid).toBe(200)
     expect(l.asks).toEqual([
-      { price: 201, size: 3, total: 3 },
-      { price: 202, size: 3, total: 6 },
+      { price: expect.closeTo(201, 9), size: 3, total: 3 },
+      { price: expect.closeTo(202, 9), size: 3, total: 6 },
     ])
-    expect(l.bids).toEqual([{ price: 199, size: 5, total: 5 }])
+    expect(l.bids).toEqual([{ price: expect.closeTo(199, 9), size: 5, total: 5 }])
   })
 
   test('flipping a book to the other token keeps the value on each side', () => {
@@ -248,7 +251,9 @@ describe('Manifest market accounts', () => {
   // A market built by hand in the layout of CKS-Systems/manifest client/ts: 256 bytes of
   // MarketFixed, then 80-byte nodes (16 of red-black header, 64 of RestingOrder).
   const NIL = 0xffffffff
-  function market(orders: { price: number; atoms: bigint; bid: boolean; lastValidSlot?: number }[]) {
+  function market(
+    orders: { price: number; atoms: bigint; bid: boolean; lastValidSlot?: number }[],
+  ) {
     const d = Buffer.alloc(256 + 80 * orders.length)
     d.writeBigUInt64LE(4859840929024028656n, 0)
     d[9] = 9 // base decimals
@@ -268,7 +273,7 @@ describe('Manifest market accounts', () => {
       else roots[side] = at
       last[side] = at
       // Price: quote atoms per base atom times 10^18. 100 USDC per SOL is 0.1 atoms per atom.
-      const raw = BigInt(Math.round(o.price * 1e3)) * 10n ** 14n
+      const raw = BigInt(Math.round(o.price * 1e3)) * 10n ** 12n
       d.writeBigUInt64LE(raw & 0xffffffffffffffffn, 256 + at + 16)
       d.writeBigUInt64LE(raw >> 64n, 256 + at + 24)
       d.writeBigUInt64LE(o.atoms, 256 + at + 32)
@@ -288,6 +293,8 @@ describe('Manifest market accounts', () => {
         { price: 100.5, atoms: 1_500_000_000n, bid: false },
         { price: 101, atoms: 1_000_000_000n, bid: false, lastValidSlot: 10 },
         { price: 99, atoms: 3_000_000_000n, bid: true, lastValidSlot: 2_000 },
+        // Valid through its last valid slot: the program expires it only once the slot is past.
+        { price: 98, atoms: 1_000_000_000n, bid: true, lastValidSlot: 1_000 },
       ]),
       1_000,
     )
@@ -297,6 +304,7 @@ describe('Manifest market accounts', () => {
     expect(m.orders).toEqual([
       { price: 99.5, size: 2, side: 'bid' },
       { price: 99, size: 3, side: 'bid' },
+      { price: 98, size: 1, side: 'bid' },
       { price: 100.5, size: 1.5, side: 'ask' },
     ])
   })
@@ -328,8 +336,9 @@ describe('reading a pool', () => {
     d[45] = 1
     return d
   }
-  const vault = (amount: bigint) => {
+  const vault = (holds: string, amount: bigint) => {
     const d = Buffer.alloc(165)
+    key(holds).copy(d, 0)
     d.writeBigUInt64LE(amount, 64)
     return d
   }
@@ -339,8 +348,8 @@ describe('reading a pool', () => {
       if (a === POOL) return { owner: PUMPSWAP, data: pumpswap() }
       if (a === MINT) return { owner: TOKEN, data: mint(6) }
       if (a === SOL) return { owner: TOKEN, data: mint(9) }
-      if (a === BASE_VAULT) return { owner: TOKEN, data: vault(1_000_000_000_000n) }
-      if (a === QUOTE_VAULT) return { owner: TOKEN, data: vault(10_000_000_000n) }
+      if (a === BASE_VAULT) return { owner: TOKEN, data: vault(MINT, 1_000_000_000_000n) }
+      if (a === QUOTE_VAULT) return { owner: TOKEN, data: vault(SOL, 10_000_000_000n) }
       return null
     }),
   })
