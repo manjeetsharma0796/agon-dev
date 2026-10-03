@@ -480,8 +480,23 @@ export const lpad = (s: string, n: number) => {
 }
 // A figure the server did not send. Drawn dim, never as 0, never as "N/A".
 const NOT_SENT = 'not sent'
-const price = (p: number | null) =>
-  p === null ? NOT_SENT : p >= 1 ? `$${p.toFixed(2)}` : `$${p.toPrecision(3)}`
+// toPrecision writes 2.110e-7 below 1e-6; its digits are moved into plain decimals, as the Claude
+// Code plugin (T-E25) prints them, so a trader reads the same figure on both surfaces.
+const decimals = (s: string) => {
+  const m = /^(-?)(\d)(?:\.(\d+))?e([+-]\d+)$/.exec(s)
+  if (!m) return s
+  const [, sign, int, frac = '', exp] = m
+  const e = Number(exp)
+  return e < 0
+    ? `${sign}0.${'0'.repeat(-e - 1)}${int}${frac}`
+    : `${sign}${int}${frac}${'0'.repeat(Math.max(0, e - frac.length))}`
+}
+/** A price, T-E25's rule: 2 decimals from $1,000, 6 significant digits from $1, 4 below. */
+export const money = (v: number) => {
+  const a = Math.abs(v)
+  return `$${decimals(a >= 1000 ? v.toFixed(2) : a >= 1 ? v.toPrecision(6) : v.toPrecision(4))}`
+}
+const price = (p: number | null) => (p === null ? NOT_SENT : money(p))
 // Compact so a 7425% move fits the column instead of losing its sign or its % sign.
 const pct = (c: number | null) => {
   if (c === null) return NOT_SENT
@@ -715,6 +730,7 @@ function createModel(api: TuiPluginApi, options: Options) {
   return {
     api,
     mcpUrl: options.mcpUrl,
+    logos: options.logos,
     watchMints,
     watchlist,
     watchErrors,
@@ -743,8 +759,9 @@ type Model = ReturnType<typeof createModel>
 function Logo(props: { model: Model; token: Token; size: number }) {
   const cells = () => props.model.logo(props.token.icon, props.size)
   const theme = () => props.model.api.theme.current
+  // With logos off (the default) only the letter is drawn, so it takes 1 line, not the logo's.
   return (
-    <box flexDirection="column" width={props.size} height={props.size / 2}>
+    <box flexDirection="column" width={props.size} height={props.model.logos ? props.size / 2 : 1}>
       <Show
         when={cells()}
         fallback={
@@ -901,7 +918,7 @@ function Sidebar(props: { model: Model; open: () => void; openSetup: () => void 
           <box
             flexDirection="row"
             gap={1}
-            height={3}
+            height={props.model.logos ? 3 : 2}
             onMouseDown={(e) => {
               if (e.button !== 0 || api.ui.dialog.open) return
               props.model.setFocus(t.mint)
@@ -915,7 +932,7 @@ function Sidebar(props: { model: Model; open: () => void; openSetup: () => void 
                 <V
                   api={api}
                   v={t.price}
-                  text={lpad(price(t.price), 11)}
+                  text={lpad(price(t.price), 13)}
                   bg={theme()?.backgroundPanel}
                 />
               </text>
@@ -1311,11 +1328,19 @@ function Page(props: {
     Math.ceil(hint().length / Math.max(20, dims().width - 2)) +
     (model.error() ? 1 : 0) +
     (view() === 'table' ? 1 : 0)
-  // Table rows are 2 lines tall for a 4 by 4 pixel logo; cards fill whole rows of cards.
+  // Table rows are 2 lines tall for a 4 by 4 pixel logo, 1 line with logos off, which left every
+  // other line blank at 2; cards fill whole rows of cards.
+  const rowH = model.logos ? 2 : 1
+  // The logo column: a 4 by 4 pixel logo and a gap, or with logos off the letter (2 cells for a CJK
+  // one) and a gap, which leaves room for the volume column beside a $0.0000005859 price at 80.
+  const logoW = model.logos ? 5 : 3
   const visible = () =>
     view() === 'cards'
       ? cols() * Math.max(1, Math.floor((dims().height - chrome()) / CARD_H))
-      : Math.max(3, Math.floor((dims().height - chrome()) / 2))
+      : Math.max(3, Math.floor((dims().height - chrome()) / rowH))
+  // The price column fits the widest price in view, so $0.0000002110 is never cut to a different
+  // number; at least 11 wide.
+  const priceW = () => Math.max(11, ...window().map((t) => price(t.price).length))
 
   const rows = createMemo(() => {
     const key = SORTS[sort()]!
@@ -1560,8 +1585,8 @@ function Page(props: {
 
   const window = () => rows().slice(offset(), offset() + visible())
   const src = () => SOURCES[model.source()]!
-  // Optional columns after logo, token and price (26 columns), in screen order. `keep` is the order
-  // they are kept in when the list is narrow: 24h first, organic score last.
+  // Optional columns after logo, token and price (the logo, 10 and the price's width), in screen
+  // order. `keep` is the order they are kept in when the list is narrow: 24h first, organic last.
   type Column = {
     label: string
     width: number
@@ -1595,9 +1620,11 @@ function Page(props: {
       value: (t) => pct(t.change24h),
       change: (t) => t.change24h,
     },
-    { label: 'vol 24h', width: 10, sort: 0, keep: 1, value: (t) => compact(t.volume24h) },
-    { label: 'liq', width: 10, sort: 5, keep: 3, value: (t) => compact(t.liquidity) },
-    { label: 'mcap', width: 10, sort: 4, keep: 5, value: (t) => compact(t.mcap) },
+    // 9 wide: "$999.9M" and "not sent" fit with a space, and at 80 columns the volume still fits
+    // beside a $0.00000001234 price.
+    { label: 'vol 24h', width: 9, sort: 0, keep: 1, value: (t) => compact(t.volume24h) },
+    { label: 'liq', width: 9, sort: 5, keep: 3, value: (t) => compact(t.liquidity) },
+    { label: 'mcap', width: 9, sort: 4, keep: 5, value: (t) => compact(t.mcap) },
     { label: 'holders', width: 9, sort: 6, keep: 6, value: (t) => compact(t.holders, false) },
     // 9 wide, not 5, so "not sent" fits whole.
     { label: 'org', width: 9, sort: 7, keep: 7, value: (t) => fixed(t.organic, 0) },
@@ -1611,7 +1638,7 @@ function Page(props: {
     value: curveText,
   }
   const shownColumns = createMemo(() => {
-    let room = listWidth() - 26
+    let room = listWidth() - logoW - 10 - priceW()
     const kept = new Set<Column>()
     const all = src().curve ? [...columns.slice(0, 3), curveColumn, ...columns.slice(3)] : columns
     const rank = (c: Column) => (c.sort === sort() ? -1 : c.keep)
@@ -1697,7 +1724,7 @@ function Page(props: {
           >
             <box flexDirection="row" height={1} flexShrink={0}>
               <text fg={ink(api, theme()?.textMuted)} wrapMode="none">
-                {pad('', 5) + pad('token', 10) + lpad('price', 11)}
+                {pad('', logoW) + pad('token', 10) + lpad('price', priceW())}
               </text>
               <For each={shownColumns()}>
                 {(c) => {
@@ -1734,7 +1761,7 @@ function Page(props: {
                 return (
                   <box
                     flexDirection="row"
-                    height={2}
+                    height={rowH}
                     flexShrink={0}
                     backgroundColor={bg()}
                     onMouseOver={() => setHovered(t.mint)}
@@ -1743,12 +1770,12 @@ function Page(props: {
                       if (e.button === 0 && !api.ui.dialog.open) move(offset() + i())
                     }}
                   >
-                    <box width={5} flexShrink={0}>
-                      <Logo model={model} token={t} size={4} />
+                    <box width={logoW} flexShrink={0}>
+                      <Logo model={model} token={t} size={model.logos ? 4 : 2} />
                     </box>
                     <text fg={theme()?.text} wrapMode="none">
                       {pad((isSel() ? '>' : '') + (watched() ? '*' : '') + t.symbol, 9) + ' '}
-                      <V api={api} v={t.price} text={lpad(price(t.price), 11)} bg={bg()} />
+                      <V api={api} v={t.price} text={lpad(price(t.price), priceW())} bg={bg()} />
                     </text>
                     <For each={shownColumns()}>
                       {(c) => (

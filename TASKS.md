@@ -3408,7 +3408,7 @@ _(empty)_
 - Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/294. Rendered on OpenTUI 0.4.5 (inside
   opencode 1.18.33) at 80x24 and 140x40, dark and light, against a mock replaying `/discover` (6 lists
   and trending at 5m) and `/market` (10 answers) recorded live on 2026-10-03 from this branch's server:
-  944 checks over 6 runs, 0 failures. A fetch spy refusing every host but the Agon server saw 28 fetches
+  1,208 checks over 6 runs, 0 failures. A fetch spy refusing every host but the Agon server saw 28 fetches
   a run, all to the Agon server, 0 elsewhere; with the opt-in `logos: true` it saw 131 to wsrv.nl, so
   the spy bites. Every visible row's price, volume, 24h and curve, the detail pane's figures, the
   trade header's `liq $31.2M` and the server's whole reserve-to-volume flag equal the recorded
@@ -3425,6 +3425,11 @@ _(empty)_
   column at 80x24, because rows were padded by string length; padding is by terminal cells now. The
   trade view's book panel overprinted 14 lines on T-C35's real Orca answer, whose venue line wraps to
   2 lines at 80 columns while the ladder was sized for 1
+- Finding 3, from review: prices under 1e-6 printed as "$5.86e-7" while Claude Code (T-E25) prints
+  "$0.0000005860"; both opencode views now use T-E25's rule, checked on 8 values from 2.11e-7 to
+  67,012. Table rows stayed 2 lines tall for a logo after logos went opt-in, so every other line was
+  blank and 140x40 showed 17 of 30 about-to-graduate tokens; rows are 1 line with logos off and all
+  30 fit. The price column now fits the widest price in view, so "$0.00000001179" is never cut
 - Kill criterion: none
 
 ### T-E27, The market list in Claude Code, from /discover

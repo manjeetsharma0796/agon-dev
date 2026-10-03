@@ -16,7 +16,7 @@ import { createEffect, createMemo, createSignal, For, on, onCleanup, Show } from
 import { useKeyboard, useTerminalDimensions } from '@opentui/solid'
 import { RGBA } from '@opentui/core'
 import type { TuiPluginApi } from '@opencode-ai/plugin/tui'
-import { BASE58, getJson, ink, short } from './agon-discovery.tsx'
+import { BASE58, getJson, ink, money, short } from './agon-discovery.tsx'
 
 export const TRADE_ROUTE = 'agon.trade'
 const MINT_KEY = 'agon.trade.mint'
@@ -282,11 +282,8 @@ export function readStatus(raw: unknown): Status {
 /* formatting: display only, never a new number                                                    */
 /* ---------------------------------------------------------------------------------------------- */
 
-export const usd = (v: number | null) => {
-  if (v === null) return 'none'
-  const a = Math.abs(v)
-  return `$${a >= 1000 ? v.toFixed(2) : a >= 1 ? v.toPrecision(6) : v.toPrecision(4)}`
-}
+// Plain decimals below 1e-6, never 2.110e-7: the same figure as discovery and Claude Code.
+export const usd = (v: number | null) => (v === null ? 'none' : money(v))
 export const big = (v: number | null, dollar = true) => {
   if (v === null) return 'none'
   const [d, s] = v >= 1e9 ? [1e9, 'B'] : v >= 1e6 ? [1e6, 'M'] : v >= 1e3 ? [1e3, 'K'] : [1, '']
@@ -652,8 +649,8 @@ export function Trade(props: {
   const inner = () => W() - 2
   const side = () => (W() >= 120 ? 46 : W() >= 100 ? 36 : 32)
   const stacked = () => W() >= 120 && H() >= 30
-  // The widest price label is 12 cells: an arrow and $0.00001234.
-  const AXIS = 13
+  // The widest price label is 14 cells: an arrow and $0.0000002110, in plain decimals.
+  const AXIS = 15
   const chartW = () => Math.max(10, inner() - side() - 1 - AXIS)
   const headerRows = () => (W() >= 120 ? 1 : 2)
   const volRow = () => (H() >= 30 ? 1 : 0)
