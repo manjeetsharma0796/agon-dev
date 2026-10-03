@@ -3315,7 +3315,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-C37, /market sends liquidity, and /status says plainly when the network is not set
-- Status: open
+- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-c37-liquidity
 - Depends-on: T-C33, T-C34
 - Touches: packages/mcp/src/market.ts, packages/mcp/src/market.test.ts, packages/mcp/src/stream.ts,
   packages/mcp/src/stream.test.ts
