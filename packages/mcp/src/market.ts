@@ -342,9 +342,14 @@ type Entry = {
   promise: Promise<unknown>
   /** The last value this key loaded, carried from entry to entry so a failed refresh can serve it. */
   good: Good | null
-  /** Resolves when a 429 pauses the queue while this load waits in it. */
+  /** Resolves when a 429 pauses the queue while this load waits in it; re-armed every pause. */
   woken: Promise<void>
   wake: () => void
+}
+/** Gives an entry a fresh, unresolved `woken` and the `wake` that resolves it. */
+function arm(e: Entry): Entry {
+  e.woken = new Promise<void>((r) => (e.wake = r))
+  return e
 }
 /** A cached value, and why it is old when it is the last good one rather than a fresh load. */
 type Got<T> = { value: T; stale: { ageSeconds: number; error: unknown } | null }
@@ -387,7 +392,13 @@ export function createMarket(
         const pauseS = retryAfterOf(e) ?? COOL_DOWN_S
         pausedUntil = Date.now() + pauseS * 1000
         // Every block waiting on a refresh with a last good value answers with it now.
-        for (const entry of cache.values()) if (!entry.settled) entry.wake()
+        // Re-armed, so a load still queued when a later pause starts is woken by that one too.
+        for (const entry of cache.values())
+          if (!entry.settled) {
+            const wake = entry.wake
+            arm(entry)
+            wake()
+          }
         throw new RateLimited(pauseS)
       }
     })
@@ -419,9 +430,7 @@ export function createMarket(
         for (const [k, e] of cache) if (e.settled && now - e.at >= e.ttl) cache.delete(k)
         for (const k of cache.keys()) if (cache.size >= MAX_ENTRIES) cache.delete(k)
       }
-      let wake = () => {}
-      const woken = new Promise<void>((r) => (wake = r))
-      const fresh: Entry = { at: now, ttl, settled: false, promise: load(), good, woken, wake }
+      const fresh = arm({ at: now, ttl, settled: false, promise: load(), good } as Entry)
       fresh.promise.then(
         (value) =>
           Object.assign(fresh, { at: Date.now(), settled: true, good: { value, at: Date.now() } }),
@@ -448,7 +457,7 @@ export function createMarket(
       return good ? Promise.resolve(staleGot<T>(good, why)) : Promise.reject(why)
     }
     if (pausedUntil > now) return held()
-    // `woken` stays resolved after its pause ends, so it only cuts the wait while one lasts.
+    // Waits for the load, cut short by the next pause that starts before it settles.
     const waited = answer()
     return Promise.race([waited, e.woken.then(() => (pausedUntil > Date.now() ? held() : waited))])
   }

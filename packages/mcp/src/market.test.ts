@@ -389,6 +389,42 @@ describe('a 429 cools the whole queue down', () => {
     expect(JSON.stringify(a)).not.toMatch(/for -\d+ more s/)
   })
 
+  test('a second pause cuts the wait of a refresh the first pause already woke', async () => {
+    const { upstream } = fakeGecko()
+    let storm = false
+    let first = true
+    const flaky: Upstream = async (url) => {
+      if (storm && first) {
+        first = false
+        // 1 s on the wire, so every refresh of this answer is queued before pause 1 starts.
+        await new Promise((r) => setTimeout(r, 1_000))
+        throw rateLimited(5)
+      }
+      if (storm && url.includes('/trades')) {
+        await new Promise((r) => setTimeout(r, 10_000))
+        throw rateLimited(60)
+      }
+      return upstream(url)
+    }
+    const market = createMarket(flaky, SPACING_MS, fakeChain().chain)
+    const warm = market.get(SOL, '1h')
+    await vi.advanceTimersByTimeAsync(75_000)
+    await warm
+    // Pause 1 (5 s) from the candles; trades then run 10 s and end in pause 2 (60 s), with the
+    // quote price still queued behind them.
+    storm = true
+    const during = market.get(SOL, '1h')
+    await vi.advanceTimersByTimeAsync(1_500)
+    await during
+    // Pause 1 is over and trades are on the wire; the book is due again and asks the quote price.
+    await vi.advanceTimersByTimeAsync(10_500)
+    let done = false
+    const after = market.get(SOL, '1h').then((a) => ((done = true), a))
+    await vi.advanceTimersByTimeAsync(5_000)
+    expect(done).toBe(true)
+    expect((await after).trades).toMatchObject({ stale: true })
+  })
+
   test('Retry-After is read as seconds or an HTTP date, capped, and ignored when unreadable', () => {
     const now = Date.parse('2026-10-03T12:00:00Z')
     expect(retryAfterSeconds('7', now)).toBe(7)
