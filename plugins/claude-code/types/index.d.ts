@@ -1,5 +1,6 @@
 // What the plugin reads from the Agon server, as the server sends it. The plugin computes no
-// number of its own: every price, change, size and total on screen is one of these, printed as sent.
+// number of its own: every price, change, size and total on screen is one of these, rounded for
+// display only.
 
 // GET /market?mint=&range= (packages/mcp/src/market.ts).
 export type Candle = {
@@ -29,14 +30,18 @@ export type Book =
       label: string
       venue: string
       pool: string
-      slot: number
+      slot: number | null
       fetchedAt: string
-      mid: number
+      mid: number | null
       bids: Level[]
       asks: Level[]
       moves: Move[]
+      basis?: string
+      ttlSeconds?: number
     }
   | { error: string }
+// An indicator line, index for index with candles.list; null while it warms up.
+export type Line = { params?: { period?: number }; values?: (number | null)[] }
 export type Market = {
   mint?: string
   range?: string
@@ -57,6 +62,11 @@ export type Market = {
     low?: number
     volumeUsd?: number
     fetchedAt?: string
+    error?: string
+  }
+  indicators?: {
+    ma?: Line
+    ema?: Line
     error?: string
   }
   trades?: { list?: Trade[]; leftOut?: string | null; fetchedAt?: string; error?: string }
