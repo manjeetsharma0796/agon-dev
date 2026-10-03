@@ -3142,7 +3142,7 @@ _(empty)_
   log can lag by the measured number
 
 ### T-C31, /overview: return against holding SOL, the equity curve and the cap meter, from 1 place
-- Status: open
+- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-c31-overview
 - Depends-on: T-C27
 - Touches: packages/mcp/src/overview.ts, packages/mcp/src/overview.test.ts, packages/mcp/src/serve.ts,
   packages/core/src/overview.ts, packages/core/src/index.ts, fixtures/contracts/
