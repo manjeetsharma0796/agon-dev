@@ -3572,7 +3572,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-E29, Both terminals say when a number is stale, and why
-- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-e29-stale
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/307 | Owner: jishnu-baruah | Branch: feature/t-e29-stale
 - Depends-on: T-C41, T-C39
 - Touches: .opencode/tui/agon-trade.tsx, .opencode/tui/agon-discovery.tsx, plugins/claude-code/
 - Serves: UX (judged) ; a trader never reads a 4 minute old price as live
@@ -3581,5 +3581,23 @@ _(empty)_
   try in 41 s"), the status line shows the cool-down while it lasts, and nothing stale is drawn in
   the live colour; the header price says stale when its block is; tested in both plugins against a
   recorded stale answer from T-C41's live run, at 80 and 140 columns, with no line wider than the pane
-- Evidence: <PR link, screens>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/307. A real stale answer recorded 2026-10-03
+  10:43:15 UTC from a locally built server (AGON_NET_MODE=live) while GeckoTerminal answered 429: SOL 1h
+  with candles, 24h stats and trades stale and the book's USD quote price stale. Both plugins draw it as
+  "prices 90 s old, candles 90 s old, trades 87 s old, book USD price 84 s old: GeckoTerminal is
+  rate-limiting, next try in 60 s", dim, with the header price marked stale and "GeckoTerminal
+  cool-down 60 s" on the status line; 1 builder, byte for byte the same in both (4,090 characters),
+  checked against the same expected text. opencode on OpenTUI 0.4.5 at 140x40 and 80x24, dark and
+  light: 66 checks each, 0 failures (note whole and counting down, note, header, candles, book and
+  trades in the muted colour, never green or red; blocks that never had a value name the cool-down; a
+  fresh answer shows none of it; 0 overlapping text). `claude plugin test` 12 pass 0 fail at 60, 80 and
+  140 on terminal and desktop, every line at most the body less 2; `claude plugin validate` passes,
+  both locally since CI has no `claude` CLI
+- Finding: the IP was already limited when recording began: of the first 28 answers in 35 s, 14 had a
+  block that never had a value and JUP 1h answered 502 7 of 7. The book's USD quote price is never
+  `stale: true`; its age rides only in `book.basis`, so the note reads it there and the ladder dims
+  with it. Review found the stale lines could push T-C37's liquidity flag out of the trade view's
+  4-line cap; failures and warnings keep 4 lines and the notes get up to 4 more. In discovery's 80x24
+  detail pane the 4-block note took 4 lines and pushed 3 lines under the key hints, so that chart
+  notes its candles only. Claude Code redraws per poll (15 s), so its countdown moves in those steps
 - Kill criterion: none
