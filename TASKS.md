@@ -3201,7 +3201,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-C35, The order book, or the honest depth, for every pool type
-- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-c35-depth
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/281 | Owner: jishnu-baruah | Branch: feature/t-c35-depth
 - Depends-on: T-C33
 - Touches: packages/mcp/src/depth.ts, packages/mcp/src/depth.test.ts, packages/mcp/src/market.ts,
   packages/mcp/package.json, pnpm-lock.yaml
@@ -3211,7 +3211,24 @@ _(empty)_
   the cost to move the price 1, 2, 5 and 10% from the reserves; each labelled with its kind and slot,
   and AMM depth worded "AMM liquidity, not resting orders"; the constant product arithmetic tested
   against x times y equals k by hand; checked on 1 live pool of each kind
-- Evidence: <PR link>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/281. All 8 pool programs read live 2026-10-03 from this
+  machine, no SDK and no new dependency. Manifest USDT/USDC (8sjV1A...) slot 452,772,423: 185 resting orders, best bid
+  0.99981 x 11,334, best ask 0.99982 x 153, 327,210 USDT bid over 20 levels. Orca SOL/USDC (Czfq3x...) through
+  `/market` end to end, slot 452,772,375: mid $118.87, 439 ticks from 5 tick arrays, 26,590 SOL bid and 27,337 offered
+  within 2%, cold 6.4 s through the GeckoTerminal queue, repeat 1 ms. Raydium CLMM (3ucNos...): 9,098 line steps, the
+  line's L at the current tick equal to the pool account's (196,528,589,933,247); 5,257 SOL bid within 2%. Meteora
+  DLMM (5rCf1D...): 280 bins from 4 bin arrays, 7,907 SOL bid within 2%. Raydium AMM v4 (58oQCh...): a 1% buy costs
+  $91,318. Raydium CPMM (Q2sPHP...): $12,882. PumpSwap (AmdUDq...): $1.00. pump.fun curve (4ronbj...): $1.12, and 3
+  of 4 sells left out by name. Hand tests: x*y=k at +21% and -19% (1,000 quote for 9.0909 and 11.111 base) and k held
+  after all 8 moves; L 1,000 from price 1 to 4 holds 500 token0 and 1,000 token1. Book cached 10 s per pool (2 RPC
+  reads a refresh); the quote token's USD price is the only new GeckoTerminal call, cached 60 s, and the budget test
+  stays at 7 calls in any minute. Every other pool program (Meteora DAMM and DBC, Raydium LaunchLab, Phoenix and
+  others) returns a book error naming its program and the 8 that are read, never a guessed book; no kind falls back
+- Finding: USDT's busiest pool by 24h volume, the one `/market` picks, is 23XoPQ..., owned by program REALQqNE...,
+  which none of the 8 parsers reads, so its book is a named error rather than a constant product guess, while
+  Manifest's USDT/USDC market trades $64M a day with 327,210 USDT of real bids. And a pump.fun curve's virtual
+  reserves said 1.9 SOL where its real reserves held 0.0145 SOL: virtual-only math would have priced a 10% sell
+  paying 0.0974 SOL, 6.7 times what is there
 - Kill criterion: none
 
 ### T-E21, Portfolio in opencode

@@ -1,6 +1,7 @@
 import type { ServerResponse } from 'node:http'
 import { PublicKey } from '@solana/web3.js'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import type { Accounts } from './depth.js'
 import {
   createMarket,
   readCandles,
@@ -52,6 +53,11 @@ function fakeGecko() {
         ],
       }
     }
+    if (
+      url.startsWith('https://api.geckoterminal.com/api/v2/simple/networks/solana/token_price/')
+    ) {
+      return { data: { attributes: { token_prices: { [USDC]: '0.9995' } } } }
+    }
     if (url.includes('/ohlcv/')) {
       const step = url.includes('/hour') ? 3_600 : 60
       const now = Math.floor(Date.now() / 1000 / step) * step
@@ -86,6 +92,50 @@ function fakeGecko() {
   return { upstream, calls }
 }
 
+/**
+ * A chain where POOL is a PumpSwap pool of 1,000 SOL against 118,000 USDC, so the book is read
+ * through the real parser with no network. Counts its reads.
+ */
+function fakeChain() {
+  const reads: number[] = []
+  const VAULT_A = '7UYTFE4y1kC4LBLkLXxp1gmheiVPhVkFXggfEbo1Eikt'
+  const VAULT_B = '6RBg6W7jNn2FspqbTV36L6Ue1EueTcwrW4vA3XgPmCM3'
+  const key = (a: string) => new PublicKey(a).toBuffer()
+  const account = (len: number, fill: (d: Buffer) => void) => {
+    const d = Buffer.alloc(len)
+    fill(d)
+    return d
+  }
+  const SPL = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'
+  const data: Record<string, { owner: string; data: Buffer }> = {
+    [POOL]: {
+      owner: 'pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA',
+      data: account(301, (d) => {
+        Buffer.from('f19a6d0411b16dbc', 'hex').copy(d, 0)
+        key(SOL).copy(d, 43)
+        key(USDC).copy(d, 75)
+        key(VAULT_A).copy(d, 139)
+        key(VAULT_B).copy(d, 171)
+      }),
+    },
+    [SOL]: { owner: SPL, data: account(82, (d) => ((d[44] = 9), (d[45] = 1))) },
+    [USDC]: { owner: SPL, data: account(82, (d) => ((d[44] = 6), (d[45] = 1))) },
+    [VAULT_A]: {
+      owner: SPL,
+      data: account(165, (d) => (key(SOL).copy(d, 0), d.writeBigUInt64LE(1_000_000_000_000n, 64))),
+    },
+    [VAULT_B]: {
+      owner: SPL,
+      data: account(165, (d) => (key(USDC).copy(d, 0), d.writeBigUInt64LE(118_000_000_000n, 64))),
+    },
+  }
+  const accounts: Accounts = async (addresses) => {
+    reads.push(Date.now())
+    return { slot: 452_759_300, list: addresses.map((a) => data[a] ?? null) }
+  }
+  return { chain: { accounts, getJson: async () => null }, reads }
+}
+
 /** GET /market through the real handler, with the response captured. */
 async function serve(query: string, market: ReturnType<typeof createMarket>) {
   let status = 0
@@ -114,7 +164,8 @@ afterEach(() => {
 describe('the upstream budget', () => {
   test('10 clients polling 1 mint every second make at most 30 upstream calls in any minute', async () => {
     const { upstream, calls } = fakeGecko()
-    const market = createMarket(upstream)
+    const { chain, reads } = fakeChain()
+    const market = createMarket(upstream, SPACING_MS, chain)
     const start = Date.now()
     const end = start + 120_000
     let answers = 0
@@ -135,8 +186,11 @@ describe('the upstream budget', () => {
       worst = Math.max(worst, calls.filter((c) => c.at >= from && c.at < from + 60_000).length)
     }
     expect(worst).toBeLessThanOrEqual(30)
-    // 1 pool lookup, then per minute: 1m candles, 1h candles, trades every 30 s.
-    expect(worst).toBeLessThanOrEqual(6)
+    // 1 pool lookup, then per minute: 1m candles, 1h candles, trades every 30 s, and the book's
+    // quote price once.
+    expect(worst).toBeLessThanOrEqual(7)
+    // The book is cached 10 s: 2 chain reads per refresh, so at most 12 a minute per pool.
+    expect(reads.filter((t) => t >= end - 60_000 && t < end).length).toBeLessThanOrEqual(12)
     // And the clients were answered, about once a second each, not starved by the cache.
     expect(answers).toBeGreaterThan(10 * 100)
   })
@@ -165,7 +219,7 @@ describe('the upstream budget', () => {
 describe('the answer', () => {
   test('picks the busiest pool, not the largest reserve, stamps every block with it and echoes no token text', async () => {
     const { upstream } = fakeGecko()
-    const market = createMarket(upstream)
+    const market = createMarket(upstream, SPACING_MS, fakeChain().chain)
     const pending = market.get(SOL, '1m')
     await vi.advanceTimersByTimeAsync(10_000)
     const a = await pending
@@ -175,6 +229,17 @@ describe('the answer', () => {
       expect(block.pool).toBe(POOL)
       expect('fetchedAt' in block && typeof block.fetchedAt).toBe('string')
     }
+    // The book is the pool's, stamped with its kind, label and slot, priced in USD.
+    expect(a.book).toMatchObject({
+      kind: 'amm-curve',
+      label: 'Cost to move the price',
+      venue: 'PumpSwap',
+      pool: POOL,
+      slot: 452_759_300,
+      ttlSeconds: 10,
+    })
+    // 118,000 USDC over 1,000 SOL at $0.9995 a USDC.
+    expect('mid' in a.book && a.book.mid).toBeCloseTo(117.941, 3)
     expect(JSON.stringify(a)).not.toContain(INJECTED)
     expect(JSON.stringify(a)).not.toMatch(/"(name|symbol)"/)
     expect('list' in a.trades && a.trades.list[0]).toMatchObject({
@@ -203,6 +268,27 @@ describe('the answer', () => {
     expect('error' in a.trades && a.trades.error).toMatch(
       /^Recent trades: GeckoTerminal answered 429, its free limit of about 30 calls a minute.*15 s/,
     )
+    expect('list' in a.candles).toBe(true)
+  })
+
+  test('a pool this server cannot read is a book error that says so, and the rest still answers', async () => {
+    const { upstream } = fakeGecko()
+    const chain = {
+      accounts: (async (a: string[]) => ({
+        slot: 1,
+        list: a.map(() => ({ owner: WALLET, data: Buffer.alloc(8) })),
+      })) as Accounts,
+      getJson: async () => null,
+    }
+    const market = createMarket(upstream, SPACING_MS, chain)
+    const pending = market.get(SOL, '1h')
+    await vi.advanceTimersByTimeAsync(10_000)
+    const a = await pending
+    expect('error' in a.book && a.book.error).toMatch(
+      /^Order book: pool 58oQ.* is owned by program FHpc.*, which this server does not read; it reads Manifest, Orca Whirlpool/,
+    )
+    // Not a retry problem, so it does not say to retry.
+    expect('error' in a.book && a.book.error).not.toMatch(/retry/)
     expect('list' in a.candles).toBe(true)
   })
 })

@@ -10,6 +10,10 @@
 // flight, so 10 clients asking at once cost 1 call. Lessons from .opencode/tui/agon-discovery.tsx,
 // where 10 sparklines asked at once got 429 on every one.
 //
+// The book (T-C35, depth.ts) is read from the chosen pool's own accounts on Helius, a separate
+// budget; the only GeckoTerminal call it adds is the quote token's USD price, cached 60 s per
+// quote mint, so a screen of SOL-paired tokens shares 1 call a minute.
+//
 // Outside text is data, and token names reach no agent: GeckoTerminal sends pool and token
 // names, and none of them is returned here. The T-C33 row does not ask for a name, so the answer
 // carries the mint and pool addresses only. Every address read from GeckoTerminal is checked as base58 before it goes
@@ -18,9 +22,12 @@
 import type { ServerResponse } from 'node:http'
 import { Address } from '@agon/core'
 import { PublicKey } from '@solana/web3.js'
+import { createDepth, DepthError, liveChain, type Accounts } from './depth.js'
 import { indicators } from './indicators.js'
 
 const GT = 'https://api.geckoterminal.com/api/v2/networks/solana'
+/** Prices are under /simple, outside the network path. */
+const GT_PRICE = 'https://api.geckoterminal.com/api/v2/simple/networks/solana/token_price'
 
 /** The ranges a chart can ask for, mapped to GeckoTerminal's timeframe and aggregate. */
 const RANGES = {
@@ -38,7 +45,15 @@ const RANGE_LIST = Object.keys(RANGES).join(', ')
 /** 100 candles: enough for MACD's 26 + 9 and a screen of chart. */
 const CANDLES = 100
 const TRADES = 50
-const TTL = { pool: 10 * 60_000, candles: 60_000, trades: 30_000, failure: 15_000 }
+/** The book 10 s: it changes every slot, and 10 s is 2 RPC calls a pool, not 1 a slot. */
+const TTL = {
+  pool: 10 * 60_000,
+  candles: 60_000,
+  trades: 30_000,
+  book: 10_000,
+  usd: 60_000,
+  failure: 15_000,
+}
 /** 60 / 2.1 = 28.6, so at most 29 starts in any 60 s window, under the 30 a minute limit. */
 export const SPACING_MS = 2_100
 /** 30 waiting calls is about 63 s of queue. Past that, saying so beats a request that hangs. */
@@ -266,7 +281,11 @@ type Entry = { at: number; ttl: number; settled: boolean; promise: Promise<unkno
 /** Entries kept. 4 per mint, so about 250 mints on screen at once before the oldest go. */
 const MAX_ENTRIES = 1_000
 
-export function createMarket(upstream: Upstream = httpGet, spacingMs = SPACING_MS) {
+export function createMarket(
+  upstream: Upstream = httpGet,
+  spacingMs = SPACING_MS,
+  chain: { accounts: Accounts; getJson: (url: string) => Promise<unknown> } = liveChain,
+) {
   // 1 queue: calls start 1 at a time, at least `spacingMs` apart.
   let tail: Promise<unknown> = Promise.resolve()
   let nextAt = 0
@@ -350,15 +369,31 @@ export function createMarket(upstream: Upstream = httpGet, spacingMs = SPACING_M
       return { fetchedAt: fetchedAt(), ...readTrades(body, mint) }
     })
 
+  // The quote token's USD price, which turns a pool's price into the USD the rest of /market uses.
+  const usd = (mint: string) =>
+    cached(`usd:${mint}`, TTL.usd, async () => {
+      const body = await queued(`${GT_PRICE}/${mint}`)
+      const v = finite(obj(obj(obj(obj(body)['data'])['attributes'])['token_prices'])[mint])
+      if (v === null || v <= 0)
+        throw new DepthError(
+          `GeckoTerminal has no USD price for the quote token ${mint}, so the book cannot be priced in USD`,
+        )
+      return { usd: v, at: fetchedAt() }
+    })
+  const depth = createDepth({ ...chain, usd })
+  const book = (poolAddress: string, mint: string) =>
+    cached(`book:${poolAddress}:${mint}`, TTL.book, () => depth.book(poolAddress, mint))
+
   /** The whole answer for 1 mint and range. Each block fails on its own and says why. */
   const get = async (mint: string, range: Range) => {
     const p = await pool(mint)
     const at = { pool: p.address }
     // Candles first in the queue: they are what the screen is waiting for.
-    const [chart, hourly, recent] = await Promise.allSettled([
+    const [chart, hourly, recent, depthRead] = await Promise.allSettled([
       series(p.address, mint, range),
       series(p.address, mint, '1h'),
       trades(p.address, mint),
+      book(p.address, mint),
     ])
     const r = RANGES[range]
     return {
@@ -410,6 +445,15 @@ export function createMarket(upstream: Upstream = httpGet, spacingMs = SPACING_M
         recent.status === 'fulfilled'
           ? { ...at, ...recent.value }
           : { ...at, error: failure('Recent trades', recent.reason) },
+      book:
+        depthRead.status === 'fulfilled'
+          ? { ...depthRead.value, ttlSeconds: TTL.book / 1000 }
+          : {
+              error:
+                depthRead.reason instanceof DepthError && !depthRead.reason.retry
+                  ? `Order book: ${depthRead.reason.message}.`
+                  : failure('Order book', depthRead.reason),
+            },
     }
   }
 
