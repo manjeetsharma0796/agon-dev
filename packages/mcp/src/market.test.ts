@@ -6,6 +6,7 @@ import {
   createMarket,
   readCandles,
   readTrades,
+  retryAfterSeconds,
   serveMarket,
   SPACING_MS,
   stats24h,
@@ -162,7 +163,7 @@ afterEach(() => {
 })
 
 describe('the upstream budget', () => {
-  test('10 clients polling 1 mint every second make at most 30 upstream calls in any minute', async () => {
+  test('10 clients polling 1 mint every second make at most 20 upstream calls in any minute', async () => {
     const { upstream, calls } = fakeGecko()
     const { chain, reads } = fakeChain()
     const market = createMarket(upstream, SPACING_MS, chain)
@@ -185,7 +186,7 @@ describe('the upstream budget', () => {
     for (let from = start; from <= end - 60_000; from += 1_000) {
       worst = Math.max(worst, calls.filter((c) => c.at >= from && c.at < from + 60_000).length)
     }
-    expect(worst).toBeLessThanOrEqual(30)
+    expect(worst).toBeLessThanOrEqual(20)
     // 1 pool lookup, then per minute: 1m candles, 1h candles, trades every 30 s, and the book's
     // quote price once.
     expect(worst).toBeLessThanOrEqual(7)
@@ -209,7 +210,8 @@ describe('the upstream budget', () => {
     })
   })
 
-  test('the queue starts calls at least 2.1 s apart and names a full queue', async () => {
+  test('the queue starts calls at least 3 s apart, at most 20 a minute, and names a full queue', async () => {
+    expect(SPACING_MS).toBe(3_000)
     const { upstream, calls } = fakeGecko()
     const market = createMarket(upstream)
     // 40 different mints at once: 40 pool lookups, more than the queue holds.
@@ -225,8 +227,170 @@ describe('the upstream budget', () => {
     const gaps = calls.slice(1).map((c, i) => c.at - calls[i]!.at)
     expect(Math.min(...gaps)).toBeGreaterThanOrEqual(SPACING_MS)
     expect(errors.length).toBeGreaterThan(0)
-    expect(errors[0]).toMatch(/30 GeckoTerminal calls are already waiting, about 63 s/)
+    expect(errors[0]).toMatch(/30 GeckoTerminal calls are already waiting, about 90 s/)
     expect(errors[0]).toMatch(/retry then/)
+  })
+})
+
+/** A 429 the way httpGet throws it, with Retry-After in seconds when the upstream sent one. */
+const rateLimited = (retryAfterS: number | null = null) =>
+  Object.assign(new Error('GeckoTerminal answered 429'), { status: 429, retryAfterS })
+
+/** Upstream calls that started in [from, to). */
+const between = (calls: { at: number }[], from: number, to: number) =>
+  calls.filter((c) => c.at >= from && c.at < to).length
+
+describe('a 429 cools the whole queue down', () => {
+  test('0 calls during the 60 s pause, and exactly 1 right after it', async () => {
+    const { upstream, calls } = fakeGecko()
+    let failedAt = 0
+    const once: Upstream = async (url) => {
+      if (url.includes('/trades') && !failedAt) {
+        calls.push({ url, at: Date.now() })
+        failedAt = Date.now()
+        throw rateLimited()
+      }
+      return upstream(url)
+    }
+    const market = createMarket(once, SPACING_MS, fakeChain().chain)
+    const pending = market.get(SOL, '5m')
+    await vi.advanceTimersByTimeAsync(80_000)
+    await pending
+    expect(failedAt).toBeGreaterThan(0)
+    expect(between(calls, failedAt + 1, failedAt + 60_000)).toBe(0)
+    expect(between(calls, failedAt + 60_000, failedAt + 60_000 + SPACING_MS)).toBe(1)
+  })
+
+  test('a Retry-After from the upstream sets the pause instead of 60 s', async () => {
+    const { upstream, calls } = fakeGecko()
+    let failedAt = 0
+    const once: Upstream = async (url) => {
+      if (url.includes('/trades') && !failedAt) {
+        failedAt = Date.now()
+        throw rateLimited(5)
+      }
+      return upstream(url)
+    }
+    const market = createMarket(once, SPACING_MS, fakeChain().chain)
+    const pending = market.get(SOL, '5m')
+    await vi.advanceTimersByTimeAsync(20_000)
+    await pending
+    const next = calls.find((c) => c.at > failedAt)!
+    expect(next.at - failedAt).toBe(5_000)
+  })
+
+  test('a pause longer than the queue waits fails fast with the cool-down named, and calls nothing', async () => {
+    const { upstream, calls } = fakeGecko()
+    let failedAt = 0
+    const once: Upstream = async (url) => {
+      if (url.includes('/trades') && !failedAt) {
+        failedAt = Date.now()
+        throw rateLimited(120)
+      }
+      return upstream(url)
+    }
+    const market = createMarket(once, SPACING_MS, fakeChain().chain)
+    const pending = market.get(SOL, '5m')
+    await vi.advanceTimersByTimeAsync(20_000)
+    const a = await pending
+    expect('error' in a.book && a.book.error).toMatch(
+      /^Order book: GeckoTerminal answered 429, so this server holds every GeckoTerminal call for 120 more s.*retry then/,
+    )
+    expect(between(calls, failedAt + 1, failedAt + 120_000)).toBe(0)
+  })
+
+  test('a block refreshed during a failure serves its last good value, stale, with its age and reason', async () => {
+    const { upstream, calls } = fakeGecko()
+    let failing = false
+    const flaky: Upstream = async (url) => {
+      if (failing) {
+        calls.push({ url, at: Date.now() })
+        throw rateLimited()
+      }
+      return upstream(url)
+    }
+    const market = createMarket(flaky, SPACING_MS, fakeChain().chain)
+    const first = market.get(SOL, '1h')
+    await vi.advanceTimersByTimeAsync(15_000)
+    const good = await first
+    expect('stale' in good.candles).toBe(false)
+
+    // 75 s in, candles, trades and the quote price are all due; the first refresh gets a 429.
+    await vi.advanceTimersByTimeAsync(60_000)
+    failing = true
+    const asked = Date.now()
+    const second = market.get(SOL, '1h')
+    await vi.advanceTimersByTimeAsync(SPACING_MS)
+    const a = await second
+    // Answered right after the 429, not after the 60 s pause.
+    expect(Date.now() - asked).toBeLessThanOrEqual(SPACING_MS)
+    expect(a.candles).toMatchObject({ pool: POOL, stale: true })
+    expect('list' in a.candles && a.candles.list).toEqual(
+      'list' in good.candles && good.candles.list,
+    )
+    expect('ageSeconds' in a.candles && a.candles.ageSeconds).toBeGreaterThanOrEqual(60)
+    expect('staleReason' in a.candles && a.candles.staleReason).toMatch(
+      /^Candles for 1h: GeckoTerminal answered 429.*Showing the last good value, fetched \d+ s ago/,
+    )
+    expect(a.trades).toMatchObject({ stale: true })
+    expect('staleReason' in a.trades && a.trades.staleReason).toMatch(
+      /^Recent trades: GeckoTerminal answered 429, so this server holds every GeckoTerminal call/,
+    )
+    expect(a.stats24h).toMatchObject({ stale: true, price: 100.5 })
+    expect(a.indicators).toMatchObject({ stale: true })
+    // The book reads the chain fresh and says its USD price is the last good one.
+    expect('basis' in a.book && a.book.basis).toMatch(/the last good price, \d+ s old/)
+
+    // Polled every 5 s through the pause: every answer is stale data, and 0 upstream calls.
+    const failedAt = calls.at(-1)!.at
+    for (let i = 0; i < 11; i++) {
+      await vi.advanceTimersByTimeAsync(5_000)
+      const p = market.get(SOL, '1h')
+      await vi.advanceTimersByTimeAsync(0)
+      expect(await p).toMatchObject({ candles: { stale: true }, trades: { stale: true } })
+    }
+    expect(between(calls, failedAt + 1, failedAt + 60_000)).toBe(0)
+  })
+
+  test('after the pause, a refresh still in the queue is waited for, not served stale with a negative countdown', async () => {
+    const { upstream } = fakeGecko()
+    let failing = false
+    let slow = false
+    const flaky: Upstream = async (url) => {
+      if (failing) {
+        failing = false
+        throw rateLimited(5)
+      }
+      if (slow && url.includes('/trades')) await new Promise((r) => setTimeout(r, 2_000))
+      return upstream(url)
+    }
+    const market = createMarket(flaky, SPACING_MS, fakeChain().chain)
+    const first = market.get(SOL, '1h')
+    await vi.advanceTimersByTimeAsync(75_000)
+    await first
+    // Candles get the 429 and a 5 s pause; trades and the quote price wait in the queue behind it.
+    failing = true
+    slow = true
+    const during = market.get(SOL, '1h')
+    await vi.advanceTimersByTimeAsync(0)
+    expect((await during).trades).toMatchObject({ stale: true })
+    // 5.5 s on the pause is over and the trades refresh is in flight (2 s); an asker waits for it.
+    await vi.advanceTimersByTimeAsync(5_500)
+    const after = market.get(SOL, '1h')
+    await vi.advanceTimersByTimeAsync(SPACING_MS)
+    const a = await after
+    expect('stale' in a.trades).toBe(false)
+    expect(JSON.stringify(a)).not.toMatch(/for -\d+ more s/)
+  })
+
+  test('Retry-After is read as seconds or an HTTP date, capped, and ignored when unreadable', () => {
+    const now = Date.parse('2026-10-03T12:00:00Z')
+    expect(retryAfterSeconds('7', now)).toBe(7)
+    expect(retryAfterSeconds('Sat, 03 Oct 2026 12:00:30 GMT', now)).toBe(30)
+    expect(retryAfterSeconds('99999', now)).toBe(600)
+    expect(retryAfterSeconds('soon', now)).toBeNull()
+    expect(retryAfterSeconds('0', now)).toBeNull()
+    expect(retryAfterSeconds(null, now)).toBeNull()
   })
 })
 
@@ -235,7 +399,8 @@ describe('the answer', () => {
     const { upstream } = fakeGecko()
     const market = createMarket(upstream, SPACING_MS, fakeChain().chain)
     const pending = market.get(SOL, '1m')
-    await vi.advanceTimersByTimeAsync(10_000)
+    // 5 calls 3 s apart: pool, 1m and 1h candles, trades, the quote price.
+    await vi.advanceTimersByTimeAsync(15_000)
     const a = await pending
 
     expect(a.pool.address).toBe(POOL)
@@ -329,23 +494,23 @@ describe('the answer', () => {
     })
   })
 
-  test('a 429 names the limit and when to retry, and the other blocks still answer', async () => {
+  test('a 429 names the limit and the pause, and a block that never had a value shows the error', async () => {
     const { upstream } = fakeGecko()
     const failing: Upstream = async (url) => {
-      if (url.includes('/trades')) {
-        const e = Object.assign(new Error('GeckoTerminal answered 429'), { status: 429 })
-        throw e
-      }
+      if (url.includes('/trades')) throw rateLimited()
       return upstream(url)
     }
     const market = createMarket(failing)
     const pending = market.get(SOL, '5m')
-    await vi.advanceTimersByTimeAsync(10_000)
+    // The book's quote price waits out the 60 s pause behind the 429.
+    await vi.advanceTimersByTimeAsync(75_000)
     const a = await pending
     expect('error' in a.trades && a.trades.error).toMatch(
-      /^Recent trades: GeckoTerminal answered 429, its free limit of about 30 calls a minute.*15 s/,
+      /^Recent trades: GeckoTerminal answered 429, its free limit of about 30 calls a minute.*pauses every GeckoTerminal call for 60 s/,
     )
+    expect('stale' in a.trades).toBe(false)
     expect('list' in a.candles).toBe(true)
+    expect('stale' in a.candles).toBe(false)
   })
 
   test('a pool this server cannot read is a book error that says so, and the rest still answers', async () => {
