@@ -3315,7 +3315,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-C37, /market sends liquidity, and /status says plainly when the network is not set
-- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-c37-liquidity
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/286 | Owner: jishnu-baruah | Branch: feature/t-c37-liquidity
 - Depends-on: T-C33, T-C34
 - Touches: packages/mcp/src/market.ts, packages/mcp/src/market.test.ts, packages/mcp/src/stream.ts,
   packages/mcp/src/stream.test.ts
@@ -3326,5 +3326,19 @@ _(empty)_
   with both numbers, because T-C33 measured a $217.9M reserve against $0.72M of volume on a stale pool;
   `/status` with AGON_NETWORK unset says "AGON_NETWORK is not set on this server" and never "on unset",
   tested; both terminal views (T-E24, T-E25) stop printing "liquidity: not sent" once it lands
-- Evidence: <PR link>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/286. Measured from this machine 2026-10-03 05:32 UTC through the built `createMarket`
+  against real GeckoTerminal: SOL picks Orca Czfq3x... with liquidity $31,135,698 against $169,179,942
+  of 24h volume (0.18 times, not flagged); BONK picks 5zpyut... with $414,239 against $3,233,459 (0.13
+  times, not flagged). Each answer cost 3 GeckoTerminal calls (pool list, hourly candles, trades) and
+  none for liquidity. Unit: the 2-minute, 10-client budget test now also asserts 1 pool lookup and no
+  URL outside the 4 kinds it counts; flag, no reserve and no volume each tested; `/status` with
+  `network: 'unset'` tested to start "AGON_NETWORK is not set on this server" and never contain "unset"
+- Finding: the stale pool that motivated the flag is gone. On 2026-10-03 05:33 UTC none of the 20 pools
+  GeckoTerminal lists for SOL or for BONK trips it: the worst reserve to volume ratio is 11.0 for SOL
+  and 69.8 for BONK, and SOL's largest reserve is now Raydium 58oQCh... at $36.4M, not the $217.9M
+  pumpswap pool T-C33 saw hours earlier. So the flag is a guard for a state that comes and goes, and
+  ranking by volume already keeps such a pool out of the pick. Code review also found that `network()`
+  returns 'unset' for a typo as well as a missing value, so the note says "not set, or not 1 of fork,
+  devnet or mainnet". The trade view in `.opencode/tui/agon-trade.tsx` (outside Touches) still prints
+  "liquidity: /market sends none" and should now read `stats24h.liquidityUsd`
 - Kill criterion: none

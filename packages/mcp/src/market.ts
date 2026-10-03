@@ -345,12 +345,23 @@ export function createMarket(
         .map((p) => obj(obj(p)['attributes']))
         .map((a) => ({
           address: solanaAddress(a['address']),
-          volume: finite(obj(a['volume_usd'])['h24']) ?? 0,
+          volume: finite(obj(a['volume_usd'])['h24']),
+          // Liquidity rides on this same answer (T-C37), so it costs 0 extra calls.
+          reserve: finite(a['reserve_in_usd']),
         }))
-        .filter((p): p is { address: string; volume: number } => p.address !== null)
-        .sort((x, y) => y.volume - x.volume)[0]
+        .filter(
+          (p): p is { address: string; volume: number | null; reserve: number | null } =>
+            p.address !== null,
+        )
+        .sort((x, y) => (y.volume ?? 0) - (x.volume ?? 0))[0]
       if (!best) throw new NoPool(mint)
-      return { address: best.address, volume24hUsd: best.volume, fetchedAt: fetchedAt() }
+      return {
+        address: best.address,
+        volume24hUsd: best.volume ?? 0,
+        volumeSent: best.volume !== null,
+        reserveUsd: best.reserve !== null && best.reserve >= 0 ? best.reserve : null,
+        fetchedAt: fetchedAt(),
+      }
     })
 
   // Keyed by pool, mint and range: 2 mints can share a top pool and are priced from their own side.
@@ -396,6 +407,7 @@ export function createMarket(
       book(p.address, mint),
     ])
     const r = RANGES[range]
+    const liquidityUsd = liquidity(p)
     return {
       mint,
       range,
@@ -431,13 +443,14 @@ export function createMarket(
           : { ...at, error: 'Indicators need the candles, which failed above.' },
       stats24h: (() => {
         if (hourly.status === 'rejected')
-          return { ...at, error: failure('24h stats', hourly.reason) }
+          return { ...at, error: failure('24h stats', hourly.reason), liquidityUsd }
         const s = stats24h(hourly.value.candles, Date.now() / 1000)
         return s
-          ? { ...at, fetchedAt: hourly.value.fetchedAt, ...s }
+          ? { ...at, fetchedAt: hourly.value.fetchedAt, ...s, liquidityUsd }
           : {
               ...at,
               fetchedAt: hourly.value.fetchedAt,
+              liquidityUsd,
               error: `24h stats: pool ${p.address} has 0 hourly candles in the last 24 hours, usually no trade. Pick a mint that trades, or try again later.`,
             }
       })(),
@@ -458,6 +471,49 @@ export function createMarket(
   }
 
   return { get }
+}
+
+/** A reserve over 100 times its 24h volume is the shape of a stale or mispriced pool. */
+const RESERVE_TO_VOLUME = 100
+const usdText = (n: number) => `$${Math.round(n).toLocaleString('en-US')}`
+
+/**
+ * The chosen pool's liquidity in USD, from the pool answer already fetched, with its source and
+ * time. Flagged when the reserve is more than 100 times the 24h volume: T-C33 measured a $217.9M
+ * reserve against $0.72M of volume on a pool whose candles were 21 h old. Pure.
+ */
+function liquidity(p: {
+  address: string
+  volume24hUsd: number
+  volumeSent: boolean
+  reserveUsd: number | null
+  fetchedAt: string
+}) {
+  if (p.reserveUsd === null)
+    return {
+      pool: p.address,
+      error: `GeckoTerminal sent no usable reserve_in_usd for pool ${p.address}, so its liquidity is not shown. The pool choice is read again every ${TTL.pool / 60_000} min; the price, volume and book above do not depend on it.`,
+    }
+  const v = p.volume24hUsd
+  const r = p.reserveUsd
+  // No volume means the check cannot run, which is said, never shown as a clean null.
+  const flag = !p.volumeSent
+    ? `GeckoTerminal sent no 24h volume for pool ${p.address}, so its reserve ${usdText(r)} could not be checked against volume; a reserve over ${RESERVE_TO_VOLUME} times its volume is the shape of a stale or mispriced pool, so check the book before sizing on it.`
+    : r > RESERVE_TO_VOLUME * v
+      ? `Pool ${p.address}: reserve ${usdText(r)} ` +
+        (v > 0
+          ? `is ${(r / v).toLocaleString('en-US', { maximumFractionDigits: 1 })} times its 24h volume of ${usdText(v)}`
+          : `against 24h volume of $0`) +
+        `, more than ${RESERVE_TO_VOLUME} times. That is the shape of a stale pool or one paired with a mispriced token, whose reserve may not be there to trade against; check the book before sizing on it.`
+      : null
+  return {
+    value: r,
+    unit: 'USD',
+    pool: p.address,
+    source: `GeckoTerminal reserve_in_usd for this pool, from the same pool list /market reads to choose it, so it is as old as fetchedAt and read again every ${TTL.pool / 60_000} min`,
+    fetchedAt: p.fetchedAt,
+    flag,
+  }
 }
 
 class NoPool extends Error {

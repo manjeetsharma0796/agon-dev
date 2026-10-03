@@ -230,7 +230,11 @@ export const assembleStatus = (s: Snapshot, now: number) => ({
   readsFrom: 'mainnet',
   ...(s.network !== 'mainnet'
     ? {
-        networkNote: `This server is on ${s.network}, but every reading below is from mainnet through Helius. Use it for how the real chain is doing, not for ${s.network}.`,
+        // network() names a missing or unknown AGON_NETWORK 'unset', which is not a network to be on.
+        networkNote:
+          s.network === 'unset'
+            ? 'AGON_NETWORK is not set on this server, or is not 1 of fork, devnet or mainnet, and every reading below is from mainnet through Helius. Set AGON_NETWORK to fork, devnet or mainnet to say which chain this server trades on.'
+            : `This server is on ${s.network}, but every reading below is from mainnet through Helius. Use it for how the real chain is doing, not for ${s.network}.`,
       }
     : {}),
   at: iso(now),
