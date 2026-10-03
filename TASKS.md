@@ -3522,3 +3522,18 @@ _(empty)_
   was recorded at, never an old slot; the key appears in 0 fixtures, 0 logs and 0 client bundles
 - Evidence: <PR link>
 - Kill criterion: none
+
+### T-C41, /market stops a 429 storm: 1 cool-down for the whole queue, last good data while it lasts
+- Status: open
+- Depends-on: T-C33
+- Touches: packages/mcp/src/market.ts, packages/mcp/src/market.test.ts
+- Serves: UX (judged) ; the trade view keeps showing numbers when GeckoTerminal rate-limits this IP
+- Acceptance: a 429 from GeckoTerminal pauses every queued call for its Retry-After, or 60 s when it
+  sends none, instead of each cache key retrying on its own every 15 s; while paused, each block
+  serves its last good value with `stale: true`, its age and the reason, and only a block that never
+  had a value shows the error; spacing goes from 2.1 s to 3 s, at most 20 calls a minute, leaving room
+  for other callers on the same IP; tested with a fake upstream that answers 429 once (0 calls during
+  the pause, the next call after it) and with stale values served during it; measured live with both
+  terminal plugins polling for 10 minutes: count of 429s and of error blocks shown
+- Evidence: <PR link>
+- Kill criterion: none
