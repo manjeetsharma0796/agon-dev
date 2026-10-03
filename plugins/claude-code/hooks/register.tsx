@@ -1,13 +1,16 @@
-// Agon inside Claude Code: the status band above the prompt and the trade view in a pane.
+// Agon inside Claude Code: the status band above the prompt, and a pane with 2 views: the trade
+// view and the market list.
 //
 // Everything on screen comes from the Agon server: GET /status for the band (connection, RPC ping,
-// SOL) and GET /market?mint=&range= for the trade view (24h stats, candles with MA and EMA, recent
-// trades, the book). The plugin computes no number: it rounds the server's numbers for display by
+// SOL), GET /market?mint=&range= for the trade view (24h stats, candles with MA and EMA, recent
+// trades, the book) and GET /discover?list=&sort= for the market list (6 lists, each token's figures
+// and safety columns, a figure not sent named as not sent). The plugin computes no number: it rounds the server's numbers for display by
 // the opencode trade view's rules (.opencode/tui/agon-trade.tsx), so the two screens read alike. The
 // chart scales the server's candles to cells and pixels; that is drawing, not a number anyone reads.
 //
 // Buy, Sell and Check only fill the prompt, never send it. A draft carries the token's mint and
-// never a name or symbol (OP-38). Up and down are never colour alone: an arrow, a sign, a word, or
+// never a name or symbol (OP-38). A token's symbol is shown only from /discover's `display`, which
+// the server labels untrusted, and it reaches no prompt: a row opens by its mint. Up and down are never colour alone: an arrow, a sign, a word, or
 // a different glyph.
 //
 // It reads only. It never signs, sends or holds a key.
@@ -22,7 +25,19 @@ import type {
   SvgProps,
 } from 'claude-code'
 
-import type { BandMode, Book, Candle, Line, Loaded, Market, Status } from '../types'
+import type {
+  BandMode,
+  Book,
+  Candle,
+  Discover,
+  Figure,
+  Line,
+  Loaded,
+  Market,
+  Status,
+  Token,
+  View,
+} from '../types'
 
 // The address docs/public/agent-setup.md and the opencode plugin use; `serverUrl` overrides it.
 const DEFAULT_SERVER = 'http://127.0.0.1:8787'
@@ -38,6 +53,28 @@ const PICKS: [string, string][] = [
 ]
 const STATUS_EVERY_MS = 5_000
 const MARKET_EVERY_MS = 15_000
+// The server caches each list for 30 s, so asking more often shows nothing new.
+const DISCOVER_EVERY_MS = 30_000
+// The server's lists and sorts (discover.ts LISTS and SORTS), labelled here and not by upstream text.
+const LISTS: [string, string][] = [
+  ['trending', 'trending'],
+  ['most-traded', 'most traded'],
+  ['top-organic', 'top organic'],
+  ['new', 'new'],
+  ['about-to-graduate', 'about to graduate'],
+  ['graduated', 'graduated'],
+]
+// Each sort, its label and the column it sorts by, which is never dropped for width.
+const SORTS: [string, string, string | null][] = [
+  ['rank', 'rank', null],
+  ['change24h', '24h', 'chg'],
+  ['volume', 'vol', 'vol'],
+  ['liquidity', 'liq', 'liq'],
+  ['mcap', 'mcap', 'mcap'],
+  ['holders', 'holders', 'holders'],
+  ['age', 'age', 'age'],
+  ['bondingCurve', 'curve', 'curve'],
+]
 
 const MODE = { plugin: 'agon', key: 'mode' } as const
 const SELECTED = { plugin: 'agon', key: 'selected' } as const
@@ -45,6 +82,10 @@ const RANGE = { plugin: 'agon', key: 'range' } as const
 const MARKET = { plugin: 'agon', key: 'market' } as const
 const STATUS = { plugin: 'agon', key: 'status' } as const
 const MINT_NOTE = { plugin: 'agon', key: 'mintNote' } as const
+const VIEW = { plugin: 'agon', key: 'view' } as const
+const LIST = { plugin: 'agon', key: 'list' } as const
+const SORT = { plugin: 'agon', key: 'sort' } as const
+const DISCOVER = { plugin: 'agon', key: 'discover' } as const
 
 // Set from the plugin's options each time `register` runs.
 let server = DEFAULT_SERVER
@@ -197,6 +238,60 @@ async function choose($: Dollar, mint: string) {
   await refreshMarket($)
 }
 
+// Each /discover request's number, as for /market: only the newest answer is written.
+let discoverSeq = 0
+
+async function refreshDiscover($: Dollar) {
+  const seq = ++discoverSeq
+  const list = (await $.state.get(LIST)).value ?? 'trending'
+  const sort = (await $.state.get(SORT)).value ?? 'rank'
+  const key = `${list}:${sort}`
+  if ((await $.state.get(DISCOVER)).value?.key !== key)
+    await $.state.set(DISCOVER, { key, body: null, error: null })
+  let next: Loaded<Discover>
+  try {
+    const r = await getJson(
+      $,
+      `/discover?list=${encodeURIComponent(list)}&sort=${encodeURIComponent(sort)}`,
+    )
+    next = r.ok
+      ? { key, body: r.body as Discover, error: null }
+      : {
+          key,
+          body: null,
+          error: `/discover answered ${r.status}: ${String(r.body?.error ?? 'no reason given')}${r.status === 404 ? ' This Agon server predates /discover: update and restart it.' : ''}`,
+        }
+  } catch (e) {
+    next = {
+      key,
+      body: null,
+      error: `/discover not answering at ${server} (${why(e)}); asked again in ${DISCOVER_EVERY_MS / 1000} s`,
+    }
+  }
+  if (seq !== discoverSeq) return
+  await $.state.set(DISCOVER, next)
+  $.ui.invalidate('ui.render')
+}
+
+async function showView($: Dollar, v: View) {
+  await $.state.set(VIEW, v)
+  if (v === 'markets') await refreshDiscover($)
+}
+
+// The list is asked for only while the markets view is on screen.
+async function refreshShownDiscover($: Dollar) {
+  if ((await $.state.get(VIEW)).value !== 'markets') return
+  if (!(await $.ui.panes()).some((p) => p.id === PANE)) return
+  await refreshDiscover($)
+}
+
+// A row of the market list opens its token in the trade view, by its mint and nothing else.
+async function openToken($: Dollar, mint: string) {
+  if (!BASE58.test(mint)) return
+  await $.state.set(VIEW, 'trade')
+  await choose($, mint)
+}
+
 async function refreshAll($: Dollar) {
   await Promise.all([refreshStatus($), refreshMarket($)])
 }
@@ -213,6 +308,7 @@ async function togglePane($: Dollar) {
     closeOnEscape: true,
   })
   void refreshAll($)
+  if ((await $.state.get(VIEW)).value === 'markets') void refreshDiscover($)
   return opened.isPlaced
     ? 'Agon trade view opened.'
     : `The Agon trade view could not be placed here (${opened.reason}). Widen the terminal or use the desktop app.`
@@ -243,6 +339,7 @@ export const register: Register = (on, options) => {
     void refreshAll($)
     $.clock.every(STATUS_EVERY_MS, () => void refreshStatus($))
     $.clock.every(MARKET_EVERY_MS, () => void refreshMarket($))
+    $.clock.every(DISCOVER_EVERY_MS, () => void refreshShownDiscover($))
     return next(e)
   })
 
@@ -266,7 +363,7 @@ export const register: Register = (on, options) => {
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e, next) => {
     if (!(await ready($))) return next(e)
-    return pane($, e)
+    return (await $.state.get(VIEW)).value === 'markets' ? markets($, e) : pane($, e)
   })
 }
 
@@ -311,10 +408,23 @@ const network = (s: Status) => {
 // ---- layout: every line is laid out to a known width, never left to the surface to wrap ----
 
 type Part = { text: string; prio: number; color?: string; bold?: boolean; dim?: boolean }
-const cells = (s: string) => [...s].length
+// Cells a character takes: 2 for wide East Asian characters and emoji, 0 for combining marks and
+// format characters. A token's symbol is its creator's text and can hold any of them.
+const WIDE =
+  /[\u1100-\u115F\u2E80-\u303E\u3041-\u33FF\u3400-\u4DBF\u4E00-\u9FFF\uA000-\uA4CF\uAC00-\uD7A3\uF900-\uFAFF\uFE30-\uFE4F\uFF00-\uFF60\uFFE0-\uFFE6\u{20000}-\u{3FFFD}]|\p{Emoji_Presentation}/u
+const ZERO = /[\p{M}\p{Cf}]/u
+const charCells = (c: string) => (ZERO.test(c) ? 0 : WIDE.test(c) ? 2 : 1)
+const cells = (s: string) => [...s].reduce((n, c) => n + charCells(c), 0)
 // Text shortened to `width` cells, marked with `..` when cut; the full text is in the pane.
-const clip = (s: string, width: number) =>
-  cells(s) <= width ? s : `${[...s].slice(0, Math.max(0, width - 2)).join('')}..`
+function clip(s: string, width: number) {
+  if (cells(s) <= width) return s
+  let out = ''
+  for (const c of s) {
+    if (cells(out) + charCells(c) > Math.max(0, width - 2)) break
+    out += c
+  }
+  return `${out}..`
+}
 // The parts that fit `width`, lowest `prio` first, kept in their order, 2 spaces apart.
 function fit(parts: Part[], width: number) {
   const keep = new Set<Part>()
@@ -886,6 +996,7 @@ async function pane($: Dollar, e: Site) {
 
   return (
     <Box flexDirection="column">
+      {viewTabs($, els, 'trade', width)}
       {head}
       {status}
       {header}
@@ -1268,6 +1379,307 @@ function tradesPanel(els: Els, m: Market | null, width: number) {
         </Text>
       ))}
       {t.leftOut && lines(els, 'tr-left', wrap(t.leftOut, width, 2), undefined, true)}
+    </Box>
+  )
+}
+
+// ---- the market list ----
+
+// A tab: a plain Button, the active one bracketed, so the choice reads without colour.
+function tabButton(els: Els, key: string, label: string, active: boolean, press: () => unknown) {
+  const { Button } = els
+  return (
+    <Button
+      key={key}
+      plain
+      label={active ? `[${label}]` : label}
+      variant={active ? 'primary' : undefined}
+      onPress={press}
+    />
+  )
+}
+
+// Tabs over as many rows as `width` needs, 2 cells apart, after an optional dim lead word.
+function tabRows(
+  els: Els,
+  key: string,
+  lead: string | null,
+  tabs: { key: string; label: string; active: boolean; press: () => unknown }[],
+  width: number,
+) {
+  const { Box, Text } = els
+  type El = ReturnType<typeof tabButton>
+  const rows: El[][] = [[]]
+  let used = 0
+  const place = (el: El, w: number) => {
+    if (rows.at(-1)!.length && used + 2 + w > width) {
+      rows.push([])
+      used = 0
+    }
+    used += w + (rows.at(-1)!.length ? 2 : 0)
+    rows.at(-1)!.push(el)
+  }
+  if (lead)
+    place(
+      <Text key={`${key}-lead`} dimColor>
+        {lead}
+      </Text>,
+      cells(lead),
+    )
+  for (const t of tabs)
+    place(tabButton(els, t.key, t.label, t.active, t.press), cells(t.label) + (t.active ? 2 : 0))
+  return (
+    <Box key={key} flexDirection="column">
+      {rows.map((r, i) => (
+        <Box key={`${key}-${i}`} flexDirection="row" gap={2} flexWrap="nowrap">
+          {r}
+        </Box>
+      ))}
+    </Box>
+  )
+}
+
+// The pane's 2 views.
+function viewTabs($: Dollar, els: Els, current: View, width: number) {
+  return tabRows(
+    els,
+    'views',
+    'Agon',
+    [
+      {
+        key: 'view-trade',
+        label: 'trade',
+        active: current === 'trade',
+        press: () => showView($, 'trade'),
+      },
+      {
+        key: 'view-markets',
+        label: 'markets',
+        active: current === 'markets',
+        press: () => showView($, 'markets'),
+      },
+    ],
+    width,
+  )
+}
+
+const NOT_SENT = 'not sent'
+const figure = (f: Figure | undefined, fmt: (n: number) => string | null) => {
+  const n = num(f?.value)
+  return n === null ? NOT_SENT : (fmt(n) ?? NOT_SENT)
+}
+const pct = (n: number) => `${n.toFixed(2)}%`
+// A holder count is whole: as sent below 1,000, compact from there.
+const count = (n: number) => (n >= 1000 ? big(n, false) : String(n))
+const since = (s: number) =>
+  s < 60
+    ? `${s}s`
+    : s < 3600
+      ? `${Math.floor(s / 60)}m`
+      : s < 86400
+        ? `${Math.floor(s / 3600)}h`
+        : `${Math.floor(s / 86400)}d`
+// Mint and freeze authority as words: off (revoked) or on (someone can still mint or freeze).
+const auth = (a: Token['mintAuthority']) =>
+  a?.value === 'disabled' ? 'off' : a?.value === 'enabled' ? 'on' : NOT_SENT
+const graduated = (t: Token) =>
+  t.bondingCurvePct?.graduatedAt ? 'yes' : num(t.bondingCurvePct?.value) !== null ? 'no' : NOT_SENT
+// The symbol a person reads: from `display` only, separators and marks folded, at most 10 cells.
+const UNSAFE = /[\p{Cc}\p{Cf}\p{M}\p{Z}\s]+/gu
+const symbolOf = (t: Token) => {
+  const s = (typeof t.display?.symbol === 'string' ? t.display.symbol : '')
+    .replace(UNSAFE, ' ')
+    .trim()
+  return s ? clip(s, 10) : NOT_SENT
+}
+
+type Col = {
+  id: string
+  head: string
+  prio: number
+  right?: boolean
+  text: (t: Token) => string
+  color?: (t: Token) => string | undefined
+}
+// Columns by priority, the highest number dropping first as the pane narrows; the token and the
+// sorted column never drop.
+const columns = (list: string): Col[] => [
+  { id: 'token', head: 'token', prio: 0, text: symbolOf },
+  { id: 'price', head: 'price', prio: 1, right: true, text: (t) => figure(t.price, usd) },
+  {
+    id: 'chg',
+    head: '24h',
+    prio: 2,
+    right: true,
+    text: (t) => figure(t.change?.['24h'], move),
+    color: (t) => tone(t.change?.['24h']?.value),
+  },
+  ...(list === 'about-to-graduate'
+    ? [
+        {
+          id: 'curve',
+          head: 'curve',
+          prio: 2,
+          right: true,
+          text: (t: Token) => figure(t.bondingCurvePct, pct),
+        },
+      ]
+    : []),
+  {
+    id: 'mintAuth',
+    head: 'mint',
+    prio: 3,
+    text: (t) => auth(t.mintAuthority),
+    color: (t) => (t.mintAuthority?.value === 'enabled' ? 'yellow' : undefined),
+  },
+  {
+    id: 'freezeAuth',
+    head: 'freeze',
+    prio: 4,
+    text: (t) => auth(t.freezeAuthority),
+    color: (t) => (t.freezeAuthority?.value === 'enabled' ? 'yellow' : undefined),
+  },
+  { id: 'grad', head: 'grad', prio: list === 'graduated' ? 3 : 13, text: graduated },
+  { id: 'liq', head: 'liq', prio: 5, right: true, text: (t) => figure(t.liquidity, big) },
+  { id: 'holders', head: 'holders', prio: 6, right: true, text: (t) => figure(t.holders, count) },
+  { id: 'top10', head: 'top10', prio: 7, right: true, text: (t) => figure(t.topHoldersPct, pct) },
+  { id: 'dev', head: 'dev', prio: 8, right: true, text: (t) => figure(t.devPct, pct) },
+  { id: 'vol', head: 'vol', prio: 9, right: true, text: (t) => figure(t.volume24h, big) },
+  { id: 'mcap', head: 'mcap', prio: 10, right: true, text: (t) => figure(t.marketCap, big) },
+  { id: 'address', head: 'address', prio: 11, text: (t) => short(t.mint) },
+  { id: 'age', head: 'age', prio: 12, right: true, text: (t) => figure(t.age, since) },
+]
+const padTo = (s: string, w: number, right?: boolean) => {
+  const pad = ' '.repeat(Math.max(0, w - cells(s)))
+  return right ? pad + s : s + pad
+}
+
+async function markets($: Dollar, e: Site) {
+  const els = $.ui.resolve(e)
+  const { Box, Button, Text } = els
+  const props = e.props as { bodyColumns?: number }
+  const width = usable(e, props.bodyColumns ?? 80)
+  const list = (await $.state.get(LIST)).value ?? 'trending'
+  const sort = (await $.state.get(SORT)).value ?? 'rank'
+  const d = (await $.state.get(DISCOVER)).value ?? null
+  const current = d?.key === `${list}:${sort}` ? d : null
+  const body = current?.body ?? null
+  const tokens = (body?.tokens ?? []).filter((t) => BASE58.test(String(t?.mint)))
+  const sortedBy = SORTS.find(([s]) => s === sort)?.[2] ?? null
+
+  const lists = tabRows(
+    els,
+    'lists',
+    null,
+    LISTS.map(([l, label]) => ({
+      key: `list-${l}`,
+      label,
+      active: l === list,
+      press: async () => {
+        await $.state.set(LIST, l)
+        // The bonding curve is sent on about to graduate only.
+        if (sort === 'bondingCurve' && l !== 'about-to-graduate') await $.state.set(SORT, 'rank')
+        await refreshDiscover($)
+      },
+    })),
+    width,
+  )
+  const sorts = tabRows(
+    els,
+    'sorts',
+    'sort',
+    SORTS.filter(([s]) => s !== 'bondingCurve' || list === 'about-to-graduate').map(
+      ([s, label]) => ({
+        key: `sort-${s}`,
+        label,
+        active: s === sort,
+        press: async () => {
+          await $.state.set(SORT, s)
+          await refreshDiscover($)
+        },
+      }),
+    ),
+    width,
+  )
+
+  // Each column as wide as its widest cell; then the columns that fit, by priority.
+  const all = columns(list).map((c) => {
+    const head = c.id === sortedBy ? `${c.head} v` : c.head
+    const texts = tokens.map((t) => c.text(t))
+    return { ...c, head, texts, w: Math.max(cells(head), ...texts.map(cells)) }
+  })
+  const first = (c: Col) => (c.id === 'token' || c.id === sortedBy ? -1 : c.prio)
+  const keep = new Set<string>()
+  let used = 0
+  for (const c of [...all].sort((a, b) => first(a) - first(b))) {
+    const add = c.w + (keep.size ? 1 : 0)
+    if (used + add > width) continue
+    keep.add(c.id)
+    used += add
+  }
+  const cols = all.filter((c) => keep.has(c.id))
+
+  const msg = (text: string, color?: string) => (
+    <Box key="table" flexDirection="column">
+      {lines(els, 'mk-msg', wrap(text, width), color, !color)}
+    </Box>
+  )
+  const table =
+    !current || (!body && !current.error) ? (
+      msg(`loading ${server}/discover for ${list}`)
+    ) : current.error || body?.error ? (
+      msg((current.error ?? body?.error)!, 'yellow')
+    ) : tokens.length === 0 ? (
+      msg(`/discover sent 0 tokens for ${list}`)
+    ) : (
+      <Box key="table" flexDirection="column">
+        <Box key="mk-head" flexDirection="row" gap={1} flexWrap="nowrap">
+          {cols.map((c) => (
+            <Text key={`hd-${c.id}`} dimColor bold wrap="truncate-end">
+              {padTo(c.head, c.w, c.right)}
+            </Text>
+          ))}
+        </Box>
+        {tokens.map((t, i) => (
+          <Box key={`mk-${t.mint}`} flexDirection="row" gap={1} flexWrap="nowrap">
+            {cols.map((c) =>
+              c.id === 'token' ? (
+                <Box key={`tk-${i}`} width={c.w} flexShrink={0}>
+                  <Button
+                    key={`open-${t.mint}`}
+                    plain
+                    label={c.texts[i]!}
+                    onPress={() => openToken($, t.mint)}
+                  />
+                </Box>
+              ) : (
+                <Text key={`c-${i}-${c.id}`} color={c.color?.(t)} wrap="truncate-end">
+                  {padTo(c.texts[i]!, c.w, c.right)}
+                </Text>
+              ),
+            )}
+          </Box>
+        ))}
+      </Box>
+    )
+
+  const src = body?.source
+  const notes = body
+    ? [
+        `${tokens.length} tokens from ${src?.name ?? 'a source the server did not name'}, ${num(src?.ageSeconds) ?? 'unknown'} s old`,
+        ...(body.leftOut ? [body.leftOut] : []),
+        ...(body.authority ? [body.authority] : []),
+        "Press a token to open it in the trade view. Symbols are the creator's own text, unchecked; a prompt carries the mint only.",
+      ]
+    : []
+
+  return (
+    <Box flexDirection="column">
+      {viewTabs($, els, 'markets', width)}
+      {lists}
+      {sorts}
+      {table}
+      {notes.flatMap((n, i) => lines(els, `mk-note-${i}`, wrap(n, width, 4), undefined, true))}
     </Box>
   )
 }
