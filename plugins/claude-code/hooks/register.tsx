@@ -62,9 +62,27 @@ const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : n
 const why = (e: unknown) => (e instanceof Error ? e.message : String(e))
 const short = (a: string) => `${a.slice(0, 4)}..${a.slice(-4)}`
 const labelOf = (mint: string) => PICKS.find(([, m]) => m === mint)?.[0] ?? short(mint)
-// Printed as sent: String(n), never rounded, so every number equals the server's.
-const usd = (v: unknown) => (num(v) === null ? null : `$${String(v)}`)
-const signed = (v: number) => `${v > 0 ? '+' : ''}${String(v)}`
+// Printed as sent, never rounded, so every number equals the server's. String(n) writes 2.11e-7
+// below 1e-6; its digits are moved into plain decimals, not recomputed.
+const plain = (n: number) => {
+  const s = String(n)
+  const m = /^(-?)(\d)(?:\.(\d+))?e([+-]\d+)$/.exec(s)
+  if (!m) return s
+  const [, sign, int, frac = '', exp] = m
+  const e = Number(exp)
+  return e < 0
+    ? `${sign}0.${'0'.repeat(-e - 1)}${int}${frac}`
+    : `${sign}${int}${frac}${'0'.repeat(Math.max(0, e - frac.length))}`
+}
+const usd = (v: unknown) => {
+  const n = num(v)
+  return n === null ? null : `$${plain(n)}`
+}
+const amt = (v: unknown) => {
+  const n = num(v)
+  return n === null ? 'not sent' : plain(n)
+}
+const signed = (v: number) => `${v > 0 ? '+' : ''}${plain(v)}`
 // A move as an arrow, a sign and its number, so it reads without colour.
 const move = (v: unknown) => {
   const n = num(v)
@@ -112,7 +130,12 @@ async function refreshStatus($: Dollar) {
   }
 }
 
+// Each /market request's number: only the newest writes, so a slow timer answer never lands over
+// a fresher one for the same token.
+let marketSeq = 0
+
 async function refreshMarket($: Dollar) {
+  const seq = ++marketSeq
   const mint = (await $.state.get(SELECTED)).value ?? PICKS[0]![1]
   const range = (await $.state.get(RANGE)).value ?? '1h'
   const key = `${mint}:${range}`
@@ -138,8 +161,8 @@ async function refreshMarket($: Dollar) {
       error: `/market not answering at ${server} (${why(e)}); asked again in ${MARKET_EVERY_MS / 1000} s`,
     }
   }
-  // Only the newest request writes: a slow answer for a token the person has left is dropped.
-  if ((await $.state.get(MARKET)).value?.key === key) await $.state.set(MARKET, next)
+  // Only the newest request writes: a slow answer, or one for a token the person left, is dropped.
+  if (seq === marketSeq) await $.state.set(MARKET, next)
 }
 
 async function choose($: Dollar, mint: string) {
@@ -243,7 +266,9 @@ async function band($: Dollar, e: RenderInput<'AbovePrompt'>) {
   const mk = (await $.state.get(MARKET)).value ?? null
   const mint = (await $.state.get(SELECTED)).value ?? PICKS[0]![1]
   const s = st?.body ?? null
-  const stats = mk?.body?.stats24h
+  // Only an answer for the token and range selected now: never one token's price under another's label.
+  const current = mk?.key === `${mint}:${(await $.state.get(RANGE)).value ?? '1h'}` ? mk : null
+  const stats = current?.body?.stats24h
   const parts: [string, string, string | undefined][] = []
   if (!st) parts.push(['conn', `asking ${server}`, undefined])
   else if (!s) parts.push(['conn', `Offline: ${st.error}`, 'yellow'])
@@ -265,7 +290,7 @@ async function band($: Dollar, e: RenderInput<'AbovePrompt'>) {
   const price = usd(stats?.price)
   const tokenText = price
     ? `${labelOf(mint)} ${price}`
-    : `${labelOf(mint)}: ${mk?.error ?? stats?.error ?? 'loading from /market'}`
+    : `${labelOf(mint)}: ${current?.error ?? stats?.error ?? 'loading from /market'}`
   return (
     <Box flexDirection="row" gap={2} alignItems="center" flexWrap="nowrap" overflow="hidden">
       {toggle}
@@ -289,9 +314,13 @@ function connection(s: Status) {
   const u = s.upstream
   if (!u) return 'connection unknown: /status sent no upstream state'
   if (u.state === 'live') return 'Live'
-  if (u.state === 'reconnecting') return `Reconnecting (attempt ${u.attempt ?? '?'})`
-  if (u.state === 'offline') return `Offline since ${clock(u.since)}`
-  return 'Connecting'
+  if (u.state === 'connecting') return 'Connecting'
+  const cause = u.cause ? `: ${u.cause}` : ''
+  if (u.state === 'reconnecting')
+    return `Reconnecting (attempt ${u.attempt ?? 'not counted'})${cause}`
+  if (u.state === 'offline')
+    return `Offline since ${clock(u.since)}${cause}${u.next ? `. ${u.next}` : ''}`
+  return `upstream state "${u.state.slice(0, 20)}" is not one this plugin knows; update it`
 }
 
 // Candles as half-block cells: each cell 2 pixels tall, a candle a column. A last row carries + or -
@@ -620,7 +649,7 @@ function bookPanel(els: Els, m: Market | null, wide: boolean) {
     i: number,
   ) => (
     <Text key={`${side}-${i}`} color={side === 'ask' ? 'red' : 'green'} wrap="truncate-end">
-      {`${side} ${usd(l.price) ?? 'price not sent'}  size ${String(l.size)}  total ${String(l.total)}`}
+      {`${side} ${usd(l.price) ?? 'price not sent'}  size ${amt(l.size)}  total ${amt(l.total)}`}
     </Text>
   )
   return (
@@ -640,7 +669,7 @@ function bookPanel(els: Els, m: Market | null, wide: boolean) {
       {b.bids.slice(0, n).map((l, i) => level('bid', l, i))}
       {b.moves.map((mv, i) => (
         <Text key={`move-${i}`} wrap="truncate-end">
-          {`move ${signed(mv.pct)}% (${mv.side}): pay ${String(mv.quoteIn)}, get ${String(mv.baseOut)}`}
+          {`move ${signed(mv.pct)}% (${mv.side}): pay ${amt(mv.quoteIn)}, get ${amt(mv.baseOut)}`}
         </Text>
       ))}
     </Box>

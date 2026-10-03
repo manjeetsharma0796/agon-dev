@@ -79,6 +79,8 @@ const ORDERBOOK = {
   bids: [
     { price: 0.0000211, size: 300000, total: 300000 },
     { price: 0.00002106, size: 125000, total: 425000 },
+    // Below 1e-6 String() writes 2.11e-7; the screen must still show the same number in decimals.
+    { price: 0.000000211, size: 5, total: 425005 },
   ],
   moves: [],
 }
@@ -228,6 +230,7 @@ test('band and pane at 60, 80 and 140 columns print every number exactly as /sta
         'ask $0.00002117  size 250000  total 650000',
         'bid $0.0000211  size 300000  total 300000',
         'bid $0.00002106  size 125000  total 425000',
+        'bid $0.000000211  size 5  total 425005',
       ]
       for (const want of numbers) expect(p).toContain(want)
       if (width >= 80) expect(p).toContain('1500000.5')
