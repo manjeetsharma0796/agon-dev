@@ -3138,7 +3138,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-C32, The action layer: 1 function per action, whoever presses it
-- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-c32-actions
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/284 | Owner: jishnu-baruah | Branch: feature/t-c32-actions
 - Depends-on: T-C30
 - Touches: packages/mcp/src/actions.ts, packages/mcp/src/actions.test.ts, packages/mcp/src/index.ts,
   packages/mcp/src/serve.ts, packages/cli/src/daemon/sign.ts, packages/cli/src/daemon/submit.ts
@@ -3148,7 +3148,23 @@ _(empty)_
   otherwise returns the owner link, and writes the journal row; a proposal unanswered for 120 s becomes
   expired and does nothing; a sent trade with an unknown result is uncertain and never retried; tests on
   the fork drive each action from a plain HTTP call with 0 LLM calls; fork only until T-D04
-- Evidence: <PR link, plus /security-review>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/284, plus /security-review (0 findings
+  at confidence 8 or above; /code-review's 2 findings fixed with tests). Measured on a Surfpool fork
+  2026-10-03 on the final code: the built server over HTTP, the daemon's own `approve` and
+  `signApproved` with a key from Windows Credential Manager (test-only service), a local Postgres
+  journal, a vault armed by the page's `arm()` with a cap of 400000 lamports. 400001 lamports: owner
+  link, check_trade pass, nothing built, 2,612 ms. Exactly 400000: cleared for the agent key
+  (pass, dataSlot 452838209, 3,009 ms), then `/actions/send` confirmed in 780 ms as
+  `5DUXWhRg9Di3sxDPVFaPkvNoAeThQrM1T3iTYUJg7EjPkRj9Y9aPjapf9D7EUdTf4hpkjVamzmWM9KFvJbhnsYqo`, err null
+  on chain; the same clearance sent again got 409. Rows: approved, approved, sent and confirmed with
+  that signature. 15 HTTP tests with 0 LLM calls plus 1 fork test (green here in 9.3 s, skipped in CI)
+- Finding: the daemon and the agent hold the same hired key, so the actor label is only the
+  caller's word: a hired key calling itself owner-terminal could confirm its own unsure, approve its
+  own proposal and lift its own pause. Owner powers now follow the owner's wallet key. Owed outside
+  Touches: agent MCP tools (`TOOLS` in packages/core plus DECISIONS.md), an `agon daemon` command
+  (packages/cli/src/index.ts), and `approve()` taking a confirmed unsure (sign.test.ts); until then
+  the daemon signs passes only, which fails closed. The owner link's `/trade` page is the order
+  panel's
 - Kill criterion: none
 
 ### T-C33, /market: candles, indicators, recent trades and 24h stats, cached for every client
