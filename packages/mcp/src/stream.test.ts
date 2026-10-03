@@ -129,6 +129,28 @@ test('status is assembled from readings, each with its age and source', () => {
   expect(status.priorityFee.note).toMatch(/0/)
 })
 
+test('with AGON_NETWORK unset, the note says it is not set, never "on unset"', () => {
+  const s = assembleStatus(
+    {
+      network: 'unset',
+      upstream: { state: 'live', since: 0 },
+      slot: {},
+      ping: {},
+      slotLag: {},
+      tps: {},
+      fees: {},
+      tipFloor: {},
+      solPrice: {},
+      accounts: [],
+    },
+    1_000,
+  )
+  expect(s.networkNote).toMatch(
+    /^AGON_NETWORK is not set on this server, or is not 1 of fork, devnet or mainnet, and every reading below/,
+  )
+  expect(s.networkNote).not.toMatch(/unset/)
+})
+
 test('accounts are base58 addresses, at most 128, and a bad one is refused by position', () => {
   expect(parseAccounts(null)).toEqual([])
   expect(parseAccounts(`${SOL},${SOL}`)).toEqual([SOL, SOL])

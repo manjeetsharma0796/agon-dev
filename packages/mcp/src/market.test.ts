@@ -193,6 +193,20 @@ describe('the upstream budget', () => {
     expect(reads.filter((t) => t >= end - 60_000 && t < end).length).toBeLessThanOrEqual(12)
     // And the clients were answered, about once a second each, not starved by the cache.
     expect(answers).toBeGreaterThan(10 * 100)
+    // Liquidity rides on the pool answer already fetched: 1 pool lookup in 2 minutes, and no URL
+    // of a kind this test does not already count.
+    expect(calls.filter((c) => c.url.includes('/tokens/'))).toHaveLength(1)
+    expect(
+      calls.filter(
+        (c) =>
+          !/\/tokens\/|\/ohlcv\/|\/trades$|\/simple\/networks\/solana\/token_price\//.test(c.url),
+      ),
+    ).toEqual([])
+    const a = await market.get(SOL, '1m')
+    expect('liquidityUsd' in a.stats24h && a.stats24h.liquidityUsd).toMatchObject({
+      value: 36_647_359,
+      pool: POOL,
+    })
   })
 
   test('the queue starts calls at least 2.1 s apart and names a full queue', async () => {
@@ -249,6 +263,69 @@ describe('the answer', () => {
     expect('rsi' in a.indicators && a.indicators.rsi.params).toEqual({
       period: 14,
       smoothing: 'Wilder',
+    })
+  })
+
+  test('24h stats carry the pool liquidity with its source and time, and flag a reserve 100 times its volume', async () => {
+    // The busiest pool: $36.6M reserve on $209.5M volume, not flagged.
+    const { upstream } = fakeGecko()
+    const market = createMarket(upstream, SPACING_MS, fakeChain().chain)
+    const pending = market.get(SOL, '1h')
+    await vi.advanceTimersByTimeAsync(10_000)
+    const a = await pending
+    expect('liquidityUsd' in a.stats24h && a.stats24h.liquidityUsd).toEqual({
+      value: 36_647_359,
+      unit: 'USD',
+      pool: POOL,
+      source: expect.stringMatching(/GeckoTerminal reserve_in_usd/),
+      fetchedAt: a.pool.fetchedAt,
+      flag: null,
+    })
+
+    // A mint whose only pool is the stale one measured on SOL: $217.9M against $0.72M of volume.
+    const stale: Upstream = async (url) => {
+      if (!url.includes('/tokens/')) return upstream(url)
+      const body = (await upstream(url)) as { data: unknown[] }
+      return { data: body.data.slice(0, 1) }
+    }
+    const m2 = createMarket(stale, SPACING_MS, fakeChain().chain)
+    const p2 = m2.get(SOL, '1h')
+    await vi.advanceTimersByTimeAsync(10_000)
+    const b = await p2
+    const liq = b.stats24h.liquidityUsd
+    const flag = 'flag' in liq ? liq.flag : null
+    expect(flag).toMatch(/reserve \$217,882,261 is 300\.9 times its 24h volume of \$724,071/)
+    expect(flag).toMatch(/more than 100 times/)
+  })
+
+  test('a pool with no 24h volume says its reserve could not be checked, never a clean null', async () => {
+    const { upstream } = fakeGecko()
+    const noVolume: Upstream = async (url) => {
+      if (!url.includes('/tokens/')) return upstream(url)
+      return { data: [{ attributes: { address: POOL, reserve_in_usd: '1000' } }] }
+    }
+    const market = createMarket(noVolume, SPACING_MS, fakeChain().chain)
+    const pending = market.get(SOL, '1h')
+    await vi.advanceTimersByTimeAsync(10_000)
+    const liq = (await pending).stats24h.liquidityUsd
+    expect('flag' in liq && liq.flag).toMatch(
+      /^GeckoTerminal sent no 24h volume for pool 58oQ.*, so its reserve \$1,000 could not be checked/,
+    )
+  })
+
+  test('a pool with no readable reserve says so instead of a number', async () => {
+    const { upstream } = fakeGecko()
+    const noReserve: Upstream = async (url) => {
+      if (!url.includes('/tokens/')) return upstream(url)
+      return { data: [{ attributes: { address: POOL, volume_usd: { h24: '5' } } }] }
+    }
+    const market = createMarket(noReserve, SPACING_MS, fakeChain().chain)
+    const pending = market.get(SOL, '1h')
+    await vi.advanceTimersByTimeAsync(10_000)
+    const a = await pending
+    expect('liquidityUsd' in a.stats24h && a.stats24h.liquidityUsd).toEqual({
+      pool: POOL,
+      error: expect.stringMatching(/GeckoTerminal sent no usable reserve_in_usd for pool 58oQ/),
     })
   })
 
