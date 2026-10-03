@@ -1,0 +1,312 @@
+{
+  "synthetic": true,
+  "network": "fork",
+  "dataSlot": 452400200,
+  "ruleVersion": "overview/1",
+  "asOf": "2026-10-02T10:00:00.000Z",
+  "report": {
+    "vault": "AuTJA9aBVQTa9QQ6ChwLgFKe12CinB8R8o9mTnL1WnDj",
+    "owner": "Arp9sY4pxiaFKJsQAAQWbyKCX5Pym7Br7Ni7myNkjpJU",
+    "summary": [
+      "Total P&L +0.000023495 SOL ($0.00): realised -0.000003842 SOL ($0.00) over 1 sell, unrealised +0.000027337 SOL ($0.00) on 1 of 1 open position.",
+      "Open 9.721934 USDC: cost 0.08229513 SOL, worth 0.082322467 SOL now (Jupiter sell quote), +0.000027337 SOL ($0.00).",
+      "Dollars use SOL/USD $118.21 now (Pyth $118.21, Jupiter $118.13, 0.07% apart), not the price on each trade's day.",
+      "3 trades counted; 1 other transaction(s) or amount(s) not counted, see history."
+    ],
+    "totals": {
+      "realised": {
+        "sol": {
+          "amount": "-3842",
+          "ui": "-0.000003842",
+          "unit": "SOL"
+        },
+        "usd": "0.00"
+      },
+      "unrealised": {
+        "sol": {
+          "amount": "27337",
+          "ui": "0.000027337",
+          "unit": "SOL"
+        },
+        "usd": "0.00"
+      },
+      "total": {
+        "sol": {
+          "amount": "23495",
+          "ui": "0.000023495",
+          "unit": "SOL"
+        },
+        "usd": "0.00"
+      },
+      "unpriced": [],
+      "note": "First in, first out over every trade the vault made, with SOL as the quote: a buy opens a lot, a sell closes the oldest. Realised is exact from the chain and needs no price. Unrealised values what is still open, capped at the vault's on-chain balance, at what selling it fetches now, each with its source. Dollars are SOL figures times SOL/USD now. Trade times are the fork's own clock, which can lag real time until sync_fork runs."
+    },
+    "solUsd": {
+      "usd": "118.21",
+      "sources": [
+        {
+          "name": "Pyth",
+          "usd": "118.21"
+        },
+        {
+          "name": "Jupiter",
+          "usd": "118.13"
+        }
+      ],
+      "spreadPct": "0.07"
+    },
+    "positions": [
+      {
+        "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "held": {
+          "amount": "9721934",
+          "ui": "9.721934",
+          "unit": "USDC"
+        },
+        "cost": {
+          "amount": "82295130",
+          "ui": "0.08229513",
+          "unit": "SOL"
+        },
+        "value": {
+          "amount": "82322467",
+          "ui": "0.082322467",
+          "unit": "SOL"
+        },
+        "unrealised": {
+          "sol": {
+            "amount": "27337",
+            "ui": "0.000027337",
+            "unit": "SOL"
+          },
+          "usd": "0.00"
+        },
+        "source": "Jupiter sell quote",
+        "whyUnpriced": null
+      }
+    ],
+    "balances": [
+      {
+        "mint": "So11111111111111111111111111111111111111112",
+        "held": {
+          "amount": "917701028",
+          "ui": "0.917701028",
+          "unit": "SOL"
+        }
+      },
+      {
+        "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "held": {
+          "amount": "9721934",
+          "ui": "9.721934",
+          "unit": "USDC"
+        }
+      }
+    ],
+    "nativeSol": {
+      "amount": "890880",
+      "ui": "0.00089088",
+      "unit": "SOL"
+    },
+    "agents": [
+      {
+        "address": "2mzuh9Vftkx6X4MHRzyr8TcVqVPs6cZGQWTsRBhH7gNj",
+        "feeSol": {
+          "amount": "9985000",
+          "ui": "0.009985",
+          "unit": "SOL"
+        }
+      }
+    ],
+    "trades": [
+      {
+        "signature": "2Ym6RkQfS9zN1dTqWcX4bV7hJ8uK3pL5aE2rT9yG6iO1nM4sD7fH3jK8lZ5xC2vB9nQ6wE4rT1yU8iO5pA3sD7fG",
+        "slot": 452400100,
+        "time": "2026-10-03T01:15:00.000Z",
+        "side": "sell",
+        "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "token": {
+          "amount": "8000000",
+          "ui": "8",
+          "unit": "USDC"
+        },
+        "sol": {
+          "amount": "67701028",
+          "ui": "0.067701028",
+          "unit": "SOL"
+        },
+        "realised": {
+          "amount": "-3842",
+          "ui": "-0.000003842",
+          "unit": "SOL"
+        },
+        "explorer": "https://explorer.solana.com/tx/2Ym6RkQfS9zN1dTqWcX4bV7hJ8uK3pL5aE2rT9yG6iO1nM4sD7fH3jK8lZ5xC2vB9nQ6wE4rT1yU8iO5pA3sD7fG?cluster=custom&customUrl=http%3A%2F%2F127.0.0.1%3A8899"
+      },
+      {
+        "signature": "4sDQnY7cXw2KuGHpbTq8VrJ5mE3aL9zF6tN1oB4yR8iU2kP5jW7hC3gS6dM9xZ1vQ4eA8rT2yI5uO7pL3nK6bJ9",
+        "slot": 452113575,
+        "time": "2026-10-03T01:22:55.000Z",
+        "side": "buy",
+        "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "token": {
+          "amount": "5905945",
+          "ui": "5.905945",
+          "unit": "USDC"
+        },
+        "sol": {
+          "amount": "50000000",
+          "ui": "0.05",
+          "unit": "SOL"
+        },
+        "realised": null,
+        "explorer": "https://explorer.solana.com/tx/4sDQnY7cXw2KuGHpbTq8VrJ5mE3aL9zF6tN1oB4yR8iU2kP5jW7hC3gS6dM9xZ1vQ4eA8rT2yI5uO7pL3nK6bJ9?cluster=custom&customUrl=http%3A%2F%2F127.0.0.1%3A8899"
+      },
+      {
+        "signature": "5P1Wbvs9QudFxY3kT8mN2rL6pA4zE7cV1oJ9hG5uS3iD8wB2nK6qR4tF7yM1xC9vZ3eL5aP8sT2gH6jU4kO1bN7",
+        "slot": 452111676,
+        "time": "2026-10-03T01:24:36.000Z",
+        "side": "buy",
+        "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "token": {
+          "amount": "11815989",
+          "ui": "11.815989",
+          "unit": "USDC"
+        },
+        "sol": {
+          "amount": "100000000",
+          "ui": "0.1",
+          "unit": "SOL"
+        },
+        "realised": null,
+        "explorer": "https://explorer.solana.com/tx/5P1Wbvs9QudFxY3kT8mN2rL6pA4zE7cV1oJ9hG5uS3iD8wB2nK6qR4tF7yM1xC9vZ3eL5aP8sT2gH6jU4kO1bN7?cluster=custom&customUrl=http%3A%2F%2F127.0.0.1%3A8899"
+      }
+    ],
+    "history": {
+      "trades": 3,
+      "shown": 3,
+      "positions": 1,
+      "positionsShown": 1,
+      "balances": 2,
+      "signaturesRead": 6,
+      "complete": true,
+      "incomplete": null,
+      "notCounted": [
+        {
+          "count": 1,
+          "reason": "deposits into the vault, which are not trades"
+        }
+      ]
+    },
+    "explorer": "https://explorer.solana.com/address/AuTJA9aBVQTa9QQ6ChwLgFKe12CinB8R8o9mTnL1WnDj?cluster=custom&customUrl=http%3A%2F%2F127.0.0.1%3A8899",
+    "dataSlot": 452400200,
+    "asOf": "2026-10-02T10:00:00.000Z"
+  },
+  "returnInSol": {
+    "network": "fork",
+    "slot": 452400200,
+    "ruleVersion": "overview/1",
+    "pct": "9.34",
+    "why": null,
+    "method": "In SOL; holding SOL scores 0. Net of 0 lamports of network fees paid by the agent key. 3 deposits and withdrawals adjusted at their own slot. Slots 100 to 452400200.",
+    "sample": "1 trade is too few to judge a strategy.",
+    "trades": 1,
+    "flows": 3,
+    "agentFees": {
+      "amount": "0",
+      "ui": "0",
+      "unit": "SOL"
+    },
+    "fromSlot": 100,
+    "toSlot": 452400200,
+    "prices": [
+      {
+        "mint": "So11111111111111111111111111111111111111112",
+        "usd": "125",
+        "t": 1789999200,
+        "stepSeconds": 3600,
+        "source": "GeckoTerminal 1h candles, pool Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE",
+        "fetchedAt": "2026-10-04T00:00:00.000Z"
+      },
+      {
+        "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "usd": "0.9998",
+        "t": 1789999200,
+        "stepSeconds": 3600,
+        "source": "GeckoTerminal 1h candles, pool Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE",
+        "fetchedAt": "2026-10-04T00:00:00.000Z"
+      }
+    ]
+  },
+  "equityCurve": {
+    "network": "fork",
+    "slot": 452400200,
+    "ruleVersion": "overview/1",
+    "points": [
+      {
+        "t": 1789999200,
+        "value": {
+          "amount": "11000000000",
+          "ui": "11",
+          "unit": "SOL"
+        },
+        "gap": null
+      },
+      {
+        "t": 1790002800,
+        "value": null,
+        "gap": "no candle for EPjF..Dt1v at 2026-09-21T13:40:00.000Z: GeckoTerminal sent no usable candle for 1 bucket of 3600 s, usually no trade in the pool then; not filled"
+      }
+    ],
+    "gaps": 1,
+    "method": "Holdings at the end of each hour, rebuilt back from the balances at slot 452400200 through the 4 transactions read, times that hour's GeckoTerminal close (mint USD over SOL USD); SOL needs no price. 2 hours from 2026-09-21T12:40:00.000Z. A missing close is a gap with its reason, never a line drawn across it.",
+    "why": null,
+    "series": [
+      {
+        "mint": "So11111111111111111111111111111111111111112",
+        "source": "GeckoTerminal 1h candles, pool Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE",
+        "stepSeconds": 3600,
+        "fetchedAt": "2026-10-04T00:00:00.000Z",
+        "stale": null,
+        "error": null
+      }
+    ]
+  },
+  "capMeter": {
+    "network": "fork",
+    "slot": 452400200,
+    "ruleVersion": "overview/1",
+    "roles": [
+      {
+        "roleId": 2,
+        "agent": "1HVWcU6i42t4hCuAUgHtoizLpXxsPxmsZnqxiTB5jYU",
+        "mint": "So11111111111111111111111111111111111111112",
+        "cap": {
+          "amount": "1000000000",
+          "ui": "1",
+          "unit": "wSOL"
+        },
+        "used": {
+          "amount": "350000000",
+          "ui": "0.35",
+          "unit": "wSOL"
+        },
+        "left": {
+          "amount": "650000000",
+          "ui": "0.65",
+          "unit": "wSOL"
+        },
+        "windowSlots": 150,
+        "refillSlot": 451,
+        "refillWhy": null,
+        "burstWorstCase": {
+          "amount": "2000000000",
+          "ui": "2",
+          "unit": "wSOL"
+        },
+        "line": "Spent 0.35 of 1 wSOL this window; refills at slot 451. Across a window edge the agent can spend up to 2 wSOL. This limits what the agent can spend, not what you can lose."
+      }
+    ],
+    "method": "used = cap - what the agent can spend now (effectiveRemaining), per role and mint.",
+    "why": null
+  }
+}
