@@ -3143,7 +3143,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-C33, /market: candles, indicators, recent trades and 24h stats, cached for every client
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/273 | Owner: jishnu-baruah | Branch: feature/t-c33-market
+- Status: done
 - Depends-on: none
 - Touches: packages/mcp/src/market.ts, packages/mcp/src/market.test.ts, packages/mcp/src/indicators.ts,
   packages/mcp/src/indicators.test.ts, packages/mcp/src/serve.ts
@@ -3168,7 +3168,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-C34, /stream and the status bar: live slot, ping, fees and connection state
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/272 | Owner: jishnu-baruah | Branch: feature/t-c34-stream
+- Status: done
 - Depends-on: none
 - Touches: packages/mcp/src/stream.ts, packages/mcp/src/stream.test.ts, packages/mcp/src/serve.ts
 - Serves: UX (judged) ; a trader sees whether the data is live and how fast the chain is answering
@@ -3228,5 +3228,50 @@ _(empty)_
   used and return; the pane shows the rest, braille and half-block on the terminal, SVG on the
   desktop; read at 60, 80 and 140 columns; every number equal to the one `/overview` gives for the
   same slot
+- Evidence: <PR link, screenshots>
+- Kill criterion: none
+
+### T-E23, The trade view on the web: chart, book, trades and the status bar, in the Agon design
+- Status: open
+- Depends-on: T-C33, T-C34, T-C35, T-E16
+- Touches: apps/web/app/trade/, apps/web/app/api/market/, apps/web/src/routes.ts, apps/web/src/market-view.ts,
+  apps/web/src/market-view.test.ts, apps/web/app/globals.css, apps/web/app/wallet/no-signing.test.ts,
+  apps/web/package.json, pnpm-lock.yaml
+- Serves: UX (judged) ; a trader gets the screen they expect from Binance or Axiom, honest about Solana
+- Acceptance: `/trade?mint=` draws only what `/market`, `/status` and `/stream` return, with 0 money
+  arithmetic in the page: the header (price, change, high, low, volume, liquidity), candles with
+  ranges 1m to 1d and the 6 indicators, a keyboard crosshair (Left, Right, Home, End) with a live
+  readout, the order book or depth labelled by kind, recent trades, and the status bar (connection,
+  ping, slot, data age, TPS, fees, tip, SOL); every chart has a caption and a table of the same points;
+  up and down never by colour alone; the TradingView attribution kept; seen at 1280 and 375 px with 0
+  console errors and 0 horizontal scroll; 0 signing code on the page, asserted by the no-signing test
+- Evidence: <PR link, screenshots>
+- Kill criterion: none
+
+### T-E24, The trade view in opencode, with the status bar and the trading keys
+- Status: open
+- Depends-on: T-C33, T-C34, T-C35
+- Touches: .opencode/tui/agon-discovery.tsx, .opencode/tui/agon-trade.tsx
+- Serves: UX (judged) ; the trade view with no browser and no LLM
+- Acceptance: the plugin reads `/market`, `/status` and `/stream` and does no arithmetic of its own: a
+  status line (connection, ping, slot, data age, SOL), half-block candles with the range keys and 2
+  indicator overlays, a hover crosshair, the book or depth labelled by kind, recent trades; the pool is
+  the one `/market` chose, no longer the largest reserve (T-C33 measured that pick 21 h stale for SOL);
+  the keys of docs/plans/agon-terminal.md section 7b, none of which opencode already binds; read at 80
+  and 140 columns with no overprinted line, every number equal to `/market`'s
+- Evidence: <PR link, screenshots>
+- Kill criterion: none
+
+### T-E25, The Claude Code plugin in the repo, with the trade view and the status band
+- Status: open
+- Depends-on: T-C33, T-C34
+- Touches: plugins/claude-code/
+- Serves: UX (judged) ; the same trade view in Claude Code's terminal and desktop app
+- Acceptance: the plugin moves from a personal folder into `plugins/claude-code/`, passes `claude plugin
+  validate` and its own tests in CI or skips them by name; it reads `/market` and `/status` and does no
+  arithmetic: the band shows connection, ping, SOL and the selected token; the pane shows candles
+  (braille and half-block on the terminal, SVG on the desktop), the book or depth labelled by kind and
+  recent trades; read at 60, 80 and 140 columns; every number equal to `/market`'s; mints only reach the
+  prompt, never a token's name
 - Evidence: <PR link, screenshots>
 - Kill criterion: none

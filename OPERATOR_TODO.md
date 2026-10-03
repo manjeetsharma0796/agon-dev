@@ -1097,3 +1097,15 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   (1), because a pinned version from a signed release job is the only form a stranger's agent can
   install and we can still say exactly what it ran
 - Done when: the decision is in `DECISIONS.md`, and T-E17's row names the package and the publisher
+
+### OP-40, Rebase the design system PR so the trade view can be built on it
+- Status: open
+- Owner: prithwish122
+- Needed by: before T-E23 starts
+- Unblocks: T-E23, and every web screen of the Agon terminal (docs/plans/agon-terminal.md)
+- What exactly: #260 (T-E16, the waitlist design system: Outfit, the dark tokens, the card and button
+  classes) conflicts with dev since 2026-10-03, after #259 and #240 merged. T-E23 should be built on
+  its tokens rather than on the old ones it replaces, or the trade view is restyled twice. Also #241
+  needs its branch renamed to `feature/t-c36-check-trade-no-history` after T-C24's duplicate id was
+  renumbered to T-C36 in #268
+- Done when: #260 is merged into dev
