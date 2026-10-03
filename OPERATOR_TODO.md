@@ -1110,7 +1110,7 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   renumbered to T-C36 in #268
 - Done when: #260 is merged into dev
 
-### OP-41, A second person reviews the action layer, #284
+### OP-41, A second person reviews the action layer #284 and the overview arithmetic #310
 - Status: open
 - Owner: manjeetsharma0796 or prithwish122
 - Needed by: before any order entry screen (Part 4 of docs/plans/agon-terminal.md) is built on it
@@ -1120,7 +1120,11 @@ Status values: `open` | `claimed <date> | Owner: <name>` | `done <date>: <result
   lamport cap confirmed as 5DUXWhRg9Di3sxDPVFaPkvNoAeThQrM1T3iTYUJg7EjPkRj9Y9aPjapf9D7EUdTf4hpkjVamzmWM9KFvJbhnsYqo,
   1 lamport over returned the owner link and sent nothing, a repeat send was refused. Read actions.ts
   for the cap boundary, the owner-only powers and the sent-then-failed rows
-- Done when: a person other than the author approves #284 on GitHub
+- Also #310 (T-C31, added 2026-10-04): money arithmetic, so section 2 asks for a second person.
+  Its 3 numbers are checked against hand arithmetic in its tests: the return in SOL +9.34% with 2
+  deposits and 1 withdrawal (1323/1210), the equity curve with a named gap, the cap meter across a
+  window edge. The Portfolio screens T-E20, T-E21 and T-E22 wait on it
+- Done when: a person other than the author approves #284 and #310 on GitHub
 
 ### OP-42, Rebase the vault P&L PR, #262, so the Portfolio screens can start
 - Status: open
