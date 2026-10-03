@@ -3301,7 +3301,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-E25, The Claude Code plugin in the repo, with the trade view and the status band
-- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-e25-claude-code
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/280
 - Depends-on: T-C33, T-C34
 - Touches: plugins/claude-code/
 - Serves: UX (judged) ; the same trade view in Claude Code's terminal and desktop app
@@ -3311,7 +3311,15 @@ _(empty)_
   (braille and half-block on the terminal, SVG on the desktop), the book or depth labelled by kind and
   recent trades; read at 60, 80 and 140 columns; every number equal to `/market`'s; mints only reach the
   prompt, never a token's name
-- Evidence: <PR link, screenshots>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/280 ; `claude plugin validate` passes and
+  `claude plugin test` 2 pass on Claude Code 2.1.288; screenshots wait on a live `/market` in a session
+- Finding: 3 upstream hosts became 1 (the Agon server). `claude plugin validate` and `claude plugin test`
+  both run with an empty `CLAUDE_CONFIG_DIR` and no API key in 0.6 s, so CI could run them with no secret,
+  but no workflow installs `claude` and workflows are outside Touches: skipped by name. The terminal's
+  element table answers `'Svg' in els` as true and draws it as an empty box, which drew 0 candles while
+  every text check passed; the chart is chosen by surface. `String(n)` writes 2.11e-7 below 1e-6, shown as
+  0.000000211 by moving digits. `/market` sends no liquidity, so the header says so. Terminal candles are
+  half-block only. The book panel is tested against T-C35's contract until its `book` field merges.
 - Kill criterion: none
 
 ### T-C37, /market sends liquidity, and /status says plainly when the network is not set
