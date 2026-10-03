@@ -3502,3 +3502,23 @@ _(empty)_
   tests already in T-E26 and T-E27; seen live in both terminals
 - Evidence: <PR link, screenshots>
 - Kill criterion: none
+
+### T-C40, Move the token lookups off lite-api.jup.ag before Jupiter retires it, and fail closed on it
+- Status: open
+- Depends-on: T-C04, T-C22, T-C38
+- Touches: packages/core/src/net/record.ts, packages/core/src/net/net.test.ts,
+  packages/guard/src/mint-check.ts, packages/guard/src/mint-check.test.ts,
+  packages/mcp/src/discover.ts, packages/mcp/src/discover.test.ts, packages/mcp/src/stream.ts,
+  packages/mcp/src/stream.test.ts, fixtures/recorded/jupiter/
+- Serves: Functionality (judged) ; the trade guard keeps its impostor check when the keyless host goes
+- Acceptance: Jupiter's own docs confirm the retirement (announced 2025-11 for 2026-01-31, postponed
+  2026-02 with no new date, lite-api's limit cut progressively; keyless api.jup.ag at 0.5 req/s, free
+  key 1 req/s in `x-api-key`). After this row `git grep lite-api.jup.ag packages/` finds 0 lines. The
+  mint check's listing lookup, which today fails open (a Jupiter outage silently skips the impostor
+  check), blocks every mint in 4 of 4 cases: key unset, Jupiter unreachable, a non-200, a body that is
+  not a token list, each with a message naming the cause, the number (status or the 1 req/s limit)
+  and the next step. Analytics (`categoriesOf`, `/discover`, the SOL price) stay fail open. Every
+  re-recorded fixture comes from api.jup.ag with the key shown as REDACTED, stamped with the slot it
+  was recorded at, never an old slot; the key appears in 0 fixtures, 0 logs and 0 client bundles
+- Evidence: <PR link>
+- Kill criterion: none
