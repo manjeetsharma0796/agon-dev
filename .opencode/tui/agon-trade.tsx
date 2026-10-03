@@ -526,7 +526,8 @@ function createFeed(base: string, mint: string, range: () => string) {
     statusError,
     link,
     upstream,
-    slot: () => slot() ?? status()?.slot ?? null,
+    // The stream's slot while it is connected, else the last /status reading, never a frozen one.
+    slot: () => (link().up ? slot() : null) ?? status()?.slot ?? null,
     now,
     reload: () => {
       void loadMarket()
@@ -636,7 +637,7 @@ export function Trade(props: {
   const [showMa, setShowMa] = createSignal(true)
   const [showEma, setShowEma] = createSignal(true)
   const [panel, setPanel] = createSignal<'book' | 'trades'>('book')
-  const [hover, setHover] = createSignal<number | null>(null)
+  const [hoverAt, setHover] = createSignal<number | null>(null)
   const [scroll, setScroll] = createSignal(0)
   const [help, setHelp] = createSignal(false)
   const feed = createFeed(props.base, props.mint, () => RANGES[rangeIx()]!)
@@ -653,20 +654,25 @@ export function Trade(props: {
   const chartW = () => Math.max(10, inner() - side() - 1 - AXIS)
   const headerRows = () => (W() >= 120 ? 1 : 2)
   const volRow = () => (H() >= 30 ? 1 : 0)
-  const errorText = () =>
-    feed.marketError() ??
-    feed.statusError() ??
-    (feed.link().up || feed.link().attempt === 0
-      ? null
-      : `/stream at ${props.base}: not connected after ${feed.link().attempt} attempt${feed.link().attempt === 1 ? '' : 's'}, trying again within 30 s. Connection state and the live slot wait for it`) ??
-    statsError()
-  const statsError = () => {
+  // Every failure on its own lines, the server's first: each names its cause and what happens
+  // next. Wrapped here, by word, into lines drawn 1 text each, so the layout knows their exact
+  // height: up to 3 lines per failure and 4 in all.
+  const errors = () => {
+    const l = feed.link()
     const s = feed.market()?.stats
-    return s && 'error' in s ? `24h stats: ${s.error}` : null
+    return [
+      feed.marketError(),
+      feed.statusError(),
+      s && 'error' in s ? s.error : null,
+      l.up || l.attempt === 0
+        ? null
+        : `/stream at ${props.base}: not connected after ${l.attempt} attempt${l.attempt === 1 ? '' : 's'}, trying again within 30 s. Connection state and the live slot wait for it`,
+    ].filter((e): e is string => e !== null)
   }
-  // The error and the key help are wrapped here, by word, into lines drawn 1 text each, so the
-  // layout knows their exact height: at most 2 lines of error and 4 of help.
-  const errorLines = () => wrap(errorText(), inner(), 2)
+  const errorLines = () =>
+    errors()
+      .flatMap((e) => wrap(e, inner(), 3))
+      .slice(0, 4)
   const hintLines = () => wrap(hint(), inner(), 4)
   const chartH = () =>
     Math.max(
@@ -709,6 +715,11 @@ export function Trade(props: {
     return buildGrid(c.list, c.gaps, c.stepSeconds, chartW(), chartH(), overlays)
   })
 
+  // The crosshair column, dropped when a resize leaves it outside the chart.
+  const hover = () => {
+    const h = hoverAt()
+    return h !== null && h < chartW() ? h : null
+  }
   // The candle under the crosshair, or the newest one when the mouse is elsewhere.
   const focus = () => {
     const g = grid()
@@ -900,7 +911,7 @@ export function Trade(props: {
     const s = m.stats
     const first =
       'error' in s
-        ? `${name}  24h stats did not load, the reason is in red below`
+        ? `${name}  24h stats did not load, see the red lines below`
         : `${name}  ${usd(s.price)}  ${move(s.changePct)} 24h`
     const second = fit(
       [
@@ -943,6 +954,8 @@ export function Trade(props: {
       return t && !('error' in t) ? t.list : []
     }
     const wide = () => side() >= 42
+    // A refresh can return fewer trades than the scroll had passed, so the first row is clamped.
+    const top = () => Math.min(scroll(), Math.max(0, list().length - 1))
     return (
       <box flexDirection="column" height={p.rows} overflow="hidden" flexShrink={0}>
         <text fg={theme()?.text} wrapMode="none">
@@ -970,7 +983,7 @@ export function Trade(props: {
               0 trades in the answer. The pool may be quiet.
             </text>
           </Show>
-          <For each={list().slice(scroll(), scroll() + Math.max(1, p.rows - 2))}>
+          <For each={list().slice(top(), top() + Math.max(1, p.rows - 2))}>
             {(f) => (
               <text
                 fg={ink(api, f.side === 'buy' ? theme()?.success : theme()?.error)}
