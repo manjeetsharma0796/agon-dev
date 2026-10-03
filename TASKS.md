@@ -3138,7 +3138,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-C32, The action layer: 1 function per action, whoever presses it
-- Status: open
+- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-c32-actions
 - Depends-on: T-C30
 - Touches: packages/mcp/src/actions.ts, packages/mcp/src/actions.test.ts, packages/mcp/src/index.ts,
   packages/mcp/src/serve.ts, packages/cli/src/daemon/sign.ts, packages/cli/src/daemon/submit.ts
