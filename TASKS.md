@@ -3249,7 +3249,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-E24, The trade view in opencode, with the status bar and the trading keys
-- Status: open
+- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-e24-trade
 - Depends-on: T-C33, T-C34, T-C35
 - Touches: .opencode/tui/agon-discovery.tsx, .opencode/tui/agon-trade.tsx
 - Serves: UX (judged) ; the trade view with no browser and no LLM
