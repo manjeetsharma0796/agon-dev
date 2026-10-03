@@ -3572,7 +3572,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-E29, Both terminals say when a number is stale, and why
-- Status: open
+- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-e29-stale
 - Depends-on: T-C41, T-C39
 - Touches: .opencode/tui/agon-trade.tsx, .opencode/tui/agon-discovery.tsx, plugins/claude-code/
 - Serves: UX (judged) ; a trader never reads a 4 minute old price as live
