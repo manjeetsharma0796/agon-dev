@@ -491,10 +491,19 @@ test('a docked pane lays out for the room the terminal has, not the body the hos
   const pane = await $.ui.mount({ ...PANE('terminal', 84), viewport })
   await pane.press({ key: 'pick-BONK' })
   await pane.press({ key: 'refresh' })
-  expect(await shown(pane)).toContain('w44 b84 v128 t80')
+  expect(await shown(pane)).toContain('w44 b84 v128 t80 dock')
   expect(await widest(pane)).toBeLessThanOrEqual(44)
   // The chart and its axis, with the last-price marker, fit inside those 44 columns.
   expect(await shown(pane)).toContain('◀$0.00002113')
-  await band.unmount()
   await pane.unmount()
+  // Inline above the prompt the pane has the terminal's width, so its body is kept.
+  const base = PANE('terminal', 126)
+  const inline = await $.ui.mount({
+    ...base,
+    props: { ...base.props, placement: 'inline' as const },
+    viewport,
+  })
+  expect(await shown(inline)).toContain('w124 b126 v128 t80 inline')
+  await inline.unmount()
+  await band.unmount()
 })

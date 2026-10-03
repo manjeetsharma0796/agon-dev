@@ -3312,7 +3312,7 @@ _(empty)_
   recent trades; read at 60, 80 and 140 columns; every number equal to `/market`'s; mints only reach the
   prompt, never a token's name
 - Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/280 ; `claude plugin validate` passes and
-  `claude plugin test` 4 pass on Claude Code 2.1.288; the coordinator ran it live against a real server
+  `claude plugin test` 5 pass on Claude Code 2.1.288; the coordinator ran it live against a real server
 - Finding: 3 upstream hosts became 1 (the Agon server). `claude plugin validate` and `claude plugin test`
   both run with an empty `CLAUDE_CONFIG_DIR` and no API key in 0.6 s, so CI could run them with no secret,
   but no workflow installs `claude` and workflows are outside Touches: skipped by name. The terminal's

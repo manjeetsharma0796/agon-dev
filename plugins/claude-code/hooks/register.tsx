@@ -406,7 +406,15 @@ let transcriptColumns: number | null = null
 function usable(e: Site, body: number) {
   let w = body
   const vp = e.viewport?.columns
-  if (e.surface === 'terminal' && vp && transcriptColumns && transcriptColumns < vp) {
+  // Only beside the transcript: an inline pane has the terminal's full width.
+  const placement = (e.props as { placement?: string }).placement
+  if (
+    e.surface === 'terminal' &&
+    placement === 'dock' &&
+    vp &&
+    transcriptColumns &&
+    transcriptColumns < vp
+  ) {
     const room = vp - transcriptColumns - 2
     if (room >= 30 && room < w) w = room
   }
@@ -414,7 +422,7 @@ function usable(e: Site, body: number) {
   const width = Math.max(30, w - 2)
   return {
     width,
-    diag: `w${width} b${body} v${vp ?? '-'} t${transcriptColumns ?? '-'}`,
+    diag: `w${width} b${body} v${vp ?? '-'} t${transcriptColumns ?? '-'} ${placement ?? '-'}`,
   }
 }
 
@@ -720,13 +728,13 @@ async function pane($: Dollar, e: Site) {
           { text: network(s), prio: 5, dim: true },
         ]
       : []),
-    // Temporary, for the live check: the width laid out for and the numbers it came from.
-    { text: diag, prio: 0, dim: true },
   ]
   const status = (
     <Box key="status" flexDirection="column">
       {cells(conn) > 24 && lines(els, 'conn', wrap(conn, width), connTone)}
       {fit2(statusParts, width).map((p, i) => line(els, `status-${i}`, p))}
+      {/* Temporary, for the live check: the width laid out for and the numbers it came from. */}
+      {line(els, 'diag', [{ text: diag, prio: 0, dim: true }])}
       {Input && (
         <Input
           key="mint"
