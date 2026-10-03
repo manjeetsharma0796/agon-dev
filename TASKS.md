@@ -3344,7 +3344,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-C38, /discover: the market list and its safety numbers, computed once for every surface
-- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-c38-discover
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/289 | Owner: jishnu-baruah | Branch: feature/t-c38-discover
 - Depends-on: T-C33
 - Touches: packages/mcp/src/discover.ts, packages/mcp/src/discover.test.ts, packages/mcp/src/serve.ts
 - Serves: UX (judged) ; the market list a trader expects, the same on the web, in opencode and in
@@ -3356,7 +3356,21 @@ _(empty)_
   as untrusted display text and are never part of anything handed to an agent; mints validated at the
   boundary; 1 cache and 1 queue per upstream, with the measured upstream calls a minute for 10 clients
   under the provider's free limit; a figure the source does not send is named as not sent, never 0
-- Evidence: <PR link>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/289. Measured live 2026-10-03 through the
+  built server with only JUPITER_API_KEY set, every outbound fetch logged by host: 10 clients polling
+  trending and graduated every 5 s for 3 minutes made 700 requests and cost 12 upstream calls, 4 a
+  minute in each of the 3 minutes (2 to api.jup.ag, 2 to datapi.jup.ag), against 60 a minute on the
+  keyed free plan and 30 keyless. Lists cached 30 s, 1 queue per host (1.1 s keyed, 2.1 s keyless and
+  for datapi). Counts: trending 50, most traded 50, top organic 50, new 30, about to graduate 30,
+  graduated 30, 0 rows dropped for a bad mint. Host: api.jup.ag with x-api-key; lite-api.jup.ag only
+  when the key is unset, and the answer says so. 16 unit tests, including an injected name that
+  appears only inside `display` (`untrusted: true`) and every missing figure as `notSent`, never 0
+- Finding: Jupiter Tokens v2 has no graduation list and no bonding curve: `/graduated` and
+  `/aboutToGraduate` answer 404 and 0 of 80 probed tokens carried a curve. Jupiter Pro's own feed,
+  `datapi.jup.ag/v1/pools/gems` (undocumented, keyless), answers both columns in 1 POST: `bondingCurve`
+  % on about-to-graduate pools (98.0 to 81.0 in the first 10) and `graduatedAt` on graduated tokens,
+  read as 100 %. Most fresh graduates have no price at Jupiter at all: 20 to 24 of 30 in 4 reads, and
+  Tokens v2 search priced the same 6 of 30, so they read as not sent instead of costing a second call
 - Kill criterion: none
 
 ### T-E26, The opencode views read /discover and show liquidity

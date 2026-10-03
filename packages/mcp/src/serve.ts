@@ -21,6 +21,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { createServer } from './index.js'
 import { routeStream } from './stream.js'
 import { serveMarket } from './market.js'
+import { serveDiscover } from './discover.js'
 import { liveIo } from './io.js'
 import { activityRoute, journalFor } from './journal.js'
 
@@ -60,6 +61,10 @@ const handle = async (req: IncomingMessage, res: ServerResponse): Promise<void> 
   if (routeStream(req, res)) return
   if (req.method === 'GET' && (req.url ?? '').split('?')[0] === '/market') {
     await serveMarket(new URL(req.url ?? '/', 'http://localhost'), res)
+    return
+  }
+  if (req.method === 'GET' && (req.url ?? '').split('?')[0] === '/discover') {
+    await serveDiscover(new URL(req.url ?? '/', 'http://localhost'), res)
     return
   }
   // The journal's signed read (T-C30): 401 with the reason unless signed by the owner or a hired key.
