@@ -117,6 +117,11 @@ describe('examples parse against their contract', () => {
     // Token text never reaches the agent: a row that tries to carry a token's name is refused, not stripped quietly.
     expect(JournalRow.safeParse({ ...row, name: 'USD Coin' }).success).toBe(false)
     expect(JournalRow.safeParse({ ...row, size: '3.2' }).success).toBe(false)
+    // A row with no proven key is unattributed, never the person's or their agent's, and back.
+    expect(row.actor).toBe('unattributed')
+    expect(JournalRow.safeParse({ ...row, actor: 'agent' }).success).toBe(false)
+    expect(JournalRow.safeParse({ ...row, actor: 'owner-web' }).success).toBe(false)
+    expect(JournalRow.safeParse({ ...row, actorKey: activity.wallet }).success).toBe(false)
   })
 
   it('report for a wallet with nothing decoded', () => {

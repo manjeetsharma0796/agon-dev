@@ -1185,6 +1185,9 @@ Lists the caps currently armed for a wallet.
       "type": "integer",
       "minimum": 1,
       "maximum": 10
+    },
+    "unattributed": {
+      "type": "boolean"
     }
   },
   "required": [
@@ -1250,7 +1253,8 @@ Lists the caps currently armed for a wallet.
             "enum": [
               "owner-web",
               "owner-terminal",
-              "agent"
+              "agent",
+              "unattributed"
             ]
           },
           "actorKey": {
@@ -1472,6 +1476,11 @@ Lists the caps currently armed for a wallet.
         "additionalProperties": false
       }
     },
+    "unattributedHidden": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
     "basis": {
       "type": "string",
       "minLength": 1
@@ -1481,6 +1490,7 @@ Lists the caps currently armed for a wallet.
     "wallet",
     "rows",
     "writeFailures",
+    "unattributedHidden",
     "basis"
   ],
   "additionalProperties": false

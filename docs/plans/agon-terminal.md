@@ -108,7 +108,7 @@ Methods, all arithmetic:
 ## 4. The journal
 
 One table in the Neon Postgres decided in `DECISIONS.md`. Row: id, time, slot, network, wallet,
-actor (`owner-web`, `owner-terminal`, `agent`) and its public key, action, mint, amounts in base
+actor (`owner-web`, `owner-terminal`, `agent`, or `unattributed` when no key was proven) and its public key, action, mint, amounts in base
 units, verdict with reasons and rule version, transaction signature, status (`checked` and
 `refused` for a `check_trade` call, then `proposed`, `approved`, `declined`, `expired`, `sent`,
 `confirmed`, `failed`, `uncertain` for an action), and an optional note the person wrote. No token
@@ -124,10 +124,12 @@ names or descriptions.
 - **Built (T-C30, 2026-10-03).** `GET /activity?wallet=` and `get_activity` share 1 function: the
   wallet alone gets a 60 s single-use nonce and the text to sign; the signer, nonce and an ed25519
   signature over it (checked with node:crypto) get rows only if the signer is the wallet or a key its
-  vault hires on chain now. Budget 4,000 tokens at 10 rows, 3,478 measured. On Neon from this
-  machine a write p50 is 279 ms and a read p50 278 ms over 20 calls each; the first write on a cold
-  connection took 4,727 ms. Over MCP, `check_trade` carries no caller key, so its rows have
-  `actorKey` null until the action layer (T-C32) passes who acted.
+  vault hires on chain now. Budget 4,000 tokens at 10 rows, 3,517 measured. On Neon from this
+  machine a write p50 is 274 ms and a read p50 276 ms over 20 calls each; the first write on a cold
+  connection took 4,657 ms. Over MCP, `check_trade` carries no caller key and anyone who reaches the
+  server can call it for any wallet, so its rows are actor `unattributed` with `actorKey` null, never
+  the person's or the agent's; reads hide them unless asked (`unattributed: true`) and state how
+  many were hidden. The action layer (T-C32) writes attributed rows with the key that acted.
 
 ## 5. The copilot on every panel
 

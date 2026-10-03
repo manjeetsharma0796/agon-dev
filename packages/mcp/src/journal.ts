@@ -32,21 +32,33 @@ import type { ToolIo } from './io.js'
 /** Where rows live. Postgres in production; the tests hand in a Map. */
 export interface JournalStore {
   insert(row: JournalRow): Promise<void>
-  /** Newest first, this wallet on this network only. */
-  list(wallet: string, net: string, limit: number): Promise<JournalRow[]>
+  /**
+   * Newest first, this wallet on this network only. Unattributed rows only when asked for; `hidden`
+   * counts those left out.
+   */
+  list(
+    wallet: string,
+    net: string,
+    limit: number,
+    withUnattributed: boolean,
+  ): Promise<{ rows: JournalRow[]; hidden: number }>
 }
 
 export interface Journal {
   /** Never throws and never alters what it is given: a failure is kept for the next read instead. */
   record(row: JournalRow): Promise<void>
-  read(wallet: string, limit: number): Promise<{ rows: JournalRow[]; failures: WriteFailure[] }>
+  read(
+    wallet: string,
+    limit: number,
+    withUnattributed: boolean,
+  ): Promise<{ rows: JournalRow[]; hidden: number; failures: WriteFailure[] }>
 }
 
 /**
- * How long a write may hold up the answer it journals. Neon measured a write p50 of 279 ms from this
+ * How long a write may hold up the answer it journals. Neon measured a write p50 of 274 ms from this
  * machine on 2026-10-03 (T-C30's row), so this is about 5 p50s, and a write past it is named as
  * `write-timeout` rather than left to push an agent's client past its own timeout. The first write
- * on a cold connection took 4,727 ms, so that one is named and lands late.
+ * on a cold connection took 4,657 ms, so that one is named and lands late.
  */
 const WRITE_DEADLINE_MS = 1500
 /** Failures kept for the next read. Bounded, so a database that is down for a day costs no memory. */
@@ -93,11 +105,12 @@ export const createJournal = (store: JournalStore, deadlineMs = WRITE_DEADLINE_M
         clearTimeout(timer)
       }
     },
-    async read(wallet, limit) {
+    async read(wallet, limit, withUnattributed) {
       const net = network(process.env['AGON_NETWORK']).id
       try {
-        const rows = (await store.list(wallet, net, limit)).map((r) => JournalRow.parse(r))
-        return { rows, failures: failures.filter((f) => f.wallet === wallet) }
+        const found = await store.list(wallet, net, limit, withUnattributed)
+        const rows = found.rows.map((r) => JournalRow.parse(r))
+        return { rows, hidden: found.hidden, failures: failures.filter((f) => f.wallet === wallet) }
       } catch (error) {
         throw new Refusal(journalUnreadable({ cause: causeOf(error) }))
       }
@@ -180,12 +193,21 @@ export const postgresStore = (url: string): JournalStore => {
         note: r.note ?? null,
       })}`
     },
-    async list(wallet, net, limit) {
+    async list(wallet, net, limit, withUnattributed) {
       await schema()
-      const found = await sql`
-        SELECT * FROM journal WHERE wallet = ${wallet} AND network = ${net}
-        ORDER BY time DESC, seq DESC LIMIT ${limit}`
-      return found.map((r) => ({
+      // 2 queries side by side on the pool, so hiding costs no extra round trip in sequence.
+      const [found, [count]] = await Promise.all([
+        sql`
+          SELECT * FROM journal WHERE wallet = ${wallet} AND network = ${net}
+          AND (${withUnattributed} OR actor <> 'unattributed')
+          ORDER BY time DESC, seq DESC LIMIT ${limit}`,
+        withUnattributed
+          ? Promise.resolve([{ hidden: 0 }])
+          : sql`
+              SELECT count(*)::int AS hidden FROM journal
+              WHERE wallet = ${wallet} AND network = ${net} AND actor = 'unattributed'`,
+      ])
+      const rows = found.map((r) => ({
         id: r['id'],
         time: new Date(r['time']).toISOString(),
         slot: r['slot'] === null ? null : Number(r['slot']),
@@ -205,6 +227,7 @@ export const postgresStore = (url: string): JournalStore => {
         status: r['status'],
         ...(r['note'] === null ? {} : { note: r['note'] }),
       })) as JournalRow[]
+      return { rows, hidden: Number(count?.['hidden'] ?? 0) }
     },
   }
 }
@@ -215,7 +238,8 @@ export const journalFor = (url: string | undefined): Journal =>
 
 /**
  * check_trade's row, built from our own values only: the parsed input, and the verdict or the
- * refusal. Over MCP the caller proves no key, so the actor is an agent whose key is unknown.
+ * refusal. Over MCP the caller proves no key, and anyone who reaches the server can ask about any
+ * wallet, so the row is unattributed: it never reads as the person's or their agent's.
  */
 export const checkTradeRow = (
   trade: CheckTradeInput,
@@ -229,7 +253,7 @@ export const checkTradeRow = (
     slot: answered?.dataSlot ?? null,
     network: network(process.env['AGON_NETWORK']).id,
     wallet: trade.wallet,
-    actor: 'agent',
+    actor: 'unattributed',
     actorKey: null,
     action: 'check_trade' satisfies JournalAction,
     mint: trade.mint,
@@ -382,12 +406,14 @@ export const readActivity = async (
   used.set(nonce, Number(Buffer.from(nonce, 'hex').readBigUInt64BE(0)))
 
   const limit = input.limit ?? 10
-  const { rows, failures } = await journal.read(wallet, limit)
+  const withUnattributed = input.unattributed === true
+  const { rows, hidden, failures } = await journal.read(wallet, limit, withUnattributed)
   const net = network(process.env['AGON_NETWORK']).id
   return {
     wallet,
     rows,
     writeFailures: failures.slice(-FAILURES_LISTED).reverse(),
+    unattributedHidden: hidden,
     basis:
       `Newest first, ${rows.length} of this wallet's journal rows on ${net}, ${limit} at most. ` +
       (failures.length === 0
@@ -395,12 +421,16 @@ export const readActivity = async (
         : `${failures.length} write${failures.length === 1 ? '' : 's'} failed since this server ` +
           `started, the newest ${Math.min(failures.length, FAILURES_LISTED)} listed in ` +
           'writeFailures; those calls have no row. ') +
-      'actorKey null means the call came over MCP check_trade, which proves no caller key.',
+      (withUnattributed
+        ? 'Unattributed rows are included as asked: anyone who reaches this server can write ' +
+          'them, so they are not proof that the person or their agent asked.'
+        : `${hidden} unattributed row${hidden === 1 ? '' : 's'} hidden: checks by a caller who ` +
+          'proved no key, which anyone can write. Pass unattributed true to see them.'),
   }
 }
 
 /**
- * `GET /activity?wallet=&signer=&nonce=&signature=&limit=`, as a status and a body. 400 for a
+ * `GET /activity?wallet=&signer=&nonce=&signature=&limit=&unattributed=`, as a status and a body. 400 for a
  * malformed query, 401 with the reason (and a nonce when none was sent), 503 when the journal cannot
  * be read, 200 with rows.
  */
@@ -416,7 +446,13 @@ export const activityRoute = async (
     if (key in query) {
       return { status: 400, body: { network: net, error: `${key} is given twice; send it once.` } }
     }
-    query[key] = key === 'limit' ? Number(value) : value
+    // Typed here so the contract can refuse anything else: a limit is a number, a flag true or false.
+    query[key] =
+      key === 'limit'
+        ? Number(value)
+        : key === 'unattributed' && (value === 'true' || value === 'false')
+          ? value === 'true'
+          : value
   }
   const parsed = GetActivityInput.safeParse(query)
   if (!parsed.success) {

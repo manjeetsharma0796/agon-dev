@@ -58,13 +58,12 @@ const memory = (down: 'refused' | 'hangs' | null = null) => {
       : Promise.reject(Object.assign(new Error('connect failed'), { code: 'ECONNREFUSED' }))
   const store: JournalStore = {
     insert: async (row) => (down !== null ? fail() : void rows.push(row)),
-    list: async (wallet, net, limit) =>
-      down !== null
-        ? fail()
-        : rows
-            .filter((r) => r.wallet === wallet && r.network === net)
-            .reverse()
-            .slice(0, limit),
+    list: async (wallet, net, limit, withUnattributed) => {
+      if (down !== null) return fail()
+      const mine = rows.filter((r) => r.wallet === wallet && r.network === net).reverse()
+      const shown = mine.filter((r) => withUnattributed || r.actor !== 'unattributed')
+      return { rows: shown.slice(0, limit), hidden: mine.length - shown.length }
+    },
   }
   return { rows, store }
 }
@@ -119,7 +118,7 @@ describe('check_trade writes 1 row per call, and the row never changes the answe
     expect(db.rows).toHaveLength(1)
     expect(db.rows[0]).toMatchObject({
       wallet: RECORDED,
-      actor: 'agent',
+      actor: 'unattributed',
       actorKey: null,
       action: 'check_trade',
       mint: USDC,
@@ -204,7 +203,7 @@ describe('check_trade writes 1 row per call, and the row never changes the answe
 
     const proof = await signedRead(owner.address, owner, empty, journal)
     const activity = Activity.parse(
-      await readActivity({ wallet: owner.address, ...proof }, empty, journal),
+      await readActivity({ wallet: owner.address, ...proof, unattributed: true }, empty, journal),
     )
     expect(activity.rows).toHaveLength(1)
     expect(activity.writeFailures).toHaveLength(1)
@@ -223,7 +222,7 @@ describe('check_trade writes 1 row per call, and the row never changes the answe
     await journal.record(
       checkTradeRow({ ...TRADE, mint: USDC } as never, { error: new Error('x') }),
     )
-    const { failures } = await journal.read(RECORDED, 10)
+    const { failures } = await journal.read(RECORDED, 10, true)
     expect(failures[0]?.cause).toMatch(/^write-timeout after 20 ms/)
   })
 })
@@ -251,13 +250,51 @@ describe('GET /activity and get_activity answer only the wallet or a key its vau
   })
 
   test('the owner signing the nonce reads the rows', async () => {
-    const { owner, io, journal } = setup()
-    await journal.record(
-      checkTradeRow({ ...TRADE, wallet: owner.address } as never, { error: new Error('x') }),
-    )
+    const { owner, agent, io, journal } = setup()
+    const row = checkTradeRow({ ...TRADE, wallet: owner.address } as never, { error: 'x' })
+    await journal.record({ ...row, actor: 'agent', actorKey: agent.address })
     const proof = await signedRead(owner.address, owner, io, journal)
     const activity = await readActivity({ wallet: owner.address, ...proof }, io, journal)
     expect(activity.rows).toHaveLength(1)
+  })
+
+  test("a stranger's check_trade on the owner's wallet never reads as the owner's or the agent's", async () => {
+    // Anyone who reaches the server can call check_trade for any wallet, and it proves no key. The
+    // person and the agent read this journal as what they did, so such a row is unattributed in the
+    // row itself, hidden by default with its count stated, and shown only when asked for.
+    const { owner, agent, io, journal } = setup()
+    const empty: ToolIo = { ...io, loadTransactions: async () => [] }
+    const trade = { ...TRADE, wallet: owner.address }
+    await callTool('check_trade', trade, empty, journal).catch(() => undefined)
+    await callTool('check_trade', trade, empty, journal).catch(() => undefined)
+    const own = checkTradeRow(trade as never, { error: 'x' })
+    await journal.record({ ...own, actor: 'agent', actorKey: agent.address })
+
+    const hidden = await readActivity(
+      { wallet: owner.address, ...(await signedRead(owner.address, agent, io, journal)) },
+      io,
+      journal,
+    )
+    expect(hidden.rows.map((r) => r.actor)).toEqual(['agent'])
+    expect(hidden.unattributedHidden).toBe(2)
+    expect(hidden.basis).toContain('2 unattributed rows hidden')
+
+    const shown = await readActivity(
+      {
+        wallet: owner.address,
+        ...(await signedRead(owner.address, owner, io, journal)),
+        unattributed: true,
+      },
+      io,
+      journal,
+    )
+    expect(shown.rows.map((r) => [r.actor, r.actorKey])).toEqual([
+      ['agent', agent.address],
+      ['unattributed', null],
+      ['unattributed', null],
+    ])
+    expect(shown.unattributedHidden).toBe(0)
+    expect(shown.basis).toContain('not proof that the person or their agent asked')
   })
 
   test('a key the vault hires on chain reads the rows', async () => {
@@ -386,6 +423,10 @@ describe('GET /activity and get_activity answer only the wallet or a key its vau
     const body = challenge.body as { error: string; nonce: string; message: string }
     expect(body.error).toMatch(/shown only to that wallet/)
 
+    expect(
+      (await activityRoute(url({ wallet: owner.address, unattributed: 'yes' }), io, journal))
+        .status,
+    ).toBe(400)
     const ok = await activityRoute(
       url({
         wallet: owner.address,
@@ -454,10 +495,22 @@ test.skipIf(TEST_DB === undefined)(
       ruleVersion: 'v1',
     }
     const refused = checkTradeRow(trade, { error: new Error('x') })
-    const checked = { ...checkTradeRow(trade, { verdict }), note: 'sold because the stop hit' }
+    const checked = {
+      ...checkTradeRow(trade, { verdict }),
+      actor: 'agent' as const,
+      actorKey: keypair().address,
+      note: 'sold because the stop hit',
+    }
     await store.insert(refused)
     await store.insert(checked)
-    expect(await store.list(wallet, checked.network, 10)).toEqual([checked, refused])
-    expect(await store.list(wallet, 'mainnet', 10)).toEqual([])
+    expect(await store.list(wallet, checked.network, 10, true)).toEqual({
+      rows: [checked, refused],
+      hidden: 0,
+    })
+    expect(await store.list(wallet, checked.network, 10, false)).toEqual({
+      rows: [checked],
+      hidden: 1,
+    })
+    expect(await store.list(wallet, 'mainnet', 10, true)).toEqual({ rows: [], hidden: 0 })
   },
 )

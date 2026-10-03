@@ -9,8 +9,13 @@ import { Reason, Side, Verdict } from './check-trade.js'
 // and `strictObject` refuses a row that tries to add one, because `get_activity` hands these rows to
 // the agent and token text never reaches the agent.
 
-/** Who pressed it. The owner on the web signs in Phantom; in a terminal or as the agent, a hired key. */
-export const Actor = z.enum(['owner-web', 'owner-terminal', 'agent'])
+/**
+ * Who pressed it. The owner on the web signs in Phantom; in a terminal or as the agent, a hired key.
+ * `unattributed`: the caller proved no key, as with check_trade over MCP, which anyone who can reach
+ * the server may call for any wallet. Such a row is a stranger's check until proven otherwise, so it
+ * never reads as the person's or their agent's, and reads hide it unless asked.
+ */
+export const Actor = z.enum(['owner-web', 'owner-terminal', 'agent', 'unattributed'])
 
 /** What was done. `check_trade` is a verdict asked for; the rest are actions T-C32 writes. */
 export const JournalAction = z.enum(['check_trade', 'buy', 'sell', 'cancel', 'pause', 'note'])
@@ -37,36 +42,39 @@ export const TxSignature = z
   .string()
   .regex(/^[1-9A-HJ-NP-Za-km-z]{64,88}$/, 'not a base58 transaction signature')
 
-export const JournalRow = z.strictObject({
-  id: z.uuid(),
-  /** When the row was written, ISO 8601 UTC. */
-  time: z.iso.datetime(),
-  /** The slot the verdict's reads were taken at; null when the call stopped before any read. */
-  slot: Slot.nullable(),
-  network: z.enum(['fork', 'devnet', 'mainnet', 'unset']),
-  /** The wallet whose journal this is: check_trade's wallet, or the vault owner for an action. */
-  wallet: Address,
-  actor: Actor,
-  /**
-   * The key that acted. Null when the caller proved no key: check_trade over MCP takes none (its
-   * input is a frozen contract), so such a row says an unidentified agent asked, nothing more.
-   */
-  actorKey: Address.nullable(),
-  action: JournalAction,
-  mint: Address.nullable(),
-  side: Side.nullable(),
-  /** Base units of the asset spent, check_trade's meaning: the quote asset on a buy, the mint on a sell. */
-  size: BaseUnits.nullable(),
-  /** Base units that arrived, once the chain confirms a trade; null before that and for a check. */
-  received: BaseUnits.nullable(),
-  verdict: Verdict.nullable(),
-  reasons: z.array(Reason),
-  ruleVersion: z.string().min(1).nullable(),
-  signature: TxSignature.nullable(),
-  status: JournalStatus,
-  /** Written by the person, never by a fetched source. */
-  note: z.string().min(1).max(500).optional(),
-})
+export const JournalRow = z
+  .strictObject({
+    id: z.uuid(),
+    /** When the row was written, ISO 8601 UTC. */
+    time: z.iso.datetime(),
+    /** The slot the verdict's reads were taken at; null when the call stopped before any read. */
+    slot: Slot.nullable(),
+    network: z.enum(['fork', 'devnet', 'mainnet', 'unset']),
+    /** The wallet whose journal this is: check_trade's wallet, or the vault owner for an action. */
+    wallet: Address,
+    actor: Actor,
+    /** The key that acted; null exactly when the actor is `unattributed`. */
+    actorKey: Address.nullable(),
+    action: JournalAction,
+    mint: Address.nullable(),
+    side: Side.nullable(),
+    /** Base units of the asset spent, check_trade's meaning: the quote asset on a buy, the mint on a sell. */
+    size: BaseUnits.nullable(),
+    /** Base units that arrived, once the chain confirms a trade; null before that and for a check. */
+    received: BaseUnits.nullable(),
+    verdict: Verdict.nullable(),
+    reasons: z.array(Reason),
+    ruleVersion: z.string().min(1).nullable(),
+    signature: TxSignature.nullable(),
+    status: JournalStatus,
+    /** Written by the person, never by a fetched source. */
+    note: z.string().min(1).max(500).optional(),
+  })
+  .refine((r) => (r.actor === 'unattributed') === (r.actorKey === null), {
+    message:
+      'actorKey is null exactly when the actor is unattributed: a named actor proves its key, and a ' +
+      'row with no proven key must not read as the person or their agent',
+  })
 
 /** A write that did not land, kept in memory and named on the next read so it is never silent. */
 export const WriteFailure = z.strictObject({
@@ -93,6 +101,8 @@ export const GetActivityInput = z.strictObject({
   signature: TxSignature.optional(),
   /** Newest rows to return, 10 at most. */
   limit: z.number().int().min(1).max(10).optional(),
+  /** Also show rows nobody proved a key for. Off by default: those can be anyone's checks. */
+  unattributed: z.boolean().optional(),
 })
 
 export const Activity = z.object({
@@ -101,6 +111,8 @@ export const Activity = z.object({
   rows: z.array(JournalRow),
   /** The newest 5 writes for this wallet that failed since this server started; `basis` counts all. */
   writeFailures: z.array(WriteFailure),
+  /** Unattributed rows for this wallet left out of `rows`; 0 when they were asked for. */
+  unattributedHidden: z.number().int().nonnegative(),
   /** What the rows are and are not. Never blank. */
   basis: z.string().min(1),
 })

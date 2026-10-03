@@ -8,7 +8,7 @@
       "slot": 312904411,
       "network": "fork",
       "wallet": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
-      "actor": "agent",
+      "actor": "unattributed",
       "actorKey": null,
       "action": "check_trade",
       "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
@@ -35,7 +35,7 @@
       "slot": null,
       "network": "fork",
       "wallet": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
-      "actor": "agent",
+      "actor": "unattributed",
       "actorKey": null,
       "action": "check_trade",
       "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
@@ -62,5 +62,6 @@
       "cause": "ECONNREFUSED"
     }
   ],
-  "basis": "Newest first, 2 rows of this wallet's journal on fork. 1 write failed and is listed in writeFailures, so that check_trade has no row."
+  "unattributedHidden": 0,
+  "basis": "Newest first, 2 rows of this wallet's journal on fork, unattributed rows included as asked. 1 write failed and is listed in writeFailures, so that check_trade has no row."
 }

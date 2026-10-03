@@ -541,7 +541,9 @@ const DESCRIPTIONS: Record<ToolName, string> = {
     'with wallet alone: it refuses with a nonce and the exact text to sign. Sign that text with the ' +
     "owner's key or an agent key the vault hires, then call again with signer, nonce and signature " +
     '(base58) within 60 s; limit is 1 to 10, default 10. writeFailures lists writes that did not ' +
-    'land, so a missing row is never silent. Mints only, never token names.',
+    'land, so a missing row is never silent. check_trade calls carry no proven key, so their rows ' +
+    'are unattributed and hidden unless you pass unattributed true; unattributedHidden counts them. ' +
+    'Never present an unattributed row as something the user or you did. Mints only, never token names.',
 }
 
 /**

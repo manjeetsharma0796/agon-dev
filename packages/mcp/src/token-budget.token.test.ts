@@ -77,7 +77,7 @@ test('prepare_swap stays inside the 700 token budget at the largest legal transa
   ).toBeLessThanOrEqual(700)
 })
 
-// get_activity (T-C30), budget 4,000, set with the tool; 3,478 measured on 2026-10-03. Measured at its largest legal answer: the
+// get_activity (T-C30), budget 4,000, set with the tool; 3,517 measured on 2026-10-03. Measured at its largest legal answer: the
 // 10-row limit, every row a real check_trade verdict over the recorded wallet (the longest reasons we
 // produce), plus the 5 write failures an answer lists. The journal is read to answer "why did I
 // sell", so it carries whole verdicts; 10 of them is what that costs.
@@ -94,7 +94,7 @@ test('get_activity stays inside the 4,000 token budget at 10 full rows and 5 fai
       if (!failing.up) throw Object.assign(new Error('x'), { code: 'ECONNREFUSED' })
       rows.unshift(row)
     },
-    list: async () => rows as never,
+    list: async () => ({ rows: rows as never, hidden: 0 }),
   })
   for (let i = 0; i < 10; i++) {
     await journal.record(checkTradeRow({ ...TRADE, wallet: owner } as never, { verdict }))
@@ -115,7 +115,7 @@ test('get_activity stays inside the 4,000 token budget at 10 full rows and 5 fai
   for (let i = 0; raw[i] === 0; i++) signature = '1' + signature
   const result = await callAsTool(
     'get_activity',
-    { wallet: owner, signer: owner, nonce, signature },
+    { wallet: owner, signer: owner, nonce, signature, unattributed: true },
     liveIo(),
     journal,
   )
