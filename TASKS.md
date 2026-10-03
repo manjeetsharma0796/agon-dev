@@ -3489,7 +3489,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-C39, The server serves token logos, so both terminals show them by default with 0 outside calls
-- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-c39-logos
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/305 | Owner: jishnu-baruah | Branch: feature/t-c39-logos
 - Depends-on: T-C38, T-E26, T-E27
 - Touches: packages/mcp/src/logo.ts, packages/mcp/src/logo.test.ts, packages/mcp/src/serve.ts,
   .opencode/tui/agon-discovery.tsx, plugins/claude-code/
@@ -3500,7 +3500,23 @@ _(empty)_
   mint or a failed fetch answers 404 with the reason and the client draws the first letter; both
   plugins turn logos on by default and read them only from `/logo`, asserted by the 0-outside-call
   tests already in T-E26 and T-E27; seen live in both terminals
-- Evidence: <PR link, screenshots>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/305. Live 2026-10-03 against this branch's
+  server, every outbound fetch logged by host: the first 20 trending mints at size 32 served 16 of 20
+  (17 in 2 earlier runs), all 32x32, 3,193 to 4,217 bytes, image/png with nosniff, cold 5.96 s for all 20
+  at once, cached 25 ms; outbound 1 call to api.jup.ag and 19 to wsrv.nl, 0 to any icon host. 46 unit
+  tests written first, including 23 refused icon URL classes that ask the proxy 0 times and never echo
+  the URL. opencode (OpenTUI 0.4.5, T-E26's check, logos on by default): 202 checks 0 failures dark and
+  light, 200/0 with logos off, 160 fetches all to the Agon server, 0 `/logo` asks for the 12 tokens with
+  no icon; live, 16 logo lines at 140x40 in 4.7 s. Claude Code 2.1.288, normal-size window: `/agon`,
+  `m` drew trending with 2-cell logos and the letter where there is none; `claude plugin test` 10 pass,
+  its stub still refusing any host but the Agon server
+- Finding: wsrv.nl answers 400 to every gateway.irys.xyz icon (2 of the first 20 trending), and the same
+  id on arweave.net and uploader.irys.xyz answered 404 and 400, so those draw the letter. Loading 50 cold
+  logos inside the press that opens markets ran past Claude Code's 10 s hook budget although every wait
+  was a `$.http.fetch`; they now load on a timer. The plugin API reads bodies as text, so `/logo` offers
+  `encoding=base64`, and the proxy is asked for compression level 0 so a plugin with no zlib reads the
+  pixels from stored blocks (32x32 RGBA is 4.2 KB). With logos on, opencode's 80x24 about-to-graduate
+  list drops volume, 1 cell short; `"logos": false` restores it
 - Kill criterion: none
 
 ### T-C40, Move the token lookups off lite-api.jup.ag before Jupiter retires it, and fail closed on it
