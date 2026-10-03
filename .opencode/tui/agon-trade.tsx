@@ -3,8 +3,8 @@
 // MA and EMA, a hover crosshair, the order book or depth, and recent trades for 1 mint.
 //
 // Every number on this page comes from the Agon server: `GET /market` (candles, indicators, trades,
-// 24h stats, the pool it chose and, once T-C35 lands, the book), `GET /status` (ping, SOL price,
-// network) and `GET /stream` (connection state and the live slot). The page does 0 money
+// 24h stats, the pool it chose with its liquidity and, once T-C35 lands, the book), `GET /status`
+// (ping, SOL price, network) and `GET /stream` (connection state and the live slot). The page does 0 money
 // arithmetic: it formats and draws what the server sent. Scaling prices onto rows and ages in
 // seconds are the only sums here, and neither produces a number a trade could use.
 //
@@ -16,7 +16,7 @@ import { createEffect, createMemo, createSignal, For, on, onCleanup, Show } from
 import { useKeyboard, useTerminalDimensions } from '@opentui/solid'
 import { RGBA } from '@opentui/core'
 import type { TuiPluginApi } from '@opencode-ai/plugin/tui'
-import { BASE58, ink, short } from './agon-discovery.tsx'
+import { BASE58, getJson, ink, short } from './agon-discovery.tsx'
 
 export const TRADE_ROUTE = 'agon.trade'
 const MINT_KEY = 'agon.trade.mint'
@@ -85,6 +85,9 @@ export type Market = {
   trades: Block<{ fetchedAt: string | null; list: Fill[]; leftOut: string | null }>
   // undefined: the server sends no book field at all, which is the case until T-C35 merges.
   book: Block<Book> | undefined
+  // The chosen pool's reserve in USD (T-C37), with the server's reserve-to-volume flag when it
+  // raised one. null: this server sends no liquidity at all, a build from before T-C37.
+  liquidity: Block<{ value: number; flag: string | null }> | null
 }
 
 const cellv = (v: unknown): Cellv | null => num(v) ?? str(v)
@@ -206,6 +209,18 @@ export function readMarket(raw: unknown): Market {
               : []
           }),
         }
+  // Sent inside stats24h, and kept when the rest of the 24h stats failed.
+  const liq = 'liquidityUsd' in s ? obj(s['liquidityUsd']) : null
+  const liquidity: Market['liquidity'] =
+    liq === null
+      ? null
+      : failed(liq) !== null
+        ? { error: failed(liq)! }
+        : num(liq['value']) !== null
+          ? { value: num(liq['value'])!, flag: str(liq['flag']) }
+          : {
+              error: 'the server sent liquidity without a value; nothing shown rather than a guess',
+            }
   const address = str(pool['address'])
   return {
     mint: str(m['mint']) ?? '',
@@ -217,6 +232,7 @@ export function readMarket(raw: unknown): Market {
     stats,
     trades,
     book: 'book' in m ? readBook(m['book']) : undefined,
+    liquidity,
   }
 }
 
@@ -392,19 +408,6 @@ export function buildGrid(
 /* ---------------------------------------------------------------------------------------------- */
 /* data: /market and /status polled, /stream held open, all while the page is on screen            */
 /* ---------------------------------------------------------------------------------------------- */
-
-const getJson = async (url: string) => {
-  let res: Response
-  try {
-    res = await fetch(url, { signal: AbortSignal.timeout(15_000) })
-  } catch (e) {
-    throw new Error(`no answer (${e instanceof Error ? e.message : String(e)})`)
-  }
-  const body = (await res.json().catch(() => null)) as unknown
-  if (!res.ok)
-    throw new Error(str(obj(body)['error']) ?? `answered ${res.status} with no reason given`)
-  return body
-}
 
 function createFeed(base: string, mint: string, range: () => string) {
   const [market, setMarket] = createSignal<Market | null>(null)
@@ -656,7 +659,7 @@ export function Trade(props: {
   const volRow = () => (H() >= 30 ? 1 : 0)
   // Every failure on its own lines, the server's first: each names its cause and what happens
   // next. Wrapped here, by word, into lines drawn 1 text each, so the layout knows their exact
-  // height: up to 3 lines per failure and 4 in all.
+  // height: up to 3 lines per failure, 4 for a warning, and 4 in all.
   const errors = () => {
     const l = feed.link()
     const s = feed.market()?.stats
@@ -669,9 +672,20 @@ export function Trade(props: {
         : `/stream at ${props.base}: not connected after ${l.attempt} attempt${l.attempt === 1 ? '' : 's'}, trying again within 30 s. Connection state and the live slot wait for it`,
     ].filter((e): e is string => e !== null)
   }
+  // Not failures, drawn as warnings after them: why liquidity is not shown, or the server's flag
+  // on a reserve over 100 times its 24h volume (T-C37).
+  const warnings = () => {
+    const l = feed.market()?.liquidity
+    return !l ? [] : 'error' in l ? [l.error] : l.flag ? [l.flag] : []
+  }
   const errorLines = () =>
-    errors()
-      .flatMap((e) => wrap(e, inner(), 3))
+    [
+      ...errors().map((e) => [e, 'error'] as const),
+      ...warnings().map((e) => [e, 'warning'] as const),
+    ]
+      .flatMap(([e, tone]) =>
+        wrap(e, inner(), tone === 'error' ? 3 : 4).map((line) => [line, tone] as const),
+      )
       .slice(0, 4)
   const hintLines = () => wrap(hint(), inner(), 4)
   const chartH = () =>
@@ -922,8 +936,13 @@ export function Trade(props: {
               [`L ${usd(s.low)}`, 1],
               [`vol ${big(s.volumeUsd)}`, 2],
             ] as [string, number][])),
-        [`pool ${m.pool ? short(m.pool.address) : 'none'}`, 3],
-        ['liquidity: /market sends none', 4],
+        [
+          !m.liquidity || 'error' in m.liquidity
+            ? 'liq not sent'
+            : `liq ${big(m.liquidity.value)}${m.liquidity.flag ? ' flagged, see below' : ''}`,
+          3,
+        ],
+        [`pool ${m.pool ? short(m.pool.address) : 'none'}`, 4],
       ],
       headerRows() === 1 ? inner() - first.length - 2 : inner(),
     )
@@ -958,18 +977,22 @@ export function Trade(props: {
     const top = () => Math.min(scroll(), Math.max(0, list().length - 1))
     return (
       <box flexDirection="column" height={p.rows} overflow="hidden" flexShrink={0}>
-        <text fg={theme()?.text} wrapMode="none">
+        <text flexShrink={0} fg={theme()?.text} wrapMode="none">
           <b>{`Recent trades${tr() && !('error' in tr()!) ? `, ${ageOf((tr() as { fetchedAt: string | null }).fetchedAt, feed.now())} old` : ''}`}</b>
         </text>
         <Show
           when={tr() && !('error' in tr()!)}
           fallback={
-            <text fg={ink(api, tr() ? theme()?.error : theme()?.textMuted)} wrapMode="word">
+            <text
+              flexShrink={0}
+              fg={ink(api, tr() ? theme()?.error : theme()?.textMuted)}
+              wrapMode="word"
+            >
               {tr() && 'error' in tr()! ? (tr() as { error: string }).error : 'waiting for /market'}
             </text>
           }
         >
-          <text fg={ink(api, theme()?.textMuted)} wrapMode="none">
+          <text flexShrink={0} fg={ink(api, theme()?.textMuted)} wrapMode="none">
             {row([
               ['time', 8],
               ['side', 6],
@@ -979,13 +1002,14 @@ export function Trade(props: {
             ])}
           </text>
           <Show when={list().length === 0}>
-            <text fg={ink(api, theme()?.textMuted)} wrapMode="word">
+            <text flexShrink={0} fg={ink(api, theme()?.textMuted)} wrapMode="word">
               0 trades in the answer. The pool may be quiet.
             </text>
           </Show>
           <For each={list().slice(top(), top() + Math.max(1, p.rows - 2))}>
             {(f) => (
               <text
+                flexShrink={0}
                 fg={ink(api, f.side === 'buy' ? theme()?.success : theme()?.error)}
                 wrapMode="none"
               >
@@ -1010,8 +1034,24 @@ export function Trade(props: {
       const b = book()
       return b && !('error' in b) ? b : null
     }
+    // The label and the venue line, wrapped here so the ladder knows how many lines they take: a
+    // real Orca answer wraps the venue to 2 lines at 80 columns, and a ladder sized for 1 pushed
+    // every line into the next.
+    const head = (b: Book) => [
+      ...wrap(b.label, side(), 2).map((l) => [l, theme()?.warning] as const),
+      ...wrap(
+        `${b.venue}  ${b.pool ? short(b.pool) : 'pool not named'}  slot ${b.slot ?? 'none'}  ${ageOf(b.fetchedAt, feed.now())} old`,
+        side(),
+        2,
+      ).map((l) => [l, theme()?.textMuted] as const),
+    ]
+    // Lines left under the title, the head and the column titles.
+    const room = () => {
+      const b = ready()
+      return p.rows - 2 - (b ? head(b).length : 0)
+    }
     // Levels nearest the mid sit next to it: asks above, highest first, bids below.
-    const depth = () => Math.max(1, Math.floor((p.rows - 5) / 2))
+    const depth = () => Math.max(1, Math.floor((room() - 1) / 2))
     const levelLine = (side: 'ask' | 'bid', l: Level) =>
       row([
         [side, 3],
@@ -1021,13 +1061,17 @@ export function Trade(props: {
       ])
     return (
       <box flexDirection="column" height={p.rows} overflow="hidden" flexShrink={0}>
-        <text fg={theme()?.text} wrapMode="none">
+        <text flexShrink={0} fg={theme()?.text} wrapMode="none">
           <b>Order book / depth</b>
         </text>
         <Show
           when={ready()}
           fallback={
-            <text fg={ink(api, book() ? theme()?.error : theme()?.textMuted)} wrapMode="word">
+            <text
+              flexShrink={0}
+              fg={ink(api, book() ? theme()?.error : theme()?.textMuted)}
+              wrapMode="word"
+            >
               {!feed.market()
                 ? 'waiting for /market'
                 : book()
@@ -1038,17 +1082,18 @@ export function Trade(props: {
         >
           {(b) => (
             <>
-              <text fg={ink(api, theme()?.warning)} wrapMode="word">
-                {b().label}
-              </text>
-              <text fg={ink(api, theme()?.textMuted)} wrapMode="word">
-                {`${b().venue}  ${b().pool ? short(b().pool) : 'pool not named'}  slot ${b().slot ?? 'none'}  ${ageOf(b().fetchedAt, feed.now())} old`}
-              </text>
+              <For each={head(b())}>
+                {([line, tone]) => (
+                  <text flexShrink={0} fg={ink(api, tone)} wrapMode="none">
+                    {line}
+                  </text>
+                )}
+              </For>
               <Show
                 when={b().kind !== 'amm-curve'}
                 fallback={
                   <>
-                    <text fg={ink(api, theme()?.textMuted)} wrapMode="none">
+                    <text flexShrink={0} fg={ink(api, theme()?.textMuted)} wrapMode="none">
                       {row([
                         ['move', 5],
                         ['side', 6],
@@ -1056,9 +1101,10 @@ export function Trade(props: {
                         ['get', -9],
                       ])}
                     </text>
-                    <For each={b().moves.slice(0, Math.max(1, p.rows - 4))}>
+                    <For each={b().moves.slice(0, Math.max(1, room()))}>
                       {(mv) => (
                         <text
+                          flexShrink={0}
                           fg={ink(api, mv.side === 'buy' ? theme()?.success : theme()?.error)}
                           wrapMode="none"
                         >
@@ -1081,7 +1127,7 @@ export function Trade(props: {
                   </>
                 }
               >
-                <text fg={ink(api, theme()?.textMuted)} wrapMode="none">
+                <text flexShrink={0} fg={ink(api, theme()?.textMuted)} wrapMode="none">
                   {row([
                     ['', 3],
                     ['price', -10],
@@ -1091,12 +1137,12 @@ export function Trade(props: {
                 </text>
                 <For each={b().asks.slice(0, depth()).reverse()}>
                   {(l) => (
-                    <text fg={ink(api, theme()?.error)} wrapMode="none">
+                    <text flexShrink={0} fg={ink(api, theme()?.error)} wrapMode="none">
                       {levelLine('ask', l)}
                     </text>
                   )}
                 </For>
-                <text fg={theme()?.text} wrapMode="none">
+                <text flexShrink={0} fg={theme()?.text} wrapMode="none">
                   {row([
                     ['mid', 3],
                     [cell(b().mid), -10],
@@ -1104,7 +1150,7 @@ export function Trade(props: {
                 </text>
                 <For each={b().bids.slice(0, depth())}>
                   {(l) => (
-                    <text fg={ink(api, theme()?.success)} wrapMode="none">
+                    <text flexShrink={0} fg={ink(api, theme()?.success)} wrapMode="none">
                       {levelLine('bid', l)}
                     </text>
                   )}
@@ -1321,8 +1367,12 @@ export function Trade(props: {
         {legend()}
       </text>
       <For each={errorLines()}>
-        {(line) => (
-          <text fg={ink(api, theme()?.error)} wrapMode="none" flexShrink={0}>
+        {([line, tone]) => (
+          <text
+            fg={ink(api, tone === 'error' ? theme()?.error : theme()?.warning)}
+            wrapMode="none"
+            flexShrink={0}
+          >
             {line}
           </text>
         )}

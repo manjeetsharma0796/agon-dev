@@ -2,9 +2,13 @@
 // Agon discovery inside opencode.
 //
 // - A live sidebar panel for your watchlist.
-// - A full-screen page (`/discover`, or "Agon discovery" in the command palette) with Jupiter's
-//   trending, most traded, top organic or newest tokens, sortable and searchable, with a detail pane,
-//   a large logo and a braille price chart for the selected token. The sidebar has 24h sparklines.
+// - A full-screen page (`/discover`, or "Agon discovery" in the command palette) with the trending,
+//   most traded, top organic, new, about to graduate and graduated lists, sortable and searchable,
+//   with a detail pane and a braille price chart for the selected token. The sidebar has sparklines.
+// - Every list, figure and chart comes from the Agon server: `GET /discover` for the lists and
+//   `GET /market` for charts and the watchlist. The plugin calls no Jupiter, GeckoTerminal or other
+//   outside host itself (T-E26), so the numbers here are the ones every other Agon surface shows. A
+//   figure the server names as not sent is drawn as a dim "not sent", never as 0.
 // - Quick actions that hand an instruction to the opencode agent: b buy, x sell, c check. They
 //   only ever fill the chat box. You read it and press Enter; the agent then runs Agon's check_trade
 //   before anything is built, and your wallet signs. This plugin never signs, sends or reads keys,
@@ -26,8 +30,10 @@
 // a .ts file still renders once and then silently never updates.
 //
 // Logos are drawn as half-block characters, 2 pixels per cell, because the OpenTUI build inside
-// opencode 1.18.33 has no image element for plugins. Each is fetched once as a small PNG through an
-// image proxy, decoded here and cached for the life of the process.
+// opencode 1.18.33 has no image element for plugins. They are off unless tui.json sets
+// `"logos": true`: a logo is a URL the token creator chose, fetched through the wsrv.nl image proxy,
+// and that is the 1 call to a host other than the Agon server. Off, a row shows the symbol's first
+// letter.
 
 import {
   createEffect,
@@ -46,7 +52,6 @@ import type { TuiPlugin, TuiPluginApi, TuiPluginModule } from '@opencode-ai/plug
 
 const ID = 'agon-discovery'
 const ROUTE = 'agon.discovery'
-const JUP = 'https://lite-api.jup.ag/tokens/v2'
 const WATCH_KEY = 'agon.discovery.watchlist'
 const VIEW_KEY = 'agon.discovery.view'
 export const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/
@@ -58,8 +63,25 @@ const DEFAULT_WATCHLIST = [
   'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263',
   'J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn',
 ]
+// Symbols for the default watchlist, pinned here rather than read, for a watched token no list on
+// screen carries.
+const PINNED: Record<string, string> = {
+  So11111111111111111111111111111111111111112: 'SOL',
+  EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: 'USDC',
+  JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN: 'JUP',
+  DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263: 'BONK',
+  J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn: 'JitoSOL',
+}
+/** A watched token's /market answer is asked again after 5 minutes, 3 GeckoTerminal calls each. */
+const WATCH_MAX_AGE_MS = 300_000
 
-type Options = { refreshMs: number; limit: number; mcpUrl: string; armUrl: string }
+type Options = {
+  refreshMs: number
+  limit: number
+  mcpUrl: string
+  armUrl: string
+  logos: boolean
+}
 // Only http and https, and only from the user's own tui.json: the setup page fetches the first and
 // opens the second in a browser.
 const httpUrl = (v: unknown, fallback: string) => {
@@ -79,6 +101,7 @@ const toOptions = (raw: unknown): Options => {
     limit: typeof o.limit === 'number' && o.limit > 0 ? Math.min(o.limit, 100) : 50,
     mcpUrl: httpUrl(o.mcpUrl, 'http://127.0.0.1:8787'),
     armUrl: httpUrl(o.armUrl, 'http://localhost:3111/arm'),
+    logos: o.logos === true,
   }
 }
 
@@ -86,6 +109,9 @@ const toOptions = (raw: unknown): Options => {
 /* data                                                                                            */
 /* ---------------------------------------------------------------------------------------------- */
 
+// A token as the page draws it. Every figure is null when the server sent none, drawn as "not sent".
+// symbol, name and icon are `display` text the token creator chose: drawn for a person, matched by
+// the search box, and never put into anything handed to the agent, which gets the mint only.
 type Token = {
   mint: string
   symbol: string
@@ -99,80 +125,116 @@ type Token = {
   liquidity: number | null
   mcap: number | null
   holders: number | null
-  holderChange1h: number | null
-  buys1h: number | null
-  sells1h: number | null
-  traders1h: number | null
   organic: number | null
-  organicLabel: string | null
-  verified: boolean
   mintAuthorityOff: boolean | null
   freezeAuthorityOff: boolean | null
   topHoldersPct: number | null
   devPct: number | null
-  tags: string[]
+  curve: number | null
+  graduatedAt: string | null
+  ageSeconds: number | null
+}
+const blank = (mint: string): Token => ({
+  mint,
+  symbol: mint.slice(0, 4),
+  name: '',
+  icon: null,
+  price: null,
+  change5m: null,
+  change1h: null,
+  change24h: null,
+  volume24h: null,
+  liquidity: null,
+  mcap: null,
+  holders: null,
+  organic: null,
+  mintAuthorityOff: null,
+  freezeAuthorityOff: null,
+  topHoldersPct: null,
+  devPct: null,
+  curve: null,
+  graduatedAt: null,
+  ageSeconds: null,
+})
+
+type Json = Record<string, unknown>
+const obj = (v: unknown): Json => (v && typeof v === 'object' ? (v as Json) : {})
+const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
+const str = (v: unknown): string | null => (typeof v === 'string' ? v : null)
+// The server strips these already. Stripped again here, because 1 control or bidi character in a
+// symbol would redraw the terminal around it.
+const UNSAFE = /[\p{Cc}\p{Cf}]/gu
+const display = (v: unknown): string | null =>
+  typeof v === 'string' ? v.replace(UNSAFE, '').slice(0, 64) : null
+const fig = (v: unknown) => num(obj(v)['value'])
+const authorityOff = (v: unknown) => {
+  const x = obj(v)['value']
+  return x === 'disabled' ? true : x === 'enabled' ? false : null
 }
 
-const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
-const bool = (v: unknown): boolean | null => (typeof v === 'boolean' ? v : null)
-
-const toToken = (t: Record<string, any>): Token => {
-  const buy = num(t.stats24h?.buyVolume)
-  const sell = num(t.stats24h?.sellVolume)
+/** 1 row of `/discover` as the page draws it, or null when its mint is not a Solana address. */
+const toToken = (raw: unknown): Token | null => {
+  const t = obj(raw)
+  const mint = str(t['mint'])
+  if (!mint || !BASE58.test(mint)) return null
+  const d = obj(t['display'])
+  const change = obj(t['change'])
+  const curve = obj(t['bondingCurvePct'])
   return {
-    mint: String(t.id),
-    symbol: typeof t.symbol === 'string' ? t.symbol : String(t.id).slice(0, 4),
-    name: typeof t.name === 'string' ? t.name : '',
-    icon: typeof t.icon === 'string' ? t.icon : null,
-    price: num(t.usdPrice),
-    change5m: num(t.stats5m?.priceChange),
-    change1h: num(t.stats1h?.priceChange),
-    change24h: num(t.stats24h?.priceChange),
-    volume24h: buy !== null && sell !== null ? buy + sell : null,
-    liquidity: num(t.liquidity),
-    mcap: num(t.mcap),
-    holders: num(t.holderCount),
-    holderChange1h: num(t.stats1h?.holderChange),
-    buys1h: num(t.stats1h?.numBuys),
-    sells1h: num(t.stats1h?.numSells),
-    traders1h: num(t.stats1h?.numTraders),
-    organic: num(t.organicScore),
-    organicLabel: typeof t.organicScoreLabel === 'string' ? t.organicScoreLabel : null,
-    verified: t.isVerified === true,
-    mintAuthorityOff: bool(t.audit?.mintAuthorityDisabled),
-    freezeAuthorityOff: bool(t.audit?.freezeAuthorityDisabled),
-    topHoldersPct: num(t.audit?.topHoldersPercentage),
-    devPct: num(t.audit?.devBalancePercentage),
-    tags: Array.isArray(t.tags) ? t.tags.filter((x: unknown) => typeof x === 'string') : [],
+    mint,
+    symbol: display(d['symbol']) || mint.slice(0, 4),
+    name: display(d['name']) ?? '',
+    icon: str(d['icon']),
+    price: fig(t['price']),
+    change5m: fig(change['5m']),
+    change1h: fig(change['1h']),
+    change24h: fig(change['24h']),
+    volume24h: fig(t['volume24h']),
+    liquidity: fig(t['liquidity']),
+    mcap: fig(t['marketCap']),
+    holders: fig(t['holders']),
+    organic: fig(t['organicScore']),
+    mintAuthorityOff: authorityOff(t['mintAuthority']),
+    freezeAuthorityOff: authorityOff(t['freezeAuthority']),
+    topHoldersPct: fig(t['topHoldersPct']),
+    devPct: fig(t['devPct']),
+    curve: num(curve['value']),
+    graduatedAt: str(curve['graduatedAt']),
+    ageSeconds: fig(t['age']),
   }
 }
 
-async function getTokens(url: string): Promise<Token[]> {
+/** A GET to the Agon server: its JSON, or an error carrying the server's own reason. */
+export const getJson = async (url: string) => {
   let res: Response
   try {
-    res = await fetch(url, { signal: AbortSignal.timeout(10_000) })
+    res = await fetch(url, { signal: AbortSignal.timeout(15_000) })
   } catch (e) {
-    throw new Error(`Jupiter unreachable (${e instanceof Error ? e.message : String(e)})`)
+    throw new Error(`no answer (${e instanceof Error ? e.message : String(e)})`)
   }
-  if (!res.ok) throw new Error(`Jupiter answered ${res.status}`)
-  const body = (await res.json()) as unknown
-  if (!Array.isArray(body)) throw new Error('Jupiter answered something that is not a token list')
-  // The mint is the only token field that reaches the agent, so a row whose mint is not a Solana
-  // address is dropped rather than carried.
-  return body.map((t) => toToken(t as Record<string, any>)).filter((t) => BASE58.test(t.mint))
+  // A body that is not JSON (a proxy's HTML page, say) is a failure with its cause, never an empty
+  // answer that would read as "not sent".
+  const body = (await res.json().catch(() => undefined)) as unknown
+  if (!res.ok)
+    throw new Error(str(obj(body)['error']) ?? `answered ${res.status} with no reason given`)
+  if (body === undefined) throw new Error(`answered ${res.status} with a body that is not JSON`)
+  return body
 }
 
-type Source = { label: string; path: string; interval: boolean }
+// `curve`: the list carries a bonding curve % or a graduation time, so it gets a curve column.
+type Source = { label: string; list: string; interval: boolean; curve: boolean }
 const SOURCES: Source[] = [
-  { label: 'trending', path: 'toptrending', interval: true },
-  { label: 'most traded', path: 'toptraded', interval: true },
-  { label: 'top organic', path: 'toporganicscore', interval: true },
-  { label: 'new', path: 'recent', interval: false },
+  { label: 'trending', list: 'trending', interval: true, curve: false },
+  { label: 'most traded', list: 'most-traded', interval: true, curve: false },
+  { label: 'top organic', list: 'top-organic', interval: true, curve: false },
+  { label: 'new', list: 'new', interval: false, curve: false },
+  { label: 'about to graduate', list: 'about-to-graduate', interval: false, curve: true },
+  { label: 'graduated', list: 'graduated', interval: false, curve: true },
 ]
 const INTERVALS = ['5m', '1h', '6h', '24h']
 
 /* ---------------------------------------------------------------------------------------------- */
-/* logos, as half-block pixels                                                                     */
+/* logos, as half-block pixels                                                                    */
 /* ---------------------------------------------------------------------------------------------- */
 
 type Pixels = { w: number; h: number; rgba: Uint8Array }
@@ -300,79 +362,46 @@ function toCells(px: Pixels, bg: [number, number, number] | null): Cell[][] {
 /* charts                                                                                          */
 /* ---------------------------------------------------------------------------------------------- */
 
-// Price history from GeckoTerminal's keyless API: the token's deepest pool, then its candles.
-// About 30 calls a minute on the free tier, so charts load for the selected token only, after the
-// selection settles, and each series is cached for a minute.
-const GT = 'https://api.geckoterminal.com/api/v2/networks/solana'
+// Price history from the Agon server's `/market`, 100 candles of the chosen width on the pool it
+// picked, the same answer the trade view draws. The server queues and caches GeckoTerminal for every
+// client, so charts load for the selected token only, after the selection settles, and each answer
+// is kept for a minute here.
+const RANGES = ['1m', '15m', '1h', '1d']
+/** The sidebar's sparklines: 15-minute candles, about the last 25 hours. */
+const WATCH_RANGE = 1
 
-type Range = { label: string; path: string; aggregate: number; limit: number }
-const RANGES: Range[] = [
-  { label: '1h', path: 'minute', aggregate: 1, limit: 60 },
-  { label: '24h', path: 'minute', aggregate: 15, limit: 96 },
-  { label: '7d', path: 'hour', aggregate: 4, limit: 42 },
-  { label: '30d', path: 'day', aggregate: 1, limit: 30 },
-]
-
-type Series = { closes: number[]; volumes: number[]; times: number[] }
-
-// Every GeckoTerminal call goes through 1 queue, about 2 s apart, because its free tier allows
-// about 30 a minute: a watchlist asking for 10 sparklines at once got 429 on every one. The detail
-// chart jumps the queue, so the token being looked at is never behind the sidebar.
-type Job = { url: string; resolve: (v: unknown) => void; reject: (e: unknown) => void }
-const gtQueue: Job[] = []
-let gtBusy = false
-const gtGet = (url: string, urgent: boolean) =>
-  new Promise<unknown>((resolve, reject) => {
-    const job = { url, resolve, reject }
-    if (urgent) gtQueue.unshift(job)
-    else gtQueue.push(job)
-    void pump()
-  })
-async function pump() {
-  if (gtBusy) return
-  gtBusy = true
-  while (gtQueue.length) {
-    const job = gtQueue.shift()!
-    try {
-      const res = await fetch(job.url, { signal: AbortSignal.timeout(10_000) })
-      if (!res.ok)
-        throw new Error(
-          `GeckoTerminal answered ${res.status}${res.status === 429 ? ', its limit of about 30 calls a minute' : ''}`,
-        )
-      job.resolve(await res.json())
-    } catch (e) {
-      job.reject(e)
-    }
-    await new Promise((r) => setTimeout(r, 2_100))
-  }
-  gtBusy = false
+// 1 `/market` answer, as far as discovery uses it: closes oldest first, and the 24h figures that
+// stand in for a watched token the current list does not carry.
+type Series = {
+  closes: number[]
+  volumes: number[]
+  times: number[]
+  price: number | null
+  change24h: number | null
+  liquidity: number | null
+  // The server's own reason when its candles or its 24h stats failed, each failing on its own.
+  candlesError: string | null
+  statsError: string | null
 }
 
-async function topPool(mint: string, urgent: boolean): Promise<string | null> {
-  const body = (await gtGet(`${GT}/tokens/${mint}/pools?page=1`, urgent)) as {
-    data?: Array<{ attributes?: Record<string, any> }>
-  }
-  const pools = (body.data ?? [])
-    .map((p) => p.attributes ?? {})
-    .filter((a) => typeof a.address === 'string')
-    .sort((a, b) => Number(b.reserve_in_usd ?? 0) - Number(a.reserve_in_usd ?? 0))
-  return pools[0]?.address ?? null
-}
-
-async function candles(pool: string, range: Range, urgent: boolean): Promise<Series> {
-  const url = `${GT}/pools/${pool}/ohlcv/${range.path}?aggregate=${range.aggregate}&limit=${range.limit}&token=base`
-  const body = (await gtGet(url, urgent)) as {
-    data?: { attributes?: { ohlcv_list?: unknown[][] } }
-  }
-  // Newest first from the API; charts read oldest first. A candle without a finite close is
-  // dropped, because 1 NaN reaching the braille grid throws inside the renderer.
-  const list = [...(body.data?.attributes?.ohlcv_list ?? [])]
-    .reverse()
-    .filter((c) => Array.isArray(c) && num(c[4]) !== null)
+const readSeries = (raw: unknown): Series => {
+  const m = obj(raw)
+  const c = obj(m['candles'])
+  const s = obj(m['stats24h'])
+  // A candle without a finite close is dropped, because 1 NaN reaching the braille grid throws
+  // inside the renderer.
+  const list = (Array.isArray(c['list']) ? c['list'] : [])
+    .map(obj)
+    .filter((k) => num(k['close']) !== null)
   return {
-    closes: list.map((c) => num(c[4])!),
-    volumes: list.map((c) => num(c[5]) ?? 0),
-    times: list.map((c) => num(c[0]) ?? 0),
+    closes: list.map((k) => num(k['close'])!),
+    volumes: list.map((k) => num(k['volume']) ?? 0),
+    times: list.map((k) => num(k['t']) ?? 0),
+    price: num(s['price']),
+    change24h: num(s['changePct']),
+    liquidity: fig(s['liquidityUsd']),
+    candlesError: str(c['error']),
+    statsError: str(s['error']),
   }
 }
 
@@ -426,22 +455,43 @@ function sparkline(values: number[], w: number): string {
 /* formatting                                                                                      */
 /* ---------------------------------------------------------------------------------------------- */
 
-export const pad = (s: string, n: number) =>
-  s.length >= n ? s.slice(0, n) : s + ' '.repeat(n - s.length)
-export const lpad = (s: string, n: number) =>
-  s.length >= n ? s.slice(0, n) : ' '.repeat(n - s.length) + s
+// Widths in terminal cells, not string length: a CJK character or an emoji in a symbol takes 2
+// cells, and padding by length pushed a graduated token's price over the next column. Bun's
+// measure is the one OpenTUI itself uses under Bun, which is what opencode runs on.
+const cells = (s: string): number =>
+  (globalThis as { Bun?: { stringWidth(s: string): number } }).Bun?.stringWidth(s) ?? s.length
+/** At most `n` cells of `s`, cut between code points. */
+const cut = (s: string, n: number) => {
+  if (cells(s) <= n) return s
+  let out = ''
+  for (const ch of s) {
+    if (cells(out + ch) > n) break
+    out += ch
+  }
+  return out
+}
+export const pad = (s: string, n: number) => {
+  const c = cut(s, n)
+  return c + ' '.repeat(Math.max(0, n - cells(c)))
+}
+export const lpad = (s: string, n: number) => {
+  const c = cut(s, n)
+  return ' '.repeat(Math.max(0, n - cells(c))) + c
+}
+// A figure the server did not send. Drawn dim, never as 0, never as "N/A".
+const NOT_SENT = 'not sent'
 const price = (p: number | null) =>
-  p === null ? '-' : p >= 1 ? `$${p.toFixed(2)}` : `$${p.toPrecision(3)}`
+  p === null ? NOT_SENT : p >= 1 ? `$${p.toFixed(2)}` : `$${p.toPrecision(3)}`
 // Compact so a 7425% move fits the column instead of losing its sign or its % sign.
 const pct = (c: number | null) => {
-  if (c === null) return '-'
+  if (c === null) return NOT_SENT
   const sign = c >= 0 ? '+' : '-'
   const a = Math.abs(c)
   const body = a >= 1000 ? `${(a / 1000).toFixed(1)}K` : a >= 100 ? a.toFixed(0) : a.toFixed(2)
   return `${sign}${body}%`
 }
 const compact = (v: number | null, dollar = true) => {
-  if (v === null) return '-'
+  if (v === null) return NOT_SENT
   const [d, s] =
     v >= 1e12
       ? [1e12, 'T']
@@ -455,6 +505,18 @@ const compact = (v: number | null, dollar = true) => {
   return `${dollar ? '$' : ''}${(v / d).toFixed(v >= 1e3 ? 1 : 0)}${s}`
 }
 export const short = (mint: string) => `${mint.slice(0, 4)}...${mint.slice(-4)}`
+const fixed = (v: number | null, digits: number, unit = '') =>
+  v === null ? NOT_SENT : v.toFixed(digits) + unit
+// The curve column: graduated, the curve's %, or not sent.
+const curveText = (t: Token) => (t.graduatedAt ? 'graduated' : fixed(t.curve, 1, '%'))
+const ageText = (s: number | null) =>
+  s === null
+    ? NOT_SENT
+    : s < 3_600
+      ? `${Math.floor(s / 60)}m`
+      : s < 86_400
+        ? `${Math.floor(s / 3_600)}h`
+        : `${Math.floor(s / 86_400)}d`
 
 type SortKey = { label: string; get: (t: Token) => number | null }
 const SORTS: SortKey[] = [
@@ -466,8 +528,9 @@ const SORTS: SortKey[] = [
   { label: 'liquidity', get: (t) => t.liquidity },
   { label: 'holders', get: (t) => t.holders },
   { label: 'organic score', get: (t) => t.organic },
-  { label: 'traders 1h', get: (t) => t.traders1h },
+  { label: 'bonding curve', get: (t) => t.curve },
 ]
+const CURVE_SORT = SORTS.length - 1
 
 /* ---------------------------------------------------------------------------------------------- */
 /* model                                                                                           */
@@ -480,8 +543,10 @@ function createModel(api: TuiPluginApi, options: Options) {
       ? stored.filter((m) => typeof m === 'string' && BASE58.test(m))
       : DEFAULT_WATCHLIST,
   )
-  const [watchlist, setWatchlist] = createSignal<Token[]>([])
   const [list, setList] = createSignal<Token[]>([])
+  // The last display text any list sent for a watched mint, so a watched token keeps its symbol
+  // after the user moves to a list without it. Bounded by the watchlist.
+  const [seen, setSeen] = createSignal(new Map<string, Pick<Token, 'symbol' | 'name' | 'icon'>>())
   const [source, setSource] = createSignal(0)
   const [interval, setInterval_] = createSignal(1)
   const [updatedAt, setUpdatedAt] = createSignal<number | null>(null)
@@ -494,7 +559,7 @@ function createModel(api: TuiPluginApi, options: Options) {
   // Logo cache, keyed by icon URL and size. A logo that fails is cached as null, so it is not
   // retried every refresh; the row then shows the symbol's first letter.
   const logo = (url: string | null, size: number): Cell[][] | null | undefined => {
-    if (!url) return null
+    if (!url || !options.logos) return null
     const back = api.theme.current?.background?.toInts()
     const bg =
       back && back[3] >= 128 ? ([back[0], back[1], back[2]] as [number, number, number]) : null
@@ -523,34 +588,21 @@ function createModel(api: TuiPluginApi, options: Options) {
   const [series, setSeries] = createSignal(
     new Map<string, { at: number; data: Series | null; error: string | null }>(),
   )
-  const pools = new Map<string, Promise<string | null>>()
   const loadingSeries = new Set<string>()
-  const chart = (mint: string, range: number, maxAgeMs = 60_000, urgent = false) => {
+  const chart = (mint: string, range: number, maxAgeMs = 60_000) => {
     const key = `${mint}:${range}`
     const have = series().get(key)
-    // A failure is asked again after 15 s, not cached for the session.
-    const fresh = have && Date.now() - have.at < (have.data ? maxAgeMs : 15_000)
+    // A failure is asked again after 15 s, not cached for the session. The last good answer stays
+    // meanwhile, with the failure beside it, so 1 timeout does not blank a watched row.
+    const fresh = have && Date.now() - have.at < (have.error ? 15_000 : maxAgeMs)
     if (fresh || loadingSeries.has(key)) return have
     loadingSeries.add(key)
-    if (!pools.has(mint))
-      pools.set(
-        mint,
-        topPool(mint, urgent).catch((e) => {
-          pools.delete(mint)
-          throw e
-        }),
-      )
-    void pools
-      .get(mint)!
-      .then(async (pool) => {
-        if (!pool) {
-          // Asked again later: a new token usually gets its first pool minutes after launch.
-          pools.delete(mint)
-          return { data: null, error: 'GeckoTerminal lists no pool for this token yet' }
-        }
-        return { data: await candles(pool, RANGES[range]!, urgent), error: null }
-      })
-      .catch((e) => ({ data: null, error: e instanceof Error ? e.message : String(e) }))
+    void getJson(`${options.mcpUrl}/market?mint=${encodeURIComponent(mint)}&range=${RANGES[range]}`)
+      .then((body) => ({ data: readSeries(body), error: null }))
+      .catch((e) => ({
+        data: series().get(key)?.data ?? null,
+        error: `/market: ${e instanceof Error ? e.message : String(e)}`,
+      }))
       .then((r) => {
         loadingSeries.delete(key)
         setSeries((m) => new Map(m).set(key, { at: Date.now(), ...r }))
@@ -558,15 +610,48 @@ function createModel(api: TuiPluginApi, options: Options) {
     return have
   }
 
+  // The watchlist: a watched token's row from the list on screen when it is there, else its 24h
+  // figures from `/market`, the answer its sparkline is drawn from. Shown once either has arrived.
+  const watchlist = createMemo(() =>
+    watchMints().flatMap((mint): Token[] => {
+      const row = list().find((t) => t.mint === mint)
+      if (row) return [row]
+      const s = chart(mint, WATCH_RANGE, WATCH_MAX_AGE_MS)?.data
+      if (!s) return []
+      const known = seen().get(mint)
+      return [
+        {
+          ...blank(mint),
+          symbol: known?.symbol ?? PINNED[mint] ?? mint.slice(0, 4),
+          name: known?.name ?? '',
+          icon: known?.icon ?? null,
+          price: s.price,
+          change24h: s.change24h,
+          liquidity: s.liquidity,
+        },
+      ]
+    }),
+  )
+
+  // Why a watched token is missing or shows "not sent": the server's reason, named by token.
+  const watchErrors = createMemo(() =>
+    watchMints().flatMap((mint) => {
+      if (list().some((t) => t.mint === mint)) return []
+      const e = series().get(`${mint}:${WATCH_RANGE}`)
+      const why = e?.error ?? e?.data?.statsError ?? e?.data?.candlesError
+      return why ? [`${seen().get(mint)?.symbol ?? PINNED[mint] ?? short(mint)}: ${why}`] : []
+    }),
+  )
+
   const listUrl = () => {
     const s = SOURCES[source()]!
-    const i = s.interval ? `/${INTERVALS[interval()]}` : ''
-    return `${JUP}/${s.path}${i}?limit=${options.limit}`
+    const i = s.interval ? `&interval=${INTERVALS[interval()]}` : ''
+    return `${options.mcpUrl}/discover?list=${s.list}${i}`
   }
 
   // Only the latest refresh writes, so a slow answer for the list the user just left cannot land
   // under the new list's heading.
-  // A poll waits for a refresh still in flight instead of superseding it, or a Jupiter slower than
+  // A poll waits for a refresh still in flight instead of superseding it, or a server slower than
   // the poll would never land a list and never show an error.
   let run = 0
   let busy = false
@@ -574,29 +659,37 @@ function createModel(api: TuiPluginApi, options: Options) {
     const mine = ++run
     busy = true
     try {
-      const mints = watchMints()
-      const [w, l] = await Promise.all([
-        mints.length ? getTokens(`${JUP}/search?query=${mints.join(',')}`) : Promise.resolve([]),
-        getTokens(listUrl()),
-      ])
+      const body = obj(await getJson(listUrl()))
+      const tokens = body['tokens']
+      if (!Array.isArray(tokens))
+        throw new Error('the answer has no token list, so nothing is shown rather than a guess')
       if (mine !== run) return
-      const byMint = new Map(w.map((t) => [t.mint, t]))
-      setWatchlist(mints.flatMap((m) => (byMint.has(m) ? [byMint.get(m)!] : [])))
+      const l = tokens.flatMap((t) => toToken(t) ?? []).slice(0, options.limit)
       setList(l)
-      setUpdatedAt(Date.now())
+      const watched = l.filter((t) => watchMints().includes(t.mint))
+      if (watched.length)
+        setSeen((m) => {
+          const next = new Map([...m].filter(([k]) => watchMints().includes(k)))
+          for (const t of watched)
+            next.set(t.mint, { symbol: t.symbol, name: t.name, icon: t.icon })
+          return next
+        })
+      // The data's age is the server's: when it read the list, not when this page asked.
+      const at = Date.parse(str(obj(body['source'])['fetchedAt']) ?? '')
+      setUpdatedAt(Number.isFinite(at) ? Math.min(at, Date.now()) : Date.now())
       setError(null)
     } catch (e) {
       // The last good rows stay on screen, and the reason they are not moving is said.
       if (mine !== run) return
       setError(
-        `${e instanceof Error ? e.message : String(e)}. ${updatedAt() === null ? 'No data yet' : `Showing data from ${age()}`}, retrying in ${options.refreshMs / 1000}s`,
+        `/discover at ${options.mcpUrl}: ${e instanceof Error ? e.message : String(e)}. ${updatedAt() === null ? 'No data yet' : `Showing data from ${age()}`}, retrying in ${options.refreshMs / 1000}s`,
       )
     } finally {
       if (mine === run) busy = false
     }
   }
-  // A new list or watchlist is fetched at once rather than on the next poll.
-  createEffect(on([source, interval, watchMints], () => void refresh()))
+  // A new list is fetched at once rather than on the next poll.
+  createEffect(on([source, interval], () => void refresh()))
   const poll = setInterval(() => {
     if (!busy) void refresh()
   }, options.refreshMs)
@@ -621,8 +714,10 @@ function createModel(api: TuiPluginApi, options: Options) {
   }
   return {
     api,
+    mcpUrl: options.mcpUrl,
     watchMints,
     watchlist,
+    watchErrors,
     list,
     source,
     setSource,
@@ -654,7 +749,7 @@ function Logo(props: { model: Model; token: Token; size: number }) {
         when={cells()}
         fallback={
           <text fg={ink(props.model.api, theme()?.accent)}>
-            {pad(props.token.symbol.slice(0, 1), props.size)}
+            {pad([...props.token.symbol][0] ?? '', props.size)}
           </text>
         }
       >
@@ -763,6 +858,27 @@ const colourOf = (api: TuiPluginApi, c: number | null, bg?: Colour) =>
     bg,
   )
 
+// A figure inside a line of text: dim when the server did not send it (v null), else `fg`, or the
+// line's own colour when `fg` is not given.
+function V(props: {
+  api: TuiPluginApi
+  v: unknown
+  text: string
+  fg?: Colour | string
+  bg?: Colour
+}) {
+  return (
+    <span
+      // @ts-expect-error OpenTUI 0.4.5 draws a span's fg, but its SpanProps type does not declare it
+      fg={
+        props.v === null ? ink(props.api, props.api.theme.current?.textMuted, props.bg) : props.fg
+      }
+    >
+      {props.text}
+    </span>
+  )
+}
+
 // At most this many tokens in the sidebar, so a long watchlist does not push opencode's own panels
 // (MCP, LSP, todo, files) off the screen; the rest are a line that opens the page.
 const SIDEBAR_ROWS = 5
@@ -795,17 +911,26 @@ function Sidebar(props: { model: Model; open: () => void; openSetup: () => void 
             <Logo model={props.model} token={t} size={6} />
             <box flexDirection="column">
               <text fg={theme()?.text} wrapMode="none">
-                {pad(t.symbol, 7) + ' ' + lpad(price(t.price), 11)}
+                {pad(t.symbol, 7) + ' '}
+                <V
+                  api={api}
+                  v={t.price}
+                  text={lpad(price(t.price), 11)}
+                  bg={theme()?.backgroundPanel}
+                />
               </text>
               <box flexDirection="row" gap={1} height={1}>
                 <text fg={colourOf(api, t.change24h, theme()?.backgroundPanel)} wrapMode="none">
                   {pad(
-                    sparkline(props.model.chart(t.mint, 1, 300_000)?.data?.closes ?? [], 10),
+                    sparkline(
+                      props.model.chart(t.mint, WATCH_RANGE, WATCH_MAX_AGE_MS)?.data?.closes ?? [],
+                      10,
+                    ),
                     10,
                   )}
                 </text>
-                <text fg={colourOf(api, t.change5m, theme()?.backgroundPanel)} wrapMode="none">
-                  {`5m ${pct(t.change5m)}`}
+                <text fg={colourOf(api, t.change24h, theme()?.backgroundPanel)} wrapMode="none">
+                  {`24h ${pct(t.change24h)}`}
                 </text>
               </box>
             </box>
@@ -823,6 +948,14 @@ function Sidebar(props: { model: Model; open: () => void; openSetup: () => void 
       </box>
       <Show when={props.model.error()}>
         <text fg={ink(api, theme()?.error)}>{props.model.error()}</text>
+      </Show>
+      <Show when={props.model.watchErrors()[0]}>
+        <text fg={ink(api, theme()?.textMuted, theme()?.backgroundPanel)}>
+          {props.model.watchErrors()[0]! +
+            (props.model.watchErrors().length > 1
+              ? ` And ${props.model.watchErrors().length - 1} more watched ${props.model.watchErrors().length > 2 ? 'tokens' : 'token'} failed.`
+              : '')}
+        </text>
       </Show>
     </box>
   )
@@ -850,8 +983,7 @@ function Chart(props: {
       },
     ),
   )
-  const entry = () =>
-    settled() ? props.model.chart(props.token.mint, props.range, 60_000, true) : undefined
+  const entry = () => (settled() ? props.model.chart(props.token.mint, props.range) : undefined)
   const data = () => entry()?.data ?? null
   const first = () => data()?.closes[0] ?? null
   const last = () => data()?.closes.at(-1) ?? null
@@ -876,7 +1008,7 @@ function Chart(props: {
           {(r, i) => (
             <Button
               model={props.model}
-              label={r.label}
+              label={r}
               active={i() === props.range}
               onPress={() => props.setRange(i())}
             />
@@ -888,7 +1020,13 @@ function Chart(props: {
         when={data() && data()!.closes.length > 1}
         fallback={
           <text fg={ink(api, theme()?.textMuted)}>
-            {entry()?.error ? `no chart: ${entry()!.error}` : 'loading chart'}
+            {entry()?.error
+              ? `no chart: ${entry()!.error}`
+              : data()?.candlesError
+                ? `no chart: ${data()!.candlesError}`
+                : data()
+                  ? `no chart: /market sent ${data()!.closes.length} of the 2 candles a line needs for ${RANGES[props.range]}; try another range (v)`
+                  : `loading ${RANGES[props.range]} candles from /market`}
           </text>
         }
       >
@@ -917,6 +1055,11 @@ function Chart(props: {
               </text>
             </>
           )}
+        </Show>
+        <Show when={entry()?.error}>
+          <text fg={ink(api, theme()?.warning)} flexShrink={0}>
+            {`the last chart, not refreshed: ${entry()!.error}`}
+          </text>
         </Show>
         <Show when={!props.compact}>
           <text fg={ink(api, theme()?.textMuted)} wrapMode="none">
@@ -952,9 +1095,12 @@ function Detail(props: {
   const api = props.model.api
   const theme = () => api.theme.current
   const muted = () => ink(api, theme()?.textMuted)
-  const yes = (v: boolean | null, good: string, bad: string) =>
-    v === null ? 'unknown' : v ? good : bad
   const live = (off: boolean | null) => (off === false ? ink(api, theme()?.error) : theme()?.text)
+  const authority = (off: boolean | null) => (off === null ? NOT_SENT : off ? 'disabled' : 'LIVE')
+  const change = (v: number | null) => <V api={api} v={v} text={pct(v)} fg={colourOf(api, v)} />
+  // The curve line shows on the 2 lists that carry it, and wherever a token has one.
+  const showCurve = (t: Token) =>
+    t.curve !== null || t.graduatedAt !== null || SOURCES[props.model.source()]!.curve
   // The pane is taller than a short terminal, so it clips at its bottom edge instead of squeezing
   // its lines on top of each other, and the safety lines come right after the buttons, where a
   // short screen still shows them. Below 46 rows the logo and chart shrink.
@@ -967,9 +1113,9 @@ function Detail(props: {
               <Logo model={props.model} token={t()} size={props.compact ? 8 : 20} />
               <box flexDirection="column">
                 <text fg={theme()?.text} wrapMode="none">
-                  <b>{t().symbol.slice(0, 18)}</b>
+                  <b>{cut(t().symbol, 18)}</b>
                 </text>
-                <text fg={theme()?.text}>{price(t().price)}</text>
+                <text fg={t().price === null ? muted() : theme()?.text}>{price(t().price)}</text>
                 <text fg={colourOf(api, t().change24h)}>{`24h ${pct(t().change24h)}`}</text>
               </box>
             </box>
@@ -990,14 +1136,19 @@ function Detail(props: {
               />
               <Button model={props.model} label="Copy" onPress={() => props.actions.copy(t())} />
             </box>
-            <text fg={live(t().mintAuthorityOff)} flexShrink={0}>
-              {`mint authority ${yes(t().mintAuthorityOff, 'disabled', 'LIVE')}`}
+            <text fg={live(t().mintAuthorityOff)} flexShrink={0} wrapMode="none">
+              {'mint authority '}
+              <V api={api} v={t().mintAuthorityOff} text={authority(t().mintAuthorityOff)} />
             </text>
-            <text fg={live(t().freezeAuthorityOff)} flexShrink={0}>
-              {`freeze authority ${yes(t().freezeAuthorityOff, 'disabled', 'LIVE')}`}
+            <text fg={live(t().freezeAuthorityOff)} flexShrink={0} wrapMode="none">
+              {'freeze authority '}
+              <V api={api} v={t().freezeAuthorityOff} text={authority(t().freezeAuthorityOff)} />
             </text>
-            <text fg={theme()?.text} flexShrink={0}>
-              {`top holders ${t().topHoldersPct === null ? '-' : t().topHoldersPct!.toFixed(1) + '%'}, dev ${t().devPct === null ? '-' : t().devPct!.toFixed(2) + '%'}`}
+            <text fg={theme()?.text} flexShrink={0} wrapMode="none">
+              {'top holders '}
+              <V api={api} v={t().topHoldersPct} text={fixed(t().topHoldersPct, 1, '%')} />
+              {', dev '}
+              <V api={api} v={t().devPct} text={fixed(t().devPct, 2, '%')} />
             </text>
             <Chart
               model={props.model}
@@ -1008,31 +1159,47 @@ function Detail(props: {
               compact={props.compact}
             />
             <text fg={muted()} wrapMode="none" flexShrink={0}>
-              {t().name.length > 36 ? t().name.slice(0, 35) + '~' : t().name}
+              {cells(t().name) > 36 ? cut(t().name, 35) + '~' : t().name}
             </text>
             <text fg={muted()} flexShrink={0}>
               {short(t().mint)}
             </text>
-            <text fg={theme()?.text} flexShrink={0}>
-              {`${price(t().price)}  mcap ${compact(t().mcap)}  liq ${compact(t().liquidity)}`}
+            <text fg={theme()?.text} flexShrink={0} wrapMode="none">
+              <V api={api} v={t().price} text={price(t().price)} />
+              {'  mcap '}
+              <V api={api} v={t().mcap} text={compact(t().mcap)} />
+              {'  liq '}
+              <V api={api} v={t().liquidity} text={compact(t().liquidity)} />
             </text>
-            <text fg={colourOf(api, t().change24h)} flexShrink={0}>
-              {`5m ${pct(t().change5m)}  1h ${pct(t().change1h)}  24h ${pct(t().change24h)}`}
+            <text fg={theme()?.text} flexShrink={0} wrapMode="none">
+              {'5m '}
+              {change(t().change5m)}
+              {'  1h '}
+              {change(t().change1h)}
+              {'  24h '}
+              {change(t().change24h)}
             </text>
-            <text fg={theme()?.text} flexShrink={0}>
-              {`1h ${compact(t().buys1h, false)} buys ${compact(t().sells1h, false)} sells ${compact(t().traders1h, false)} traders`}
+            <text fg={theme()?.text} flexShrink={0} wrapMode="none">
+              {'holders '}
+              <V api={api} v={t().holders} text={compact(t().holders, false)} />
+              {'  organic '}
+              <V api={api} v={t().organic} text={fixed(t().organic, 0)} />
             </text>
-            <text fg={theme()?.text} flexShrink={0}>
-              {`holders ${compact(t().holders, false)} (${pct(t().holderChange1h)} 1h)`}
-            </text>
-            <text fg={theme()?.text} flexShrink={0}>
-              {`organic ${t().organic === null ? '-' : t().organic!.toFixed(0)} ${t().organicLabel ?? ''}${t().verified ? ', verified' : ''}`}
-            </text>
-            <text fg={muted()} wrapMode="none" flexShrink={0}>
-              {t().tags.reduce((line, tag) => {
-                const next = line ? `${line} ${tag}` : tag
-                return next.length <= 40 ? next : line
-              }, '')}
+            <text fg={theme()?.text} flexShrink={0} wrapMode="none">
+              {'age '}
+              <V api={api} v={t().ageSeconds} text={ageText(t().ageSeconds)} />
+              <Show when={showCurve(t())}>
+                {t().graduatedAt ? '  graduated ' : '  bonding curve '}
+                <V
+                  api={api}
+                  v={t().graduatedAt ?? t().curve}
+                  text={
+                    t().graduatedAt
+                      ? `${t().graduatedAt!.slice(5, 16).replace('T', ' ')} UTC`
+                      : fixed(t().curve, 1, '%')
+                  }
+                />
+              </Show>
             </text>
           </>
         )}
@@ -1041,8 +1208,9 @@ function Detail(props: {
   )
 }
 
-// A token as a card: logo, price, volume and liquidity, and the 24h change in a 2-line font.
-// Fixed size, so a grid of them lines up and the page can work out how many fit.
+// A token as a card: logo, price, volume and liquidity (the curve on the 2 lists that carry it), and
+// the 24h change in a 2-line font. Fixed size, so a grid of them lines up and the page can work out
+// how many fit.
 const CARD_W = 30
 const CARD_H = 7
 
@@ -1052,21 +1220,23 @@ function Card(props: {
   width: number
   selected: boolean
   watched: boolean
+  curve: boolean
   onSelect: () => void
 }) {
   const api = props.model.api
   const theme = () => api.theme.current
   const t = () => props.token
   const bg = () => (props.selected ? theme()?.backgroundElement : undefined)
+  const dim = () => ink(api, theme()?.textMuted, bg())
   return (
     <box
       border
       borderStyle="rounded"
       width={props.width}
       height={CARD_H}
-      borderColor={props.selected ? ink(api, theme()?.primary) : colourOf(api, t().change24h)}
+      borderColor={props.selected ? ink(api, theme()?.primary, bg()) : colourOf(api, t().change24h)}
       backgroundColor={bg()}
-      title={` ${props.selected ? '> ' : ''}${props.watched ? '*' : ''}${t().symbol.slice(0, 18)} `}
+      title={` ${props.selected ? '> ' : ''}${props.watched ? '*' : ''}${cut(t().symbol, 18)} `}
       paddingLeft={1}
       flexDirection="column"
       onMouseDown={(e) => {
@@ -1076,22 +1246,24 @@ function Card(props: {
       <box flexDirection="row" gap={1} height={3}>
         <Logo model={props.model} token={t()} size={6} />
         <box flexDirection="column">
-          <text fg={theme()?.text} wrapMode="none">
+          <text fg={t().price === null ? dim() : theme()?.text} wrapMode="none">
             {price(t().price)}
           </text>
-          <text fg={ink(api, theme()?.textMuted, bg())} wrapMode="none">
+          <text fg={dim()} wrapMode="none">
             {`vol ${compact(t().volume24h)}`}
           </text>
-          <text fg={ink(api, theme()?.textMuted, bg())} wrapMode="none">
-            {`liq ${compact(t().liquidity)}`}
+          <text fg={dim()} wrapMode="none">
+            {props.curve ? `curve ${curveText(t())}` : `liq ${compact(t().liquidity)}`}
           </text>
         </box>
       </box>
-      <ascii_font
-        text={pct(t().change24h)}
-        font="tiny"
-        color={colourOf(api, t().change24h, bg())}
-      />
+      <Show when={t().change24h !== null} fallback={<text fg={dim()}>{`24h ${NOT_SENT}`}</text>}>
+        <ascii_font
+          text={pct(t().change24h)}
+          font="tiny"
+          color={colourOf(api, t().change24h, bg())}
+        />
+      </Show>
     </box>
   )
 }
@@ -1148,10 +1320,18 @@ function Page(props: {
   const rows = createMemo(() => {
     const key = SORTS[sort()]!
     const dir = desc() ? -1 : 1
-    const q = search().toLowerCase()
+    const raw = search()
+    const q = raw.toLowerCase()
+    // A mint matches as typed, since base58 is case sensitive; a symbol or name in any case.
     return model
       .list()
-      .filter((t) => !q || t.symbol.toLowerCase().includes(q) || t.name.toLowerCase().includes(q))
+      .filter(
+        (t) =>
+          !q ||
+          t.mint.includes(raw) ||
+          t.symbol.toLowerCase().includes(q) ||
+          t.name.toLowerCase().includes(q),
+      )
       .filter(
         (t) => !auditedOnly() || (t.mintAuthorityOff === true && t.freezeAuthorityOff === true),
       )
@@ -1272,7 +1452,7 @@ function Page(props: {
     api.ui.dialog.replace(() => (
       <api.ui.DialogPrompt
         title="Search tokens"
-        placeholder="symbol or name, empty to clear"
+        placeholder="symbol, name or mint, empty to clear"
         value={search()}
         onCancel={() => api.ui.dialog.clear()}
         onConfirm={(value) => {
@@ -1419,24 +1599,28 @@ function Page(props: {
     { label: 'liq', width: 10, sort: 5, keep: 3, value: (t) => compact(t.liquidity) },
     { label: 'mcap', width: 10, sort: 4, keep: 5, value: (t) => compact(t.mcap) },
     { label: 'holders', width: 9, sort: 6, keep: 6, value: (t) => compact(t.holders, false) },
-    {
-      label: 'org',
-      width: 5,
-      sort: 7,
-      keep: 7,
-      value: (t) => (t.organic === null ? '-' : t.organic.toFixed(0)),
-    },
+    // 9 wide, not 5, so "not sent" fits whole.
+    { label: 'org', width: 9, sort: 7, keep: 7, value: (t) => fixed(t.organic, 0) },
   ]
+  // The bonding curve, or "graduated", on the 2 lists that carry it, kept right after 24h.
+  const curveColumn: Column = {
+    label: 'curve',
+    width: 10,
+    sort: CURVE_SORT,
+    keep: 0.5,
+    value: curveText,
+  }
   const shownColumns = createMemo(() => {
     let room = listWidth() - 26
     const kept = new Set<Column>()
+    const all = src().curve ? [...columns.slice(0, 3), curveColumn, ...columns.slice(3)] : columns
     const rank = (c: Column) => (c.sort === sort() ? -1 : c.keep)
-    for (const c of [...columns].sort((a, b) => rank(a) - rank(b))) {
+    for (const c of [...all].sort((a, b) => rank(a) - rank(b))) {
       if (c.width > room) break
       kept.add(c)
       room -= c.width
     }
-    return columns.filter((c) => kept.has(c))
+    return all.filter((c) => kept.has(c))
   })
 
   return (
@@ -1487,7 +1671,7 @@ function Page(props: {
           <Show when={rows().length === 0}>
             <text fg={ink(api, theme()?.textMuted)} wrapMode="word">
               {model.list().length === 0
-                ? `no tokens yet: ${model.error() ?? 'loading from Jupiter'}`
+                ? `no tokens yet: ${model.error() ?? `loading /discover from ${model.mcpUrl}`}`
                 : `no tokens match ${search() ? `"${search()}"` : 'these filters'}${auditedOnly() ? ' with authorities disabled' : ''}. / changes the search${auditedOnly() ? ', a shows all tokens' : ''}`}
             </text>
           </Show>
@@ -1503,6 +1687,7 @@ function Page(props: {
                       width={cardWidth()}
                       selected={current()?.mint === t.mint}
                       watched={model.watchMints().includes(t.mint)}
+                      curve={src().curve}
                       onSelect={() => move(offset() + i())}
                     />
                   )}
@@ -1562,14 +1747,19 @@ function Page(props: {
                       <Logo model={model} token={t} size={4} />
                     </box>
                     <text fg={theme()?.text} wrapMode="none">
-                      {pad((isSel() ? '>' : '') + (watched() ? '*' : '') + t.symbol, 9) +
-                        ' ' +
-                        lpad(price(t.price), 11)}
+                      {pad((isSel() ? '>' : '') + (watched() ? '*' : '') + t.symbol, 9) + ' '}
+                      <V api={api} v={t.price} text={lpad(price(t.price), 11)} bg={bg()} />
                     </text>
                     <For each={shownColumns()}>
                       {(c) => (
                         <text
-                          fg={c.change ? colourOf(api, c.change(t), bg()) : theme()?.text}
+                          fg={
+                            c.value(t) === NOT_SENT
+                              ? ink(api, theme()?.textMuted, bg())
+                              : c.change
+                                ? colourOf(api, c.change(t), bg())
+                                : theme()?.text
+                          }
                           wrapMode="none"
                         >
                           {lpad(c.value(t), c.width)}
@@ -2006,7 +2196,8 @@ const tui: TuiPlugin = async (api, rawOptions) => {
     {
       title: 'Agon discovery',
       value: ROUTE,
-      description: 'Live tokens: trending, most traded, top organic, new',
+      description:
+        'Live tokens from the Agon server: trending, most traded, top organic, new, graduating',
       category: 'Agon',
       slash: { name: 'discover' },
       onSelect: open,
