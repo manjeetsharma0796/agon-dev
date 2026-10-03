@@ -3,12 +3,22 @@
 // The mint's busiest pool, its candles for 1 range with indicators, its recent trades and 24h
 // stats. Every block is stamped with the pool it came from and the time it was fetched.
 //
-// Budget: GeckoTerminal's free tier allows about 30 calls a minute for the whole server, however
-// many screens are open. So every upstream call goes through 1 queue that starts a call at most
-// every 2.1 s (at most 29 starts in any 60 s), and every answer is cached by pool, mint and range
-// (candles 60 s, trades 30 s, the pool choice 10 min), with 1 shared promise while a fetch is in
-// flight, so 10 clients asking at once cost 1 call. Lessons from .opencode/tui/agon-discovery.tsx,
-// where 10 sparklines asked at once got 429 on every one.
+// Budget: GeckoTerminal's free tier allows about 30 calls a minute per IP, however many screens
+// are open. So every upstream call goes through 1 queue that starts a call at most every 3 s (at
+// most 20 starts in any 60 s, leaving room for other callers on the same IP), and every answer is
+// cached by pool, mint and range (candles 60 s, trades 30 s, the pool choice 10 min), with 1 shared
+// promise while a fetch is in flight, so 10 clients asking at once cost 1 call. Lessons from
+// .opencode/tui/agon-discovery.tsx, where 10 sparklines asked at once got 429 on every one.
+//
+// A 429 pauses the whole queue for its Retry-After, or 60 s when it sends none (T-C41). Measured
+// 2026-10-03: with each cache key retrying on its own every 15 s, several failing keys kept the IP
+// over the limit for as long as the server ran; 75 s of silence brought direct calls back to 5 of
+// 5 answered. While paused, every block with a last good value serves it at once with
+// `stale: true`, its age and the reason; a block that never had a value answers at once with the
+// cool-down named. Either way its call stays queued and goes out when the pause ends, unless the
+// pause is longer than a full queue (about 90 s). A failed refresh outside a pause also serves the
+// last good value, and only a key with none shows the error. Measured live: holding each answer
+// for the pause instead timed out 15 of 225 answers at 120 s while the IP stayed limited.
 //
 // The book (T-C35, depth.ts) is read from the chosen pool's own accounts on Helius, a separate
 // budget; the only GeckoTerminal call it adds is the quote token's USD price, cached 60 s per
@@ -54,10 +64,13 @@ const TTL = {
   usd: 60_000,
   failure: 15_000,
 }
-/** 60 / 2.1 = 28.6, so at most 29 starts in any 60 s window, under the 30 a minute limit. */
-export const SPACING_MS = 2_100
-/** 30 waiting calls is about 63 s of queue. Past that, saying so beats a request that hangs. */
+/** 60 / 3 = 20, so at most 20 starts in any 60 s window, two thirds of the 30 a minute limit. */
+export const SPACING_MS = 3_000
+/** 30 waiting calls is about 90 s of queue. Past that, saying so beats a request that hangs. */
 const MAX_WAITING = 30
+/** The pause after a 429 that sends no Retry-After, and the most a Retry-After can ask for. */
+const COOL_DOWN_S = 60
+const MAX_COOL_DOWN_S = 600
 const TIMEOUT_MS = 10_000
 
 /**
@@ -70,9 +83,23 @@ class UpstreamError extends Error {
   constructor(
     message: string,
     readonly status: number | null = null,
+    /** Seconds from a 429's Retry-After header, when it sent a readable one. */
+    readonly retryAfterS: number | null = null,
   ) {
     super(message)
   }
+}
+
+/**
+ * Retry-After as whole seconds from now: a count of seconds or an HTTP date, capped at 10 min so a
+ * broken header cannot stop the queue for good. Null when absent, unreadable or not in the future,
+ * and the caller then waits its own 60 s. Pure.
+ */
+export function retryAfterSeconds(header: string | null, nowMs: number): number | null {
+  if (header === null) return null
+  const text = header.trim()
+  const s = /^\d+$/.test(text) ? Number(text) : Math.ceil((Date.parse(text) - nowMs) / 1000)
+  return Number.isFinite(s) && s > 0 ? Math.min(s, MAX_COOL_DOWN_S) : null
 }
 
 const httpGet: Upstream = async (url) => {
@@ -90,7 +117,12 @@ const httpGet: Upstream = async (url) => {
         : `GeckoTerminal could not be reached (${e instanceof Error ? e.message : String(e)})`,
     )
   }
-  if (!res.ok) throw new UpstreamError(`GeckoTerminal answered ${res.status}`, res.status)
+  if (!res.ok)
+    throw new UpstreamError(
+      `GeckoTerminal answered ${res.status}`,
+      res.status,
+      res.status === 429 ? retryAfterSeconds(res.headers.get('retry-after'), Date.now()) : null,
+    )
   return res.json()
 }
 
@@ -98,7 +130,32 @@ const httpGet: Upstream = async (url) => {
 const statusOf = (e: unknown) =>
   e && typeof e === 'object' && 'status' in e && typeof e.status === 'number' ? e.status : null
 
+/** Seconds a 429 asked for, from Retry-After when the upstream exposed it. */
+const retryAfterOf = (e: unknown) =>
+  e && typeof e === 'object' && 'retryAfterS' in e && typeof e.retryAfterS === 'number'
+    ? e.retryAfterS
+    : null
+
+/** A 429 from GeckoTerminal, after it paused the whole queue for `pauseS`. */
+class RateLimited extends UpstreamError {
+  constructor(readonly pauseS: number) {
+    super('GeckoTerminal answered 429', 429)
+  }
+}
+
+/** A call this server held back, or answered from the last good value, during a pause. */
+class CoolingDown extends Error {
+  constructor(leftS: number) {
+    super(
+      `GeckoTerminal answered 429, its free limit of about 30 calls a minute was hit, so this server holds every GeckoTerminal call for ${leftS} more s and makes 0 calls until then; retry then`,
+    )
+  }
+}
+
 const failure = (what: string, e: unknown): string => {
+  if (e instanceof CoolingDown) return `${what}: ${e.message}.`
+  if (e instanceof RateLimited)
+    return `${what}: GeckoTerminal answered 429, its free limit of about 30 calls a minute was hit, so this server pauses every GeckoTerminal call for ${e.pauseS} s. Retry then.`
   const retry = `This server asks again after ${TTL.failure / 1000} s, so retry then.`
   if (statusOf(e) === 429)
     return `${what}: GeckoTerminal answered 429, its free limit of about 30 calls a minute was hit. ${retry}`
@@ -277,7 +334,25 @@ export function readTrades(raw: unknown, mint: string) {
   }
 }
 
-type Entry = { at: number; ttl: number; settled: boolean; promise: Promise<unknown> }
+type Good = { value: unknown; at: number }
+type Entry = {
+  at: number
+  ttl: number
+  settled: boolean
+  promise: Promise<unknown>
+  /** The last value this key loaded, carried from entry to entry so a failed refresh can serve it. */
+  good: Good | null
+  /** Resolves when a 429 pauses the queue while this load waits in it; re-armed every pause. */
+  woken: Promise<void>
+  wake: () => void
+}
+/** Gives an entry a fresh, unresolved `woken` and the `wake` that resolves it. */
+function arm(e: Entry): Entry {
+  e.woken = new Promise<void>((r) => (e.wake = r))
+  return e
+}
+/** A cached value, and why it is old when it is the last good one rather than a fresh load. */
+type Got<T> = { value: T; stale: { ageSeconds: number; error: unknown } | null }
 /** Entries kept. 4 per mint, so about 250 mints on screen at once before the oldest go. */
 const MAX_ENTRIES = 1_000
 
@@ -286,10 +361,13 @@ export function createMarket(
   spacingMs = SPACING_MS,
   chain: { accounts: Accounts; getJson: (url: string) => Promise<unknown> } = liveChain,
 ) {
-  // 1 queue: calls start 1 at a time, at least `spacingMs` apart.
+  // 1 queue: calls start 1 at a time, at least `spacingMs` apart, and none while a 429's pause
+  // lasts. A call that would wait longer than a full queue does (about 90 s) fails at once, named.
   let tail: Promise<unknown> = Promise.resolve()
   let nextAt = 0
   let waiting = 0
+  let pausedUntil = 0
+  const leftS = () => Math.ceil((pausedUntil - Date.now()) / 1000)
   const queued = (url: string): Promise<unknown> => {
     if (waiting >= MAX_WAITING)
       return Promise.reject(
@@ -299,37 +377,111 @@ export function createMarket(
       )
     waiting++
     const run = tail.then(async () => {
-      const wait = nextAt - Date.now()
+      if (pausedUntil - Date.now() > MAX_WAITING * spacingMs) {
+        waiting--
+        throw new CoolingDown(leftS())
+      }
+      const wait = Math.max(nextAt, pausedUntil) - Date.now()
       if (wait > 0) await new Promise((r) => setTimeout(r, wait))
       nextAt = Date.now() + spacingMs
       waiting--
-      return upstream(url)
+      try {
+        return await upstream(url)
+      } catch (e) {
+        if (statusOf(e) !== 429) throw e
+        const pauseS = retryAfterOf(e) ?? COOL_DOWN_S
+        pausedUntil = Date.now() + pauseS * 1000
+        // Every block waiting on a refresh with a last good value answers with it now.
+        // Re-armed, so a load still queued when a later pause starts is woken by that one too.
+        for (const entry of cache.values())
+          if (!entry.settled) {
+            const wake = entry.wake
+            arm(entry)
+            wake()
+          }
+        throw new RateLimited(pauseS)
+      }
     })
     tail = run.catch(() => undefined)
     return run
   }
 
-  // 1 cache, with the in-flight promise shared, so concurrent askers wait on 1 call.
+  // 1 cache, with the in-flight promise shared, so concurrent askers wait on 1 call. A key keeps
+  // its last good value: a failed refresh, or one held back by a pause, serves it as stale.
   const cache = new Map<string, Entry>()
-  const cached = <T>(key: string, ttl: number, load: () => Promise<T>): Promise<T> => {
+  const staleGot = <T>(good: Good, error: unknown): Got<T> => ({
+    value: good.value as T,
+    stale: { ageSeconds: Math.round((Date.now() - good.at) / 1000), error },
+  })
+  /** `onQueue` false: the load does not wait on the GeckoTerminal queue, so a pause skips it. */
+  const cached = <T>(
+    key: string,
+    ttl: number,
+    load: () => Promise<T>,
+    onQueue = true,
+  ): Promise<Got<T>> => {
     const now = Date.now()
-    const hit = cache.get(key)
-    if (hit && (!hit.settled || now - hit.at < hit.ttl)) return hit.promise as Promise<T>
-    // Bounded, so a loop asking for random mints cannot grow it: expired entries go first, then
-    // the oldest. Map keeps insertion order, so the first keys are the oldest.
-    if (cache.size >= MAX_ENTRIES) {
-      for (const [k, e] of cache) if (e.settled && now - e.at >= e.ttl) cache.delete(k)
-      for (const k of cache.keys()) if (cache.size >= MAX_ENTRIES) cache.delete(k)
+    let entry = cache.get(key)
+    if (!entry || (entry.settled && now - entry.at >= entry.ttl)) {
+      const good = entry?.good ?? null
+      // Bounded, so a loop asking for random mints cannot grow it: expired entries go first,
+      // then the oldest. Map keeps insertion order, so the first keys are the oldest.
+      if (cache.size >= MAX_ENTRIES) {
+        for (const [k, e] of cache) if (e.settled && now - e.at >= e.ttl) cache.delete(k)
+        for (const k of cache.keys()) if (cache.size >= MAX_ENTRIES) cache.delete(k)
+      }
+      const fresh = arm({ at: now, ttl, settled: false, promise: load(), good } as Entry)
+      fresh.promise.then(
+        (value) =>
+          Object.assign(fresh, { at: Date.now(), settled: true, good: { value, at: Date.now() } }),
+        // The key that got the 429 is asked again when its pause ends, if that is under 15 s.
+        (error: unknown) =>
+          Object.assign(fresh, {
+            at: Date.now(),
+            settled: true,
+            ttl:
+              error instanceof RateLimited
+                ? Math.min(TTL.failure, error.pauseS * 1000)
+                : TTL.failure,
+          }),
+      )
+      cache.set(key, fresh)
+      entry = fresh
     }
-    const entry: Entry = { at: now, ttl, settled: false, promise: load() }
-    entry.promise.then(
-      () => Object.assign(entry, { at: Date.now(), settled: true }),
-      () => Object.assign(entry, { at: Date.now(), settled: true, ttl: TTL.failure }),
-    )
-    cache.set(key, entry)
-    return entry.promise as Promise<T>
+    const e = entry
+    const answer = () =>
+      e.promise.then(
+        (value): Got<T> => ({ value: value as T, stale: null }),
+        (error: unknown) => {
+          // A pool that is gone, or a book this server cannot read, is an answer, not an outage.
+          if (!e.good || error instanceof NoPool || (error instanceof DepthError && !error.retry))
+            throw error
+          return staleGot<T>(e.good, error)
+        },
+      )
+    if (e.settled || !onQueue) return answer()
+    // While a pause lasts, a load waiting in the queue is not waited for: the block answers now
+    // with its last good value, or with the cool-down named, and the load still runs after it.
+    const good = e.good
+    const held = () => {
+      const why = new CoolingDown(leftS())
+      return good ? Promise.resolve(staleGot<T>(good, why)) : Promise.reject(why)
+    }
+    if (pausedUntil > now) return held()
+    // Waits for the load, cut short by the next pause that starts before it settles.
+    const waited = answer()
+    return Promise.race([waited, e.woken.then(() => (pausedUntil > Date.now() ? held() : waited))])
   }
   const fetchedAt = () => new Date().toISOString()
+  /** The fields a block gains when it is the last good value: flag, age and why. */
+  const staleness = (got: Got<unknown>, what: string, why = failure) =>
+    got.stale
+      ? {
+          stale: true as const,
+          ageSeconds: got.stale.ageSeconds,
+          staleReason: `${why(what, got.stale.error)} Showing the last good value, fetched ${got.stale.ageSeconds} s ago.`,
+        }
+      : {}
 
   const pool = (mint: string) =>
     cached(`pool:${mint}`, TTL.pool, async () => {
@@ -391,13 +543,34 @@ export function createMarket(
         )
       return { usd: v, at: fetchedAt() }
     })
-  const depth = createDepth({ ...chain, usd })
+  // The book prints the quote price's time in its basis, so a last good price says so there.
+  const depth = createDepth({
+    ...chain,
+    usd: async (mint) => {
+      const got = await usd(mint)
+      if (!got.stale) return got.value
+      const { ageSeconds, error } = got.stale
+      return {
+        usd: got.value.usd,
+        // No countdown here: the book is cached as a success and would carry it out of date.
+        at: `${got.value.at} (the last good price, ${ageSeconds} s old, because its refresh ${
+          statusOf(error) === 429 || error instanceof CoolingDown
+            ? 'met a GeckoTerminal 429 and this server is pausing its calls'
+            : `failed: ${error instanceof Error ? error.message : String(error)}`
+        })`,
+      }
+    },
+  })
+  // The book reads Helius; its 1 GeckoTerminal input, the quote price, answers stale on its own.
   const book = (poolAddress: string, mint: string) =>
-    cached(`book:${poolAddress}:${mint}`, TTL.book, () => depth.book(poolAddress, mint))
+    cached(`book:${poolAddress}:${mint}`, TTL.book, () => depth.book(poolAddress, mint), false)
+  const bookFailure = (what: string, e: unknown) =>
+    e instanceof DepthError && !e.retry ? `${what}: ${e.message}.` : failure(what, e)
 
   /** The whole answer for 1 mint and range. Each block fails on its own and says why. */
   const get = async (mint: string, range: Range) => {
-    const p = await pool(mint)
+    const pg = await pool(mint)
+    const p = pg.value
     const at = { pool: p.address }
     // Candles first in the queue: they are what the screen is waiting for.
     const [chart, hourly, recent, depthRead] = await Promise.allSettled([
@@ -417,56 +590,67 @@ export function createMarket(
         volume24hUsd: p.volume24hUsd,
         fetchedAt: p.fetchedAt,
         choice: 'the pool with the most 24h volume in USD among the first 20 GeckoTerminal lists',
+        ...staleness(pg, `Pool lookup for mint ${mint}`),
       },
       candles:
         chart.status === 'fulfilled'
           ? {
               ...at,
-              fetchedAt: chart.value.fetchedAt,
+              fetchedAt: chart.value.value.fetchedAt,
               stepSeconds: r.stepS,
               unit: 'USD per token; t is the bucket start in Unix seconds',
-              list: chart.value.candles,
-              gaps: chart.value.gaps,
+              list: chart.value.value.candles,
+              gaps: chart.value.value.gaps,
+              ...staleness(chart.value, `Candles for ${range}`),
             }
           : { ...at, error: failure(`Candles for ${range}`, chart.reason) },
       indicators:
         chart.status === 'fulfilled'
           ? {
               ...at,
-              fetchedAt: chart.value.fetchedAt,
-              basis: `${chart.value.candles.length} candles above, index for index; ${chart.value.gaps.length} gaps not filled, so a window across a gap spans more time than its length`,
+              fetchedAt: chart.value.value.fetchedAt,
+              basis: `${chart.value.value.candles.length} candles above, index for index; ${chart.value.value.gaps.length} gaps not filled, so a window across a gap spans more time than its length`,
               ...indicators(
-                chart.value.candles.map((c) => c.close),
-                chart.value.candles.map((c) => c.volume),
+                chart.value.value.candles.map((c) => c.close),
+                chart.value.value.candles.map((c) => c.volume),
               ),
+              ...staleness(chart.value, `Candles for ${range}`),
             }
           : { ...at, error: 'Indicators need the candles, which failed above.' },
       stats24h: (() => {
         if (hourly.status === 'rejected')
           return { ...at, error: failure('24h stats', hourly.reason), liquidityUsd }
-        const s = stats24h(hourly.value.candles, Date.now() / 1000)
+        const h = hourly.value.value
+        // The 24 h the candles were fetched for: a stale value must not lose an hour to the clock.
+        const s = stats24h(h.candles, Date.parse(h.fetchedAt) / 1000)
         return s
-          ? { ...at, fetchedAt: hourly.value.fetchedAt, ...s, liquidityUsd }
+          ? {
+              ...at,
+              fetchedAt: h.fetchedAt,
+              ...s,
+              liquidityUsd,
+              ...staleness(hourly.value, '24h stats'),
+            }
           : {
               ...at,
-              fetchedAt: hourly.value.fetchedAt,
+              fetchedAt: h.fetchedAt,
               liquidityUsd,
               error: `24h stats: pool ${p.address} has 0 hourly candles in the last 24 hours, usually no trade. Pick a mint that trades, or try again later.`,
+              ...staleness(hourly.value, '24h stats'),
             }
       })(),
       trades:
         recent.status === 'fulfilled'
-          ? { ...at, ...recent.value }
+          ? { ...at, ...recent.value.value, ...staleness(recent.value, 'Recent trades') }
           : { ...at, error: failure('Recent trades', recent.reason) },
       book:
         depthRead.status === 'fulfilled'
-          ? { ...depthRead.value, ttlSeconds: TTL.book / 1000 }
-          : {
-              error:
-                depthRead.reason instanceof DepthError && !depthRead.reason.retry
-                  ? `Order book: ${depthRead.reason.message}.`
-                  : failure('Order book', depthRead.reason),
-            },
+          ? {
+              ...depthRead.value.value,
+              ttlSeconds: TTL.book / 1000,
+              ...staleness(depthRead.value, 'Order book', bookFailure),
+            }
+          : { error: bookFailure('Order book', depthRead.reason) },
     }
   }
 

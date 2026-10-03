@@ -3524,7 +3524,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-C41, /market stops a 429 storm: 1 cool-down for the whole queue, last good data while it lasts
-- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-c41-cooldown
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/303 | Owner: jishnu-baruah | Branch: feature/t-c41-cooldown
 - Depends-on: T-C33
 - Touches: packages/mcp/src/market.ts, packages/mcp/src/market.test.ts
 - Serves: UX (judged) ; the trade view keeps showing numbers when GeckoTerminal rate-limits this IP
@@ -3535,5 +3535,22 @@ _(empty)_
   for other callers on the same IP; tested with a fake upstream that answers 429 once (0 calls during
   the pause, the next call after it) and with stale values served during it; measured live with both
   terminal plugins polling for 10 minutes: count of 429s and of error blocks shown
-- Evidence: <PR link>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/303. Measured from this machine 2026-10-03 10:19 to 10:29 UTC
+  through the built server on port 8788 against real GeckoTerminal, polled the way the 2 plugins do
+  (/market SOL 1h and BONK 15m every 5 s each, /discover?list=trending every 15 s), upstream counted
+  in a wrapped fetch: 33 GeckoTerminal calls, at most 6 in any 60 s, 9 of them 429, each the 1 probe
+  after a pause of 60 to 75 s, 0 calls inside a pause; 240 /market answers, 0 timed out, p50 9 ms,
+  p95 6.0 s, max 13.1 s; 227 answered 200 and 13 a named 502 for BONK's pool lookup, which never had
+  a value. Blocks fresh / stale / error: candles 89 / 125 / 13, trades 50 / 149 / 28, 24h stats
+  74 / 125 / 28, book 193 fresh and 34 errors; every error a key that never had a value, oldest stale
+  value 247 s. Unit: a fake upstream answering 429 once makes 0 calls in the 60 s pause and exactly 1
+  in the 3 s after it; Retry-After 5 gives a 5 s gap; Retry-After 120 fails fast, named; a block
+  refreshed during a 429 is served stale with its age; budget test at most 20 a minute
+- Finding: the IP stayed limited for all 10 minutes while this server made at most 6 calls a minute:
+  9 of 9 probes after a pause got another 429, so another caller on the same IP kept it over (inferred,
+  not measured: the 8787 server still on the old build). A cool-down stops this server adding to a
+  storm; it cannot quiet a neighbour. And the row's "queued calls wait out the pause" was measured and
+  changed: a block with no value held the whole answer pause after pause, 15 of 225 answers timed out
+  at 120 s (p95 99.6 s); it now answers at once with the cool-down named while its call stays queued,
+  max 118 s became 13 s. The trade view and the Claude Code plugin do not read `stale` yet
 - Kill criterion: none
