@@ -14,9 +14,11 @@
 // 2026-10-03: with each cache key retrying on its own every 15 s, several failing keys kept the IP
 // over the limit for as long as the server ran; 75 s of silence brought direct calls back to 5 of
 // 5 answered. While paused, every block with a last good value serves it at once with
-// `stale: true`, its age and the reason. A block that never had a value waits for the pause to
-// end, or fails at once, named, when the pause is longer than a full queue (about 90 s); a failed
-// refresh outside a pause also serves the last good value, and only a key with none shows the error.
+// `stale: true`, its age and the reason; a block that never had a value answers at once with the
+// cool-down named. Either way its call stays queued and goes out when the pause ends, unless the
+// pause is longer than a full queue (about 90 s). A failed refresh outside a pause also serves the
+// last good value, and only a key with none shows the error. Measured live: holding each answer
+// for the pause instead timed out 15 of 225 answers at 120 s while the IP stayed limited.
 //
 // The book (T-C35, depth.ts) is read from the chosen pool's own accounts on Helius, a separate
 // budget; the only GeckoTerminal call it adds is the quote token's USD price, cached 60 s per
@@ -145,7 +147,7 @@ class RateLimited extends UpstreamError {
 class CoolingDown extends Error {
   constructor(leftS: number) {
     super(
-      `GeckoTerminal answered 429, so this server holds every GeckoTerminal call for ${leftS} more s and makes 0 calls until then; retry then`,
+      `GeckoTerminal answered 429, its free limit of about 30 calls a minute was hit, so this server holds every GeckoTerminal call for ${leftS} more s and makes 0 calls until then; retry then`,
     )
   }
 }
@@ -429,23 +431,26 @@ export function createMarket(
       entry = fresh
     }
     const e = entry
-    const answer = e.promise.then(
-      (value): Got<T> => ({ value: value as T, stale: null }),
-      (error: unknown) => {
-        if (!e.good) throw error
-        return staleGot<T>(e.good, error)
-      },
-    )
+    const answer = () =>
+      e.promise.then(
+        (value): Got<T> => ({ value: value as T, stale: null }),
+        (error: unknown) => {
+          if (!e.good) throw error
+          return staleGot<T>(e.good, error)
+        },
+      )
+    if (e.settled || !onQueue) return answer()
+    // While a pause lasts, a load waiting in the queue is not waited for: the block answers now
+    // with its last good value, or with the cool-down named, and the load still runs after it.
     const good = e.good
-    if (e.settled || !good || !onQueue) return answer
-    if (pausedUntil > now) return Promise.resolve(staleGot<T>(good, new CoolingDown(leftS())))
+    const held = () => {
+      const why = new CoolingDown(leftS())
+      return good ? Promise.resolve(staleGot<T>(good, why)) : Promise.reject(why)
+    }
+    if (pausedUntil > now) return held()
     // `woken` stays resolved after its pause ends, so it only cuts the wait while one lasts.
-    return Promise.race([
-      answer,
-      e.woken.then(() =>
-        pausedUntil > Date.now() ? staleGot<T>(good, new CoolingDown(leftS())) : answer,
-      ),
-    ])
+    const waited = answer()
+    return Promise.race([waited, e.woken.then(() => (pausedUntil > Date.now() ? held() : waited))])
   }
   const fetchedAt = () => new Date().toISOString()
   /** The fields a block gains when it is the last good value: flag, age and why. */

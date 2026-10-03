@@ -254,8 +254,14 @@ describe('a 429 cools the whole queue down', () => {
     }
     const market = createMarket(once, SPACING_MS, fakeChain().chain)
     const pending = market.get(SOL, '5m')
-    await vi.advanceTimersByTimeAsync(80_000)
-    await pending
+    await vi.advanceTimersByTimeAsync(10_000)
+    // The book's quote price never had a value: it answers at once with the cool-down named,
+    // instead of holding the whole answer for the pause, and its call still goes out after it.
+    const a = await pending
+    expect('error' in a.book && a.book.error).toMatch(
+      /^Order book: GeckoTerminal answered 429, its free limit of about 30 calls a minute was hit, so this server holds every GeckoTerminal call for \d+ more s/,
+    )
+    await vi.advanceTimersByTimeAsync(70_000)
     expect(failedAt).toBeGreaterThan(0)
     expect(between(calls, failedAt + 1, failedAt + 60_000)).toBe(0)
     expect(between(calls, failedAt + 60_000, failedAt + 60_000 + SPACING_MS)).toBe(1)
@@ -294,7 +300,7 @@ describe('a 429 cools the whole queue down', () => {
     await vi.advanceTimersByTimeAsync(20_000)
     const a = await pending
     expect('error' in a.book && a.book.error).toMatch(
-      /^Order book: GeckoTerminal answered 429, so this server holds every GeckoTerminal call for 120 more s.*retry then/,
+      /^Order book: GeckoTerminal answered 429, its free limit .* holds every GeckoTerminal call for 120 more s.*retry then/,
     )
     expect(between(calls, failedAt + 1, failedAt + 120_000)).toBe(0)
   })
@@ -334,7 +340,7 @@ describe('a 429 cools the whole queue down', () => {
     )
     expect(a.trades).toMatchObject({ stale: true })
     expect('staleReason' in a.trades && a.trades.staleReason).toMatch(
-      /^Recent trades: GeckoTerminal answered 429, so this server holds every GeckoTerminal call/,
+      /^Recent trades: GeckoTerminal answered 429, its free limit .* holds every GeckoTerminal call/,
     )
     expect(a.stats24h).toMatchObject({ stale: true, price: 100.5 })
     expect(a.indicators).toMatchObject({ stale: true })
@@ -502,11 +508,10 @@ describe('the answer', () => {
     }
     const market = createMarket(failing)
     const pending = market.get(SOL, '5m')
-    // The book's quote price waits out the 60 s pause behind the 429.
-    await vi.advanceTimersByTimeAsync(75_000)
+    await vi.advanceTimersByTimeAsync(15_000)
     const a = await pending
     expect('error' in a.trades && a.trades.error).toMatch(
-      /^Recent trades: GeckoTerminal answered 429, its free limit of about 30 calls a minute.*pauses every GeckoTerminal call for 60 s/,
+      /^Recent trades: GeckoTerminal answered 429, its free limit of about 30 calls a minute was hit, so this server (pauses|holds) every GeckoTerminal call for 60 (more )?s/,
     )
     expect('stale' in a.trades).toBe(false)
     expect('list' in a.candles).toBe(true)
