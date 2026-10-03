@@ -3301,7 +3301,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-E25, The Claude Code plugin in the repo, with the trade view and the status band
-- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-e25-claude-code
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/280 | Owner: jishnu-baruah | Branch: feature/t-e25-claude-code
 - Depends-on: T-C33, T-C34
 - Touches: plugins/claude-code/
 - Serves: UX (judged) ; the same trade view in Claude Code's terminal and desktop app
@@ -3311,7 +3311,30 @@ _(empty)_
   (braille and half-block on the terminal, SVG on the desktop), the book or depth labelled by kind and
   recent trades; read at 60, 80 and 140 columns; every number equal to `/market`'s; mints only reach the
   prompt, never a token's name
-- Evidence: <PR link, screenshots>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/280 ; 2 live runs on 2026-10-03, Claude
+  Code 2.1.288 in Windows Terminal against a real server on fork with T-C35 and T-C37 merged (normal
+  window: whole pane fits, header with liq and pool, status, axis, volume, OHLC with MA20 and EMA20;
+  window launched maximized: right side clipped); `claude plugin validate` passes, `claude plugin test` 5
+  pass 0 fail, both locally since CI has no `claude` CLI
+- Finding: the clipping is the host's, measured with a temporary width readout (laid out, body,
+  viewport, transcript, placement): a normal window read "w72 b74 v45 t45 dock" and the 72-column layout
+  fit on screen; the same window launched maximized read "w72 b74 v81 t81 dock" and only about 45 of the
+  74 body columns were visible. The host reports the same 74-column body both times and a viewport equal
+  to the transcript's width, so the plugin cannot see the lost columns; the fallback to the terminal less
+  the transcript stays for hosts whose viewport is the whole terminal. Before that: 3 upstream hosts became 1 (the Agon server). `claude plugin validate` and `claude plugin test`
+  both run with an empty `CLAUDE_CONFIG_DIR` and no API key in 0.6 s, so CI could run them with no secret,
+  but no workflow installs `claude` and workflows are outside Touches: skipped by name. The terminal's
+  element table answers `'Svg' in els` as true and draws it as an empty box, which drew 0 candles while
+  every text check passed; the chart is chosen by surface. A live server sends 14 to 16 digit floats
+  ("SOL $119.44073547737729"); they are now rounded by the opencode trade view's rules ($119.441, $165.2M,
+  2 decimal percents), and toPrecision's 2.110e-7 below 1e-6 is shown as 0.0000002110. Live on desktop the
+  band read "Connecting" while the pane read "Live" from the same value; both now share 1 reading and
+  redraw on each poll. Live in a maximized Windows Terminal (128 columns) the docked pane drew past its
+  visible edge: the axis and the last-price marker never showed, and Ink's wrapped flex rows came out as
+  blank lines. Every line is now laid out to a known width (body less 2, checked against the terminal less
+  the transcript), with no wrapping rows, tested at 60, 80 and 140. Liquidity comes from T-C37's
+  `liquidityUsd` with its flag. Terminal candles are half-block only, at least 12 rows. T-C35's book is
+  drawn as a ladder of up to 10 a side, or a curve's move table.
 - Kill criterion: none
 
 ### T-C37, /market sends liquidity, and /status says plainly when the network is not set
