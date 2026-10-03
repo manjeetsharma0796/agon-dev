@@ -3201,7 +3201,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-C35, The order book, or the honest depth, for every pool type
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/281 | Owner: jishnu-baruah | Branch: feature/t-c35-depth
+- Status: done
 - Depends-on: T-C33
 - Touches: packages/mcp/src/depth.ts, packages/mcp/src/depth.test.ts, packages/mcp/src/market.ts,
   packages/mcp/package.json, pnpm-lock.yaml
@@ -3275,7 +3275,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-E24, The trade view in opencode, with the status bar and the trading keys
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/282 | Owner: jishnu-baruah | Branch: feature/t-e24-trade
+- Status: done
 - Depends-on: T-C33, T-C34, T-C35
 - Touches: .opencode/tui/agon-discovery.tsx, .opencode/tui/agon-trade.tsx
 - Serves: UX (judged) ; the trade view with no browser and no LLM
@@ -3312,4 +3312,19 @@ _(empty)_
   recent trades; read at 60, 80 and 140 columns; every number equal to `/market`'s; mints only reach the
   prompt, never a token's name
 - Evidence: <PR link, screenshots>
+- Kill criterion: none
+
+### T-C37, /market sends liquidity, and /status says plainly when the network is not set
+- Status: open
+- Depends-on: T-C33, T-C34
+- Touches: packages/mcp/src/market.ts, packages/mcp/src/market.test.ts, packages/mcp/src/stream.ts,
+  packages/mcp/src/stream.test.ts
+- Serves: UX (judged) ; the header a trader expects, with nothing left as "not sent"
+- Acceptance: `/market`'s 24h stats gain the chosen pool's liquidity in USD with its source and time,
+  read from the same pool answer `/market` already fetches, so 0 extra upstream calls (asserted by the
+  call-counting test); a pool whose reported reserve is more than 100 times its 24h volume is flagged
+  with both numbers, because T-C33 measured a $217.9M reserve against $0.72M of volume on a stale pool;
+  `/status` with AGON_NETWORK unset says "AGON_NETWORK is not set on this server" and never "on unset",
+  tested; both terminal views (T-E24, T-E25) stop printing "liquidity: not sent" once it lands
+- Evidence: <PR link>
 - Kill criterion: none
