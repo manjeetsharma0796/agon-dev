@@ -44,7 +44,7 @@ const history = (series: PriceSeries[], fees: bigint[] = [0n, 0n, 0n, 0n]): Vaul
     },
     { signature: 'E3', slot: 300, time: b(2) + 10, deltas: new Map([[SOL, 2n * SOLS]]) },
     { signature: 'E4', slot: 400, time: b(3) + 10, deltas: new Map([[SOL, -1n * SOLS]]) },
-  ].map((e, k) => ({ ...e, agentFee: fees[k] ?? 0n })),
+  ].map((e, k) => ({ ...e, agentFee: fees[k] ?? 0n, byOwner: e.signature !== 'E2' })),
   holdings: new Map([
     [SOL, 6n * SOLS],
     [USDC, 500_000_000n],
@@ -101,8 +101,22 @@ test('holding SOL scores 0, and an agent fee is netted out of the period it was 
   const plain: VaultHistory = {
     ...history([]),
     events: [
-      { signature: 'D1', slot: 10, time: b(0), deltas: new Map([[SOL, 3n * SOLS]]), agentFee: 0n },
-      { signature: 'D2', slot: 20, time: b(1), deltas: new Map([[SOL, 7n * SOLS]]), agentFee: 0n },
+      {
+        signature: 'D1',
+        slot: 10,
+        time: b(0),
+        deltas: new Map([[SOL, 3n * SOLS]]),
+        agentFee: 0n,
+        byOwner: true,
+      },
+      {
+        signature: 'D2',
+        slot: 20,
+        time: b(1),
+        deltas: new Map([[SOL, 7n * SOLS]]),
+        agentFee: 0n,
+        byOwner: true,
+      },
     ],
     holdings: new Map([[SOL, 10n * SOLS]]),
     trades: 0,
@@ -116,11 +130,51 @@ test('holding SOL scores 0, and an agent fee is netted out of the period it was 
     time: b(2),
     deltas: new Map(),
     agentFee: 100_000_000n,
+    byOwner: false,
   })
   const r = timeWeightedReturn(paid)
   expect(r.pct).toBe('-1.00')
   expect(r.method).toContain('Net of 100000000 lamports of network fees paid by the agent key.')
   expect(r.sample).toBe('0 trades is too few to judge a strategy.')
+})
+
+test('value arriving in a transaction the owner did not pay for is a return, not a deposit', () => {
+  // A Jupiter Trigger order: the agent's placement sends 5 SOL to escrow, a keeper's fill sends 6
+  // SOL back. Neither is the owner's, so neither cuts the return: 10 SOL deposited, 11 now, +10.00%.
+  // Read as flows, the 1 SOL gain would vanish between 2 cuts and the return would read 0.00.
+  const order: VaultHistory = {
+    ...history([]),
+    events: [
+      {
+        signature: 'D',
+        slot: 10,
+        time: b(0),
+        deltas: new Map([[SOL, 10n * SOLS]]),
+        agentFee: 0n,
+        byOwner: true,
+      },
+      {
+        signature: 'P',
+        slot: 20,
+        time: b(1),
+        deltas: new Map([[SOL, -5n * SOLS]]),
+        agentFee: 0n,
+        byOwner: false,
+      },
+      {
+        signature: 'F',
+        slot: 30,
+        time: b(2),
+        deltas: new Map([[SOL, 6n * SOLS]]),
+        agentFee: 0n,
+        byOwner: false,
+      },
+    ],
+    holdings: new Map([[SOL, 11n * SOLS]]),
+  }
+  const r = timeWeightedReturn(order)
+  expect(r.pct).toBe('10.00')
+  expect(r.flows).toBe(1)
 })
 
 test('a missing close at a flow while a token is held makes the return null with its reason, never 0', () => {
