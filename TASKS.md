@@ -3344,7 +3344,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-C38, /discover: the market list and its safety numbers, computed once for every surface
-- Status: open
+- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-c38-discover
 - Depends-on: T-C33
 - Touches: packages/mcp/src/discover.ts, packages/mcp/src/discover.test.ts, packages/mcp/src/serve.ts
 - Serves: UX (judged) ; the market list a trader expects, the same on the web, in opencode and in
