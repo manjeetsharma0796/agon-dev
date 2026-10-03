@@ -7,9 +7,9 @@
 // fixed paths.
 //
 // Stateless on purpose. `sessionIdGenerator: undefined` means every request carries its own
-// transport and nothing is remembered between calls, which is what you want for a server whose
-// every tool is a read: there is no session state worth losing, and a client that reconnects or a
-// tunnel that drops costs nothing.
+// transport and nothing is remembered between calls: no tool keeps session state worth losing, and
+// a client that reconnects or a tunnel that drops costs nothing. The action routes keep only short
+// lived clearances and proposals, which a restart forgets and so fails closed.
 
 import { readFileSync } from 'node:fs'
 import {
@@ -18,13 +18,15 @@ import {
   type ServerResponse,
 } from 'node:http'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
+import { Connection } from '@solana/web3.js'
+import { handleActions, type ActionDeps } from './actions.js'
 import { createServer } from './index.js'
 import { routeStream } from './stream.js'
 import { serveMarket } from './market.js'
 import { createDiscover, serveDiscover } from './discover.js'
 import { createLogos, serveLogo } from './logo.js'
 import { liveIo } from './io.js'
-import { activityRoute, journalFor } from './journal.js'
+import { activityRoute, createJournal, journalFor, postgresStore } from './journal.js'
 
 const PORT = Number(process.env['PORT'] ?? 8787)
 /** Loopback by default. Binding 0.0.0.0 exposes an unauthenticated server to the whole network. */
@@ -36,7 +38,26 @@ const PLAIN_HOST = /^([\w.-]+|\[[\da-f:]+\])(:\d{1,5})?$/i
 /** Plain http only on this machine: the kit holds a key, so from anywhere else it comes over TLS. */
 const LOOPBACK = /^(127\.0\.0\.1|localhost|\[::1\])(:|$)/i
 /** The journal (T-C30): Neon when DATABASE_URL is set, else every write a named failure. */
-const JOURNAL = journalFor(process.env['DATABASE_URL'])
+const DATABASE_URL = process.env['DATABASE_URL']
+const STORE = DATABASE_URL ? postgresStore(DATABASE_URL) : undefined
+const JOURNAL = STORE === undefined ? journalFor(undefined) : createJournal(STORE)
+/**
+ * The action layer (T-C32). It holds no key: the agent key signs on the user's machine, and the
+ * `sent` row must land before anything is sent, so with no database no trade goes out.
+ */
+const RPC_URL = process.env['AGON_RPC_URL']
+const ACTIONS: ActionDeps = {
+  io: liveIo,
+  journal: JOURNAL,
+  mustRecord: async (row) => {
+    if (STORE === undefined) {
+      throw Object.assign(new Error('no database'), { code: 'no-database-configured' })
+    }
+    await STORE.insert(row)
+  },
+  chain: RPC_URL ? new Connection(RPC_URL, 'confirmed') : null,
+  publicUrl: process.env['AGON_PUBLIC_URL'],
+}
 /** Logos (T-C39) look icon URLs up in the answers /discover makes, so both share 1 instance. */
 const LOGOS = createLogos({ discover: createDiscover() })
 
@@ -83,6 +104,8 @@ const handle = async (req: IncomingMessage, res: ServerResponse): Promise<void> 
     res.end(JSON.stringify(body))
     return
   }
+  // Buy, sell, cancel, pause and the proposal answers (T-C32): 1 signed POST each, from any surface.
+  if (await handleActions(req, res, ACTIONS)) return
   if (!(req.url ?? '').startsWith('/mcp')) {
     res.writeHead(404, { 'content-type': 'application/json' })
     res.end(

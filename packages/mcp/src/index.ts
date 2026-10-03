@@ -25,6 +25,9 @@ import {
   network,
   JupiterQuote,
   type CheckTradeInput,
+  type CheckTradeOutput,
+  type FailureMessage,
+  type PrepareSwapInput,
   type ToolName,
   toolContracts,
   zeroSizeTrade,
@@ -76,7 +79,7 @@ const withinHistoryDeadline = <T>(scan: Promise<T>, agent: string): Promise<T> =
 }
 
 /** The mints an agent role can spend, with what a refusal calls them. */
-const ARMED: Record<string, { unit: string; decimals: number }> = {
+export const ARMED: Record<string, { unit: string; decimals: number }> = {
   [WSOL_MINT]: { unit: 'wSOL', decimals: 9 },
   [USDC_MINT]: { unit: 'USDC', decimals: 6 },
 }
@@ -118,7 +121,7 @@ async function judge(
  * A Solana Explorer link on the network this deployment names. On the practice fork it points the
  * explorer at the fork's RPC as the user's browser reaches it (127.0.0.1:8899 in the local Docker).
  */
-const explorer = (kind: 'address' | 'tx', id: string): string => {
+export const explorer = (kind: 'address' | 'tx', id: string): string => {
   const base = `https://explorer.solana.com/${kind}/${id}`
   const net = network(process.env['AGON_NETWORK']).id
   if (net === 'mainnet') return base
@@ -126,6 +129,242 @@ const explorer = (kind: 'address' | 'tx', id: string): string => {
   const rpc = process.env['AGON_PUBLIC_RPC_URL'] ?? 'http://127.0.0.1:8899'
   return `${base}?cluster=custom&customUrl=${encodeURIComponent(rpc)}`
 }
+
+/** What prepare_swap's quote and check need: the pair, the amount, the slippage, whose history. */
+type SwapAsk = Pick<
+  PrepareSwapInput,
+  'inputMint' | 'outputMint' | 'amount' | 'slippageBps' | 'historyWallet'
+>
+
+/**
+ * 1 Jupiter quote, checked to be the trade asked for, then check_trade on it. Shared by prepare_swap
+ * and the action layer (T-C32), so the owner's link and the agent's transaction are judged alike.
+ */
+export async function quoteAndJudge(
+  io: ToolIo,
+  a: SwapAsk,
+  side: 'buy' | 'sell',
+  emptyHistoryAllowed: boolean,
+  excludeDexes: readonly string[] = [],
+) {
+  // The quote is outside data. It must parse, and be the trade that was asked for, or the check
+  // below would judge one trade and the transaction would carry another.
+  const ask = {
+    inputMint: a.inputMint,
+    outputMint: a.outputMint,
+    amount: a.amount,
+    slippageBps: a.slippageBps,
+  }
+  const parsed = JupiterQuote.safeParse(
+    await io.loadQuote(excludeDexes.length > 0 ? { ...ask, excludeDexes: [...excludeDexes] } : ask),
+  )
+  if (!parsed.success) {
+    throw new Refusal(quoteMismatch({ field: String(parsed.error.issues[0]?.path[0] ?? 'shape') }))
+  }
+  const quote = parsed.data
+  // The floor the output check holds the swap to is recomputed from what was asked, never taken
+  // on Jupiter's word, so a floor of 0 cannot wave through a swap that pays the vault nothing.
+  const floor = (BigInt(quote.outAmount) * BigInt(10000 - a.slippageBps)) / 10000n
+  const drift = (
+    [
+      ['inAmount', quote.inAmount === a.amount],
+      ['inputMint', quote.inputMint === a.inputMint],
+      ['outputMint', quote.outputMint === a.outputMint],
+      ['slippageBps', quote.slippageBps === a.slippageBps],
+      ['otherAmountThreshold', floor > 0n && BigInt(quote.otherAmountThreshold) >= floor],
+    ] as const
+  ).find(([, ok]) => !ok)
+  if (drift !== undefined) throw new Refusal(quoteMismatch({ field: drift[0] }))
+  const judged = await judge(
+    io,
+    {
+      wallet: a.historyWallet,
+      mint: side === 'buy' ? a.outputMint : a.inputMint,
+      side,
+      size: a.amount,
+    },
+    {
+      priceImpactPct: quote.priceImpactPct,
+      slippageBps: quote.slippageBps,
+      contextSlot: quote.contextSlot ?? null,
+    },
+    emptyHistoryAllowed,
+  )
+  return { quote, judged }
+}
+
+/**
+ * How the action layer (T-C32) gates a build, where prepare_swap's own rule would not: `block` always
+ * stops, and `unsure` stops unless the person confirmed it. `onVerdict` sees the verdict before
+ * anything is built or refused, so a stopped trade is journaled with its reasons.
+ */
+export interface SwapGate {
+  confirmedUnsure: boolean
+  onVerdict: (verdict: CheckTradeOutput) => void
+}
+
+/**
+ * Builds the trade, never signs it. Every refusal comes before anything is built, in the order that
+ * costs least: the arithmetic, then the chain's cap, then check_trade with the real quote, then a
+ * simulation on the configured chain. A transaction is returned only past all 4.
+ */
+export async function prepareSwap(a: PrepareSwapInput, io: ToolIo, gate?: SwapGate) {
+  if (a.slippageBps > MAX_SLIPPAGE_BPS) {
+    throw new Refusal(slippageTooHigh({ asked: a.slippageBps, max: MAX_SLIPPAGE_BPS }))
+  }
+  if (/^0+$/.test(a.amount)) throw new Refusal(zeroSizeTrade())
+  // check_trade measures sizes in SOL, so 1 side must be SOL for its rules to mean anything.
+  const side = a.inputMint === WSOL_MINT ? 'buy' : a.outputMint === WSOL_MINT ? 'sell' : null
+  if (side === null) throw new Refusal(swapNotAgainstSol(a))
+
+  const { vault, rules } = await io.loadVaultRules(a.owner)
+  if (vault === null) throw new Refusal(noVault({ owner: a.owner }))
+  const rule = rules.find((r) => r.authority === a.agent && r.mint === a.inputMint)
+  const armed = ARMED[a.inputMint]
+  if (rule === undefined || armed === undefined) {
+    throw new Refusal(noAgentRole({ agent: a.agent, vault, mint: a.inputMint }))
+  }
+  if (BigInt(a.amount) > rule.effectiveRemaining) {
+    throw new Refusal(
+      overRemaining({
+        amount: formatUnits(BigInt(a.amount), armed.decimals),
+        remaining: formatUnits(rule.effectiveRemaining, armed.decimals),
+        unit: armed.unit,
+      }),
+    )
+  }
+
+  // Decided 2026-09-30: on the practice fork, a history wallet with 0 closed trades is not refused.
+  // Nothing is checked against a history it does not have, the trade is bounded only by the cap the
+  // owner signed on chain, and the answer says so first. Off the fork this still fails closed.
+  const fork = network(process.env['AGON_NETWORK']).id === 'fork'
+  // Venues to route around, filled at most once, on the fork, by a failed simulation below.
+  const excludeDexes: string[] = []
+  for (;;) {
+    const { quote, judged } = await quoteAndJudge(io, a, side, fork, excludeDexes)
+    const route = quote.routePlan.map((leg) => leg.swapInfo.ammKey)
+    const unchecked = fork && judged.closedTrades === 0
+    const verdict = unchecked
+      ? {
+          ...judged.verdict,
+          // The action layer never reads an unchecked trade as a pass: the owner confirms it.
+          verdict:
+            gate !== undefined && judged.verdict.verdict === 'pass'
+              ? ('unsure' as const)
+              : judged.verdict.verdict,
+          reasons: [
+            {
+              rule: 'no-trading-history',
+              message:
+                `0 closed trades on mainnet for ${a.historyWallet}, so this trade was not checked ` +
+                `against a history. On the practice fork it goes out bounded only by the cap the ` +
+                `owner signed: ${formatUnits(rule.effectiveRemaining, armed.decimals)} ` +
+                `${armed.unit} left in this window. The reasons after this one are what the check ` +
+                `found, and none of them stopped the trade.`,
+            },
+            ...judged.verdict.reasons,
+          ],
+        }
+      : judged.verdict
+    gate?.onVerdict(verdict)
+    const stopped =
+      gate === undefined
+        ? verdict.verdict !== 'pass' && !unchecked
+        : verdict.verdict === 'block' || (verdict.verdict === 'unsure' && !gate.confirmedUnsure)
+    if (stopped) {
+      throw new Refusal(
+        tradeNotPassed({
+          verdict: verdict.verdict,
+          reasons: verdict.reasons.length,
+          first: verdict.reasons[0]?.message ?? 'none was given.',
+        }),
+      )
+    }
+
+    const built = await io.buildSwap({
+      owner: a.owner,
+      agent: a.agent,
+      roleId: rule.roleId,
+      quote,
+    })
+    if (built.failure !== null) {
+      const failed = innermostFailure(built.failure.logs)
+      const program = failed ?? 'unknown'
+      // Fork only: a venue that cannot run on the fork's copy, whose clock lags real time, is routed
+      // around once, and every check above runs again on the new route. The spending limit is never
+      // routed around, and off the fork a failed simulation is the answer.
+      const venues = quote.routePlan.flatMap((leg) => {
+        const label = (leg.swapInfo as { label?: unknown }).label
+        return typeof label === 'string' ? [label] : []
+      })
+      if (
+        fork &&
+        excludeDexes.length === 0 &&
+        failed !== null &&
+        failed !== SWIG_PROGRAM_ID &&
+        venues.length > 0
+      ) {
+        excludeDexes.push(...venues)
+        continue
+      }
+      const line = built.failure.logs.find((l) => l.startsWith(`Program ${program} failed`))
+      throw new Refusal(
+        simulationFailed({
+          program,
+          detail:
+            line?.replace(/^Program \S+ failed: /, '') ??
+            `no program ran; the chain answered ${built.failure.err ?? 'with no error'}`,
+        }),
+      )
+    }
+    if (built.outputGained < BigInt(quote.otherAmountThreshold)) {
+      throw new Refusal(
+        outputNotToVault({
+          gained: String(built.outputGained),
+          promised: quote.otherAmountThreshold,
+        }),
+      )
+    }
+    return {
+      transaction: built.transaction,
+      vault: built.vault,
+      verdict,
+      quote: {
+        inAmount: quote.inAmount,
+        outAmount: quote.outAmount,
+        minOutAmount: quote.otherAmountThreshold,
+        slippageBps: quote.slippageBps,
+        route,
+      },
+      effectiveRemaining: String(rule.effectiveRemaining),
+      lastValidBlockHeight: built.lastValidBlockHeight,
+      unitsConsumed: built.unitsConsumed,
+    }
+  }
+}
+
+/**
+ * Owners who paused their agent's new buys (T-C32), and since when. In this process's memory only,
+ * so a restart resumes the agent, and the pause answer says so and points at revoke for a hard stop.
+ */
+const PAUSED = new Map<string, string>()
+
+export const pausedSince = (owner: string): string | undefined => PAUSED.get(owner)
+
+export const setPaused = (owner: string, since: string | null): void => {
+  if (since === null) PAUSED.delete(owner)
+  else PAUSED.set(owner, since)
+}
+
+const agentPaused = (a: { owner: string; since: string }): FailureMessage => ({
+  id: 'agent-paused',
+  text:
+    `The owner of ${a.owner} paused new buys by the agent at ${a.since}, so no transaction was ` +
+    'built. Sells still work. Ask the owner to resume, or to make this buy themselves.',
+  mode: 'closed',
+  systemDoes:
+    'Refuses every agent buy for this owner until the owner resumes or the server restarts.',
+})
 
 const handlers = {
   // Still the recorded example, because a real Report needs the cost of breaking your own rule and
@@ -190,171 +429,15 @@ const handlers = {
     )
   },
 
-  // Builds the trade, never signs it. Every refusal comes before anything is built, in the order
-  // that costs least: the arithmetic, then the chain's cap, then check_trade with the real quote,
-  // then a simulation on the configured chain. A transaction is returned only past all 4.
+  // Builds the trade, never signs it (prepareSwap above). A paused agent opens no new position
+  // (T-C32): the action layer refuses its buys, and so does this tool, its direct path.
   prepare_swap: async (input: unknown, io: ToolIo) => {
     const a = toolContracts.prepare_swap.input.parse(input)
-    if (a.slippageBps > MAX_SLIPPAGE_BPS) {
-      throw new Refusal(slippageTooHigh({ asked: a.slippageBps, max: MAX_SLIPPAGE_BPS }))
+    const since = PAUSED.get(a.owner)
+    if (since !== undefined && a.inputMint === WSOL_MINT) {
+      throw new Refusal(agentPaused({ owner: a.owner, since }))
     }
-    if (/^0+$/.test(a.amount)) throw new Refusal(zeroSizeTrade())
-    // check_trade measures sizes in SOL, so 1 side must be SOL for its rules to mean anything.
-    const side = a.inputMint === WSOL_MINT ? 'buy' : a.outputMint === WSOL_MINT ? 'sell' : null
-    if (side === null) throw new Refusal(swapNotAgainstSol(a))
-
-    const { vault, rules } = await io.loadVaultRules(a.owner)
-    if (vault === null) throw new Refusal(noVault({ owner: a.owner }))
-    const rule = rules.find((r) => r.authority === a.agent && r.mint === a.inputMint)
-    const armed = ARMED[a.inputMint]
-    if (rule === undefined || armed === undefined) {
-      throw new Refusal(noAgentRole({ agent: a.agent, vault, mint: a.inputMint }))
-    }
-    if (BigInt(a.amount) > rule.effectiveRemaining) {
-      throw new Refusal(
-        overRemaining({
-          amount: formatUnits(BigInt(a.amount), armed.decimals),
-          remaining: formatUnits(rule.effectiveRemaining, armed.decimals),
-          unit: armed.unit,
-        }),
-      )
-    }
-
-    // Decided 2026-09-30: on the practice fork, a history wallet with 0 closed trades is not refused.
-    // Nothing is checked against a history it does not have, the trade is bounded only by the cap
-    // the owner signed on chain, and the answer says so first. Off the fork this still fails closed.
-    const fork = network(process.env['AGON_NETWORK']).id === 'fork'
-    // Venues to route around, filled at most once, on the fork, by a failed simulation below.
-    const excludeDexes: string[] = []
-    for (;;) {
-      // The quote is outside data. It must parse, and be the trade that was asked for, or the check
-      // below would judge one trade and the transaction would carry another.
-      const parsed = JupiterQuote.safeParse(
-        await io.loadQuote(excludeDexes.length > 0 ? { ...a, excludeDexes } : a),
-      )
-      if (!parsed.success) {
-        throw new Refusal(
-          quoteMismatch({ field: String(parsed.error.issues[0]?.path[0] ?? 'shape') }),
-        )
-      }
-      const quote = parsed.data
-      // The floor the output check holds the swap to is recomputed from what was asked, never taken
-      // on Jupiter's word, so a floor of 0 cannot wave through a swap that pays the vault nothing.
-      const floor = (BigInt(quote.outAmount) * BigInt(10000 - a.slippageBps)) / 10000n
-      const drift = (
-        [
-          ['inAmount', quote.inAmount === a.amount],
-          ['inputMint', quote.inputMint === a.inputMint],
-          ['outputMint', quote.outputMint === a.outputMint],
-          ['slippageBps', quote.slippageBps === a.slippageBps],
-          ['otherAmountThreshold', floor > 0n && BigInt(quote.otherAmountThreshold) >= floor],
-        ] as const
-      ).find(([, ok]) => !ok)
-      if (drift !== undefined) throw new Refusal(quoteMismatch({ field: drift[0] }))
-      const route = quote.routePlan.map((leg) => leg.swapInfo.ammKey)
-      const judged = await judge(
-        io,
-        {
-          wallet: a.historyWallet,
-          mint: side === 'buy' ? a.outputMint : a.inputMint,
-          side,
-          size: a.amount,
-        },
-        {
-          priceImpactPct: quote.priceImpactPct,
-          slippageBps: quote.slippageBps,
-          contextSlot: quote.contextSlot ?? null,
-        },
-        fork,
-      )
-      const unchecked = fork && judged.closedTrades === 0
-      const verdict = unchecked
-        ? {
-            ...judged.verdict,
-            reasons: [
-              {
-                rule: 'no-trading-history',
-                message:
-                  `0 closed trades on mainnet for ${a.historyWallet}, so this trade was not checked ` +
-                  `against a history. On the practice fork it goes out bounded only by the cap the ` +
-                  `owner signed: ${formatUnits(rule.effectiveRemaining, armed.decimals)} ` +
-                  `${armed.unit} left in this window. The reasons after this one are what the check ` +
-                  `found, and none of them stopped the trade.`,
-              },
-              ...judged.verdict.reasons,
-            ],
-          }
-        : judged.verdict
-      if (verdict.verdict !== 'pass' && !unchecked) {
-        throw new Refusal(
-          tradeNotPassed({
-            verdict: verdict.verdict,
-            reasons: verdict.reasons.length,
-            first: verdict.reasons[0]?.message ?? 'none was given.',
-          }),
-        )
-      }
-
-      const built = await io.buildSwap({
-        owner: a.owner,
-        agent: a.agent,
-        roleId: rule.roleId,
-        quote,
-      })
-      if (built.failure !== null) {
-        const failed = innermostFailure(built.failure.logs)
-        const program = failed ?? 'unknown'
-        // Fork only: a venue that cannot run on the fork's copy, whose clock lags real time, is routed
-        // around once, and every check above runs again on the new route. The spending limit is never
-        // routed around, and off the fork a failed simulation is the answer.
-        const venues = quote.routePlan.flatMap((leg) => {
-          const label = (leg.swapInfo as { label?: unknown }).label
-          return typeof label === 'string' ? [label] : []
-        })
-        if (
-          fork &&
-          excludeDexes.length === 0 &&
-          failed !== null &&
-          failed !== SWIG_PROGRAM_ID &&
-          venues.length > 0
-        ) {
-          excludeDexes.push(...venues)
-          continue
-        }
-        const line = built.failure.logs.find((l) => l.startsWith(`Program ${program} failed`))
-        throw new Refusal(
-          simulationFailed({
-            program,
-            detail:
-              line?.replace(/^Program \S+ failed: /, '') ??
-              `no program ran; the chain answered ${built.failure.err ?? 'with no error'}`,
-          }),
-        )
-      }
-      if (built.outputGained < BigInt(quote.otherAmountThreshold)) {
-        throw new Refusal(
-          outputNotToVault({
-            gained: String(built.outputGained),
-            promised: quote.otherAmountThreshold,
-          }),
-        )
-      }
-      return {
-        transaction: built.transaction,
-        vault: built.vault,
-        verdict,
-        quote: {
-          inAmount: quote.inAmount,
-          outAmount: quote.outAmount,
-          minOutAmount: quote.otherAmountThreshold,
-          slippageBps: quote.slippageBps,
-          route,
-        },
-        effectiveRemaining: String(rule.effectiveRemaining),
-        lastValidBlockHeight: built.lastValidBlockHeight,
-        unitsConsumed: built.unitsConsumed,
-      }
-    }
+    return prepareSwap(a, io)
   },
 
   // What an armed vault holds and how its trades are doing (T-C25). The P&L is arithmetic over
