@@ -3524,7 +3524,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-C41, /market stops a 429 storm: 1 cool-down for the whole queue, last good data while it lasts
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/303 | Owner: jishnu-baruah | Branch: feature/t-c41-cooldown
+- Status: done
 - Depends-on: T-C33
 - Touches: packages/mcp/src/market.ts, packages/mcp/src/market.test.ts
 - Serves: UX (judged) ; the trade view keeps showing numbers when GeckoTerminal rate-limits this IP
@@ -3553,4 +3553,17 @@ _(empty)_
   changed: a block with no value held the whole answer pause after pause, 15 of 225 answers timed out
   at 120 s (p95 99.6 s); it now answers at once with the cool-down named while its call stays queued,
   max 118 s became 13 s. The trade view and the Claude Code plugin do not read `stale` yet
+- Kill criterion: none
+
+### T-E29, Both terminals say when a number is stale, and why
+- Status: open
+- Depends-on: T-C41, T-C39
+- Touches: .opencode/tui/agon-trade.tsx, .opencode/tui/agon-discovery.tsx, plugins/claude-code/
+- Serves: UX (judged) ; a trader never reads a 4 minute old price as live
+- Acceptance: every block `/market` marks `stale: true` (candles, trades, 24h stats, usd, book) is drawn
+  with its age and the reason in a dim line ("prices 247 s old: GeckoTerminal is rate-limiting, next
+  try in 41 s"), the status line shows the cool-down while it lasts, and nothing stale is drawn in
+  the live colour; the header price says stale when its block is; tested in both plugins against a
+  recorded stale answer from T-C41's live run, at 80 and 140 columns, with no line wider than the pane
+- Evidence: <PR link, screens>
 - Kill criterion: none
