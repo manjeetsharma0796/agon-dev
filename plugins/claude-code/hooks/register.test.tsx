@@ -668,7 +668,9 @@ test('markets: 6 lists, sort, safety columns and not sent from /discover only, a
       const h = await laid(pane)
       expect(h).toContain('holders v')
       expect(h).toContain('12.3K')
-      expect(urls).toContain('http://127.0.0.1:8787/discover?list=trending&sort=holders')
+      expect(urls).toContain(
+        'http://127.0.0.1:8787/discover?list=trending&sort=holders&interval=24h',
+      )
       expect(await widest(pane)).toBeLessThanOrEqual(width - 2)
       await pane.press({ key: 'sort-rank' })
 
@@ -682,11 +684,11 @@ test('markets: 6 lists, sort, safety columns and not sent from /discover only, a
       const g = await laid(pane)
       expect(g).toContain('grad')
       expect(g).toContain('yes')
-      expect(urls).toContain('http://127.0.0.1:8787/discover?list=graduated&sort=rank')
+      expect(urls).toContain('http://127.0.0.1:8787/discover?list=graduated&sort=rank&interval=24h')
       expect(await widest(pane)).toBeLessThanOrEqual(width - 2)
       for (const l of ['most-traded', 'top-organic', 'new']) {
         await pane.press({ key: `list-${l}` })
-        expect(urls).toContain(`http://127.0.0.1:8787/discover?list=${l}&sort=rank`)
+        expect(urls).toContain(`http://127.0.0.1:8787/discover?list=${l}&sort=rank&interval=24h`)
       }
 
       // A row opens its token in the trade view by mint; the prompt never carries its text.

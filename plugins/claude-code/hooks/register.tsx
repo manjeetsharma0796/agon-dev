@@ -252,7 +252,8 @@ async function refreshDiscover($: Dollar) {
   try {
     const r = await getJson(
       $,
-      `/discover?list=${encodeURIComponent(list)}&sort=${encodeURIComponent(sort)}`,
+      // Ranked over 24h, the window of the change column, so the order and the numbers agree.
+      `/discover?list=${encodeURIComponent(list)}&sort=${encodeURIComponent(sort)}&interval=24h`,
     )
     next = r.ok
       ? { key, body: r.body as Discover, error: null }
@@ -1490,11 +1491,15 @@ const auth = (a: Token['mintAuthority']) =>
   a?.value === 'disabled' ? 'off' : a?.value === 'enabled' ? 'on' : NOT_SENT
 const graduated = (t: Token) =>
   t.bondingCurvePct?.graduatedAt ? 'yes' : num(t.bondingCurvePct?.value) !== null ? 'no' : NOT_SENT
-// The symbol a person reads: from `display` only, separators and marks folded, at most 10 cells.
-const UNSAFE = /[\p{Cc}\p{Cf}\p{M}\p{Z}\s]+/gu
+// The symbol a person reads: from `display` only, control and format characters (bidi overrides
+// among them) dropped, separators folded to 1 space, at most 10 cells. Combining marks stay: an
+// accent belongs to its letter and takes 0 cells.
+const UNSAFE = /[\p{Cc}\p{Cf}]/gu
+const SPACES = /[\p{Z}\s]+/gu
 const symbolOf = (t: Token) => {
   const s = (typeof t.display?.symbol === 'string' ? t.display.symbol : '')
-    .replace(UNSAFE, ' ')
+    .replace(UNSAFE, '')
+    .replace(SPACES, ' ')
     .trim()
   return s ? clip(s, 10) : NOT_SENT
 }
