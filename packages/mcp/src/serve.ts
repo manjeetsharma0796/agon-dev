@@ -21,6 +21,8 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { createServer } from './index.js'
 import { routeStream } from './stream.js'
 import { serveMarket } from './market.js'
+import { liveIo } from './io.js'
+import { activityRoute, journalFor } from './journal.js'
 
 const PORT = Number(process.env['PORT'] ?? 8787)
 /** Loopback by default. Binding 0.0.0.0 exposes an unauthenticated server to the whole network. */
@@ -31,6 +33,8 @@ const KIT = readFileSync(new URL('../kit/agon-kit.mjs', import.meta.url))
 const PLAIN_HOST = /^([\w.-]+|\[[\da-f:]+\])(:\d{1,5})?$/i
 /** Plain http only on this machine: the kit holds a key, so from anywhere else it comes over TLS. */
 const LOOPBACK = /^(127\.0\.0\.1|localhost|\[::1\])(:|$)/i
+/** The journal (T-C30): Neon when DATABASE_URL is set, else every write a named failure. */
+const JOURNAL = journalFor(process.env['DATABASE_URL'])
 
 const handle = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
   // One health path, so somebody checking a tunnel gets an answer instead of a protocol error.
@@ -58,6 +62,15 @@ const handle = async (req: IncomingMessage, res: ServerResponse): Promise<void> 
     await serveMarket(new URL(req.url ?? '/', 'http://localhost'), res)
     return
   }
+  // The journal's signed read (T-C30): 401 with the reason unless signed by the owner or a hired key.
+  // Matched as a string first: `new URL` throws on some request targets, and nothing catches here.
+  const url = req.url ?? '/'
+  if (req.method === 'GET' && (url === '/activity' || url.startsWith('/activity?'))) {
+    const { status, body } = await activityRoute(new URL(url, 'http://local'), liveIo(), JOURNAL)
+    res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store' })
+    res.end(JSON.stringify(body))
+    return
+  }
   if (!(req.url ?? '').startsWith('/mcp')) {
     res.writeHead(404, { 'content-type': 'application/json' })
     res.end(
@@ -77,6 +90,7 @@ const handle = async (req: IncomingMessage, res: ServerResponse): Promise<void> 
   const server = createServer(
     undefined,
     PLAIN_HOST.test(host) ? `${scheme}://${host}/kit.mjs` : undefined,
+    JOURNAL,
   )
   res.on('close', () => {
     void transport.close()

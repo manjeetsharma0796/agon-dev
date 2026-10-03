@@ -1154,6 +1154,349 @@ Lists the caps currently armed for a wallet.
 }
 ```
 
+## `get_activity`
+
+
+
+**Input**
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "wallet": {
+      "type": "string",
+      "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+    },
+    "signer": {
+      "type": "string",
+      "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+    },
+    "nonce": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "signature": {
+      "type": "string",
+      "pattern": "^[1-9A-HJ-NP-Za-km-z]{64,88}$"
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "unattributed": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "wallet"
+  ],
+  "additionalProperties": false
+}
+```
+
+**Output**
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "wallet": {
+      "type": "string",
+      "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+    },
+    "rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "time": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "slot": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "network": {
+            "type": "string",
+            "enum": [
+              "fork",
+              "devnet",
+              "mainnet",
+              "unset"
+            ]
+          },
+          "wallet": {
+            "type": "string",
+            "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+          },
+          "actor": {
+            "type": "string",
+            "enum": [
+              "owner-web",
+              "owner-terminal",
+              "agent",
+              "unattributed"
+            ]
+          },
+          "actorKey": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "check_trade",
+              "buy",
+              "sell",
+              "cancel",
+              "pause",
+              "note"
+            ]
+          },
+          "mint": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "side": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "buy",
+                  "sell"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "size": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "received": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "pass",
+                  "block",
+                  "unsure"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "rule": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "message": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "observed": {
+                  "type": "number"
+                },
+                "limit": {
+                  "type": "number"
+                },
+                "unit": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "rule",
+                "message"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "ruleVersion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "signature": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[1-9A-HJ-NP-Za-km-z]{64,88}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "checked",
+              "refused",
+              "proposed",
+              "approved",
+              "declined",
+              "expired",
+              "sent",
+              "confirmed",
+              "failed",
+              "uncertain"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "id",
+          "time",
+          "slot",
+          "network",
+          "wallet",
+          "actor",
+          "actorKey",
+          "action",
+          "mint",
+          "side",
+          "size",
+          "received",
+          "verdict",
+          "reasons",
+          "ruleVersion",
+          "signature",
+          "status"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "writeFailures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "time": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "wallet": {
+            "type": "string",
+            "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "check_trade",
+              "buy",
+              "sell",
+              "cancel",
+              "pause",
+              "note"
+            ]
+          },
+          "cause": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "time",
+          "wallet",
+          "action",
+          "cause"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "unattributedHidden": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "basis": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "wallet",
+    "rows",
+    "writeFailures",
+    "unattributedHidden",
+    "basis"
+  ],
+  "additionalProperties": false
+}
+```
+
 ## What the schemas do not say
 
 Some rules are cross-field and JSON Schema cannot express them, so they are enforced when the

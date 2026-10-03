@@ -99,8 +99,8 @@ test('the HTTP route has not caught up, and the test says so rather than hiding 
   expect(fromLeg.reasons).not.toEqual(fromTool.reasons)
 })
 
-test('all 7 tools are reachable, and arm_rule refuses off the fork rather than answering', async () => {
-  expect(TOOLS).toHaveLength(7)
+test('all 8 tools are reachable, and arm_rule refuses off the fork rather than answering', async () => {
+  expect(TOOLS).toHaveLength(8)
   for (const name of TOOLS) expect(isTool(name)).toBe(true)
   expect(isTool('drop_table')).toBe(false)
   await expect(callTool('arm_rule', SPEC)).rejects.toThrow(/practice fork only/)

@@ -3091,7 +3091,7 @@ _(empty)_
   running server, never by a person clicking through opencode
 
 ### T-C30, The journal: every verdict and every action, with who did it, read only by the owner or a hired key
-- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-c30-journal
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/274 | Owner: jishnu-baruah | Branch: feature/t-c30-journal
 - Depends-on: none
 - Touches: packages/core/src/journal.ts, packages/core/src/index.ts, packages/core/src/contracts.test.ts,
   fixtures/contracts/, packages/mcp/src/journal.ts, packages/mcp/src/journal.test.ts,
@@ -3108,7 +3108,16 @@ _(empty)_
   signature over a server nonce by the vault's owner or a hired agent key, and 401 with the reason to
   anything else; database tests run against a local Postgres or skip by name, never against Neon from
   CI; measured on Neon from this machine: write and read p50 over 20 calls
-- Evidence: <PR link>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/274, plus /security-review (0 findings at
+  confidence 8 or above). Measured on Neon from this machine 2026-10-03, 20 calls each on the final
+  code: write p50 274 ms, read p50 276 ms (first write on a cold connection 4,657 ms). get_activity
+  measured 3,517 tokens at its largest legal answer, against a budget of 4,000
+- Finding: the postgres driver with prepared statements off costs 2 round trips per query, 541 ms p50
+  against 260 ms prepared on the same Neon, so the journal prepares. And check_trade over MCP proves
+  no key and anyone who reaches the server can call it for any wallet, so a row labelled agent would
+  have shown a stranger's checks as the user's agent's: such rows are actor unattributed in the row
+  itself (the contract refuses actorKey null under any other actor) and reads hide them by default,
+  stating how many were hidden
 - Kill criterion: write p50 above 1 s, so the write goes off the answer's path and the read says the
   log can lag by the measured number
 

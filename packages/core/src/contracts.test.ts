@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
+  Activity,
   ArmedRule,
+  JournalRow,
   SyncForkResult,
   VaultStatus,
   ArmRequest,
@@ -107,6 +109,21 @@ describe('examples parse against their contract', () => {
   // rather than a shape: share must be 0 here, and until T-A06 the contract exempted this exact
   // case from its own arithmetic, so a report claiming we had understood 100% of a wallet we had
   // decoded none of parsed clean.
+  // T-C30: the journal, read by get_activity and GET /activity.
+  it('activity, whose rows have no field for token text', () => {
+    const activity = example('activity')
+    expect(() => Activity.parse(activity)).not.toThrow()
+    const [row] = activity.rows
+    // Token text never reaches the agent: a row that tries to carry a token's name is refused, not stripped quietly.
+    expect(JournalRow.safeParse({ ...row, name: 'USD Coin' }).success).toBe(false)
+    expect(JournalRow.safeParse({ ...row, size: '3.2' }).success).toBe(false)
+    // A row with no proven key is unattributed, never the person's or their agent's, and back.
+    expect(row.actor).toBe('unattributed')
+    expect(JournalRow.safeParse({ ...row, actor: 'agent' }).success).toBe(false)
+    expect(JournalRow.safeParse({ ...row, actor: 'owner-web' }).success).toBe(false)
+    expect(JournalRow.safeParse({ ...row, actorKey: activity.wallet }).success).toBe(false)
+  })
+
   it('report for a wallet with nothing decoded', () => {
     const empty = example('report-empty-wallet')
     expect(() => Report.parse(empty)).not.toThrow()
@@ -125,6 +142,7 @@ describe('the tool list is the stable four', () => {
       'prepare_swap',
       'vault_status',
       'sync_fork',
+      'get_activity',
     ])
   })
 
