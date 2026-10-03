@@ -3258,7 +3258,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-E24, The trade view in opencode, with the status bar and the trading keys
-- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-e24-trade
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/282 | Owner: jishnu-baruah | Branch: feature/t-e24-trade
 - Depends-on: T-C33, T-C34, T-C35
 - Touches: .opencode/tui/agon-discovery.tsx, .opencode/tui/agon-trade.tsx
 - Serves: UX (judged) ; the trade view with no browser and no LLM
@@ -3268,7 +3268,19 @@ _(empty)_
   the one `/market` chose, no longer the largest reserve (T-C33 measured that pick 21 h stale for SOL);
   the keys of docs/plans/agon-terminal.md section 7b, none of which opencode already binds; read at 80
   and 140 columns with no overprinted line, every number equal to `/market`'s
-- Evidence: <PR link, screenshots>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/282. Rendered on OpenTUI 0.4.5 (inside
+  opencode 1.18.33) at 80x24 and 140x40, dark and light, against a mock replaying `/market` and
+  `/status` answers recorded from the server code on dev and `/stream` frames recorded from Helius:
+  562 checks over 13 runs, 0 failures; every number on screen equal to the recorded answer
+  (status, header, axis, newest candle, first trade, the book's label, mid and best levels); 0
+  overlapping text elements; lowest text contrast 5.01 to 1 dark, 4.83 light. The book panel is
+  tested against a fixture of the T-C35 contract in all 3 kinds and its error form; until T-C35
+  merges it says the book arrives with T-C35. Not evidenced: a person in a real opencode
+- Finding: `/market` sends no liquidity, so the header says so instead of borrowing Jupiter's
+  figure. In OpenTUI's test renderer `pressKey('return')` types the 6 letters r, e, t, u, r, n, so
+  every Enter, Escape and arrow in a plugin test must go through `KeyCodes`, or it drives other
+  keys (in discovery, r reverses the list and t changes it). The axis close label drawn over the high label on the same row left
+  3 stale digits (118.569785) until it was padded to the axis width
 - Kill criterion: none
 
 ### T-E25, The Claude Code plugin in the repo, with the trade view and the status band
