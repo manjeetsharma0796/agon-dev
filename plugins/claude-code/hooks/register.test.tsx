@@ -554,7 +554,7 @@ const token = (list: string) => ({
     use: 'Text the token creator chose, unchecked.',
     name: INJECT,
     symbol: 'EVIL\u202E',
-    icon: null,
+    icon: 'https://example.com/evil.png',
     notSent: null,
   },
   price: { ...sent(0.000021131234567891), slot: 371234567 },
@@ -620,16 +620,66 @@ const discover = (list: string, sort: string) => ({
   leftOut: null,
 })
 
+// A 32 by 32 PNG as the server's /logo sends it: RGBA, level 0 (stored deflate blocks), base64.
+// The top half red, the bottom half blue. CRCs are 0: the plugin does not check them.
+const LOGO = (() => {
+  const raw = new Uint8Array(32 * 129)
+  for (let y = 0; y < 32; y++)
+    for (let x = 0; x < 32; x++)
+      raw.set(y < 16 ? [255, 0, 0, 255] : [0, 0, 255, 255], y * 129 + 1 + x * 4)
+  const z = new Uint8Array(2 + 5 + raw.length + 4)
+  z.set([
+    0x78,
+    0x01,
+    1,
+    raw.length & 255,
+    raw.length >> 8,
+    ~raw.length & 255,
+    (~raw.length >> 8) & 255,
+  ])
+  z.set(raw, 7)
+  const chunk = (kind: string, data: Uint8Array) => {
+    const c = new Uint8Array(12 + data.length)
+    new DataView(c.buffer).setUint32(0, data.length)
+    c.set(
+      [...kind].map((k) => k.charCodeAt(0)),
+      4,
+    )
+    c.set(data, 8)
+    return [...c]
+  }
+  const ihdr = new Uint8Array(13)
+  new DataView(ihdr.buffer).setUint32(0, 32)
+  new DataView(ihdr.buffer).setUint32(4, 32)
+  ihdr.set([8, 6, 0, 0, 0], 8)
+  const png = Uint8Array.from([
+    0x89,
+    0x50,
+    0x4e,
+    0x47,
+    0x0d,
+    0x0a,
+    0x1a,
+    0x0a,
+    ...chunk('IHDR', ihdr),
+    ...chunk('IDAT', z),
+    ...chunk('IEND', new Uint8Array(0)),
+  ])
+  return (png as unknown as { toBase64(): string }).toBase64()
+})()
+
 test('markets: 6 lists, sort, safety columns and not sent from /discover only, at 60, 80 and 140', async ($, on) => {
   const urls: string[] = []
   const filled: string[] = []
   mock.store(on)
+  const clock = mock.clock(on, { now: Date.parse('2026-10-03T12:00:00Z') })
   on('command.register', async (_$, e) => ({ value: { command: e.name } }))
   // Any host but the Agon server fails the call: the plugin asks no upstream itself.
   on('http.fetch', async (_$, e) => {
     urls.push(e.url)
     const u = new URL(e.url)
     if (u.host !== '127.0.0.1:8787') throw new Error(`not the Agon server: ${u.host}`)
+    if (u.pathname === '/logo') return { value: { status: 200, ok: true, headers: {}, text: LOGO } }
     const body =
       u.pathname === '/discover'
         ? discover(u.searchParams.get('list') ?? '', u.searchParams.get('sort') ?? '')
@@ -663,6 +713,27 @@ test('markets: 6 lists, sort, safety columns and not sent from /discover only, a
       expect(p).not.toContain(INJECT)
       expect(p).not.toContain('\u202E')
       expect(await widest(pane)).toBeLessThanOrEqual(width - 2)
+
+      // Logos on by default, from /logo only: half blocks in the terminal (red over blue), the
+      // server's PNG in an SVG on desktop; no icon, the first letter.
+      // They load on a timer after the list is drawn, never inside the press.
+      await clock.advance(1)
+      const logo = ((await pane.find({ key: `lg-${BONK}` })) as any)?.children?.[0]
+      if (surface === 'terminal') {
+        expect(logo?.type).toBe('Raster')
+        const words = new Uint32Array(
+          (Uint8Array as unknown as { fromBase64(s: string): Uint8Array }).fromBase64(
+            logo.props.cells,
+          ).buffer,
+        )
+        expect([...words]).toEqual([0x2580, 0xff0000, 0x0000ff, 0x2580, 0xff0000, 0x0000ff])
+      } else {
+        expect(logo?.type).toBe('Svg')
+        expect(logo.props.source).toContain(`data:image/png;base64,${LOGO}`)
+      }
+      expect(p).toContain('? ')
+      expect(urls).toContain(`http://127.0.0.1:8787/logo?mint=${BONK}&size=32&encoding=base64`)
+      expect(urls.filter((u) => u.includes('/logo?'))).toHaveLength(1)
 
       // The sorted column is kept however narrow the pane, and the server is asked to sort.
       await pane.press({ key: 'sort-holders' })

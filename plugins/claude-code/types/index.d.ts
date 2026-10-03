@@ -99,7 +99,7 @@ export type Authority = {
 }
 export type Token = {
   mint: string
-  display?: { untrusted?: true; name?: string | null; symbol?: string | null }
+  display?: { untrusted?: true; name?: string | null; symbol?: string | null; icon?: string | null }
   price?: Figure
   change?: Partial<Record<'5m' | '1h' | '6h' | '24h', Figure>>
   volume24h?: Figure

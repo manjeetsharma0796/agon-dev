@@ -30,10 +30,9 @@
 // a .ts file still renders once and then silently never updates.
 //
 // Logos are drawn as half-block characters, 2 pixels per cell, because the OpenTUI build inside
-// opencode 1.18.33 has no image element for plugins. They are off unless tui.json sets
-// `"logos": true`: a logo is a URL the token creator chose, fetched through the wsrv.nl image proxy,
-// and that is the 1 call to a host other than the Agon server. Off, a row shows the symbol's first
-// letter.
+// opencode 1.18.33 has no image element for plugins. They come from the Agon server's `/logo` by
+// mint (T-C39), so this page calls no host but the Agon server; tui.json `"logos": false` turns them
+// off. A token with no logo, or with logos off, shows the symbol's first letter.
 
 import {
   createEffect,
@@ -101,7 +100,7 @@ const toOptions = (raw: unknown): Options => {
     limit: typeof o.limit === 'number' && o.limit > 0 ? Math.min(o.limit, 100) : 50,
     mcpUrl: httpUrl(o.mcpUrl, 'http://127.0.0.1:8787'),
     armUrl: httpUrl(o.armUrl, 'http://localhost:3111/arm'),
-    logos: o.logos === true,
+    logos: o.logos !== false,
   }
 }
 
@@ -571,30 +570,33 @@ function createModel(api: TuiPluginApi, options: Options) {
   const [focus, setFocus] = createSignal<string | null>(null)
   const pending = new Set<string>()
 
-  // Logo cache, keyed by icon URL and size. A logo that fails is cached as null, so it is not
-  // retried every refresh; the row then shows the symbol's first letter.
-  const logo = (url: string | null, size: number): Cell[][] | null | undefined => {
-    if (!url || !options.logos) return null
+  // Logo cache, keyed by mint and size. A logo that fails (the server answers 404 with the reason) is
+  // cached as null, so it is not retried every refresh; the row then shows the symbol's first letter.
+  // A busy server (503) or an unreachable one is not cached: a later draw asks again.
+  // A token /discover sent no icon for is not asked at all.
+  const logo = (t: Token, size: number): Cell[][] | null | undefined => {
+    if (!t.icon || !options.logos) return null
     const back = api.theme.current?.background?.toInts()
     const bg =
       back && back[3] >= 128 ? ([back[0], back[1], back[2]] as [number, number, number]) : null
-    const key = `${size}:${bg ?? 'none'}:${url}`
+    const key = `${size}:${bg ?? 'none'}:${t.mint}`
     const have = logos().get(key)
     if (have !== undefined || pending.has(key)) return have
     pending.add(key)
-    // ipfs.io and the other public gateways refuse the proxy, so a quarter of trending logos never
-    // loaded. Filebase served 12 of 12 through it on 2026-10-01.
-    const ipfs = url.match(/^(?:ipfs:\/\/|https?:\/\/[^/]+\/ipfs\/)(.+)$/)
-    const source = ipfs ? `https://ipfs.filebase.io/ipfs/${ipfs[1]}` : url
-    const proxied = `https://wsrv.nl/?url=${encodeURIComponent(source)}&w=${size}&h=${size}&fit=cover&output=png`
-    void fetch(proxied)
-      .then(async (r) =>
-        r.ok ? toCells(decodePng(new Uint8Array(await r.arrayBuffer())), bg) : null,
-      )
-      .catch(() => null)
+    void fetch(`${options.mcpUrl}/logo?mint=${encodeURIComponent(t.mint)}&size=${size}`)
+      .then(async (r) => {
+        if (r.status === 503) return undefined
+        if (!r.ok) return null
+        try {
+          return toCells(decodePng(new Uint8Array(await r.arrayBuffer())), bg)
+        } catch {
+          return null
+        }
+      })
+      .catch(() => undefined)
       .then((cells) => {
         pending.delete(key)
-        setLogos((m) => new Map(m).set(key, cells))
+        if (cells !== undefined) setLogos((m) => new Map(m).set(key, cells))
       })
     return undefined
   }
@@ -757,9 +759,9 @@ type Model = ReturnType<typeof createModel>
 /* ---------------------------------------------------------------------------------------------- */
 
 function Logo(props: { model: Model; token: Token; size: number }) {
-  const cells = () => props.model.logo(props.token.icon, props.size)
+  const cells = () => props.model.logo(props.token, props.size)
   const theme = () => props.model.api.theme.current
-  // With logos off (the default) only the letter is drawn, so it takes 1 line, not the logo's.
+  // With logos off only the letter is drawn, so it takes 1 line, not the logo's.
   return (
     <box flexDirection="column" width={props.size} height={props.model.logos ? props.size / 2 : 1}>
       <Show
