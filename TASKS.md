@@ -3142,7 +3142,7 @@ _(empty)_
   log can lag by the measured number
 
 ### T-C31, /overview: return against holding SOL, the equity curve and the cap meter, from 1 place
-- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-c31-overview
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/310 | Owner: jishnu-baruah | Branch: feature/t-c31-overview
 - Depends-on: T-C27
 - Touches: packages/mcp/src/overview.ts, packages/mcp/src/overview.test.ts, packages/mcp/src/serve.ts,
   packages/core/src/overview.ts, packages/core/src/index.ts, fixtures/contracts/
@@ -3154,7 +3154,25 @@ _(empty)_
   a window edge, with the burst worst case of 2 times the cap; the method line printed with each; 0
   floats in any amount; every answer stamped with network, slot, rule version and each price's source
   and time
-- Evidence: <PR link>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/310. Not on the fork: Docker was down
+  again on 2026-10-04. Tests on a hand-built vault, arithmetic in the comments: return +9.34% (9/10 x
+  12/11 x 12.25/11 = 1323/1210), holding SOL 0.00, a 0.1 SOL agent fee -1.00, a Trigger placement and
+  fill not cut +10.00; curve 10, 10, 11, gap, 12.25 SOL with the missing USDC hour named; cap at slot
+  450 used 0.35 of 1 wSOL, refill slot 451, worst case 2 wSOL, at 451 used 0 and no refill. Live on
+  2026-10-03 (19:00 UTC hour): T-C27's fork vault amounts (buys 11815989 and 5905945 USDC for 0.1 and
+  0.05 SOL, sell 8000000 USDC for 67701028 lamports) plus deposits of 1 and 0.5 SOL and a withdrawal of
+  0.2 SOL placed in the last 8 hours, priced by 100 hourly SOL and USDC candles (0 gaps) through
+  /market's queue: -0.14% net of 15000 lamports of fees, -0.1423% by hand with exact fractions; 9 curve
+  points, 0 gaps. The built server on mainnet, read-only: bad wallet 400 in 42 ms, not echoed; no vault
+  404 in 598 ms; the Helius key in 0 bodies. Not measured live: the cap meter and a full 200 answer, as
+  there is no fork today and no mainnet vault before T-D04
+- Finding 2026-10-04: the closes cost 15.1 s, then 20.0 s, cold for 2 mints, because the only way into
+  /market's queue without editing market.ts is its whole answer (pool, candles, trades and the book),
+  3 GeckoTerminal calls at 1 every 3 s where 1 would do; a closes-only export there would cut it to a
+  third. Review found a Trigger order is 2 one-way transactions, and cutting the return at both erased
+  the trade (0.00% instead of +10.00% on the test vault), so a flow is now a one-way transaction the
+  owner paid for; a deposit from another of the owner's wallets counts as return, named, not fixed.
+  `ChainAgentRule` drops `lastReset`, so the refill slot is read from the role's own `tokenSpend`
 - Kill criterion: none
 
 ### T-C32, The action layer: 1 function per action, whoever presses it
