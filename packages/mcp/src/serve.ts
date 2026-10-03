@@ -20,6 +20,7 @@ import {
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { createServer } from './index.js'
 import { routeStream } from './stream.js'
+import { serveMarket } from './market.js'
 
 const PORT = Number(process.env['PORT'] ?? 8787)
 /** Loopback by default. Binding 0.0.0.0 exposes an unauthenticated server to the whole network. */
@@ -53,6 +54,10 @@ const handle = async (req: IncomingMessage, res: ServerResponse): Promise<void> 
     return
   }
   if (routeStream(req, res)) return
+  if (req.method === 'GET' && (req.url ?? '').split('?')[0] === '/market') {
+    await serveMarket(new URL(req.url ?? '/', 'http://localhost'), res)
+    return
+  }
   if (!(req.url ?? '').startsWith('/mcp')) {
     res.writeHead(404, { 'content-type': 'application/json' })
     res.end(

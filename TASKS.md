@@ -3143,7 +3143,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-C33, /market: candles, indicators, recent trades and 24h stats, cached for every client
-- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-c33-market
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/273 | Owner: jishnu-baruah | Branch: feature/t-c33-market
 - Depends-on: none
 - Touches: packages/mcp/src/market.ts, packages/mcp/src/market.test.ts, packages/mcp/src/indicators.ts,
   packages/mcp/src/indicators.test.ts, packages/mcp/src/serve.ts
@@ -3153,7 +3153,18 @@ _(empty)_
   MACD and volume come from 1 pure module, each tested against hand values on a 30-candle fixture; 1
   server cache keyed by pool and range, so 10 clients polling 1 mint make at most 30 upstream calls a
   minute, measured
-- Evidence: <PR link>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/273. Measured from this machine 2026-10-03 against real
+  GeckoTerminal, twice: 10 concurrent pollers on SOL (So111...112), range 1m, each polling every 1 s
+  for 180 s through the built server. Final build: 1,640 answers, all 200; 13 upstream calls (1
+  pool, 6 candles, 6 trades), at most 5 in any 60 s window against a budget of 30; cache hit rate
+  99.8% (13 calls for 6,560 lookups); answer p50 12 ms, p95 557 ms, max 6.8 s (the cold start
+  through the 2.1 s queue); 0 upstream 429s. The earlier run: 1,630 answers, the same 13 calls and
+  5 a minute. Indicator tests: hand arithmetic on a 30-candle fixture, 10 tests
+- Finding: ranking pools by reserve, as the opencode chart does, picked the wrong pool for SOL. The
+  largest reserve GeckoTerminal listed was a pumpswap pool reporting $217.9M against $0.72M of 24h
+  volume, and its 1m candles ended 21 h earlier (a gap of 1,249 buckets, named, not drawn). A pool
+  paired with a mispriced token reports a reserve it does not have. Ranked by 24h volume it is the
+  Orca SOL/USDC pool with $209.5M, 0 gaps in 100 candles. The gap stamp is what caught it.
 - Kill criterion: none
 
 ### T-C34, /stream and the status bar: live slot, ping, fees and connection state
