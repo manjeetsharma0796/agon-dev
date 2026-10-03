@@ -3315,7 +3315,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-C37, /market sends liquidity, and /status says plainly when the network is not set
-- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-c37-liquidity
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/286 | Owner: jishnu-baruah | Branch: feature/t-c37-liquidity
 - Depends-on: T-C33, T-C34
 - Touches: packages/mcp/src/market.ts, packages/mcp/src/market.test.ts, packages/mcp/src/stream.ts,
   packages/mcp/src/stream.test.ts
@@ -3326,7 +3326,7 @@ _(empty)_
   with both numbers, because T-C33 measured a $217.9M reserve against $0.72M of volume on a stale pool;
   `/status` with AGON_NETWORK unset says "AGON_NETWORK is not set on this server" and never "on unset",
   tested; both terminal views (T-E24, T-E25) stop printing "liquidity: not sent" once it lands
-- Evidence: <PR link>. Measured from this machine 2026-10-03 05:32 UTC through the built `createMarket`
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/286. Measured from this machine 2026-10-03 05:32 UTC through the built `createMarket`
   against real GeckoTerminal: SOL picks Orca Czfq3x... with liquidity $31,135,698 against $169,179,942
   of 24h volume (0.18 times, not flagged); BONK picks 5zpyut... with $414,239 against $3,233,459 (0.13
   times, not flagged). Each answer cost 3 GeckoTerminal calls (pool list, hourly candles, trades) and
