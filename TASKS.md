@@ -3467,7 +3467,25 @@ _(empty)_
   latest candle, the book's kind and best levels, and the selected trade if any; under 400 tokens like
   `check_trade`, measured on 3 tokens; 0 token names or symbols, asserted by a test that injects a
   name into every field the server sends; the packet's numbers equal the screen's
-- Evidence: <PR link>
+- Evidence: PRLINK. opencode: `a` on the trade page (opencode 1.18.34 binds no bare `a`: of its 153
+  default keys only the diff viewer's take bare letters). Claude Code: an Ask button with hotkey `a`.
+  Both fill, never send, with 1 packet shape whose builder is byte-identical in both plugins and
+  checked against the same expected text. Measured by packages/mcp's counter (characters / 4) on
+  /market answers recorded live 2026-10-03 from a locally built server: SOL 123.5, BONK 134.5, new token
+  7biKrj...pump 117.75 tokens in opencode with a trade selected (109.5, 119.5, 102.75 without), and
+  109.5, 119.5, 102 in Claude Code, against 400. A name injected into each of 2,274 fields of SOL's and BONK's
+  answers and 340 of the new token's, 1 at a time and then everywhere at once, reached the packet 0
+  times in both builders, 0 crashes. Rendered on OpenTUI 0.4.5 at 140x40 and 80x24, dark and light: 4
+  runs on the final code, 201 checks, 0 failures; every figure in the packet is on the frame drawn just before the key
+  at 140x40. `claude plugin test` 10 pass 0 fail, `claude plugin validate` passes, both locally since
+  CI has no `claude` CLI
+- Finding: the packet copied the screen faithfully, which exposed 2 screen faults. The opencode book
+  printed BONK's mid as "0.00" (a sub-cent price through the 1.2K compactor), so the packet told the
+  agent 0.00; book values now use the price rule (0.000003640). The Claude pane drew no chart and
+  threw when a candle field was not a number, so 1 of the injected fields blanked the pane; such an
+  answer now says which candle and draws none. A curve draws no mid, so its book line carries the
+  kind alone. At 80 columns the opencode readout drops a sub-cent OHLC (59 characters) and the
+  trades column clips the USD figure, so 3 of BONK's 18 figures appear only at 140 columns
 - Kill criterion: none
 
 ### T-C39, The server serves token logos, so both terminals show them by default with 0 outside calls

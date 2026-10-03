@@ -1,7 +1,7 @@
 {
   "name": "agon",
-  "version": "0.3.0",
-  "description": "Agon inside Claude Code: a status band above the prompt, a read-only trade view and a market list whose every number comes from your Agon server; Buy and Sell only fill your prompt with the token's mint",
+  "version": "0.4.0",
+  "description": "Agon inside Claude Code: a status band above the prompt, a read-only trade view and a market list whose every number comes from your Agon server; Buy, Sell and Ask only fill your prompt, with the mint and the numbers on screen, never a token's name",
   "author": { "name": "jishnu-baruah" },
   "types": "./types/index.d.ts",
   "userConfig": {

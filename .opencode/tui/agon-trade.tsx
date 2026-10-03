@@ -10,7 +10,9 @@
 //
 // Loaded by agon-discovery.tsx, which owns the plugin and its routes. b and s open a ticket that
 // only fills the chat box with the mint, never a token's name or symbol, and never sends: order
-// entry is Part 4 of docs/plans/agon-terminal.md.
+// entry is Part 4 of docs/plans/agon-terminal.md. a (T-E28) fills it with the ask packet below, the
+// screen's numbers and the mint, and never sends either. opencode 1.18.34 binds no bare a: of its
+// 153 default keys only the diff viewer's take bare letters (b, d, n, p, q, s, v).
 
 import { createEffect, createMemo, createSignal, For, on, onCleanup, Show } from 'solid-js'
 import { useKeyboard, useTerminalDimensions } from '@opentui/solid'
@@ -291,15 +293,19 @@ export const big = (v: number | null, dollar = true) => {
 }
 // Up and down are never colour alone: an arrow and a sign every time.
 export const move = (c: number) => `${c > 0 ? '▲ +' : c < 0 ? '▼ ' : '= '}${c.toFixed(2)}%`
-// A book value as the server sent it, compacted only when it would not fit its column.
+// A book value as the server sent it, compacted only when it would not fit its column: from 1,000
+// as 1.2K, below as the price rule's plain decimals, so a sub-cent price never reads 0.00 (BONK's
+// mid did, T-E28) and never as an exponent.
 const cell = (v: Cellv | null, width = 10) =>
   v === null
     ? 'none'
     : typeof v === 'string'
       ? v
-      : String(v).length <= width
+      : String(v).length <= width && !String(v).includes('e')
         ? String(v)
-        : big(v, false)
+        : Math.abs(v) >= 1000
+          ? big(v, false)
+          : money(v).slice(1)
 const utc = (iso: string | number) => {
   const d = new Date(typeof iso === 'number' ? iso * 1000 : iso)
   return Number.isNaN(d.getTime())
@@ -312,6 +318,134 @@ const ageOf = (iso: string | null, now: number) =>
   iso && !Number.isNaN(Date.parse(iso))
     ? `${Math.max(0, Math.round((now - Date.parse(iso)) / 1000))}s`
     : 'unknown'
+
+/* ---------------------------------------------------------------------------------------------- */
+/* ask the agent (T-E28)                                                                           */
+/* ---------------------------------------------------------------------------------------------- */
+
+// The ask packet: 1 shape in both terminal plugins. This file and plugins/claude-code/hooks/
+// register.tsx each hold this same tiny builder (the Claude plugin cannot import repo code), and both
+// tests check it against the same expected text. Every value is a string the screen already shows,
+// formatted by the screen's own code, so the packet's numbers are the screen's. Only numbers, times,
+// the mint (base58 checked), our own range and kind words go in: never a token's name or symbol, nor
+// any text the server or a token's creator wrote (OP-38). Lines, in order:
+//   Agon screen: mint <mint>, range <range>, slot <slot>
+//   price <p>, 24h <change>, high <h>, low <l>, vol <v>      (or: 24h stats not sent)
+//   liq <liq>[, flagged: reserve over 100 times its 24h volume]
+//   candle <time> UTC: O <o> H <h> L <l> C <c>                (or: candle not sent)
+//   book <kind>: mid <m>, best bid <b>, best ask <a>          (each only if shown; or: book not sent)
+//   selected trade <time> UTC <side> at <price> for <usd>     (only when a trade is selected)
+//   ages: candles <a>, book <a>, trades <a>
+//   the instruction, ASK_LINE
+export type Ask = {
+  mint: string
+  range: string
+  slot: string | null
+  stats: { price: string; change: string; high: string; low: string; vol: string } | null
+  liq: string | null
+  flagged: boolean
+  candle: { time: string; o: string; h: string; l: string; c: string } | null
+  book: { kind: string; mid: string | null; bid: string | null; ask: string | null } | null
+  trade: { time: string; side: string; price: string; usd: string } | null
+  ages: { candles: string | null; book: string | null; trades: string | null }
+}
+export const ASK_LINE =
+  'Explain what this shows and what check_trade would say before any trade; do not trade.'
+const NS = 'not sent'
+// The book's figures, each left out when the screen shows none (a curve draws no mid and no levels).
+const bookFigures = (b: NonNullable<Ask['book']>) => {
+  const parts = [
+    b.mid && `mid ${b.mid}`,
+    b.bid && `best bid ${b.bid}`,
+    b.ask && `best ask ${b.ask}`,
+  ]
+  return parts.some(Boolean) ? `: ${parts.filter(Boolean).join(', ')}` : ''
+}
+export const askPacket = (a: Ask) =>
+  [
+    `Agon screen: mint ${a.mint}, range ${a.range}, slot ${a.slot ?? 'not read'}`,
+    a.stats
+      ? `price ${a.stats.price}, 24h ${a.stats.change}, high ${a.stats.high}, low ${a.stats.low}, vol ${a.stats.vol}`
+      : `24h stats ${NS}`,
+    `liq ${a.liq ?? NS}${a.flagged ? ', flagged: reserve over 100 times its 24h volume' : ''}`,
+    a.candle
+      ? `candle ${a.candle.time} UTC: O ${a.candle.o} H ${a.candle.h} L ${a.candle.l} C ${a.candle.c}`
+      : `candle ${NS}`,
+    a.book ? `book ${a.book.kind}${bookFigures(a.book)}` : `book ${NS}`,
+    ...(a.trade
+      ? [
+          `selected trade ${a.trade.time} UTC ${a.trade.side} at ${a.trade.price} for ${a.trade.usd}`,
+        ]
+      : []),
+    `ages: candles ${a.ages.candles ?? NS}, book ${a.ages.book ?? NS}, trades ${a.ages.trades ?? NS}`,
+    ASK_LINE,
+  ].join('\n')
+
+// Our words for the server's 3 book kinds; the server's own label is never passed on.
+const KIND = { orderbook: 'order book', 'amm-liquidity': 'AMM liquidity', 'amm-curve': 'AMM curve' }
+
+/**
+ * The ask packet for what the trade view shows: the market answer as read, the range and slot on
+ * screen, the candle in the readout (the crosshair's, else the newest) and the selected trade. Each
+ * value goes through the formatter the screen uses for it. Pure.
+ */
+export function askOf(
+  m: Market,
+  o: {
+    mint: string
+    range: string
+    slot: number | null
+    candle: Candle | null
+    trade: Fill | null
+    now: number
+  },
+): string {
+  const s = 'error' in m.stats ? null : m.stats
+  const c = 'error' in m.candles || m.range !== o.range ? null : m.candles
+  const b = m.book && !('error' in m.book) ? m.book : null
+  const t = 'error' in m.trades ? null : m.trades
+  const k = c ? o.candle : null
+  // A book value only as a number: a string the server sent is its text, not ours to pass on.
+  const level = (v: Cellv | null | undefined) => (typeof v === 'number' ? cell(v) : null)
+  return askPacket({
+    mint: o.mint,
+    range: o.range,
+    slot: o.slot === null ? null : String(o.slot),
+    stats: s && {
+      price: usd(s.price),
+      change: move(s.changePct),
+      high: usd(s.high),
+      low: usd(s.low),
+      vol: big(s.volumeUsd),
+    },
+    liq: m.liquidity && !('error' in m.liquidity) ? big(m.liquidity.value) : null,
+    flagged: !!(m.liquidity && !('error' in m.liquidity) && m.liquidity.flag),
+    candle: k && {
+      time: utc(k.t),
+      o: usd(k.open),
+      h: usd(k.high),
+      l: usd(k.low),
+      c: usd(k.close),
+    },
+    book: b && {
+      kind: KIND[b.kind],
+      mid: b.kind === 'amm-curve' ? null : level(b.mid),
+      bid: level(b.bids[0]?.price),
+      ask: level(b.asks[0]?.price),
+    },
+    trade: o.trade && {
+      time: clock(o.trade.time),
+      side: o.trade.side === 'buy' ? '▲ buy' : '▼ sell',
+      price: usd(o.trade.priceUsd),
+      usd: big(o.trade.volumeUsd),
+    },
+    ages: {
+      candles: c ? ageOf(c.fetchedAt, o.now) : null,
+      book: b ? ageOf(b.fetchedAt, o.now) : null,
+      trades: t ? ageOf(t.fetchedAt, o.now) : null,
+    },
+  })
+}
 
 /* ---------------------------------------------------------------------------------------------- */
 /* candles as half-block cells, 2 vertical pixels per cell                                         */
@@ -639,6 +773,8 @@ export function Trade(props: {
   const [panel, setPanel] = createSignal<'book' | 'trades'>('book')
   const [hoverAt, setHover] = createSignal<number | null>(null)
   const [scroll, setScroll] = createSignal(0)
+  // j or k selects a trade: the first row the trades list shows, highlighted. `a` passes it on.
+  const [picked, setPicked] = createSignal(false)
   const [help, setHelp] = createSignal(false)
   const feed = createFeed(props.base, props.mint, () => RANGES[rangeIx()]!)
 
@@ -963,15 +1099,19 @@ export function Trade(props: {
   /* side panels ------------------------------------------------------------------------------- */
 
   const sideRows = () => chartH() + volRow()
+  const list = () => {
+    const t = feed.market()?.trades
+    return t && !('error' in t) ? t.list : []
+  }
+  // A refresh can return fewer trades than the scroll had passed, so the first row is clamped.
+  const top = () => Math.min(scroll(), Math.max(0, list().length - 1))
+  // Selected only while the trades panel is on screen: h back to the book hides it, and a then
+  // leaves it out.
+  const selected = () =>
+    picked() && (stacked() || panel() === 'trades') ? (list()[top()] ?? null) : null
   const Trades = (p: { rows: number }) => {
     const tr = () => feed.market()?.trades
-    const list = () => {
-      const t = tr()
-      return t && !('error' in t) ? t.list : []
-    }
     const wide = () => side() >= 42
-    // A refresh can return fewer trades than the scroll had passed, so the first row is clamped.
-    const top = () => Math.min(scroll(), Math.max(0, list().length - 1))
     return (
       <box flexDirection="column" height={p.rows} overflow="hidden" flexShrink={0}>
         <text flexShrink={0} fg={theme()?.text} wrapMode="none">
@@ -1004,10 +1144,15 @@ export function Trade(props: {
             </text>
           </Show>
           <For each={list().slice(top(), top() + Math.max(1, p.rows - 2))}>
-            {(f) => (
+            {(f, i) => (
               <text
                 flexShrink={0}
-                fg={ink(api, f.side === 'buy' ? theme()?.success : theme()?.error)}
+                fg={ink(
+                  api,
+                  f.side === 'buy' ? theme()?.success : theme()?.error,
+                  picked() && i() === 0 ? theme()?.backgroundElement : undefined,
+                )}
+                bg={picked() && i() === 0 ? theme()?.backgroundElement : undefined}
                 wrapMode="none"
               >
                 {row([
@@ -1209,9 +1354,40 @@ export function Trade(props: {
     const at = hover() ?? n - 1
     setHover(d === 'home' ? 0 : d === 'end' ? n - 1 : Math.max(0, Math.min(n - 1, at + d)))
   }
-  const tradeCount = () => {
-    const t = feed.market()?.trades
-    return t && !('error' in t) ? t.list.length : 0
+  // Fills the prompt with the ask packet for what is on screen, and never sends it.
+  const ask = () => {
+    const m = feed.market()
+    if (!BASE58.test(props.mint)) return
+    if (!m) {
+      api.ui.toast({
+        variant: 'warning',
+        message: `Nothing to ask about yet: /market has not answered for ${short(props.mint)} ${RANGES[rangeIx()]}. Press a again once the header shows a price. Nothing was added.`,
+      })
+      return
+    }
+    const text = askOf(m, {
+      mint: props.mint,
+      range: RANGES[rangeIx()]!,
+      slot: feed.slot(),
+      // The readout's candle: none when the crosshair, or the newest bucket, is a gap.
+      candle: focus() ? focus()!.candle : null,
+      trade: selected(),
+      now: feed.now(),
+    })
+    props.leave()
+    api.client.tui.appendPrompt({ text }).then(
+      () =>
+        api.ui.toast({
+          variant: 'info',
+          message:
+            'The screen, as numbers and the mint, is in your prompt. Review it, then press Enter. Nothing was sent.',
+        }),
+      (e: unknown) =>
+        api.ui.toast({
+          variant: 'error',
+          message: `Could not fill the prompt (${e instanceof Error ? e.message : String(e)}). Nothing was sent.`,
+        }),
+    )
   }
 
   useKeyboard((key) => {
@@ -1238,9 +1414,18 @@ export function Trade(props: {
     else if (k === 'home' || k === 'g') moveCross('home')
     else if (k === 'end' || k === 'G') moveCross('end')
     else if (k === 'h' || k === 'l') setPanel(panel() === 'book' ? 'trades' : 'book')
-    else if (k === 'j' || k === 'down')
-      setScroll(Math.min(Math.max(0, tradeCount() - 1), scroll() + 1))
-    else if (k === 'k' || k === 'up') setScroll(Math.max(0, scroll() - 1))
+    // The first j or k selects the top trade and shows the trades panel; after that they move the
+    // selection.
+    else if (k === 'j' || k === 'down' || k === 'k' || k === 'up') {
+      if (picked())
+        setScroll(
+          k === 'j' || k === 'down'
+            ? Math.min(Math.max(0, list().length - 1), top() + 1)
+            : Math.max(0, top() - 1),
+        )
+      setPicked(true)
+      setPanel('trades')
+    } else if (k === 'a') ask()
     else if (k === 'b') ticket('buy')
     else if (k === 's') ticket('sell')
     else if (k === 'R') feed.reload()
@@ -1249,8 +1434,8 @@ export function Trade(props: {
 
   const hint = () =>
     help()
-      ? `${feed.status()?.networkNote ? `network ${feed.status()!.network}, status readings from mainnet  ` : ''}1-7 or [ ] range  m MA  e EMA  arrows, g, G crosshair  ${stacked() ? '' : 'h/l book or trades  '}j/k trades  b buy  s sell (fills your prompt, never sends)  R refresh  ? fewer keys  q or esc back`
-      : `1-7 range  m MA  e EMA  arrows crosshair  b/s ticket  ? keys  esc back`
+      ? `${feed.status()?.networkNote ? `network ${feed.status()!.network}, status readings from mainnet  ` : ''}1-7 or [ ] range  m MA  e EMA  arrows, g, G crosshair  ${stacked() ? '' : 'h/l book or trades  '}j/k select a trade  a ask the agent  b buy  s sell (a, b and s fill your prompt, never send)  R refresh  ? fewer keys  q or esc back`
+      : `1-7 range  m MA  e EMA  arrows crosshair  a ask  b/s ticket  ? keys  esc back`
 
   return (
     <box flexDirection="column" paddingLeft={1} paddingRight={1} flexGrow={1}>
