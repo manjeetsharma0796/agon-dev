@@ -211,9 +211,6 @@ async function togglePane($: Dollar) {
     title: 'Agon trade',
     focus: true,
     closeOnEscape: true,
-    // The dock's width when docked: room for the chart, its axis and the book. A width the person
-    // dragged the dock to wins.
-    columns: 84,
   })
   void refreshAll($)
   return opened.isPlaced
@@ -400,20 +397,25 @@ function lines(els: Els, key: string, list: string[], color?: string, dim?: bool
   ))
 }
 
-// The transcript's width, which the band is given while the pane is docked beside it. Kept to check
-// the pane's own width against the terminal's: live on Windows Terminal the pane drew past its
-// visible edge, so the narrower of the two is used.
+// The transcript's width, which the band is given while the pane is docked beside it. Live on a
+// 128-column Windows Terminal (2.1.288) the host laid the docked pane out wider than the room left
+// beside an 82-column transcript, so about half of it drew past the screen's edge. The pane takes
+// the narrower of its reported body and the terminal less the transcript, so the width it lays out
+// for is one it can see; `diag` says which numbers it had (temporary, for the live check).
 let transcriptColumns: number | null = null
 function usable(e: Site, body: number) {
   let w = body
   const vp = e.viewport?.columns
-  const docked = (e.props as { placement?: string }).placement === 'dock'
-  if (e.surface === 'terminal' && docked && vp && transcriptColumns) {
+  if (e.surface === 'terminal' && vp && transcriptColumns && transcriptColumns < vp) {
     const room = vp - transcriptColumns - 2
     if (room >= 30 && room < w) w = room
   }
   // A column for the scrollbar a tall pane draws, and 1 to spare.
-  return Math.max(30, w - 2)
+  const width = Math.max(30, w - 2)
+  return {
+    width,
+    diag: `w${width} b${body} v${vp ?? '-'} t${transcriptColumns ?? '-'}`,
+  }
 }
 
 // The band: connection, RPC ping, SOL, the selected token's price and change, the pane's toggle.
@@ -421,7 +423,11 @@ async function band($: Dollar, e: RenderInput<'AbovePrompt'>) {
   const els = $.ui.resolve(e)
   const { Box, Button } = els
   const width = e.props.bodyColumns ?? 80
-  transcriptColumns = width
+  // The pane sizes itself by this width; when it changes, the pane is asked to lay out again.
+  if (transcriptColumns !== width) {
+    transcriptColumns = width
+    $.ui.invalidate('ui.render')
+  }
   const mode = (await $.state.get(MODE)).value ?? 'line'
   const toggleLabel = mode === 'collapsed' ? 'Agon >' : 'Agon v'
   const toggle = (
@@ -651,7 +657,7 @@ async function pane($: Dollar, e: Site) {
     Raster?: ElementConstructor<RasterProps>
   }
   const props = e.props as { bodyColumns?: number; scroll?: { bodyRows?: number } }
-  const width = usable(e, props.bodyColumns ?? 80)
+  const { width, diag } = usable(e, props.bodyColumns ?? 80)
   const wide = width >= 108
   const st = (await $.state.get(STATUS)).value ?? null
   const mk = (await $.state.get(MARKET)).value ?? null
@@ -714,6 +720,8 @@ async function pane($: Dollar, e: Site) {
           { text: network(s), prio: 5, dim: true },
         ]
       : []),
+    // Temporary, for the live check: the width laid out for and the numbers it came from.
+    { text: diag, prio: 0, dim: true },
   ]
   const status = (
     <Box key="status" flexDirection="column">

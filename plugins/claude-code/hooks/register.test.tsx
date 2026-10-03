@@ -480,3 +480,21 @@ test('SOL is shown once when it is the selected token; a flagged or missing liqu
     await pane.unmount()
   }
 })
+
+test('a docked pane lays out for the room the terminal has, not the body the host reports', async ($, on) => {
+  const server: Server = { book: ORDERBOOK, urls: [], down: false, upstream: 'live' }
+  stub(on, server, [])
+  // Measured live: a 128-column terminal, an 80-column transcript (the band's width), and a pane
+  // body reported as 84, of which about 45 columns were on screen.
+  const viewport = { columns: 128, rows: 40, isFullscreen: true }
+  const band = await $.ui.mount({ ...BAND('terminal', 80), viewport })
+  const pane = await $.ui.mount({ ...PANE('terminal', 84), viewport })
+  await pane.press({ key: 'pick-BONK' })
+  await pane.press({ key: 'refresh' })
+  expect(await shown(pane)).toContain('w44 b84 v128 t80')
+  expect(await widest(pane)).toBeLessThanOrEqual(44)
+  // The chart and its axis, with the last-price marker, fit inside those 44 columns.
+  expect(await shown(pane)).toContain('◀$0.00002113')
+  await band.unmount()
+  await pane.unmount()
+})
