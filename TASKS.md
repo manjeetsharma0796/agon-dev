@@ -3192,7 +3192,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-C35, The order book, or the honest depth, for every pool type
-- Status: open
+- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-c35-depth
 - Depends-on: T-C33
 - Touches: packages/mcp/src/depth.ts, packages/mcp/src/depth.test.ts, packages/mcp/src/market.ts,
   packages/mcp/package.json, pnpm-lock.yaml
