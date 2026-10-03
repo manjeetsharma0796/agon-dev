@@ -110,7 +110,7 @@ describe('the 1 image proxy', () => {
   test('every fetch goes to wsrv.nl, with the icon URL encoded inside it', () => {
     const u = new URL(proxyUrl('https://example.com/a b.png?x=1&y=2', 16))
     expect(u.origin).toBe('https://wsrv.nl')
-    expect(u.searchParams.get('url')).toBe('https://example.com/a b.png?x=1&y=2')
+    expect(u.searchParams.get('url')).toBe('https://example.com/a%20b.png?x=1&y=2')
     expect(u.searchParams.get('w')).toBe('16')
     expect(u.searchParams.get('h')).toBe('16')
     expect(u.searchParams.get('output')).toBe('png')
@@ -118,6 +118,13 @@ describe('the 1 image proxy', () => {
     expect(u.searchParams.get('l')).toBe('0')
     // The icon URL's own query cannot add a parameter to the proxy's.
     expect([...u.searchParams.keys()].sort()).toEqual(['fit', 'h', 'l', 'output', 'url', 'w'])
+  })
+
+  test('the proxy gets the URL as parsed here, so a backslash cannot hide another host', () => {
+    expect(iconRefusal('https://example.com\\@127.0.0.1/a.png')).toBeNull()
+    const u = new URL(proxyUrl('https://example.com\\@127.0.0.1/a.png', 16))
+    expect(new URL(u.searchParams.get('url')!).hostname).toBe('example.com')
+    expect(u.searchParams.get('url')).not.toContain('\\')
   })
 
   test('an IPFS gateway path is read through Filebase, which the proxy is not refused by', () => {

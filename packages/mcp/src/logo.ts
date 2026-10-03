@@ -82,8 +82,11 @@ const IPFS = /^https:\/\/[^/]+\/ipfs\/(.+)$/
 
 /** The 1 URL this server fetches for an icon: wsrv.nl, the icon URL encoded inside it. Pure. */
 export function proxyUrl(icon: string, size: number): string {
-  const ipfs = IPFS.exec(icon)
-  const src = ipfs ? `https://ipfs.filebase.io/ipfs/${ipfs[1]}` : icon
+  // The URL as this file's checks parsed it, never the raw text, so the proxy cannot read a host
+  // out of it that iconRefusal did not see (a backslash or an encoded character, say).
+  const href = new URL(icon).href
+  const ipfs = IPFS.exec(href)
+  const src = ipfs ? `https://ipfs.filebase.io/ipfs/${ipfs[1]}` : href
   // Level 0: stored deflate blocks, so a client with no zlib can still read the pixels.
   return `${PROXY}?url=${encodeURIComponent(src)}&w=${size}&h=${size}&fit=cover&output=png&l=0`
 }
