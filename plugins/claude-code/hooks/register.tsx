@@ -272,6 +272,9 @@ async function refreshDiscover($: Dollar) {
   if (seq !== discoverSeq) return
   await $.state.set(DISCOVER, next)
   $.ui.invalidate('ui.render')
+  // After the list is on screen, so the rows never wait for a logo.
+  wantLogos(Array.isArray(next.body?.tokens) ? next.body.tokens : [])
+  $.clock.after(0, () => void drainLogos($))
 }
 
 async function showView($: Dollar, v: View) {
@@ -1525,6 +1528,238 @@ function tradesPanel(els: Els, m: Market | null, width: number) {
   )
 }
 
+// ---- logos (T-C39) ----
+
+// A token's logo comes only from the Agon server's GET /logo by mint, as base64 text since
+// `$.http.fetch` reads text; the plugin never asks the icon's host or any image proxy. Each mint is
+// asked once per load of this module at 32 by 32: desktop draws that PNG in an SVG, the terminal
+// averages it into 2 by 2 pixels on 2 half-block cells. A logo that fails is kept as null and the
+// row shows the symbol's first letter. Not in `$.state`: up to 50 PNGs are no state worth a version.
+const LOGO_PX = 32
+const LOGO_MAX = 256
+const logoCache = new Map<string, { png: string; cells: string | null } | null>()
+const logoPending = new Set<string>()
+
+// The server asks its proxy for level 0, so the zlib stream is stored blocks only and needs no
+// inflate (this module has no zlib). Anything else is no logo, never a guess.
+function stored(z: Uint8Array): Uint8Array | null {
+  const out: number[] = []
+  let p = 2
+  for (;;) {
+    if (p + 5 > z.length) return null
+    const head = z[p]!
+    if (((head >> 1) & 3) !== 0) return null
+    const len = z[p + 1]! | (z[p + 2]! << 8)
+    if (p + 5 + len > z.length) return null
+    for (let i = 0; i < len; i++) out.push(z[p + 5 + i]!)
+    p += 5 + len
+    if (head & 1) return Uint8Array.from(out)
+  }
+}
+
+// 8-bit, non-interlaced, colour types 0, 2, 3, 4 and 6, as RGBA; null for anything else.
+const SIG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
+const isPng = (b: Uint8Array) => b.length >= 33 && SIG.every((v, i) => b[i] === v)
+function pixelsOf(b: Uint8Array): { w: number; h: number; rgba: Uint8Array } | null {
+  if (!isPng(b)) return null
+  const dv = new DataView(b.buffer, b.byteOffset, b.byteLength)
+  let [p, w, h, depth, type, interlace] = [8, 0, 0, 0, 0, 0]
+  let pal: Uint8Array | null = null
+  let trns: Uint8Array | null = null
+  const idat: number[] = []
+  while (p + 8 <= b.length) {
+    const len = dv.getUint32(p)
+    const kind = String.fromCharCode(b[p + 4]!, b[p + 5]!, b[p + 6]!, b[p + 7]!)
+    const d = b.subarray(p + 8, p + 8 + len)
+    if (kind === 'IHDR')
+      [w, h, depth, type, interlace] = [
+        dv.getUint32(p + 8),
+        dv.getUint32(p + 12),
+        d[8]!,
+        d[9]!,
+        d[12]!,
+      ]
+    else if (kind === 'PLTE') pal = d
+    else if (kind === 'tRNS') trns = d
+    else if (kind === 'IDAT') for (const v of d) idat.push(v)
+    else if (kind === 'IEND') break
+    p += 12 + len
+  }
+  const ch = ({ 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 } as Record<number, number>)[type]
+  if (
+    depth !== 8 ||
+    interlace !== 0 ||
+    !ch ||
+    (type === 3 && !pal) ||
+    w < 1 ||
+    h < 1 ||
+    w > 64 ||
+    h > 64
+  )
+    return null
+  const raw = stored(Uint8Array.from(idat))
+  const stride = w * ch
+  if (!raw || raw.length < h * (stride + 1)) return null
+  const out = new Uint8Array(w * h * 4)
+  const prev = new Uint8Array(stride)
+  const cur = new Uint8Array(stride)
+  for (let y = 0; y < h; y++) {
+    const f = raw[y * (stride + 1)]!
+    for (let i = 0; i < stride; i++) {
+      const a = i >= ch ? cur[i - ch]! : 0
+      const up = prev[i]!
+      const c = i >= ch ? prev[i - ch]! : 0
+      const [pa, pb, pc] = [Math.abs(up - c), Math.abs(a - c), Math.abs(a + up - 2 * c)]
+      const pred = [0, a, up, (a + up) >> 1, pa <= pb && pa <= pc ? a : pb <= pc ? up : c][f] ?? 0
+      cur[i] = (raw[y * (stride + 1) + 1 + i]! + pred) & 255
+    }
+    for (let x = 0; x < w; x++) {
+      const o = (y * w + x) * 4
+      const s = x * ch
+      const k = cur[s]!
+      const rgba =
+        type === 6
+          ? [k, cur[s + 1]!, cur[s + 2]!, cur[s + 3]!]
+          : type === 2
+            ? [k, cur[s + 1]!, cur[s + 2]!, 255]
+            : type === 3
+              ? [
+                  pal![k * 3]!,
+                  pal![k * 3 + 1]!,
+                  pal![k * 3 + 2]!,
+                  trns && k < trns.length ? trns[k]! : 255,
+                ]
+              : [k, k, k, type === 4 ? cur[s + 1]! : 255]
+      out.set(rgba, o)
+    }
+    prev.set(cur)
+  }
+  return { w, h, rgba: out }
+}
+
+// 2 cells, 1 row: each cell's top and bottom half is the alpha-weighted average of a quarter of
+// the logo. A quarter mostly transparent is left to the terminal's own background.
+function logoCells(px: { w: number; h: number; rgba: Uint8Array }): string {
+  const quarter = (qx: number, qy: number) => {
+    let [r, g, b, a, n] = [0, 0, 0, 0, 0]
+    for (let y = Math.floor((qy * px.h) / 2); y < Math.floor(((qy + 1) * px.h) / 2); y++)
+      for (let x = Math.floor((qx * px.w) / 2); x < Math.floor(((qx + 1) * px.w) / 2); x++) {
+        const o = (y * px.w + x) * 4
+        const al = px.rgba[o + 3]!
+        ;[r, g, b, a, n] = [
+          r + px.rgba[o]! * al,
+          g + px.rgba[o + 1]! * al,
+          b + px.rgba[o + 2]! * al,
+          a + al,
+          n + 1,
+        ]
+      }
+    if (!n || a / n < 128) return null
+    return (Math.round(r / a) << 16) | (Math.round(g / a) << 8) | Math.round(b / a)
+  }
+  const words = new Uint32Array(6)
+  for (const x of [0, 1]) {
+    const [top, bottom] = [quarter(x, 0), quarter(x, 1)]
+    words.set(
+      top !== null
+        ? [0x2580, top, bottom ?? NONE]
+        : bottom !== null
+          ? [0x2584, bottom, NONE]
+          : [0x20, NONE, NONE],
+      x * 3,
+    )
+  }
+  return (new Uint8Array(words.buffer) as unknown as { toBase64(): string }).toBase64()
+}
+
+const B64 = /^[A-Za-z0-9+/]+={0,2}$/
+
+async function loadLogo($: Dollar, mint: string) {
+  let got: { png: string; cells: string | null } | null = null
+  try {
+    const res = await $.http.fetch(
+      `${server}/logo?mint=${encodeURIComponent(mint)}&size=${LOGO_PX}&encoding=base64`,
+    )
+    const text = res.text.trim()
+    // At most 256 KB of PNG, which is what the server serves.
+    if (res.ok && text.length <= 350_000 && B64.test(text)) {
+      const bytes = (Uint8Array as unknown as { fromBase64(s: string): Uint8Array }).fromBase64(
+        text,
+      )
+      const px = pixelsOf(bytes)
+      if (isPng(bytes)) got = { png: text, cells: px ? logoCells(px) : null }
+    }
+    // A busy server (503) is not an answer: the next list refresh asks again.
+    if (res.status === 503) return
+  } catch {
+    // Not reachable: not cached either, so the next list refresh asks again.
+    return
+  }
+  logoCache.set(mint, got)
+  while (logoCache.size > LOGO_MAX) logoCache.delete(logoCache.keys().next().value!)
+}
+
+// The logos of a list's tokens not asked yet, 4 at a time, redrawing as each batch lands. A token
+// /discover sent no icon for is not asked. Fetched by a timer, never inside the press that asked for
+// the list: live on 2.1.288, awaiting 50 cold logos inside a press ran past its 10 s budget.
+let logoBusy = false
+function wantLogos(tokens: Token[]) {
+  for (const t of tokens)
+    if (
+      typeof t.display?.icon === 'string' &&
+      BASE58.test(String(t.mint)) &&
+      !logoCache.has(t.mint)
+    )
+      logoPending.add(t.mint)
+}
+async function drainLogos($: Dollar) {
+  if (logoBusy || !logoPending.size) return
+  logoBusy = true
+  try {
+    while (logoPending.size) {
+      const batch = [...logoPending].slice(0, 4)
+      await Promise.all(batch.map((m) => loadLogo($, m)))
+      for (const m of batch) logoPending.delete(m)
+      $.ui.invalidate('ui.render')
+    }
+  } finally {
+    logoBusy = false
+  }
+}
+
+// 2 cells: the logo, or the symbol's first letter while it loads, or when there is none.
+function logoOf(
+  els: Els,
+  Svg: ElementConstructor<SvgProps> | undefined,
+  Raster: ElementConstructor<RasterProps> | undefined,
+  svg: boolean,
+  t: Token,
+  letter: string,
+) {
+  const { Box, Text } = els
+  const l = logoCache.get(t.mint)
+  const drawn =
+    l && svg && Svg ? (
+      <Svg
+        source={`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><image width="16" height="16" href="data:image/png;base64,${l.png}"/></svg>`}
+        alt={`logo, letter ${letter}`}
+        width={16}
+        height={16}
+      />
+    ) : l?.cells && !svg && Raster ? (
+      <Raster key={`logo-${t.mint}`} columns={2} rows={1} cells={l.cells} />
+    ) : (
+      <Text key={`logo-${t.mint}`} color="cyan">
+        {padTo(letter, 2)}
+      </Text>
+    )
+  return (
+    <Box key={`lg-${t.mint}`} width={2} flexShrink={0}>
+      {drawn}
+    </Box>
+  )
+}
+
 // ---- the market list ----
 
 // A tab: a plain Button, the active one bracketed, so the choice reads without colour.
@@ -1716,6 +1951,10 @@ const padTo = (s: string, w: number, right?: boolean) => {
 async function markets($: Dollar, e: Site) {
   const els = $.ui.resolve(e)
   const { Box, Button, Text } = els
+  const { Svg, Raster } = els as unknown as {
+    Svg?: ElementConstructor<SvgProps>
+    Raster?: ElementConstructor<RasterProps>
+  }
   const props = e.props as { bodyColumns?: number }
   const width = usable(e, props.bodyColumns ?? 80)
   const list = (await $.state.get(LIST)).value ?? 'trending'
@@ -1769,7 +2008,8 @@ async function markets($: Dollar, e: Site) {
   })
   const first = (c: Col) => (c.id === 'token' || c.id === sortedBy ? -1 : c.prio)
   const keep = new Set<string>()
-  let used = 0
+  // The logo's 2 cells and their gap come first.
+  let used = 3
   for (const c of [...all].sort((a, b) => first(a) - first(b))) {
     const add = c.w + (keep.size ? 1 : 0)
     if (used + add > width) continue
@@ -1793,6 +2033,7 @@ async function markets($: Dollar, e: Site) {
     ) : (
       <Box key="table" flexDirection="column">
         <Box key="mk-head" flexDirection="row" gap={1} flexWrap="nowrap">
+          <Text key="hd-logo">{'  '}</Text>
           {cols.map((c) => (
             <Text key={`hd-${c.id}`} dimColor bold wrap="truncate-end">
               {padTo(c.head, c.w, c.right)}
@@ -1801,6 +2042,14 @@ async function markets($: Dollar, e: Site) {
         </Box>
         {tokens.map((t, i) => (
           <Box key={`mk-${t.mint}`} flexDirection="row" gap={1} flexWrap="nowrap">
+            {logoOf(
+              els,
+              Svg,
+              Raster,
+              e.surface !== 'terminal',
+              t,
+              symbolOf(t) === NOT_SENT ? '?' : [...symbolOf(t)][0]!,
+            )}
             {cols.map((c) =>
               c.id === 'token' ? (
                 <Box key={`tk-${i}`} width={c.w} flexShrink={0}>

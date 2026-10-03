@@ -21,7 +21,8 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { createServer } from './index.js'
 import { routeStream } from './stream.js'
 import { serveMarket } from './market.js'
-import { serveDiscover } from './discover.js'
+import { createDiscover, serveDiscover } from './discover.js'
+import { createLogos, serveLogo } from './logo.js'
 import { liveIo } from './io.js'
 import { activityRoute, journalFor } from './journal.js'
 
@@ -36,6 +37,8 @@ const PLAIN_HOST = /^([\w.-]+|\[[\da-f:]+\])(:\d{1,5})?$/i
 const LOOPBACK = /^(127\.0\.0\.1|localhost|\[::1\])(:|$)/i
 /** The journal (T-C30): Neon when DATABASE_URL is set, else every write a named failure. */
 const JOURNAL = journalFor(process.env['DATABASE_URL'])
+/** Logos (T-C39) look icon URLs up in the answers /discover makes, so both share 1 instance. */
+const LOGOS = createLogos({ discover: createDiscover() })
 
 const handle = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
   // One health path, so somebody checking a tunnel gets an answer instead of a protocol error.
@@ -64,7 +67,11 @@ const handle = async (req: IncomingMessage, res: ServerResponse): Promise<void> 
     return
   }
   if (req.method === 'GET' && (req.url ?? '').split('?')[0] === '/discover') {
-    await serveDiscover(new URL(req.url ?? '/', 'http://localhost'), res)
+    await serveDiscover(new URL(req.url ?? '/', 'http://localhost'), res, LOGOS.discover)
+    return
+  }
+  if (req.method === 'GET' && (req.url ?? '').split('?')[0] === '/logo') {
+    await serveLogo(new URL(req.url ?? '/', 'http://localhost'), res, LOGOS)
     return
   }
   // The journal's signed read (T-C30): 401 with the reason unless signed by the owner or a hired key.
