@@ -106,7 +106,7 @@ function fakeChain() {
     fill(d)
     return d
   }
-  const TOKEN = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'
+  const SPL = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'
   const data: Record<string, { owner: string; data: Buffer }> = {
     [POOL]: {
       owner: 'pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA',
@@ -118,14 +118,14 @@ function fakeChain() {
         key(VAULT_B).copy(d, 171)
       }),
     },
-    [SOL]: { owner: TOKEN, data: account(82, (d) => ((d[44] = 9), (d[45] = 1))) },
-    [USDC]: { owner: TOKEN, data: account(82, (d) => ((d[44] = 6), (d[45] = 1))) },
+    [SOL]: { owner: SPL, data: account(82, (d) => ((d[44] = 9), (d[45] = 1))) },
+    [USDC]: { owner: SPL, data: account(82, (d) => ((d[44] = 6), (d[45] = 1))) },
     [VAULT_A]: {
-      owner: TOKEN,
+      owner: SPL,
       data: account(165, (d) => (key(SOL).copy(d, 0), d.writeBigUInt64LE(1_000_000_000_000n, 64))),
     },
     [VAULT_B]: {
-      owner: TOKEN,
+      owner: SPL,
       data: account(165, (d) => (key(USDC).copy(d, 0), d.writeBigUInt64LE(118_000_000_000n, 64))),
     },
   }

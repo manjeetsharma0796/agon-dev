@@ -16,7 +16,7 @@ import {
 const SOL = 'So11111111111111111111111111111111111111112'
 const MINT = 'FHpcNSe6tb2n15bAdq4BkeYWGyZKFD7yLYrH92ng7wCT'
 const PUMPSWAP = 'pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA'
-const TOKEN = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'
+const SPL = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'
 const sqrtOf = (tick: number) => 1.0001 ** (tick / 2)
 
 describe('constant product, x times y equals k', () => {
@@ -346,10 +346,10 @@ describe('reading a pool', () => {
     slot: 452_000_000,
     list: addresses.map((a) => {
       if (a === POOL) return { owner: PUMPSWAP, data: pumpswap() }
-      if (a === MINT) return { owner: TOKEN, data: mint(6) }
-      if (a === SOL) return { owner: TOKEN, data: mint(9) }
-      if (a === BASE_VAULT) return { owner: TOKEN, data: vault(MINT, 1_000_000_000_000n) }
-      if (a === QUOTE_VAULT) return { owner: TOKEN, data: vault(SOL, 10_000_000_000n) }
+      if (a === MINT) return { owner: SPL, data: mint(6) }
+      if (a === SOL) return { owner: SPL, data: mint(9) }
+      if (a === BASE_VAULT) return { owner: SPL, data: vault(MINT, 1_000_000_000_000n) }
+      if (a === QUOTE_VAULT) return { owner: SPL, data: vault(SOL, 10_000_000_000n) }
       return null
     }),
   })

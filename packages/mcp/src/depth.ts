@@ -419,8 +419,8 @@ const disc = (d: Buffer, hex: string, what: string) => {
     )
 }
 
-const TOKEN = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'
-const TOKEN_2022 = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'
+const SPL = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'
+const SPL_2022 = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'
 const WSOL = 'So11111111111111111111111111111111111111112'
 
 const PROGRAM = {
@@ -436,7 +436,7 @@ const PROGRAM = {
 const RAYDIUM_LINE = 'https://api-v3.raydium.io/pools/line/position?id='
 
 function decimalsOf(a: Account | null | undefined, mint: string) {
-  if (!a || (a.owner !== TOKEN && a.owner !== TOKEN_2022) || a.data.length < 82 || a.data[45] !== 1)
+  if (!a || (a.owner !== SPL && a.owner !== SPL_2022) || a.data.length < 82 || a.data[45] !== 1)
     throw new DepthError(
       `mint ${mint} is not an initialized token mint on chain, so its decimals are unknown`,
       false,
@@ -447,7 +447,7 @@ function decimalsOf(a: Account | null | undefined, mint: string) {
 function amountOf(a: Account | null | undefined, mint: string, what: string) {
   if (
     !a ||
-    (a.owner !== TOKEN && a.owner !== TOKEN_2022) ||
+    (a.owner !== SPL && a.owner !== SPL_2022) ||
     a.data.length < 72 ||
     key(a.data, 0) !== mint
   )
