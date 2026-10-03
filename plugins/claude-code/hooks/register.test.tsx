@@ -1,6 +1,6 @@
 import { expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
-import { askPacket } from './register.tsx'
+import { askPacket, staleOf } from './register.tsx'
 
 // The Agon server, stubbed with raw floats as a live server sends them: /status and /market as
 // packages/mcp answers them, the book as T-C35's depth.ts builds it. The test has no network.
@@ -986,4 +986,182 @@ test('Ask before /market answers says why and fills nothing', async ($, on) => {
   await pane.press({ key: 'ask' })
   expect(filled).toHaveLength(0)
   await pane.unmount()
+})
+
+// ---- T-E29: stale numbers ----
+
+// The shared shape: this input and these texts are also checked against the builder in
+// .opencode/tui/agon-discovery.tsx, so the 2 copies of the builder cannot drift apart. The stale
+// fields are verbatim from a real /market answer (SOL 1h) recorded 2026-10-03 10:43:15 UTC from a
+// locally built server (AGON_NET_MODE=live) while GeckoTerminal answered 429 to this IP.
+const STALE_IN = {
+  candles: {
+    stale: true,
+    ageSeconds: 90,
+    staleReason:
+      'Candles for 1h: GeckoTerminal answered 429, its free limit of about 30 calls a minute was hit, so this server holds every GeckoTerminal call for 60 more s and makes 0 calls until then; retry then. Showing the last good value, fetched 90 s ago.',
+  },
+  stats24h: {
+    stale: true,
+    ageSeconds: 90,
+    staleReason:
+      '24h stats: GeckoTerminal answered 429, its free limit of about 30 calls a minute was hit, so this server holds every GeckoTerminal call for 60 more s and makes 0 calls until then; retry then. Showing the last good value, fetched 90 s ago.',
+  },
+  trades: {
+    stale: true,
+    ageSeconds: 87,
+    staleReason:
+      'Recent trades: GeckoTerminal answered 429, its free limit of about 30 calls a minute was hit, so this server holds every GeckoTerminal call for 60 more s and makes 0 calls until then; retry then. Showing the last good value, fetched 87 s ago.',
+  },
+  book: {
+    basis:
+      'Read from the Orca Whirlpool accounts at slot 452909692. AMM liquidity, not resting orders: a trade walks along it. Prices in USD: the quote token at $0.9979333488554353 from GeckoTerminal at 2026-10-03T10:41:51.029Z (the last good price, 84 s old, because its refresh met a GeckoTerminal 429 and this server is pausing its calls). Size in base token units.',
+  },
+}
+const STALE_TEXT =
+  'prices 90 s old, candles 90 s old, trades 87 s old, book USD price 84 s old: GeckoTerminal is rate-limiting, next try in 60 s'
+const STALE_LATER =
+  'prices 95 s old, candles 95 s old, trades 92 s old, book USD price 89 s old: GeckoTerminal is rate-limiting, next try in 55 s'
+const STALE_OVER =
+  'prices 151 s old, candles 151 s old, trades 148 s old, book USD price 145 s old: GeckoTerminal is rate-limiting'
+// Not a 429: the cause the server named, without its retry advice.
+const STALE_OTHER_IN = {
+  trades: {
+    stale: true,
+    ageSeconds: 40,
+    staleReason:
+      'Recent trades: GeckoTerminal did not answer within 10 s. This server asks again after 15 s, so retry then. Showing the last good value, fetched 40 s ago.',
+  },
+}
+const STALE_OTHER_TEXT = 'trades 40 s old: GeckoTerminal did not answer within 10 s'
+// Blocks that never had a value (BONK 15m, recorded 10:42:32 UTC): no stale line, the cool-down.
+const NEVER_IN = {
+  candles: {
+    error:
+      'Candles for 15m: GeckoTerminal answered 429, its free limit of about 30 calls a minute was hit, so this server holds every GeckoTerminal call for 26 more s and makes 0 calls until then; retry then.',
+  },
+  book: {
+    error:
+      'Order book: GeckoTerminal answered 429, its free limit of about 30 calls a minute was hit, so this server holds every GeckoTerminal call for 25 more s and makes 0 calls until then; retry then.',
+  },
+}
+// ---- end of the shared stale shape
+
+test('the stale notes have the 1 wording both plugins share', () => {
+  expect(staleOf(STALE_IN, 0)).toEqual({
+    lines: [STALE_TEXT],
+    blocks: ['stats24h', 'candles', 'trades', 'usd'],
+    coolDownS: 60,
+  })
+  expect(staleOf(STALE_IN, 5.9).lines).toEqual([STALE_LATER])
+  expect(staleOf(STALE_IN, 5.9).coolDownS).toBe(55)
+  expect(staleOf(STALE_IN, 61)).toEqual({
+    lines: [STALE_OVER],
+    blocks: ['stats24h', 'candles', 'trades', 'usd'],
+    coolDownS: null,
+  })
+  expect(staleOf(STALE_OTHER_IN, 0)).toEqual({
+    lines: [STALE_OTHER_TEXT],
+    blocks: ['trades'],
+    coolDownS: null,
+  })
+  expect(staleOf(NEVER_IN, 0)).toEqual({ lines: [], blocks: [], coolDownS: 26 })
+  expect(staleOf(null, 0)).toEqual({ lines: [], blocks: [], coolDownS: null })
+})
+
+// The stub's numbers with the recorded stale fields on top, as /market sent them.
+const staleMarket = () => {
+  const m: any = market({ ...ORDERBOOK, basis: STALE_IN.book.basis })
+  for (const k of ['candles', 'stats24h', 'trades'] as const) Object.assign(m[k], STALE_IN[k])
+  return m
+}
+const neverMarket = () => {
+  const m: any = market({ error: NEVER_IN.book.error })
+  m.candles = { pool: POOL, error: NEVER_IN.candles.error }
+  m.indicators = { pool: POOL, error: 'Indicators need the candles, which failed above.' }
+  return m
+}
+const NOTE =
+  /prices 9\d s old, candles 9\d s old, trades 8\d s old, book USD price 8\d s old: GeckoTerminal is rate-limiting, next try in \d+ s/
+
+test('a stale answer is drawn dim with its age and why, the cool-down on the status line, at 60, 80 and 140', async ($, on) => {
+  let body = staleMarket()
+  mock.store(on)
+  on('command.register', async (_$, e) => ({ value: { command: e.name } }))
+  on('http.fetch', async (_$, e) => {
+    const b = e.url.includes('/status') ? status('live') : body
+    return { value: { status: 200, ok: true, headers: {}, text: JSON.stringify(b) } }
+  })
+  const LIVE = /^(green|red)$/
+  for (const surface of ['terminal', 'desktop'] as const)
+    for (const width of [60, 80, 140]) {
+      body = staleMarket()
+      const pane = await $.ui.mount(PANE(surface, width))
+      await pane.press({ key: 'pick-BONK' })
+      await pane.press({ key: 'refresh' })
+      const flat = (await shown(pane)).replace(/\n/g, ' ')
+      expect(flat).toMatch(NOTE)
+      expect(flat).toContain('BONK  $0.00002113 stale')
+      expect(flat).toMatch(/GeckoTerminal cool-down \d+ s/)
+      expect(flat).toMatch(/Recent trades, \d+s old, stale/)
+      expect(await widest(pane)).toBeLessThanOrEqual(width - 2)
+      const texts = await pane.findAll({ type: 'Text' })
+      // The note, the header, the trades and the book: dim, never green or red.
+      for (const t of texts.filter((x) =>
+        /rate-limiting|\$0\.00002113 stale|▲ buy|▼ sell|^(ask|bid|mid) /.test(x.text),
+      )) {
+        expect(t.props['dimColor']).toBe(true)
+        expect(String(t.props['color'] ?? '')).not.toMatch(LIVE)
+      }
+      // Only the connection, which is live, keeps a live colour.
+      for (const t of texts.filter((x) => LIVE.test(String(x.props['color'] ?? ''))))
+        expect(t.text).toBe('● live')
+      if (surface === 'terminal') {
+        const r = await pane.find({ type: 'Raster' })
+        const words = new Uint32Array(
+          (Uint8Array as unknown as { fromBase64(s: string): Uint8Array }).fromBase64(
+            String(r?.props['cells']),
+          ).buffer,
+        )
+        const colours = new Set([...words].filter((_, i) => i % 3 === 1))
+        expect([...colours].every((c) => c === 0x888888 || c === 0x01000000)).toBe(true)
+        expect(colours.has(0x888888)).toBe(true)
+      } else {
+        const svg = String((await pane.find({ type: 'Svg' }))?.props['source'])
+        for (const live of ['#22c55e', '#ef4444', '#eab308', '#38bdf8'])
+          expect(svg).not.toContain(live)
+      }
+      await pane.unmount()
+
+      const band = await $.ui.mount(BAND(surface, width))
+      const b = await band.findAll({ type: 'Text' })
+      const price = b.find((t) => t.text.includes('$0.00002113'))
+      expect(price?.text).toBe('BONK $0.00002113 stale')
+      expect(price?.props['dimColor']).toBe(true)
+      for (const t of b.filter((x) => LIVE.test(String(x.props['color'] ?? ''))))
+        expect(t.text).toBe('● live')
+      expect(await widest(band)).toBeLessThanOrEqual(width)
+      await band.unmount()
+
+      // Blocks that never had a value name the cool-down and draw nothing stale.
+      body = neverMarket()
+      const never = await $.ui.mount(PANE(surface, width))
+      await never.press({ key: 'refresh' })
+      const n = (await shown(never)).replace(/\n/g, ' ')
+      expect(n).toContain('Candles for 15m: GeckoTerminal answered 429')
+      expect(n).toContain('not shown: Order book: GeckoTerminal answered 429')
+      expect(n).toMatch(/GeckoTerminal cool-down 2\d s/)
+      expect(n).not.toMatch(/s old: /)
+      expect(await widest(never)).toBeLessThanOrEqual(width - 2)
+      await never.unmount()
+    }
+
+  // A fresh answer draws no note, no cool-down and no "stale".
+  body = market(ORDERBOOK)
+  const fresh = await $.ui.mount(PANE('terminal', 80))
+  await fresh.press({ key: 'refresh' })
+  const f = await shown(fresh)
+  expect(f).not.toContain('stale')
+  expect(f).not.toContain('cool-down')
+  await fresh.unmount()
 })

@@ -214,7 +214,7 @@ async function refreshMarket($: Dollar) {
       `/market?mint=${encodeURIComponent(mint)}&range=${encodeURIComponent(range)}`,
     )
     next = r.ok
-      ? { key, body: r.body as Market, error: null }
+      ? { key, body: r.body as Market, error: null, at: Date.now() }
       : {
           key,
           body: null,
@@ -573,6 +573,10 @@ async function band($: Dollar, e: RenderInput<'AbovePrompt'>) {
   const stats = current?.body?.stats24h
   const [conn, connTone] = link(st)
   const s = st?.body ?? null
+  // A last good price says so and is drawn dim, never green or red (T-E29).
+  const notes = staleNow(current)
+  const stale = notes.blocks.includes('stats24h')
+  const cool = notes.coolDownS
   const price = usd(stats?.price)
   const room = width - buttonCells(toggleLabel, true) - buttonCells('trade', false) - 4
   const solText = s ? sol(s, mint) : null
@@ -587,17 +591,26 @@ async function band($: Dollar, e: RenderInput<'AbovePrompt'>) {
       ...(solText ? [{ text: solText, prio: 3 }] : []),
       {
         text: price
-          ? `${labelOf(mint)} ${price}`
+          ? `${labelOf(mint)} ${price}${stale ? ' stale' : ''}`
           : clip(
               `${labelOf(mint)}: ${current?.error ?? stats?.error ?? 'loading from /market'}`,
               Math.max(10, room - cells(connText) - 2),
             ),
         prio: 1,
         color: current?.error || stats?.error ? 'yellow' : undefined,
+        dim: !!price && stale,
       },
       ...(price && move(stats?.changePct)
-        ? [{ text: move(stats?.changePct)!, prio: 2, color: tone(stats?.changePct) }]
+        ? [
+            {
+              text: move(stats?.changePct)!,
+              prio: 2,
+              color: stale ? undefined : tone(stats?.changePct),
+              dim: stale,
+            },
+          ]
         : []),
+      ...(cool === null ? [] : [{ text: coolDownText(cool), prio: 5, color: 'yellow' }]),
     ],
     room,
   )
@@ -649,6 +662,7 @@ function candleCells(
   w: ReturnType<typeof buckets>,
   rows: number,
   overlays: { values: (number | null)[]; dot: string; colour: number }[],
+  grey = false,
 ) {
   const { index, hi, lo } = w
   const cols = index.length
@@ -681,7 +695,7 @@ function candleCells(
                   : wick[1]
                     ? WICK.bottom
                     : null
-      if (ch) grid[r]![x] = [ch, COLOUR[d]]
+      if (ch) grid[r]![x] = [ch, grey ? COLOUR.flat : COLOUR[d]]
     }
   })
   for (const o of overlays)
@@ -689,7 +703,7 @@ function candleCells(
       const v = i === undefined ? null : num(o.values[i])
       if (v === null || v > hi || v < lo) return
       const r = Math.floor(pxOf(v) / 2)
-      if (!grid[r]![x]) grid[r]![x] = [o.dot, o.colour]
+      if (!grid[r]![x]) grid[r]![x] = [o.dot, grey ? COLOUR.flat : o.colour]
     })
   const vols = index.map((i) => (i === undefined ? null : list[i]!.volume))
   const top = Math.max(0, ...vols.map((v) => v ?? 0))
@@ -711,6 +725,7 @@ function candleSvg(
   width: number,
   height: number,
   overlays: { values: (number | null)[]; colour: string; dash: boolean }[],
+  grey = false,
 ) {
   const { index, hi, lo } = w
   const plotW = width - 96
@@ -726,7 +741,7 @@ function candleSvg(
     if (i === undefined) return
     const c = list[i]!
     const d = dirOf(c)
-    const col = d === 'up' ? '#22c55e' : d === 'down' ? '#ef4444' : '#888888'
+    const col = grey ? '#888888' : d === 'up' ? '#22c55e' : d === 'down' ? '#ef4444' : '#888888'
     const cx = x * slot + slot / 2
     const bTop = y(Math.max(c.open, c.close))
     const bH = Math.max(1, y(Math.min(c.open, c.close)) - bTop)
@@ -748,7 +763,7 @@ function candleSvg(
     })
     if (pts.length > 1)
       parts.push(
-        `<polyline points="${pts.join(' ')}" fill="none" stroke="${o.colour}" stroke-width="1.2"${o.dash ? ' stroke-dasharray="4 3"' : ''}/>`,
+        `<polyline points="${pts.join(' ')}" fill="none" stroke="${grey ? '#888888' : o.colour}" stroke-width="1.2"${o.dash ? ' stroke-dasharray="4 3"' : ''}/>`,
       )
   }
   const last = list[index.filter((i) => i !== undefined).at(-1)!]!
@@ -759,7 +774,7 @@ function candleSvg(
     `<line x1="0" x2="${plotW}" y1="${f(ly)}" y2="${f(ly)}" stroke="#888888" stroke-dasharray="2 3"/>`,
     label(8, usd(hi)!),
     label(plotH - 4, usd(lo)!),
-    label(ly, `◀ ${usd(last.close)}`, '#d4d4d4'),
+    label(ly, `◀ ${usd(last.close)}`, grey ? '#888888' : '#d4d4d4'),
     label(height - volH / 2, 'vol'),
   )
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${parts.join('')}</svg>`
@@ -881,6 +896,105 @@ export function askOf(m: Market, mint: string, range: string, slot: number | nul
   })
 }
 
+// ---- stale numbers (T-E29) ----
+
+// The stale notes (T-E29): 1 wording in both terminal plugins. .opencode/tui/agon-discovery.tsx
+// and plugins/claude-code/hooks/register.tsx each hold this same builder, byte for byte (the Claude
+// plugin cannot import repo code), and both tests check it against the same expected text. It reads /market's answer as sent (T-C41): a
+// block served from its last good value carries `stale: true`, `ageSeconds` and `staleReason`, and
+// the book's USD quote price says so in its basis. `elapsedS`, the seconds since the answer arrived,
+// is added to each age and taken off the cool-down, so a note counts on between polls. Blocks with
+// 1 reason share 1 line:
+//   prices 247 s old, candles 247 s old: GeckoTerminal is rate-limiting, next try in 41 s
+// `coolDownS` is the longest GeckoTerminal pause any block names, stale or never loaded, while it
+// lasts. `blocks` names the stale ones, so a view draws them dim. Pure.
+export type Stale = { lines: string[]; blocks: string[]; coolDownS: number | null }
+export function staleOf(raw: unknown, elapsedS: number): Stale {
+  const rec = (v: unknown): Record<string, unknown> =>
+    v && typeof v === 'object' ? (v as Record<string, unknown>) : {}
+  const text = (v: unknown) => (typeof v === 'string' ? v : '')
+  const m = rec(raw)
+  const late = Math.max(0, Math.floor(elapsedS))
+  const named: [string, string][] = [
+    ['stats24h', 'prices'],
+    ['candles', 'candles'],
+    ['trades', 'trades'],
+    ['book', 'book'],
+    ['pool', 'pool'],
+  ]
+  // The server's words for a pause: "holds every GeckoTerminal call for 41 more s" while it lasts,
+  // "pauses every GeckoTerminal call for 60 s" from the call that met the 429.
+  const left = named.flatMap(([k]) => {
+    const b = rec(m[k])
+    const n = /GeckoTerminal call for (\d+) (?:more )?s\b/.exec(
+      text(b['stale'] === true ? b['staleReason'] : b['error']),
+    )
+    return n ? [Number(n[1]) - late] : []
+  })
+  const longest = left.length ? Math.max(...left) : 0
+  const coolDownS = longest > 0 ? longest : null
+  const limited =
+    'GeckoTerminal is rate-limiting' + (coolDownS === null ? '' : `, next try in ${coolDownS} s`)
+  // A GeckoTerminal 429 reads as the rate limit. Anything else is the cause the server named,
+  // without its block's name, its retry advice or the "last good value" tail this note replaces.
+  const reasonOf = (t: string) =>
+    /GeckoTerminal(?: answered)? 429/.test(t)
+      ? limited
+      : t
+          .replace(/^[^:]{1,40}: /, '')
+          .replace(/\s*(This server asks again|Showing the last good value)[\s\S]*$/, '')
+          .replace(/[.;\s]+$/, '') || 'the server named no reason'
+  const groups = new Map<string, string[]>()
+  const blocks: string[] = []
+  const add = (block: string, what: string, age: number | null, reason: string) => {
+    blocks.push(block)
+    groups.set(reason, [
+      ...(groups.get(reason) ?? []),
+      age === null ? `${what} of unknown age` : `${what} ${age + late} s old`,
+    ])
+  }
+  for (const [k, what] of named) {
+    const b = rec(m[k])
+    if (b['stale'] !== true) continue
+    const age = b['ageSeconds']
+    add(
+      k,
+      what,
+      typeof age === 'number' && Number.isFinite(age) ? Math.max(0, Math.round(age)) : null,
+      reasonOf(text(b['staleReason'])),
+    )
+  }
+  // The book is read on chain, but its USD prices use GeckoTerminal's quote price, which can be
+  // the last good one while the book itself is fresh.
+  const usd =
+    /\(the last good price, (\d+) s old, because its refresh (?:failed: ([\s\S]*)|met a GeckoTerminal 429[^)]*)\)/.exec(
+      text(rec(m['book'])['basis']),
+    )
+  if (usd)
+    add(
+      'usd',
+      'book USD price',
+      Number(usd[1]),
+      usd[2] === undefined
+        ? limited
+        : usd[2].replace(/[.;\s]+$/, '') || 'the server named no reason',
+    )
+  return {
+    lines: [...groups].map(([reason, parts]) => `${parts.join(', ')}: ${reason}`),
+    blocks,
+    coolDownS,
+  }
+}
+/** The status line's cool-down part, the same words in both plugins. */
+export const coolDownText = (s: number) => `GeckoTerminal cool-down ${s} s`
+
+// The notes for the /market answer on screen, counted from when it arrived. A redraw (every poll,
+// every press) counts them on.
+const staleNow = (mk: Loaded<Market> | null): Stale =>
+  mk?.body
+    ? staleOf(mk.body, (Date.now() - (mk.at ?? Date.now())) / 1000)
+    : { lines: [], blocks: [], coolDownS: null }
+
 // ---- the trade view ----
 
 async function pane($: Dollar, e: Site) {
@@ -902,6 +1016,9 @@ async function pane($: Dollar, e: Site) {
   const note = (await $.state.get(MINT_NOTE)).value ?? null
   const m = mk?.key === `${mint}:${range}` ? mk.body : null
   const marketError = mk?.key === `${mint}:${range}` ? mk.error : null
+  // Blocks served from their last good value (T-E29): dim, with their age and why.
+  const notes = staleNow(mk?.key === `${mint}:${range}` ? mk : null)
+  const staleIn = (block: string) => notes.blocks.includes(block)
   const s = st?.body ?? null
   const draft = (text: string) => $.prompt.fill({ text, mode: 'replace' })
   const tab = (key: string, label: string, active: boolean, press: () => unknown) =>
@@ -949,6 +1066,9 @@ async function pane($: Dollar, e: Site) {
           { text: network(s), prio: 5, dim: true },
         ]
       : []),
+    ...(notes.coolDownS === null
+      ? []
+      : [{ text: coolDownText(notes.coolDownS), prio: 1, color: 'yellow' }]),
   ]
   const status = (
     <Box key="status" flexDirection="column">
@@ -969,6 +1089,7 @@ async function pane($: Dollar, e: Site) {
         />
       )}
       {note && lines(els, 'note', wrap(note, width), 'yellow')}
+      {notes.lines.flatMap((l, i) => lines(els, `stale-${i}`, wrap(l, width, 3), undefined, true))}
     </Box>
   )
 
@@ -991,15 +1112,17 @@ async function pane($: Dollar, e: Site) {
           fit(
             [
               {
-                text: `${labelOf(mint)}  ${usd(stats.price) ?? 'price not sent'}`,
+                text: `${labelOf(mint)}  ${usd(stats.price) ?? 'price not sent'}${staleIn('stats24h') ? ' stale' : ''}`,
                 prio: 0,
                 bold: true,
+                dim: staleIn('stats24h'),
               },
               {
                 text: `${move(stats.changePct) ?? 'change not sent'} 24h`,
                 prio: 1,
                 bold: true,
-                color: tone(stats.changePct),
+                color: staleIn('stats24h') ? undefined : tone(stats.changePct),
+                dim: staleIn('stats24h'),
               },
             ],
             width,
@@ -1007,10 +1130,19 @@ async function pane($: Dollar, e: Site) {
         )}
         {fit2(
           [
-            { text: `H ${usd(stats.high) ?? 'not sent'}`, prio: 2 },
-            { text: `L ${usd(stats.low) ?? 'not sent'}`, prio: 3 },
-            { text: `vol ${big(stats.volumeUsd) ?? 'not sent'}`, prio: 0 },
-            { text: liqText, prio: 1, color: liq?.flag ? 'yellow' : undefined },
+            { text: `H ${usd(stats.high) ?? 'not sent'}`, prio: 2, dim: staleIn('stats24h') },
+            { text: `L ${usd(stats.low) ?? 'not sent'}`, prio: 3, dim: staleIn('stats24h') },
+            {
+              text: `vol ${big(stats.volumeUsd) ?? 'not sent'}`,
+              prio: 0,
+              dim: staleIn('stats24h'),
+            },
+            {
+              text: liqText,
+              prio: 1,
+              color: liq?.flag ? 'yellow' : undefined,
+              dim: staleIn('pool'),
+            },
             {
               text: `pool ${m?.pool?.address ? short(m.pool.address) : 'none'}`,
               prio: 4,
@@ -1056,10 +1188,20 @@ async function pane($: Dollar, e: Site) {
     </Box>
   )
 
-  const chart = chartBlock(els, Svg, Raster, e.surface !== 'terminal', m, range, width, props)
+  const chart = chartBlock(
+    els,
+    Svg,
+    Raster,
+    e.surface !== 'terminal',
+    m,
+    range,
+    width,
+    props,
+    staleIn('candles'),
+  )
   const side = wide ? Math.floor((width - 2) / 2) : width
-  const book = bookPanel(els, m, side)
-  const trades = tradesPanel(els, m, side)
+  const book = bookPanel(els, m, side, staleIn('book') || staleIn('usd'))
+  const trades = tradesPanel(els, m, side, staleIn('trades'))
 
   // Ask (T-E28): the screen as numbers and the mint, into the prompt. On the row with Buy, Sell and
   // Check where the 4 fit, else on its own row.
@@ -1171,6 +1313,9 @@ function chartBlock(
   range: string,
   width: number,
   props: { scroll?: { bodyRows?: number } },
+  // Stale candles (T-E29): all grey, the glyphs and hollow or filled bodies still telling up from
+  // down, and the readout dim.
+  dim = false,
 ) {
   const { Box, Text } = els
   const c = m?.candles
@@ -1229,10 +1374,17 @@ function chartBlock(
     drawing = (
       <Svg
         key="candles"
-        source={candleSvg(list, w, pxW, pxH, [
-          { values: ma?.values ?? [], colour: '#eab308', dash: false },
-          { values: ema?.values ?? [], colour: '#38bdf8', dash: true },
-        ])}
+        source={candleSvg(
+          list,
+          w,
+          pxW,
+          pxH,
+          [
+            { values: ma?.values ?? [], colour: '#eab308', dash: false },
+            { values: ema?.values ?? [], colour: '#38bdf8', dash: true },
+          ],
+          dim,
+        )}
         alt={`${w.index.length} candles of ${range} from ${usd(w.lo)} to ${usd(w.hi)}, last close ${usd(last.close)}; hollow up, filled down`}
         width={pxW}
         height={pxH}
@@ -1259,14 +1411,20 @@ function chartBlock(
           key="raster"
           columns={w.index.length}
           rows={rows + 1}
-          cells={candleCells(list, w, rows, [
-            { values: ma?.values ?? [], dot: MA_DOT, colour: COLOUR.ma },
-            { values: ema?.values ?? [], dot: EMA_DOT, colour: COLOUR.ema },
-          ])}
+          cells={candleCells(
+            list,
+            w,
+            rows,
+            [
+              { values: ma?.values ?? [], dot: MA_DOT, colour: COLOUR.ma },
+              { values: ema?.values ?? [], dot: EMA_DOT, colour: COLOUR.ema },
+            ],
+            dim,
+          )}
         />
         <Box flexDirection="column" width={axisCells} flexShrink={0}>
           {axis.map((t, r) => (
-            <Text key={`ax-${r}`} dimColor={r !== lastRow} wrap="truncate-end">
+            <Text key={`ax-${r}`} dimColor={dim || r !== lastRow} wrap="truncate-end">
               {t}
             </Text>
           ))}
@@ -1286,12 +1444,12 @@ function chartBlock(
       {
         text: d === 'up' ? '▲ up' : d === 'down' ? '▼ down' : '= flat',
         prio: 1,
-        color: d === 'up' ? 'green' : d === 'down' ? 'red' : undefined,
+        color: dim ? undefined : d === 'up' ? 'green' : d === 'down' ? 'red' : undefined,
       },
       { text: `vol ${big(last.volume)}`, prio: 5 },
       { text: `${maName} ${usd(maV) ?? 'warming up'}`, prio: 2 },
       { text: `${emaName} ${usd(emaV) ?? 'warming up'}`, prio: 3 },
-    ],
+    ].map((p) => (dim ? { ...p, dim: true } : p)),
     width,
   )
   const legend = fit(
@@ -1331,7 +1489,8 @@ function chartBlock(
 
 // The book or depth, labelled by its kind: a ladder with asks above the mid and bids below, or the
 // cost to move the price for a curve. Every number is the server's.
-function bookPanel(els: Els, m: Market | null, width: number) {
+// `dim`: the book, or the USD quote price its levels are priced in, is a last good value (T-E29).
+function bookPanel(els: Els, m: Market | null, width: number, dim = false) {
   const { Box, Text } = els
   const b: Book | undefined = m?.book
   const title = (
@@ -1372,7 +1531,12 @@ function bookPanel(els: Els, m: Market | null, width: number) {
     l: { price: number; size: number; total: number },
     i: number,
   ) => (
-    <Text key={`${side}-${i}`} color={side === 'ask' ? 'red' : 'green'} wrap="truncate-end">
+    <Text
+      key={`${side}-${i}`}
+      color={dim ? undefined : side === 'ask' ? 'red' : 'green'}
+      dimColor={dim}
+      wrap="truncate-end"
+    >
       {row([
         [side, 3],
         [usd(l.price) ?? 'none', -priceCells],
@@ -1409,7 +1573,12 @@ function bookPanel(els: Els, m: Market | null, width: number) {
             ])}
           </Text>
           {b.moves.slice(0, depth * 2).map((mv, i) => (
-            <Text key={`move-${i}`} color={mv.side === 'buy' ? 'green' : 'red'} wrap="truncate-end">
+            <Text
+              key={`move-${i}`}
+              color={dim ? undefined : mv.side === 'buy' ? 'green' : 'red'}
+              dimColor={dim}
+              wrap="truncate-end"
+            >
               {row([
                 [`${num(mv.pct) ?? 'none'}%`, 5],
                 [
@@ -1451,7 +1620,7 @@ function bookPanel(els: Els, m: Market | null, width: number) {
             ])}
           </Text>
           {asks.map((l, i) => level('ask', l, i))}
-          <Text key="mid">
+          <Text key="mid" dimColor={dim}>
             {row([
               ['mid', 3],
               [usd(b.mid) ?? 'none', -priceCells],
@@ -1465,7 +1634,8 @@ function bookPanel(els: Els, m: Market | null, width: number) {
 }
 
 // Recent trades, newest first, the side as a word and an arrow. The wallet shows where it fits.
-function tradesPanel(els: Els, m: Market | null, width: number) {
+// `dim`: the trades are a last good value (T-E29), drawn grey, never green or red.
+function tradesPanel(els: Els, m: Market | null, width: number, dim = false) {
   const { Box, Text } = els
   const t = m?.trades
   if (!m || !t || t.error)
@@ -1498,7 +1668,7 @@ function tradesPanel(els: Els, m: Market | null, width: number) {
   ]
   return (
     <Box key="trades" flexDirection="column">
-      <Text bold>{`Recent trades, ${age(t.fetchedAt)} old`}</Text>
+      <Text bold>{`Recent trades, ${age(t.fetchedAt)} old${dim ? ', stale' : ''}`}</Text>
       <Text dimColor bold>
         {row(cols(['time', 'side', 'price', 'usd', 'wallet']))}
       </Text>
@@ -1511,7 +1681,12 @@ function tradesPanel(els: Els, m: Market | null, width: number) {
           true,
         )}
       {list.map((x, i) => (
-        <Text key={`trade-${i}`} color={x.side === 'buy' ? 'green' : 'red'} wrap="truncate-end">
+        <Text
+          key={`trade-${i}`}
+          color={dim ? undefined : x.side === 'buy' ? 'green' : 'red'}
+          dimColor={dim}
+          wrap="truncate-end"
+        >
           {row(
             cols([
               clock(x.time),
