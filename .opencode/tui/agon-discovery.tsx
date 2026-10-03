@@ -220,6 +220,96 @@ export const getJson = async (url: string) => {
   return body
 }
 
+// The stale notes (T-E29): 1 wording in both terminal plugins. .opencode/tui/agon-discovery.tsx
+// and plugins/claude-code/hooks/register.tsx each hold this same builder, byte for byte (the Claude
+// plugin cannot import repo code), and both tests check it against the same expected text. It reads /market's answer as sent (T-C41): a
+// block served from its last good value carries `stale: true`, `ageSeconds` and `staleReason`, and
+// the book's USD quote price says so in its basis. `elapsedS`, the seconds since the answer arrived,
+// is added to each age and taken off the cool-down, so a note counts on between polls. Blocks with
+// 1 reason share 1 line:
+//   prices 247 s old, candles 247 s old: GeckoTerminal is rate-limiting, next try in 41 s
+// `coolDownS` is the longest GeckoTerminal pause any block names, stale or never loaded, while it
+// lasts. `blocks` names the stale ones, so a view draws them dim. Pure.
+export type Stale = { lines: string[]; blocks: string[]; coolDownS: number | null }
+export function staleOf(raw: unknown, elapsedS: number): Stale {
+  const rec = (v: unknown): Record<string, unknown> =>
+    v && typeof v === 'object' ? (v as Record<string, unknown>) : {}
+  const text = (v: unknown) => (typeof v === 'string' ? v : '')
+  const m = rec(raw)
+  const late = Math.max(0, Math.floor(elapsedS))
+  const named: [string, string][] = [
+    ['stats24h', 'prices'],
+    ['candles', 'candles'],
+    ['trades', 'trades'],
+    ['book', 'book'],
+    ['pool', 'pool'],
+  ]
+  // The server's words for a pause: "holds every GeckoTerminal call for 41 more s" while it lasts,
+  // "pauses every GeckoTerminal call for 60 s" from the call that met the 429.
+  const left = named.flatMap(([k]) => {
+    const b = rec(m[k])
+    const n = /GeckoTerminal call for (\d+) (?:more )?s\b/.exec(
+      text(b['stale'] === true ? b['staleReason'] : b['error']),
+    )
+    return n ? [Number(n[1]) - late] : []
+  })
+  const longest = left.length ? Math.max(...left) : 0
+  const coolDownS = longest > 0 ? longest : null
+  const limited =
+    'GeckoTerminal is rate-limiting' + (coolDownS === null ? '' : `, next try in ${coolDownS} s`)
+  // A GeckoTerminal 429 reads as the rate limit. Anything else is the cause the server named,
+  // without its block's name, its retry advice or the "last good value" tail this note replaces.
+  const reasonOf = (t: string) =>
+    /GeckoTerminal(?: answered)? 429/.test(t)
+      ? limited
+      : t
+          .replace(/^[^:]{1,40}: /, '')
+          .replace(/\s*(This server asks again|Showing the last good value)[\s\S]*$/, '')
+          .replace(/[.;\s]+$/, '') || 'the server named no reason'
+  const groups = new Map<string, string[]>()
+  const blocks: string[] = []
+  const add = (block: string, what: string, age: number | null, reason: string) => {
+    blocks.push(block)
+    groups.set(reason, [
+      ...(groups.get(reason) ?? []),
+      age === null ? `${what} of unknown age` : `${what} ${age + late} s old`,
+    ])
+  }
+  for (const [k, what] of named) {
+    const b = rec(m[k])
+    if (b['stale'] !== true) continue
+    const age = b['ageSeconds']
+    add(
+      k,
+      what,
+      typeof age === 'number' && Number.isFinite(age) ? Math.max(0, Math.round(age)) : null,
+      reasonOf(text(b['staleReason'])),
+    )
+  }
+  // The book is read on chain, but its USD prices use GeckoTerminal's quote price, which can be
+  // the last good one while the book itself is fresh.
+  const usd =
+    /\(the last good price, (\d+) s old, because its refresh (?:failed: ([\s\S]*)|met a GeckoTerminal 429[^)]*)\)/.exec(
+      text(rec(m['book'])['basis']),
+    )
+  if (usd)
+    add(
+      'usd',
+      'book USD price',
+      Number(usd[1]),
+      usd[2] === undefined
+        ? limited
+        : usd[2].replace(/[.;\s]+$/, '') || 'the server named no reason',
+    )
+  return {
+    lines: [...groups].map(([reason, parts]) => `${parts.join(', ')}: ${reason}`),
+    blocks,
+    coolDownS,
+  }
+}
+/** The status line's cool-down part, the same words in both plugins. */
+export const coolDownText = (s: number) => `GeckoTerminal cool-down ${s} s`
+
 // `curve`: the list carries a bonding curve % or a graduation time, so it gets a curve column.
 type Source = { label: string; list: string; interval: boolean; curve: boolean }
 const SOURCES: Source[] = [
@@ -381,9 +471,12 @@ type Series = {
   // The server's own reason when its candles or its 24h stats failed, each failing on its own.
   candlesError: string | null
   statsError: string | null
+  // The answer as sent and when it arrived, for staleOf, whose notes count on from then.
+  raw: unknown
+  receivedAt: number
 }
 
-const readSeries = (raw: unknown): Series => {
+const readSeries = (raw: unknown, receivedAt = Date.now()): Series => {
   const m = obj(raw)
   const c = obj(m['candles'])
   const s = obj(m['stats24h'])
@@ -401,6 +494,8 @@ const readSeries = (raw: unknown): Series => {
     liquidity: fig(s['liquidityUsd']),
     candlesError: str(c['error']),
     statsError: str(s['error']),
+    raw,
+    receivedAt,
   }
 }
 
@@ -615,7 +710,7 @@ function createModel(api: TuiPluginApi, options: Options) {
     if (fresh || loadingSeries.has(key)) return have
     loadingSeries.add(key)
     void getJson(`${options.mcpUrl}/market?mint=${encodeURIComponent(mint)}&range=${RANGES[range]}`)
-      .then((body) => ({ data: readSeries(body), error: null }))
+      .then((body) => ({ data: readSeries(body, Date.now()), error: null }))
       .catch((e) => ({
         data: series().get(key)?.data ?? null,
         error: `/market: ${e instanceof Error ? e.message : String(e)}`,
@@ -657,6 +752,30 @@ function createModel(api: TuiPluginApi, options: Options) {
       const e = series().get(`${mint}:${WATCH_RANGE}`)
       const why = e?.error ?? e?.data?.statsError ?? e?.data?.candlesError
       return why ? [`${seen().get(mint)?.symbol ?? PINNED[mint] ?? short(mint)}: ${why}`] : []
+    }),
+  )
+
+  // A chart's stale notes (T-E29), counted on by the 1 s clock, for the blocks a view draws from
+  // /market. Null before any answer.
+  const staleAt = (mint: string, range: number, blocks: string[]) => {
+    const d = series().get(`${mint}:${range}`)?.data
+    if (!d) return null
+    const raw = obj(d.raw)
+    return staleOf(
+      Object.fromEntries(blocks.map((b) => [b, raw[b]])),
+      (now() - d.receivedAt) / 1000,
+    )
+  }
+  // The blocks a watched row draws from /market: its sparkline always, its price and change when
+  // the list on screen does not carry it.
+  const watchBlocks = (mint: string) =>
+    list().some((t) => t.mint === mint) ? ['candles'] : ['candles', 'stats24h', 'pool']
+  // A watched row whose numbers are their last good ones: the note, by token.
+  const watchStale = createMemo(() =>
+    watchMints().flatMap((mint) => {
+      const s = staleAt(mint, WATCH_RANGE, watchBlocks(mint))
+      const name = seen().get(mint)?.symbol ?? PINNED[mint] ?? short(mint)
+      return (s?.lines ?? []).map((l) => `${name}: ${l}`)
     }),
   )
 
@@ -736,6 +855,8 @@ function createModel(api: TuiPluginApi, options: Options) {
     watchMints,
     watchlist,
     watchErrors,
+    watchStale,
+    staleAt,
     list,
     source,
     setSource,
@@ -907,6 +1028,13 @@ function Sidebar(props: { model: Model; open: () => void; openSetup: () => void 
   const theme = () => api.theme.current
   const shown = () => props.model.watchlist().slice(0, SIDEBAR_ROWS)
   const more = () => props.model.watchlist().length - shown().length
+  // Stale numbers are drawn dim, never green or red: the sparkline when its candles are, and the
+  // price and change of a row drawn from /market when its 24h stats are.
+  const muted = () => ink(api, theme()?.textMuted, theme()?.backgroundPanel)
+  const staleIn = (mint: string, block: string) =>
+    !!props.model.staleAt(mint, WATCH_RANGE, [block])?.blocks.includes(block)
+  const statsStale = (mint: string) =>
+    staleIn(mint, 'stats24h') && !props.model.list().some((x) => x.mint === mint)
   return (
     <box flexDirection="column" gap={0}>
       <box flexDirection="row" gap={1} height={1}>
@@ -935,11 +1063,19 @@ function Sidebar(props: { model: Model; open: () => void; openSetup: () => void 
                   api={api}
                   v={t.price}
                   text={lpad(price(t.price), 13)}
+                  fg={statsStale(t.mint) ? muted() : undefined}
                   bg={theme()?.backgroundPanel}
                 />
               </text>
               <box flexDirection="row" gap={1} height={1}>
-                <text fg={colourOf(api, t.change24h, theme()?.backgroundPanel)} wrapMode="none">
+                <text
+                  fg={
+                    staleIn(t.mint, 'candles')
+                      ? muted()
+                      : colourOf(api, t.change24h, theme()?.backgroundPanel)
+                  }
+                  wrapMode="none"
+                >
                   {pad(
                     sparkline(
                       props.model.chart(t.mint, WATCH_RANGE, WATCH_MAX_AGE_MS)?.data?.closes ?? [],
@@ -948,8 +1084,15 @@ function Sidebar(props: { model: Model; open: () => void; openSetup: () => void 
                     10,
                   )}
                 </text>
-                <text fg={colourOf(api, t.change24h, theme()?.backgroundPanel)} wrapMode="none">
-                  {`24h ${pct(t.change24h)}`}
+                <text
+                  fg={
+                    statsStale(t.mint)
+                      ? muted()
+                      : colourOf(api, t.change24h, theme()?.backgroundPanel)
+                  }
+                  wrapMode="none"
+                >
+                  {`24h ${pct(t.change24h)}${statsStale(t.mint) ? ' stale' : ''}`}
                 </text>
               </box>
             </box>
@@ -973,6 +1116,14 @@ function Sidebar(props: { model: Model; open: () => void; openSetup: () => void 
           {props.model.watchErrors()[0]! +
             (props.model.watchErrors().length > 1
               ? ` And ${props.model.watchErrors().length - 1} more watched ${props.model.watchErrors().length > 2 ? 'tokens' : 'token'} failed.`
+              : '')}
+        </text>
+      </Show>
+      <Show when={props.model.watchStale()[0]}>
+        <text fg={muted()}>
+          {props.model.watchStale()[0]! +
+            (props.model.watchStale().length > 1
+              ? ` And ${props.model.watchStale().length - 1} more stale ${props.model.watchStale().length > 2 ? 'notes' : 'note'}.`
               : '')}
         </text>
       </Show>
@@ -1007,6 +1158,12 @@ function Chart(props: {
   const first = () => data()?.closes[0] ?? null
   const last = () => data()?.closes.at(-1) ?? null
   const change = () => (first() && last() ? ((last()! - first()!) / first()!) * 100 : null)
+  // Stale candles (T-E29) are drawn dim, never green or red, with the note saying how old and why.
+  // Only the candles: the rest of this pane's figures come from /discover.
+  const stale = () =>
+    settled() ? props.model.staleAt(props.token.mint, props.range, ['candles']) : null
+  const dim = () => !!stale()?.blocks.includes('candles')
+  const lineInk = () => (dim() ? ink(api, theme()?.textMuted) : colourOf(api, change()))
   // Hovering the chart reads it: the column under the mouse, its price and its time.
   const W = 36
   let area: { x: number } | undefined
@@ -1033,7 +1190,7 @@ function Chart(props: {
             />
           )}
         </For>
-        <text fg={colourOf(api, change())}>{data() ? ` ${pct(change())}` : ''}</text>
+        <text fg={lineInk()}>{data() ? ` ${pct(change())}${dim() ? ' stale' : ''}` : ''}</text>
       </box>
       <Show
         when={data() && data()!.closes.length > 1}
@@ -1057,12 +1214,19 @@ function Chart(props: {
         >
           <For each={brailleLine(data()!.closes, W, props.rows)}>
             {(line) => (
-              <text fg={colourOf(api, change())} wrapMode="none">
+              <text fg={lineInk()} wrapMode="none">
                 {line}
               </text>
             )}
           </For>
         </box>
+        <For each={stale()?.lines ?? []}>
+          {(line) => (
+            <text fg={ink(api, theme()?.textMuted)} flexShrink={0}>
+              {line}
+            </text>
+          )}
+        </For>
         <Show when={at()}>
           {(a) => (
             <>

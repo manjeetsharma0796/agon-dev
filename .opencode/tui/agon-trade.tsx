@@ -18,7 +18,16 @@ import { createEffect, createMemo, createSignal, For, on, onCleanup, Show } from
 import { useKeyboard, useTerminalDimensions } from '@opentui/solid'
 import { RGBA } from '@opentui/core'
 import type { TuiPluginApi } from '@opencode-ai/plugin/tui'
-import { BASE58, getJson, ink, money, short } from './agon-discovery.tsx'
+import {
+  BASE58,
+  coolDownText,
+  getJson,
+  ink,
+  money,
+  short,
+  staleOf,
+  type Stale,
+} from './agon-discovery.tsx'
 
 export const TRADE_ROUTE = 'agon.trade'
 const MINT_KEY = 'agon.trade.mint'
@@ -542,6 +551,8 @@ export function buildGrid(
 
 function createFeed(base: string, mint: string, range: () => string) {
   const [market, setMarket] = createSignal<Market | null>(null)
+  // The answer as sent and when it arrived, for the stale notes (T-E29).
+  const [answer, setAnswer] = createSignal<{ raw: unknown; at: number } | null>(null)
   const [marketError, setMarketError] = createSignal<string | null>(null)
   const [status, setStatus] = createSignal<Status | null>(null)
   const [statusError, setStatusError] = createSignal<string | null>(null)
@@ -566,6 +577,7 @@ function createFeed(base: string, mint: string, range: () => string) {
       )
       if (mine !== run) return
       setMarket(readMarket(body))
+      setAnswer({ raw: body, at: Date.now() })
       setMarketError(null)
     } catch (e) {
       if (mine !== run) return
@@ -653,8 +665,14 @@ function createFeed(base: string, mint: string, range: () => string) {
     abort.abort()
     for (const t of timers) clearInterval(t)
   })
+  // Which blocks are their last good value, how old and why, counted on by the 1 s clock.
+  const stale = createMemo((): Stale => {
+    const a = answer()
+    return a ? staleOf(a.raw, (now() - a.at) / 1000) : { lines: [], blocks: [], coolDownS: null }
+  })
   return {
     market,
+    stale,
     marketError,
     status,
     statusError,
@@ -811,15 +829,24 @@ export function Trade(props: {
     const l = feed.market()?.liquidity
     return !l ? [] : 'error' in l ? [l.error] : l.flag ? [l.flag] : []
   }
-  const errorLines = () =>
-    [
+  // A block served from its last good value (T-E29): its age and why, dim, after the failures.
+  const staleIn = (block: string) => feed.stale().blocks.includes(block)
+  // Failures and warnings get up to 4 lines, as before, so a note never pushes out the liquidity
+  // flag; the stale notes up to 4 more, 2 for each reason.
+  const errorLines = () => [
+    ...[
       ...errors().map((e) => [e, 'error'] as const),
       ...warnings().map((e) => [e, 'warning'] as const),
     ]
       .flatMap(([e, tone]) =>
         wrap(e, inner(), tone === 'error' ? 3 : 4).map((line) => [line, tone] as const),
       )
-      .slice(0, 4)
+      .slice(0, 4),
+    ...feed
+      .stale()
+      .lines.flatMap((e) => wrap(e, inner(), 2).map((line) => [line, 'stale'] as const))
+      .slice(0, 4),
+  ]
   const hintLines = () => wrap(hint(), inner(), 4)
   const chartH = () =>
     Math.max(
@@ -879,7 +906,11 @@ export function Trade(props: {
   }
 
   let canvas: { x: number; y: number; requestRender: () => void } | undefined
-  createEffect(on([grid, hover, () => theme()], () => canvas?.requestRender(), { defer: true }))
+  createEffect(
+    on([grid, hover, () => theme(), () => staleIn('candles')], () => canvas?.requestRender(), {
+      defer: true,
+    }),
+  )
   function draw(
     this: { x: number; y: number },
     buf: {
@@ -891,16 +922,19 @@ export function Trade(props: {
     if (!g || g.cells.length === 0) return
     const f = focus()
     const t = theme()
+    // Stale candles are all dim: the glyphs still tell up from down, the colour no longer says live.
+    const dim = staleIn('candles')
+    const tone = (k: Glyph['tone']) => ink2(dim ? 'muted' : k)
     const tones = {
-      up: ink2('up'),
-      down: ink2('down'),
-      flat: ink2('flat'),
-      ma: ink2('ma'),
-      ema: ink2('ema'),
+      up: tone('up'),
+      down: tone('down'),
+      flat: tone('flat'),
+      ma: tone('ma'),
+      ema: tone('ema'),
       muted: ink2('muted'),
     }
     const muted = tones.muted
-    const text = rgba(ink(api, t?.text))
+    const text = dim ? muted : rgba(ink(api, t?.text))
     const cross = t?.backgroundElement ?? CLEAR
     const closeRow = f?.candle ? g.rowOf(f.candle.close) : null
     for (let r = 0; r < g.cells.length; r++)
@@ -1030,8 +1064,13 @@ export function Trade(props: {
           5,
         ],
       ],
-      inner(),
+      inner() - (cool() ? cool()!.length + 2 : 0),
     )
+  }
+  // GeckoTerminal's pause after a 429 (T-C41), while it lasts, beside the status line.
+  const cool = () => {
+    const s = feed.stale().coolDownS
+    return s === null ? null : coolDownText(s)
   }
   const connColour = () => {
     const l = feed.link()
@@ -1059,7 +1098,7 @@ export function Trade(props: {
     const first =
       'error' in s
         ? `${name}  24h stats did not load, see the red lines below`
-        : `${name}  ${usd(s.price)}  ${move(s.changePct)} 24h`
+        : `${name}  ${usd(s.price)}${staleIn('stats24h') ? ' stale' : ''}  ${move(s.changePct)} 24h`
     const second = fit(
       [
         ...('error' in s
@@ -1086,13 +1125,16 @@ export function Trade(props: {
     const t = theme()
     return ink(
       api,
-      !s || 'error' in s
-        ? t?.text
-        : s.changePct > 0
-          ? t?.success
-          : s.changePct < 0
-            ? t?.error
-            : t?.text,
+      // A stale price is never drawn green or red: it is not the live move.
+      s && !('error' in s) && staleIn('stats24h')
+        ? t?.textMuted
+        : !s || 'error' in s
+          ? t?.text
+          : s.changePct > 0
+            ? t?.success
+            : s.changePct < 0
+              ? t?.error
+              : t?.text,
     )
   }
 
@@ -1115,7 +1157,7 @@ export function Trade(props: {
     return (
       <box flexDirection="column" height={p.rows} overflow="hidden" flexShrink={0}>
         <text flexShrink={0} fg={theme()?.text} wrapMode="none">
-          <b>{`Recent trades${tr() && !('error' in tr()!) ? `, ${ageOf((tr() as { fetchedAt: string | null }).fetchedAt, feed.now())} old` : ''}`}</b>
+          <b>{`Recent trades${tr() && !('error' in tr()!) ? `, ${ageOf((tr() as { fetchedAt: string | null }).fetchedAt, feed.now())} old${staleIn('trades') ? ', stale' : ''}` : ''}`}</b>
         </text>
         <Show
           when={tr() && !('error' in tr()!)}
@@ -1149,7 +1191,11 @@ export function Trade(props: {
                 flexShrink={0}
                 fg={ink(
                   api,
-                  f.side === 'buy' ? theme()?.success : theme()?.error,
+                  staleIn('trades')
+                    ? theme()?.textMuted
+                    : f.side === 'buy'
+                      ? theme()?.success
+                      : theme()?.error,
                   picked() && i() === 0 ? theme()?.backgroundElement : undefined,
                 )}
                 bg={picked() && i() === 0 ? theme()?.backgroundElement : undefined}
@@ -1194,6 +1240,16 @@ export function Trade(props: {
     }
     // Levels nearest the mid sit next to it: asks above, highest first, bids below.
     const depth = () => Math.max(1, Math.floor((room() - 1) / 2))
+    // The book, or the USD quote price its levels are priced in, from a last good value: dim.
+    const sideInk = (buy: boolean) =>
+      ink(
+        api,
+        staleIn('book') || staleIn('usd')
+          ? theme()?.textMuted
+          : buy
+            ? theme()?.success
+            : theme()?.error,
+      )
     const levelLine = (side: 'ask' | 'bid', l: Level) =>
       row([
         [side, 3],
@@ -1245,11 +1301,7 @@ export function Trade(props: {
                     </text>
                     <For each={b().moves.slice(0, Math.max(1, room()))}>
                       {(mv) => (
-                        <text
-                          flexShrink={0}
-                          fg={ink(api, mv.side === 'buy' ? theme()?.success : theme()?.error)}
-                          wrapMode="none"
-                        >
+                        <text flexShrink={0} fg={sideInk(mv.side === 'buy')} wrapMode="none">
                           {row([
                             [`${cell(mv.pct)}%`, 5],
                             [
@@ -1279,12 +1331,18 @@ export function Trade(props: {
                 </text>
                 <For each={b().asks.slice(0, depth()).reverse()}>
                   {(l) => (
-                    <text flexShrink={0} fg={ink(api, theme()?.error)} wrapMode="none">
+                    <text flexShrink={0} fg={sideInk(false)} wrapMode="none">
                       {levelLine('ask', l)}
                     </text>
                   )}
                 </For>
-                <text flexShrink={0} fg={theme()?.text} wrapMode="none">
+                <text
+                  flexShrink={0}
+                  fg={
+                    staleIn('book') || staleIn('usd') ? ink(api, theme()?.textMuted) : theme()?.text
+                  }
+                  wrapMode="none"
+                >
                   {row([
                     ['mid', 3],
                     [cell(b().mid), -10],
@@ -1292,7 +1350,7 @@ export function Trade(props: {
                 </text>
                 <For each={b().bids.slice(0, depth())}>
                   {(l) => (
-                    <text flexShrink={0} fg={ink(api, theme()?.success)} wrapMode="none">
+                    <text flexShrink={0} fg={sideInk(true)} wrapMode="none">
                       {levelLine('bid', l)}
                     </text>
                   )}
@@ -1439,9 +1497,16 @@ export function Trade(props: {
 
   return (
     <box flexDirection="column" paddingLeft={1} paddingRight={1} flexGrow={1}>
-      <text fg={connColour()} wrapMode="none" flexShrink={0}>
-        {statusLine()}
-      </text>
+      <box flexDirection="row" height={1} flexShrink={0}>
+        <text fg={connColour()} wrapMode="none" flexShrink={0}>
+          {statusLine()}
+        </text>
+        <Show when={cool()}>
+          <text fg={ink(api, theme()?.warning)} wrapMode="none" flexShrink={0}>
+            {`  ${cool()}`}
+          </text>
+        </Show>
+      </box>
       <box
         flexDirection={headerRows() === 1 ? 'row' : 'column'}
         height={headerRows()}
@@ -1450,7 +1515,11 @@ export function Trade(props: {
         <text fg={headerColour()} wrapMode="none" flexShrink={0}>
           {header()[0]}
         </text>
-        <text fg={theme()?.text} wrapMode="none" flexShrink={0}>
+        <text
+          fg={staleIn('stats24h') || staleIn('pool') ? ink(api, theme()?.textMuted) : theme()?.text}
+          wrapMode="none"
+          flexShrink={0}
+        >
           {(headerRows() === 1 ? '  ' : '') + header()[1]}
         </text>
       </box>
@@ -1542,7 +1611,11 @@ export function Trade(props: {
           </Show>
         </box>
       </box>
-      <text fg={theme()?.text} wrapMode="none" flexShrink={0}>
+      <text
+        fg={staleIn('candles') ? ink(api, theme()?.textMuted) : theme()?.text}
+        wrapMode="none"
+        flexShrink={0}
+      >
         {readout() || ' '}
       </text>
       <text fg={ink(api, theme()?.textMuted)} wrapMode="none" flexShrink={0}>
@@ -1551,7 +1624,14 @@ export function Trade(props: {
       <For each={errorLines()}>
         {([line, tone]) => (
           <text
-            fg={ink(api, tone === 'error' ? theme()?.error : theme()?.warning)}
+            fg={ink(
+              api,
+              tone === 'error'
+                ? theme()?.error
+                : tone === 'stale'
+                  ? theme()?.textMuted
+                  : theme()?.warning,
+            )}
             wrapMode="none"
             flexShrink={0}
           >

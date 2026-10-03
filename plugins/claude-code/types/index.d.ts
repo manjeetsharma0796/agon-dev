@@ -125,8 +125,9 @@ export type Discover = {
 }
 export type View = 'trade' | 'markets'
 
-// An answer and the request it answers, or why there is none.
-export type Loaded<T> = { key: string; body: T | null; error: string | null }
+// An answer and the request it answers, or why there is none. `at`: when the answer arrived, in
+// ms since the epoch, so a stale block's age and cool-down count on from it (T-E29).
+export type Loaded<T> = { key: string; body: T | null; error: string | null; at?: number }
 
 // The band: its name only, or the status line.
 export type BandMode = 'collapsed' | 'line'
