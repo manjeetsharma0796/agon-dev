@@ -1,6 +1,7 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "ignoreBinaries": ["benchmark:b"],
+  "ignoreDependencies": ["claude-code"],
   "workspaces": {
     ".": {
       "entry": ["scripts/*.mjs"],

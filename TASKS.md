@@ -3301,7 +3301,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-E25, The Claude Code plugin in the repo, with the trade view and the status band
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/280
+- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/280 | Owner: jishnu-baruah | Branch: feature/t-e25-claude-code
 - Depends-on: T-C33, T-C34
 - Touches: plugins/claude-code/
 - Serves: UX (judged) ; the same trade view in Claude Code's terminal and desktop app
