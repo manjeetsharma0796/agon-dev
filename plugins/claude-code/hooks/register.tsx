@@ -784,15 +784,8 @@ async function pane($: Dollar, e: Site) {
   const marketError = mk?.key === `${mint}:${range}` ? mk.error : null
   const s = st?.body ?? null
   const draft = (text: string) => $.prompt.fill({ text, mode: 'replace' })
-  const tab = (key: string, label: string, active: boolean, press: () => unknown) => (
-    <Button
-      key={key}
-      plain
-      label={active ? `[${label}]` : label}
-      variant={active ? 'primary' : undefined}
-      onPress={press}
-    />
-  )
+  const tab = (key: string, label: string, active: boolean, press: () => unknown) =>
+    tabButton(els, key, label, active, press)
 
   // Title, quick picks and refresh: on 1 row where they fit, else 2.
   const title = `Agon trade  ${labelOf(mint)}  ${short(mint)}`
@@ -1386,12 +1379,20 @@ function tradesPanel(els: Els, m: Market | null, width: number) {
 // ---- the market list ----
 
 // A tab: a plain Button, the active one bracketed, so the choice reads without colour.
-function tabButton(els: Els, key: string, label: string, active: boolean, press: () => unknown) {
+function tabButton(
+  els: Els,
+  key: string,
+  label: string,
+  active: boolean,
+  press: () => unknown,
+  hotkey?: string,
+) {
   const { Button } = els
   return (
     <Button
       key={key}
       plain
+      hotkey={hotkey}
       label={active ? `[${label}]` : label}
       variant={active ? 'primary' : undefined}
       onPress={press}
@@ -1404,7 +1405,7 @@ function tabRows(
   els: Els,
   key: string,
   lead: string | null,
-  tabs: { key: string; label: string; active: boolean; press: () => unknown }[],
+  tabs: { key: string; label: string; active: boolean; press: () => unknown; hotkey?: string }[],
   width: number,
 ) {
   const { Box, Text } = els
@@ -1427,7 +1428,10 @@ function tabRows(
       cells(lead),
     )
   for (const t of tabs)
-    place(tabButton(els, t.key, t.label, t.active, t.press), cells(t.label) + (t.active ? 2 : 0))
+    place(
+      tabButton(els, t.key, t.label, t.active, t.press, t.hotkey),
+      buttonCells(t.active ? `[${t.label}]` : t.label, true, t.hotkey),
+    )
   return (
     <Box key={key} flexDirection="column">
       {rows.map((r, i) => (
@@ -1449,12 +1453,14 @@ function viewTabs($: Dollar, els: Els, current: View, width: number) {
       {
         key: 'view-trade',
         label: 'trade',
+        hotkey: 't',
         active: current === 'trade',
         press: () => showView($, 'trade'),
       },
       {
         key: 'view-markets',
         label: 'markets',
+        hotkey: 'm',
         active: current === 'markets',
         press: () => showView($, 'markets'),
       },
