@@ -18,8 +18,9 @@
 // Budget: 1 queue per upstream host, each starting a call at most every `spacing` ms, and 1 cache
 // with the in-flight promise shared, so 10 clients asking at once cost 1 call. Lists are cached 30 s.
 //
-// Outside text is data (OP-38): a token's name, symbol and icon come back only inside `display`,
-// labelled untrusted, stripped of control and bidi characters and capped, for a person to read.
+// Outside text is data, and token names reach no agent: a token's name, symbol and icon come back
+// only inside `display`, labelled untrusted, stripped of control and bidi characters and capped,
+// for a person to read.
 // Nothing else in a row is text from the token. Every address is checked to decode to 32 bytes.
 // Mint and freeze authority are as Jupiter reported them at `at`, never read on chain here, and the
 // list says how old they are; read them on chain before trading.
