@@ -14,7 +14,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 
-export type Provider = 'helius' | 'jupiter' | 'rpc' | 'rugcheck' | 'jev'
+export type Provider = 'helius' | 'jupiter' | 'rpc' | 'rugcheck' | 'jev' | 'dexscreener'
 export type Mode = 'live' | 'record' | 'replay'
 
 export interface NetRequest {

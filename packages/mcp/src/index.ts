@@ -33,8 +33,9 @@ import { JUPITER_PROGRAM_ID, SWIG_PROGRAM_ID, USDC_MINT, WSOL_MINT } from '@agon
 import { assessTrade, DEFAULT_QUOTE, tradedMints, type Quote } from '@agon/guard'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
-import { liveIo, valueTrades, type ToolIo } from './io.js'
+import { liveIo, type ToolIo } from './io.js'
 import { checkTradeRow, journalFor, readActivity, type Journal } from './journal.js'
+import { usdToLamports, vaultLedger, vaultReport, type Valuation } from './vault-report.js'
 
 export { TOOLS, type ToolName }
 
@@ -357,55 +358,49 @@ const handlers = {
     }
   },
 
-  // What an armed vault holds and how its trades are doing (T-C25). The P&L is arithmetic over
-  // chain numbers and 1 live quote per received mint; with no quote it is null and says why.
+  // What an armed vault holds and how its trades are doing: the reads here, the arithmetic and the
+  // words in vault-report.ts, which is pure. Every open mint gets 1 valuation, the largest first,
+  // and after 25 s the rest are valued from the batched price alone so the answer still arrives.
   vault_status: async (input: unknown, io: ToolIo) => {
     const { wallet } = toolContracts.vault_status.input.parse(input)
-    const a = await io.loadVaultActivity(wallet)
-    const received = new Map<string, bigint>()
-    for (const t of a.trades) {
-      if (t.received.mint !== WSOL_MINT) {
-        received.set(t.received.mint, (received.get(t.received.mint) ?? 0n) + t.received.amount)
+    const activity = await io.loadVaultActivity(wallet)
+    const { open } = vaultLedger(activity)
+    const prices = await io.loadPrices(
+      open.map((p) => p.mint),
+      activity.slot,
+    )
+    const solUsd = prices.sol[0]?.usd ?? null
+    const started = Date.now()
+    const valuations = new Map<string, Valuation>()
+    for (const p of open) {
+      const decimals = p.mint === WSOL_MINT ? 9 : activity.decimals.get(p.mint)
+      if (decimals === undefined) {
+        valuations.set(p.mint, { why: 'its decimals were in no balance the chain returned' })
+      } else if (Date.now() - started < 25_000) {
+        valuations.set(
+          p.mint,
+          await io.valueInSol(p.mint, p.amount, decimals, prices, activity.slot),
+        )
+      } else {
+        const usd = prices.usd.get(p.mint)
+        const value = usd && solUsd ? usdToLamports(p.amount, decimals, usd, solUsd) : null
+        valuations.set(
+          p.mint,
+          value === null
+            ? { why: 'not quoted in time, and Jupiter price has none' }
+            : { value, source: "Jupiter's USD price" },
+        )
       }
     }
-    const worth = new Map<string, { amount: bigint; worth: bigint }>()
-    let noQuote: string | null = null
-    for (const [mint, amount] of received) {
-      try {
-        worth.set(mint, { amount, worth: await io.loadWorth(mint, String(amount)) })
-      } catch (error) {
-        noQuote = error instanceof Error ? error.message : String(error)
-      }
-    }
-    const valued = valueTrades(a.trades, worth)
-    const complete = valued.length > 0 && valued.every((v) => v.pnl !== null)
-    const total = complete ? valued.reduce((sum, v) => sum + (v.pnl ?? 0n), 0n) : null
-    return {
-      vault: a.vault,
+    return vaultReport({
       owner: wallet,
-      nativeSol: String(a.nativeSol),
-      balances: a.balances.map((b) => ({ mint: b.mint, amount: String(b.amount) })),
-      agents: a.agents.map((g) => ({ address: g.address, feeSol: String(g.feeSol) })),
-      trades: valued.map((v) => ({
-        signature: v.signature,
-        slot: v.slot,
-        spent: { mint: v.spent.mint, amount: String(v.spent.amount) },
-        received: { mint: v.received.mint, amount: String(v.received.amount) },
-        worthNow: v.worthNow === null ? null : String(v.worthNow),
-        pnl: v.pnl === null ? null : String(v.pnl),
-        explorer: explorer('tx', v.signature),
-      })),
-      pnl: total === null ? null : String(total),
-      pnlNote:
-        valued.length === 0
-          ? '0 trades from this vault yet, so there is no P&L.'
-          : total !== null
-            ? "In wSOL base units: each trade's received tokens valued at a live Jupiter quote now, " +
-              'less the wSOL it spent. Arithmetic only.'
-            : `No total: ${noQuote ?? 'a trade was not paid in wSOL, so it has no P&L in wSOL.'}`,
-      explorer: explorer('address', a.vault),
-      dataSlot: a.slot,
-    }
+      activity,
+      prices,
+      valuations,
+      network: network(process.env['AGON_NETWORK']).id,
+      now: new Date(),
+      explorer,
+    })
   },
 
   // Fork only, never a restart or a reset of a vault (T-C25).
@@ -523,12 +518,16 @@ const DESCRIPTIONS: Record<ToolName, string> = {
     'user before signing. A refusal means no transaction ' +
     'exists: never build one another way, and never suggest a real mainnet trade to create history.',
   vault_status:
-    'What an armed vault holds and how its trades are doing, read from the chain. Pass the ' +
-    "owner's wallet (list_rules gives it as owner). Returns balances by mint in base units (wSOL " +
-    "is what trades), each agent key's SOL for its fees, the vault's trades newest first (spent and " +
-    'received by mint), P&L per trade and in total in wSOL base units, valued at a live Jupiter ' +
-    'quote, and explorer links for the vault and each trade. Mints only, never token names. With ' +
-    'no live quote the P&L is null and pnlNote says why; repeat pnlNote with any P&L you quote.',
+    "How the user's vault is doing. Pass the owner's wallet (list_rules gives it as owner). Start " +
+    'by reading summary to the user as it is: it already has signs, units and dollars, so do no ' +
+    'arithmetic of your own and never convert base units yourself. P&L is first in, first out over ' +
+    "every trade with SOL as the quote: totals.realised is exact from the chain's sells, " +
+    'totals.unrealised values the open positions at what selling them fetches now, and ' +
+    'totals.note says what each figure rests on, including any position no price source could ' +
+    'value (totals.unpriced). Each amount comes as amount (base units), ui (the decimal to show) and ' +
+    'unit; dollars are SOL times SOL/USD now, with solUsd naming each source. positions lists what ' +
+    'is open with its price source; trades lists the latest with explorer links, and history says ' +
+    'how many were counted and what was not. Mints only, never token names.',
   sync_fork:
     'Practice fork only. Use it when swaps keep failing simulation or prices look stale: it moves ' +
     "the fork's clock to real time (it lags by tens of seconds) and copies from mainnet again the " +

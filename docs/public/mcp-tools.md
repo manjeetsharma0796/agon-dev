@@ -896,9 +896,389 @@ Lists the caps currently armed for a wallet.
       "type": "string",
       "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
     },
-    "nativeSol": {
-      "type": "string",
-      "pattern": "^(0|[1-9][0-9]*)$"
+    "summary": {
+      "minItems": 1,
+      "maxItems": 8,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "totals": {
+      "type": "object",
+      "properties": {
+        "realised": {
+          "type": "object",
+          "properties": {
+            "sol": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "pattern": "^-?(0|[1-9][0-9]*)$"
+                },
+                "ui": {
+                  "type": "string",
+                  "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+                },
+                "unit": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "amount",
+                "ui",
+                "unit"
+              ],
+              "additionalProperties": false
+            },
+            "usd": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "sol",
+            "usd"
+          ],
+          "additionalProperties": false
+        },
+        "unrealised": {
+          "type": "object",
+          "properties": {
+            "sol": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "pattern": "^-?(0|[1-9][0-9]*)$"
+                },
+                "ui": {
+                  "type": "string",
+                  "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+                },
+                "unit": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "amount",
+                "ui",
+                "unit"
+              ],
+              "additionalProperties": false
+            },
+            "usd": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "sol",
+            "usd"
+          ],
+          "additionalProperties": false
+        },
+        "total": {
+          "type": "object",
+          "properties": {
+            "sol": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "pattern": "^-?(0|[1-9][0-9]*)$"
+                },
+                "ui": {
+                  "type": "string",
+                  "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+                },
+                "unit": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "amount",
+                "ui",
+                "unit"
+              ],
+              "additionalProperties": false
+            },
+            "usd": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "sol",
+            "usd"
+          ],
+          "additionalProperties": false
+        },
+        "unpriced": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+          }
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "realised",
+        "unrealised",
+        "total",
+        "unpriced",
+        "note"
+      ],
+      "additionalProperties": false
+    },
+    "solUsd": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "usd": {
+              "type": "string",
+              "minLength": 1
+            },
+            "sources": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "usd": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "name",
+                  "usd"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "spreadPct": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "usd",
+            "sources",
+            "spreadPct"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "positions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "mint": {
+            "type": "string",
+            "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+          },
+          "held": {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)$"
+              },
+              "ui": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+              },
+              "unit": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "amount",
+              "ui",
+              "unit"
+            ],
+            "additionalProperties": false
+          },
+          "cost": {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)$"
+              },
+              "ui": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+              },
+              "unit": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "amount",
+              "ui",
+              "unit"
+            ],
+            "additionalProperties": false
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]*)$"
+                  },
+                  "ui": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+                  },
+                  "unit": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "amount",
+                  "ui",
+                  "unit"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "unrealised": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "sol": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "string",
+                        "pattern": "^-?(0|[1-9][0-9]*)$"
+                      },
+                      "ui": {
+                        "type": "string",
+                        "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+                      },
+                      "unit": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "ui",
+                      "unit"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "usd": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "sol",
+                  "usd"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "whyUnpriced": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "mint",
+          "held",
+          "cost",
+          "value",
+          "unrealised",
+          "source",
+          "whyUnpriced"
+        ],
+        "additionalProperties": false
+      }
     },
     "balances": {
       "type": "array",
@@ -909,17 +1289,59 @@ Lists the caps currently armed for a wallet.
             "type": "string",
             "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
           },
-          "amount": {
-            "type": "string",
-            "pattern": "^(0|[1-9][0-9]*)$"
+          "held": {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)$"
+              },
+              "ui": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+              },
+              "unit": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "amount",
+              "ui",
+              "unit"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
           "mint",
-          "amount"
+          "held"
         ],
         "additionalProperties": false
       }
+    },
+    "nativeSol": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$"
+        },
+        "ui": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+        },
+        "unit": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "amount",
+        "ui",
+        "unit"
+      ],
+      "additionalProperties": false
     },
     "agents": {
       "type": "array",
@@ -931,8 +1353,27 @@ Lists the caps currently armed for a wallet.
             "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
           },
           "feeSol": {
-            "type": "string",
-            "pattern": "^(0|[1-9][0-9]*)$"
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)$"
+              },
+              "ui": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+              },
+              "unit": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "amount",
+              "ui",
+              "unit"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
@@ -956,58 +1397,99 @@ Lists the caps currently armed for a wallet.
             "minimum": 0,
             "maximum": 9007199254740991
           },
-          "spent": {
-            "type": "object",
-            "properties": {
-              "mint": {
-                "type": "string",
-                "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
-              },
-              "amount": {
-                "type": "string",
-                "pattern": "^(0|[1-9][0-9]*)$"
-              }
-            },
-            "required": [
-              "mint",
-              "amount"
-            ],
-            "additionalProperties": false
-          },
-          "received": {
-            "type": "object",
-            "properties": {
-              "mint": {
-                "type": "string",
-                "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
-              },
-              "amount": {
-                "type": "string",
-                "pattern": "^(0|[1-9][0-9]*)$"
-              }
-            },
-            "required": [
-              "mint",
-              "amount"
-            ],
-            "additionalProperties": false
-          },
-          "worthNow": {
+          "time": {
             "anyOf": [
               {
                 "type": "string",
-                "pattern": "^(0|[1-9][0-9]*)$"
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
               },
               {
                 "type": "null"
               }
             ]
           },
-          "pnl": {
+          "side": {
+            "type": "string",
+            "enum": [
+              "buy",
+              "sell"
+            ]
+          },
+          "mint": {
+            "type": "string",
+            "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+          },
+          "token": {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)$"
+              },
+              "ui": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+              },
+              "unit": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "amount",
+              "ui",
+              "unit"
+            ],
+            "additionalProperties": false
+          },
+          "sol": {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)$"
+              },
+              "ui": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+              },
+              "unit": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "amount",
+              "ui",
+              "unit"
+            ],
+            "additionalProperties": false
+          },
+          "realised": {
             "anyOf": [
               {
-                "type": "string",
-                "pattern": "^-?(0|[1-9][0-9]*)$"
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "pattern": "^-?(0|[1-9][0-9]*)$"
+                  },
+                  "ui": {
+                    "type": "string",
+                    "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+                  },
+                  "unit": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "amount",
+                  "ui",
+                  "unit"
+                ],
+                "additionalProperties": false
               },
               {
                 "type": "null"
@@ -1022,29 +1504,99 @@ Lists the caps currently armed for a wallet.
         "required": [
           "signature",
           "slot",
-          "spent",
-          "received",
-          "worthNow",
-          "pnl",
+          "time",
+          "side",
+          "mint",
+          "token",
+          "sol",
+          "realised",
           "explorer"
         ],
         "additionalProperties": false
       }
     },
-    "pnl": {
-      "anyOf": [
-        {
-          "type": "string",
-          "pattern": "^-?(0|[1-9][0-9]*)$"
+    "history": {
+      "type": "object",
+      "properties": {
+        "trades": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
         },
-        {
-          "type": "null"
+        "shown": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "positions": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "positionsShown": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "balances": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "signaturesRead": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "incomplete": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "notCounted": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "count": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "count",
+              "reason"
+            ],
+            "additionalProperties": false
+          }
         }
-      ]
-    },
-    "pnlNote": {
-      "type": "string",
-      "minLength": 1
+      },
+      "required": [
+        "trades",
+        "shown",
+        "positions",
+        "positionsShown",
+        "balances",
+        "signaturesRead",
+        "complete",
+        "incomplete",
+        "notCounted"
+      ],
+      "additionalProperties": false
     },
     "explorer": {
       "type": "string",
@@ -1054,19 +1606,28 @@ Lists the caps currently armed for a wallet.
       "type": "integer",
       "minimum": 0,
       "maximum": 9007199254740991
+    },
+    "asOf": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
     }
   },
   "required": [
     "vault",
     "owner",
-    "nativeSol",
+    "summary",
+    "totals",
+    "solUsd",
+    "positions",
     "balances",
+    "nativeSol",
     "agents",
     "trades",
-    "pnl",
-    "pnlNote",
+    "history",
     "explorer",
-    "dataSlot"
+    "dataSlot",
+    "asOf"
   ],
   "additionalProperties": false
 }

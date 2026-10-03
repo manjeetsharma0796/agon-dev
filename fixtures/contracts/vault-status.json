@@ -1,43 +1,198 @@
 {
   "synthetic": true,
-  "vault": "6L3SNQ1UJmDm7FfjnfRvwXj1ECyEciSAQsk2hndTqNye",
+  "vault": "AuTJA9aBVQTa9QQ6ChwLgFKe12CinB8R8o9mTnL1WnDj",
   "owner": "Arp9sY4pxiaFKJsQAAQWbyKCX5Pym7Br7Ni7myNkjpJU",
-  "nativeSol": "0",
+  "summary": [
+    "Total P&L +0.000023495 SOL ($0.00): realised -0.000003842 SOL ($0.00) over 1 sell, unrealised +0.000027337 SOL ($0.00) on 1 of 1 open position.",
+    "Open 9.721934 USDC: cost 0.08229513 SOL, worth 0.082322467 SOL now (Jupiter sell quote), +0.000027337 SOL ($0.00).",
+    "Dollars use SOL/USD $118.21 now (Pyth $118.21, Jupiter $118.13, 0.07% apart), not the price on each trade's day.",
+    "3 trades counted; 1 other transaction(s) or amount(s) not counted, see history."
+  ],
+  "totals": {
+    "realised": {
+      "sol": {
+        "amount": "-3842",
+        "ui": "-0.000003842",
+        "unit": "SOL"
+      },
+      "usd": "0.00"
+    },
+    "unrealised": {
+      "sol": {
+        "amount": "27337",
+        "ui": "0.000027337",
+        "unit": "SOL"
+      },
+      "usd": "0.00"
+    },
+    "total": {
+      "sol": {
+        "amount": "23495",
+        "ui": "0.000023495",
+        "unit": "SOL"
+      },
+      "usd": "0.00"
+    },
+    "unpriced": [],
+    "note": "First in, first out over every trade the vault made, with SOL as the quote: a buy opens a lot, a sell closes the oldest. Realised is exact from the chain and needs no price. Unrealised values what is still open, capped at the vault's on-chain balance, at what selling it fetches now, each with its source. Dollars are SOL figures times SOL/USD now. Trade times are the fork's own clock, which can lag real time until sync_fork runs."
+  },
+  "solUsd": {
+    "usd": "118.21",
+    "sources": [
+      {
+        "name": "Pyth",
+        "usd": "118.21"
+      },
+      {
+        "name": "Jupiter",
+        "usd": "118.13"
+      }
+    ],
+    "spreadPct": "0.07"
+  },
+  "positions": [
+    {
+      "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "held": {
+        "amount": "9721934",
+        "ui": "9.721934",
+        "unit": "USDC"
+      },
+      "cost": {
+        "amount": "82295130",
+        "ui": "0.08229513",
+        "unit": "SOL"
+      },
+      "value": {
+        "amount": "82322467",
+        "ui": "0.082322467",
+        "unit": "SOL"
+      },
+      "unrealised": {
+        "sol": {
+          "amount": "27337",
+          "ui": "0.000027337",
+          "unit": "SOL"
+        },
+        "usd": "0.00"
+      },
+      "source": "Jupiter sell quote",
+      "whyUnpriced": null
+    }
+  ],
   "balances": [
     {
       "mint": "So11111111111111111111111111111111111111112",
-      "amount": "995000000"
+      "held": {
+        "amount": "917701028",
+        "ui": "0.917701028",
+        "unit": "SOL"
+      }
     },
     {
       "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-      "amount": "588572"
+      "held": {
+        "amount": "9721934",
+        "ui": "9.721934",
+        "unit": "USDC"
+      }
     }
   ],
+  "nativeSol": {
+    "amount": "890880",
+    "ui": "0.00089088",
+    "unit": "SOL"
+  },
   "agents": [
     {
-      "address": "BB5TkjmSNwx8DTHEDdxEFipaQY98Tcn4rg5LfvptWcVb",
-      "feeSol": "9995000"
+      "address": "2mzuh9Vftkx6X4MHRzyr8TcVqVPs6cZGQWTsRBhH7gNj",
+      "feeSol": {
+        "amount": "9985000",
+        "ui": "0.009985",
+        "unit": "SOL"
+      }
     }
   ],
   "trades": [
     {
-      "signature": "4U14XhPXHKDfhL3ZHXCDRmCSPKqoQRQdWYizyNti7c433sFcdJQUPXixin3DCw65eC2fBuoJ8CwQiC9tgPgMDzsm",
-      "slot": 452066271,
-      "spent": {
-        "mint": "So11111111111111111111111111111111111111112",
-        "amount": "5000000"
+      "signature": "2Ym6RkQfS9zN1dTqWcX4bV7hJ8uK3pL5aE2rT9yG6iO1nM4sD7fH3jK8lZ5xC2vB9nQ6wE4rT1yU8iO5pA3sD7fG",
+      "slot": 452400100,
+      "time": "2026-10-03T01:15:00.000Z",
+      "side": "sell",
+      "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "token": {
+        "amount": "8000000",
+        "ui": "8",
+        "unit": "USDC"
       },
-      "received": {
-        "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-        "amount": "588572"
+      "sol": {
+        "amount": "67701028",
+        "ui": "0.067701028",
+        "unit": "SOL"
       },
-      "worthNow": "4980000",
-      "pnl": "-20000",
-      "explorer": "https://explorer.solana.com/tx/4U14XhPXHKDfhL3ZHXCDRmCSPKqoQRQdWYizyNti7c433sFcdJQUPXixin3DCw65eC2fBuoJ8CwQiC9tgPgMDzsm?cluster=custom&customUrl=http%3A%2F%2F127.0.0.1%3A8899"
+      "realised": {
+        "amount": "-3842",
+        "ui": "-0.000003842",
+        "unit": "SOL"
+      },
+      "explorer": "https://explorer.solana.com/tx/2Ym6RkQfS9zN1dTqWcX4bV7hJ8uK3pL5aE2rT9yG6iO1nM4sD7fH3jK8lZ5xC2vB9nQ6wE4rT1yU8iO5pA3sD7fG?cluster=custom&customUrl=http%3A%2F%2F127.0.0.1%3A8899"
+    },
+    {
+      "signature": "4sDQnY7cXw2KuGHpbTq8VrJ5mE3aL9zF6tN1oB4yR8iU2kP5jW7hC3gS6dM9xZ1vQ4eA8rT2yI5uO7pL3nK6bJ9",
+      "slot": 452113575,
+      "time": "2026-10-03T01:22:55.000Z",
+      "side": "buy",
+      "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "token": {
+        "amount": "5905945",
+        "ui": "5.905945",
+        "unit": "USDC"
+      },
+      "sol": {
+        "amount": "50000000",
+        "ui": "0.05",
+        "unit": "SOL"
+      },
+      "realised": null,
+      "explorer": "https://explorer.solana.com/tx/4sDQnY7cXw2KuGHpbTq8VrJ5mE3aL9zF6tN1oB4yR8iU2kP5jW7hC3gS6dM9xZ1vQ4eA8rT2yI5uO7pL3nK6bJ9?cluster=custom&customUrl=http%3A%2F%2F127.0.0.1%3A8899"
+    },
+    {
+      "signature": "5P1Wbvs9QudFxY3kT8mN2rL6pA4zE7cV1oJ9hG5uS3iD8wB2nK6qR4tF7yM1xC9vZ3eL5aP8sT2gH6jU4kO1bN7",
+      "slot": 452111676,
+      "time": "2026-10-03T01:24:36.000Z",
+      "side": "buy",
+      "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "token": {
+        "amount": "11815989",
+        "ui": "11.815989",
+        "unit": "USDC"
+      },
+      "sol": {
+        "amount": "100000000",
+        "ui": "0.1",
+        "unit": "SOL"
+      },
+      "realised": null,
+      "explorer": "https://explorer.solana.com/tx/5P1Wbvs9QudFxY3kT8mN2rL6pA4zE7cV1oJ9hG5uS3iD8wB2nK6qR4tF7yM1xC9vZ3eL5aP8sT2gH6jU4kO1bN7?cluster=custom&customUrl=http%3A%2F%2F127.0.0.1%3A8899"
     }
   ],
-  "pnl": "-20000",
-  "pnlNote": "In wSOL base units: each trade's received tokens valued at a live Jupiter quote, less the wSOL spent.",
-  "explorer": "https://explorer.solana.com/address/6L3SNQ1UJmDm7FfjnfRvwXj1ECyEciSAQsk2hndTqNye?cluster=custom&customUrl=http%3A%2F%2F127.0.0.1%3A8899",
-  "dataSlot": 452066400
+  "history": {
+    "trades": 3,
+    "shown": 3,
+    "positions": 1,
+    "positionsShown": 1,
+    "balances": 2,
+    "signaturesRead": 6,
+    "complete": true,
+    "incomplete": null,
+    "notCounted": [
+      {
+        "count": 1,
+        "reason": "deposits into the vault, which are not trades"
+      }
+    ]
+  },
+  "explorer": "https://explorer.solana.com/address/AuTJA9aBVQTa9QQ6ChwLgFKe12CinB8R8o9mTnL1WnDj?cluster=custom&customUrl=http%3A%2F%2F127.0.0.1%3A8899",
+  "dataSlot": 452400200,
+  "asOf": "2026-10-02T10:00:00.000Z"
 }

@@ -22,6 +22,8 @@ import {
   historyProviderShape,
   historyProviderStatus,
   historyUnavailable,
+  dexscreenerToken,
+  jupiterPrice,
   jupiterQuote,
   jupiterSwapInstructions,
   mintCheckEmpty,
@@ -35,6 +37,9 @@ import {
   quoteNotRead,
   quoteUnavailable,
   Refusal,
+  rpcCall,
+  type NetRequest,
+  type NetResult,
   type JupiterQuote,
   type PrepareSwapInput,
 } from '@agon/core'
@@ -46,12 +51,29 @@ import {
   TransactionInstruction,
 } from '@solana/web3.js'
 import { fetchNullableSwig } from '@swig-wallet/classic/dist/index.js'
-import { fromEnhanced, type EnhancedTransaction, type RawTransaction } from '@agon/decoder'
+import {
+  decodeTransaction,
+  fromEnhanced,
+  type Decoded,
+  type EnhancedTransaction,
+  type RawTransaction,
+} from '@agon/decoder'
 import { categoriesOf, checkMints, type MintCheck, type TokenCategory } from '@agon/guard'
+import { usdToLamports } from './vault-report.js'
 
 /** The 2 SPL token programs a vault's token accounts can belong to. Pinned, never read from input. */
 const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
 const TOKEN_2022_PROGRAM_ID = new PublicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb')
+
+/**
+ * Pyth's SOL/USD price account on mainnet, the program that must own it and the feed it must carry.
+ * Pinned: a price account read from input could be anyone's numbers.
+ */
+const PYTH_SOL_USD_ACCOUNT = '7UVimffxr9ow1uXYxsr4LHAcV58mLzhmwaeKvJ1pjLiE'
+const PYTH_RECEIVER = 'rec5EKMGg6MxZYaMdyBfgwp4d5rB9T1VQH5pJv5LtFJ'
+const PYTH_SOL_USD_FEED = 'ef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d'
+/** A SOL/USD price older than this is stale and not used. */
+const PRICE_MAX_AGE_S = 120
 
 /** Helius returns newest first and one page is 100, which is enough to mine a habit from. */
 const PAGE = 100
@@ -81,8 +103,22 @@ export interface ToolIo {
   findHirers(agent: string): Promise<VaultRules[]>
   /** The owner's vault: its holdings, its agents' fee SOL and its trades, read from the chain. */
   loadVaultActivity(owner: string): Promise<VaultActivity>
-  /** What `amount` base units of `mint` fetch in wSOL base units at a live quote. */
-  loadWorth(mint: string, amount: string): Promise<bigint>
+  /**
+   * SOL/USD from every source that answered, Jupiter's USD price for `mints` in the same request,
+   * and why each source that did not answer did not.
+   */
+  loadPrices(mints: readonly string[], slot: number): Promise<Prices>
+  /**
+   * What selling `amount` base units of `mint` fetches now, in lamports: a Jupiter sell quote, else
+   * Jupiter's USD price from `prices`, else DexScreener. Never throws: no source gives the reasons.
+   */
+  valueInSol(
+    mint: string,
+    amount: bigint,
+    decimals: number,
+    prices: Prices,
+    slot: number,
+  ): Promise<{ value: bigint; source: string } | { why: string }>
   /** Fork only: the clock to real time and the pair's route copied from mainnet again. */
   syncFork(pair: [string, string]): Promise<ForkSync>
   /** The token category of each mint, for the wallet's category mix. A mint it cannot place is left out. */
@@ -190,21 +226,14 @@ interface JupiterInstruction {
 
 // ---- vault_status and sync_fork (T-C25): the arithmetic, kept pure so a test can hand it data. ----
 
-interface TokenBalance {
-  mint: string
-  owner?: string
-  uiTokenAmount: { amount: string }
-}
-
-/** Just the parts of a parsed transaction `tradesFrom` reads. */
-interface ParsedVaultTx {
-  slot: number
-  transaction: { signatures: string[] }
-  meta: {
-    err: unknown
-    preTokenBalances?: TokenBalance[] | null
-    postTokenBalances?: TokenBalance[] | null
-  } | null
+/** The parts of a DexScreener pair read for a price. Outside data: every field may be missing. */
+interface DexPair {
+  chainId?: string
+  baseToken?: { address?: string }
+  quoteToken?: { address?: string }
+  priceNative?: string
+  priceUsd?: string
+  liquidity?: { usd?: number }
 }
 
 /** What sync_fork did, in plain strings; the tool's contract checks it on the way out. */
@@ -217,21 +246,26 @@ interface ForkSync {
   note: string
 }
 
-interface VaultActivity {
+export interface VaultActivity {
   vault: string
   nativeSol: bigint
   balances: Array<{ mint: string; amount: bigint }>
   agents: Array<{ address: string; feeSol: bigint }>
-  /** Newest first, at most 20. */
-  trades: VaultTrade[]
+  /** Every successful transaction read, decoded for the vault with SOL as the only quote, newest first. */
+  decoded: Array<{ d: Decoded; time: number | null }>
+  /** The decimals of every mint in `balances` and `decoded`, from the chain's own balance rows. */
+  decimals: ReadonlyMap<string, number>
+  signaturesRead: number
+  /** Why older transactions were not read, or null when the read reached the vault's first one. */
+  incomplete: string | null
   slot: number
 }
 
-interface VaultTrade {
-  signature: string
-  slot: number
-  spent: { mint: string; amount: bigint }
-  received: { mint: string; amount: bigint }
+export interface Prices {
+  sol: Array<{ name: string; usd: number }>
+  /** Jupiter's USD price per whole token, for the mints asked. */
+  usd: ReadonlyMap<string, number>
+  errors: string[]
 }
 
 /**
@@ -240,76 +274,102 @@ interface VaultTrade {
  */
 export function balancesFrom(
   accounts: ReadonlyArray<unknown>,
-): Array<{ mint: string; amount: bigint }> {
+): Array<{ mint: string; amount: bigint; decimals: number }> {
   return accounts
     .map((data) => {
-      const info = (data as { parsed: { info: { mint: string; tokenAmount: { amount: string } } } })
-        .parsed.info
-      return { mint: info.mint, amount: BigInt(info.tokenAmount.amount) }
+      const info = (
+        data as {
+          parsed: { info: { mint: string; tokenAmount: { amount: string; decimals: number } } }
+        }
+      ).parsed.info
+      return {
+        mint: info.mint,
+        amount: BigInt(info.tokenAmount.amount),
+        decimals: info.tokenAmount.decimals,
+      }
     })
     .filter((b) => b.amount > 0n)
 }
 
-/**
- * The vault's trades, in the order given: a successful transaction in which exactly 1 of the
- * vault's own token balances fell and exactly 1 rose. A deposit only rises, a fee moves no token,
- * and a failed transaction moved nothing, so none of them counts.
- */
-export function tradesFrom(txs: ReadonlyArray<ParsedVaultTx | null>, vault: string): VaultTrade[] {
-  const trades: VaultTrade[] = []
-  for (const tx of txs) {
-    if (tx?.meta == null || tx.meta.err != null) continue
-    const delta = new Map<string, bigint>()
-    const add = (list: TokenBalance[] | null | undefined, sign: bigint) => {
-      for (const b of list ?? []) {
-        if (b.owner === vault) {
-          delta.set(b.mint, (delta.get(b.mint) ?? 0n) + sign * BigInt(b.uiTokenAmount.amount))
-        }
-      }
-    }
-    add(tx.meta.preTokenBalances, -1n)
-    add(tx.meta.postTokenBalances, 1n)
-    const out = [...delta].filter(([, d]) => d < 0n)
-    const into = [...delta].filter(([, d]) => d > 0n)
-    const [spent] = out
-    const [received] = into
-    const signature = tx.transaction.signatures[0]
-    if (out.length === 1 && into.length === 1 && spent && received && signature) {
-      trades.push({
-        signature,
-        slot: tx.slot,
-        spent: { mint: spent[0], amount: -spent[1] },
-        received: { mint: received[0], amount: received[1] },
-      })
-    }
-  }
-  return trades
-}
-
-/**
- * Each trade valued in wSOL base units, by arithmetic only: its received amount's share of 1 live
- * quote for everything received of that mint (so 1 quote per mint, not per trade), less the wSOL it
- * spent. A trade not paid in wSOL gets no P&L, and a mint with no quote gets no worth: never a guess.
- */
-export function valueTrades(
-  trades: readonly VaultTrade[],
-  worth: ReadonlyMap<string, { amount: bigint; worth: bigint }>,
-): Array<VaultTrade & { worthNow: bigint | null; pnl: bigint | null }> {
-  return trades.map((t) => {
-    const quoted = worth.get(t.received.mint)
-    const worthNow =
-      t.received.mint === WSOL_MINT
-        ? t.received.amount
-        : quoted !== undefined && quoted.amount > 0n
-          ? (quoted.worth * t.received.amount) / quoted.amount
-          : null
-    const pnl = worthNow !== null && t.spent.mint === WSOL_MINT ? worthNow - t.spent.amount : null
-    return { ...t, worthNow, pnl }
-  })
-}
-
 /** Time travel only goes forward, and under 2 s of lag is not worth a jump. */
 export const clockNeedsMove = (lagMs: number): boolean => lagMs > 2000
+
+/**
+ * Pyth's price update account (PriceUpdateV2) read for SOL/USD, or the reason it was not used:
+ * wrong owner, wrong feed or stale all fail closed, since a wrong price is worse than none.
+ */
+export function pythSolUsd(owner: string, data: Buffer, nowS: number): number | string {
+  if (owner !== PYTH_RECEIVER) return `Pyth's price account is owned by ${owner}, not Pyth`
+  // 8 discriminator, 32 write authority, then the verification level: Partial carries 1 more byte.
+  let at = 8 + 32
+  at += data[at] === 0 ? 2 : 1
+  const feed = data.subarray(at, at + 32).toString('hex')
+  if (feed !== PYTH_SOL_USD_FEED) return `Pyth's price account carries feed ${feed}, not SOL/USD`
+  const exponent = data.readInt32LE(at + 48)
+  const price = Number(data.readBigInt64LE(at + 32)) * 10 ** exponent
+  const confidence = Number(data.readBigUInt64LE(at + 40)) * 10 ** exponent
+  const age = Math.round(nowS - Number(data.readBigInt64LE(at + 52)))
+  if (age > PRICE_MAX_AGE_S) return `Pyth's SOL/USD is ${age} s old, over ${PRICE_MAX_AGE_S}`
+  if (!Number.isFinite(price) || price <= 0) return `Pyth's SOL/USD reads ${price}, not a price`
+  if (confidence > price / 100) {
+    return `Pyth's SOL/USD is ${price} plus or minus ${confidence}, wider than 1%`
+  }
+  return price
+}
+
+/**
+ * A finalized transaction never changes, so each is fetched and decoded once: what is kept is the
+ * decoded result and its mints' decimals, about 200 bytes, not the transaction.
+ */
+const decodedOnce = new Map<string, { d: Decoded; decimals: Array<[string, number]> }>()
+// ponytail: the oldest entries go past 50,000 (about 10 MB); an LRU if a host serves many vaults.
+const DECODED_CAP = 50_000
+// ponytail: 2,000 signatures and 20 s per read, each said in `incomplete`; page on when vaults outgrow it.
+const VAULT_SIGNATURE_CAP = 2000
+const VAULT_READ_BUDGET_MS = 20_000
+/** Price reads retry a 429 once, not 3 times, so a slow source cannot hold the answer past a minute. */
+const PRICE_RETRIES = 1
+
+/**
+ * Runs 1 outside price request, built inside the guard so a missing key is caught too, and turns any
+ * failure into a short reason that names the source and its status: never a fixture path, an env
+ * var or a stack, which an agent must not be handed.
+ */
+async function priceRead(
+  name: string,
+  build: () => NetRequest,
+  slot: number,
+): Promise<NetResult | string> {
+  try {
+    const res = await call(build(), { retries: PRICE_RETRIES, slotHint: slot })
+    return res.status === 200 ? res : `${name} answered ${res.status}`
+  } catch (error) {
+    const m = error instanceof Error ? error.message : String(error)
+    if (/replay mode|No recorded response/i.test(m)) {
+      return `${name} not read: this server replays recordings and has none for it`
+    }
+    if (/is not set/.test(m)) return `${name} not read: its API key is not set on this server`
+    return `${name} unreachable`
+  }
+}
+
+/** The most liquid DexScreener pair for `mint`, its numbers checked: outside data, so never trusted. */
+export function dexPairFor(
+  pairs: unknown,
+  mint: string,
+): { quoteIsSol: boolean; priceNative: number; priceUsd: number } | null {
+  const usable = (Array.isArray(pairs) ? (pairs as DexPair[]) : [])
+    .filter((p) => p.chainId === 'solana' && p.baseToken?.address === mint)
+    .map((p) => ({
+      quoteIsSol: p.quoteToken?.address === WSOL_MINT,
+      priceNative: Number(p.priceNative),
+      priceUsd: Number(p.priceUsd),
+      liquidity: Number(p.liquidity?.usd),
+    }))
+    .filter((p) => Number.isFinite(p.liquidity) && p.liquidity > 0)
+    .sort((a, b) => b.liquidity - a.liquidity)
+  return usable[0] ?? null
+}
 
 /** The mints Agon arms, so these are the ones a vault is read for. */
 const ARMED_MINTS = [WSOL_MINT, USDC_MINT] as const
@@ -468,34 +528,187 @@ export const liveIo = (): ToolIo => {
           feeSol: BigInt(await connection.getBalance(new PublicKey(key))),
         })),
       )
-      // ponytail: the 50 most recent signatures, enough for 20 trades beside deposits and hires.
-      const signatures = await connection.getSignaturesForAddress(vault, { limit: 50 })
-      const txs = await Promise.all(
-        signatures.map((s) =>
-          connection.getParsedTransaction(s.signature, { maxSupportedTransactionVersion: 0 }),
-        ),
-      )
+      const vaultId = vault.toBase58()
+      const started = Date.now()
+      const signatures: Array<{
+        signature: string
+        err: unknown
+        blockTime?: number | null
+        confirmationStatus?: string | null
+      }> = []
+      let incomplete: string | null = null
+      for (let before: string | undefined; ; ) {
+        const page = await connection.getSignaturesForAddress(vault, { limit: 1000, before })
+        signatures.push(...page)
+        before = page.at(-1)?.signature
+        if (page.length < 1000) break
+        if (signatures.length >= VAULT_SIGNATURE_CAP) {
+          // Exactly at the cap is complete if nothing older exists.
+          const older = await connection.getSignaturesForAddress(vault, { limit: 1, before })
+          if (older.length > 0) {
+            incomplete = `only the newest ${signatures.length} transactions were read; older trades are not counted`
+          }
+          break
+        }
+      }
+      // A failed transaction moved nothing, so it is never fetched.
+      const landed = signatures.filter((s) => s.err === null)
+      const decoded: VaultActivity['decoded'] = []
+      const decimals = new Map<string, number>(balances.map((b) => [b.mint, b.decimals]))
+      let missing = 0
+      for (let i = 0; i < landed.length; i += 20) {
+        if (Date.now() - started > VAULT_READ_BUDGET_MS) {
+          incomplete = `the read stopped after ${VAULT_READ_BUDGET_MS / 1000} s at ${i} of ${landed.length} transactions; ask again to continue from what was read`
+          break
+        }
+        const read = await Promise.all(
+          landed.slice(i, i + 20).map(async (s) => {
+            const key = `${vaultId}:${s.signature}`
+            const hit = decodedOnce.get(key)
+            if (hit) return { ...hit, time: s.blockTime ?? null }
+            const res = await fetch(connection.rpcEndpoint, {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({
+                jsonrpc: '2.0',
+                id: 1,
+                method: 'getTransaction',
+                params: [s.signature, { encoding: 'json', maxSupportedTransactionVersion: 0 }],
+              }),
+            })
+            const tx = ((await res.json()) as { result?: RawTransaction | null }).result ?? null
+            if (tx === null) return null
+            const rows = [
+              ...(tx.meta?.preTokenBalances ?? []),
+              ...(tx.meta?.postTokenBalances ?? []),
+            ]
+            const entry = {
+              d: decodeTransaction(tx, vaultId, [WSOL_MINT]),
+              decimals: rows.map(
+                (r) =>
+                  [r.mint, (r.uiTokenAmount as { decimals?: number }).decimals ?? -1] as [
+                    string,
+                    number,
+                  ],
+              ),
+            }
+            if (s.confirmationStatus === 'finalized') {
+              if (decodedOnce.size >= DECODED_CAP) {
+                decodedOnce.delete(decodedOnce.keys().next().value as string)
+              }
+              decodedOnce.set(key, entry)
+            }
+            return { ...entry, time: s.blockTime ?? null }
+          }),
+        )
+        for (const r of read) {
+          if (r === null) {
+            missing += 1
+            continue
+          }
+          decoded.push({ d: r.d, time: r.time })
+          for (const [mint, d] of r.decimals) if (d >= 0) decimals.set(mint, d)
+        }
+      }
+      if (missing > 0 && incomplete === null) {
+        incomplete = `${missing} transaction(s) were not returned by the chain yet; ask again in a minute`
+      }
       return {
-        vault: vault.toBase58(),
+        vault: vaultId,
         nativeSol: BigInt(await connection.getBalance(vault)),
-        balances,
+        balances: balances.map(({ mint, amount }) => ({ mint, amount })),
         agents,
-        trades: tradesFrom(
-          txs as unknown as ReadonlyArray<ParsedVaultTx | null>,
-          vault.toBase58(),
-        ).slice(0, 20),
+        decoded,
+        decimals,
+        signaturesRead: signatures.length,
+        incomplete,
         slot,
       }
     },
 
-    async loadWorth(mint: string, amount: string): Promise<bigint> {
-      const res = await jupiter(jupiterQuote(mint, WSOL_MINT, amount, 50))
-      if (res.status !== 200) throw new Refusal(quoteUnavailable({ status: res.status }))
-      const out = (res.body as { outAmount?: unknown }).outAmount
-      if (typeof out !== 'string' || !/^[0-9]+$/.test(out)) {
-        throw new Refusal(quoteUnavailable({ status: res.status }))
+    async loadPrices(mints, slot) {
+      const sol: Prices['sol'] = []
+      const usd = new Map<string, number>()
+      const errors: string[] = []
+      const pyth = await priceRead(
+        'Pyth',
+        () => rpcCall('getAccountInfo', [PYTH_SOL_USD_ACCOUNT, { encoding: 'base64' }]),
+        slot,
+      )
+      if (typeof pyth === 'string') errors.push(pyth)
+      else {
+        const v = (pyth.body as { result?: { value?: { owner: string; data: [string] } | null } })
+          .result?.value
+        const read = v
+          ? pythSolUsd(v.owner, Buffer.from(v.data[0], 'base64'), Date.now() / 1000)
+          : "Pyth's SOL/USD account was not in the answer"
+        if (typeof read === 'number')
+          sol.push({ name: pyth.fromFixture ? 'Pyth (recorded)' : 'Pyth', usd: read })
+        else errors.push(read)
       }
-      return BigInt(out)
+      // 1 request for SOL and every mint asked, so valuing many positions costs 1 price call.
+      const jup = await priceRead(
+        'Jupiter price',
+        () => jupiterPrice([WSOL_MINT, ...mints].slice(0, 50)),
+        slot,
+      )
+      if (typeof jup === 'string') errors.push(jup)
+      else {
+        for (const [mint, row] of Object.entries(
+          jup.body as Record<string, { usdPrice?: unknown }>,
+        )) {
+          const p = row?.usdPrice
+          if (typeof p === 'number' && Number.isFinite(p) && p > 0) usd.set(mint, p)
+        }
+        const s = usd.get(WSOL_MINT)
+        if (s !== undefined)
+          sol.push({ name: jup.fromFixture ? 'Jupiter (recorded)' : 'Jupiter', usd: s })
+        else errors.push('Jupiter price has no SOL price in its answer')
+      }
+      return { sol, usd, errors }
+    },
+
+    async valueInSol(mint, amount, decimals, prices, slot) {
+      if (mint === WSOL_MINT) return { value: amount, source: 'wSOL is SOL' }
+      const whys: string[] = []
+      const solUsd = prices.sol[0]?.usd ?? null
+      const quote = await priceRead(
+        'Jupiter quote',
+        () => jupiterQuote(mint, WSOL_MINT, String(amount), 50),
+        slot,
+      )
+      const out =
+        typeof quote === 'string' ? null : (quote.body as { outAmount?: unknown }).outAmount
+      if (typeof out === 'string' && /^[0-9]+$/.test(out)) {
+        return { value: BigInt(out), source: 'Jupiter sell quote' }
+      }
+      whys.push(typeof quote === 'string' ? quote : 'Jupiter quote has no route to SOL')
+      const usd = prices.usd.get(mint)
+      const fromUsd =
+        usd !== undefined && solUsd !== null ? usdToLamports(amount, decimals, usd, solUsd) : null
+      if (fromUsd !== null) return { value: fromUsd, source: "Jupiter's USD price" }
+      whys.push(
+        usd === undefined ? 'Jupiter price has none' : 'no SOL/USD to convert its USD price',
+      )
+      const dex = await priceRead('DexScreener', () => dexscreenerToken(mint), slot)
+      if (typeof dex === 'string') whys.push(dex)
+      else {
+        const pair = dexPairFor(dex.body, mint)
+        const value = !pair
+          ? null
+          : pair.quoteIsSol
+            ? usdToLamports(amount, decimals, pair.priceNative, 1)
+            : solUsd !== null
+              ? usdToLamports(amount, decimals, pair.priceUsd, solUsd)
+              : null
+        if (value !== null) return { value, source: 'DexScreener' }
+        whys.push(
+          pair
+            ? 'DexScreener has no usable price for it'
+            : 'DexScreener lists no Solana pair for it',
+        )
+      }
+      return { why: whys.join('; ') }
     },
 
     async syncFork([inputMint, outputMint]: [string, string]): Promise<ForkSync> {

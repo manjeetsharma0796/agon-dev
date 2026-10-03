@@ -60,6 +60,19 @@ export const jupiterQuote = (
   headers: { 'x-api-key': env('JUPITER_API_KEY') },
 })
 
+/** Jupiter's USD price per whole token for up to 50 mints: a fallback when no route quotes a sale. */
+export const jupiterPrice = (mints: readonly string[]): NetRequest => ({
+  provider: 'jupiter',
+  url: `https://api.jup.ag/price/v3?ids=${mints.join(',')}`,
+  headers: { 'x-api-key': env('JUPITER_API_KEY') },
+})
+
+/** DexScreener's pairs for 1 Solana mint, keyless: the last price source when Jupiter has none. */
+export const dexscreenerToken = (mint: string): NetRequest => ({
+  provider: 'dexscreener',
+  url: `https://api.dexscreener.com/tokens/v1/solana/${mint}`,
+})
+
 /**
  * The instructions for a quote, with `user` as the wallet that trades. Only `swapInstruction` is
  * used: wrapping is off and no lookup table is asked for, so 1 legacy transaction holds it all.

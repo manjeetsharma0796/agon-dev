@@ -230,3 +230,33 @@ export function fifoLedger(
     exceptions,
   }
 }
+
+/** 1 open position: its lots of 1 mint against 1 quote, summed. */
+export interface OpenPosition {
+  mint: string
+  quoteMint: string
+  /** Base units still held. */
+  amount: string
+  /** What those units cost, in the quote's base units. */
+  costBasis: string
+}
+
+/** Sums the open lots per mint and quote. Pure, and prices nothing: valuing is the caller's. */
+export function openPositions(lots: readonly Lot[]): OpenPosition[] {
+  const byKey = new Map<string, { mint: string; quoteMint: string; amount: bigint; cost: bigint }>()
+  for (const lot of lots) {
+    const key = `${lot.mint}|${lot.quoteMint}`
+    const p = byKey.get(key) ?? { mint: lot.mint, quoteMint: lot.quoteMint, amount: 0n, cost: 0n }
+    p.amount += BigInt(lot.amount)
+    p.cost += BigInt(lot.costBasis)
+    byKey.set(key, p)
+  }
+  return [...byKey.values()]
+    .filter((p) => p.amount > 0n)
+    .map((p) => ({
+      mint: p.mint,
+      quoteMint: p.quoteMint,
+      amount: String(p.amount),
+      costBasis: String(p.cost),
+    }))
+}

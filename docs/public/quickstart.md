@@ -35,7 +35,7 @@ The server exposes exactly seven tools, documented with their full schemas in
 | `arm_rule` | a link to the arming screen, where the user sets the cap and signs; practice fork only |
 | `list_rules` | the agent roles armed on the wallet's vault, read from the chain |
 | `prepare_swap` | 1 unsigned swap from the vault for the agent to sign, built only when `check_trade` passes with the real quote |
-| `vault_status` | the vault's balances, the agent's fee SOL, its trades with explorer links, and P&L in wSOL from a live quote |
+| `vault_status` | the vault's P&L, first in first out: realised from its sells, unrealised on what it still holds at what selling it fetches now, in SOL and dollars, each price with its source |
 | `sync_fork` | practice fork only: refreshes a stale pool and moves a lagging fork clock forward |
 
 To connect an agent, start with [`agent-setup.md`](./agent-setup.md).

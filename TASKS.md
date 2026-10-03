@@ -2741,7 +2741,7 @@ _(empty)_
   refreshes pools only and says the clock was left alone, with the lag it measured
 
 ### T-C27, Vault P&L that survives a sell: FIFO over every trade, in SOL and USD, from more than 1 price source
-- Status: claimed 2026-10-02 | Owner: manjeetsharma0796 | Branch: feature/t-c27-vault-pnl
+- Status: in-review 2026-10-02 | Owner: manjeetsharma0796 | Branch: feature/t-c27-vault-pnl
 - Depends-on: T-C25
 - Touches: packages/core/src/vault.ts, packages/core/src/index.ts, packages/core/src/contracts.test.ts,
   packages/core/src/net/index.ts, packages/core/src/net/record.ts, fixtures/contracts/,
@@ -2766,7 +2766,27 @@ _(empty)_
   the ledger: buy then sell, partial sell, sell with no buy recorded, 2 positions. Measured on the
   fork: a buy and a sell from 1 vault give a realised P&L equal to the hand arithmetic, and the
   totals still come back with the quote provider blocked
-- Evidence: <PR link, the hand arithmetic for the buy and sell, the answer with Jupiter blocked>
+- Evidence: on the fork, 1 vault with 2 buys and 1 sell made through `prepare_swap` and the agent
+  kit. The buys, read from the chain apart from the tool: 11815989 USDC for 0.1 SOL, then 5905945
+  for 0.05; the sell: 8000000 USDC for 67701028 lamports. By hand, FIFO takes the 8 USDC from the
+  first lot at 100000000 * 8000000 / 11815989 = 67704870, so realised is -3842 and the 9721934 still
+  open cost 82295130; `vault_status` gave -3842 and 82295130, before and after review rewrote it
+  onto the decoder. With Jupiter's key deliberately wrong, realised was still -3842, the open USDC
+  was valued by DexScreener within 0.01% of Jupiter's own quote, and SOL/USD came from Pyth alone
+  (read on chain; owner, feed, age, sign and a 1% confidence checked). A cold read took 4 s, a warm
+  one 2 s, about 1,100 tokens. Tests: 5 ledger, 11 report (same-slot order, reconciliation with the
+  chain, SOL always 9 decimals, unknown decimals, cents that add up, an absurd price, unpriced
+  reasons, unmatched sells, bounded size), the replay answer naming no fixture or setting, a
+  20-mint worst case under 2,000 tokens
+- Finding 2026-10-02: an agent armed today can buy but never sell. The arming page hires it for wSOL
+  only, so `prepare_swap` from USDC back to SOL is refused: 0 roles spend USDC. The sell above needed
+  a USDC role added by hand with `hireAgent`, which already takes a mint. Its own row
+- Finding 2026-10-02, from a 10-angle review: the first version showed SOL 10^9 too large when wSOL
+  was not yet in a decimals cache, matched same-slot trades latest first (realised could flip sign),
+  valued tokens that had left the vault, put fixture paths and env names in the summary, kept whole
+  transactions in memory forever (about 60 to 145 MB a busy vault) and grew past its token budget
+  with open mints. All fixed with a test each; the P&L now lives in a pure file both T-C28 and T-E20
+  reuse
 - Why it is its own row: asked for 2026-10-02 by manjeetsharma0796 after T-C25. Its P&L valued
   only buys at 1 live quote: 1 sell made the total null, nothing was realised, amounts were bare
   base units an agent read with the wrong decimals, only the last 20 trades counted, and 1 quote
