@@ -8,7 +8,7 @@
 // the opencode trade view's rules (.opencode/tui/agon-trade.tsx), so the two screens read alike. The
 // chart scales the server's candles to cells and pixels; that is drawing, not a number anyone reads.
 //
-// Buy, Sell and Check only fill the prompt, never send it. A draft carries the token's mint and
+// Buy, Sell, Check and Ask only fill the prompt, never send it. A draft carries the token's mint and
 // never a name or symbol (OP-38). A token's symbol is shown only from /discover's `display`, which
 // the server labels untrusted, and it reaches no prompt: a row opens by its mint. Up and down are never colour alone: an arrow, a sign, a word, or
 // a different glyph.
@@ -683,7 +683,7 @@ function candleCells(
   })
   for (const o of overlays)
     index.forEach((i, x) => {
-      const v = i === undefined ? null : (o.values[i] ?? null)
+      const v = i === undefined ? null : num(o.values[i])
       if (v === null || v > hi || v < lo) return
       const r = Math.floor(pxOf(v) / 2)
       if (!grid[r]![x]) grid[r]![x] = [o.dot, o.colour]
@@ -740,7 +740,7 @@ function candleSvg(
   })
   for (const o of overlays) {
     const pts = index.flatMap((i, x) => {
-      const v = i === undefined ? null : (o.values[i] ?? null)
+      const v = i === undefined ? null : num(o.values[i])
       return v === null || v > hi || v < lo ? [] : [`${f(x * slot + slot / 2)},${f(y(v))}`]
     })
     if (pts.length > 1)
@@ -760,6 +760,122 @@ function candleSvg(
     label(height - volH / 2, 'vol'),
   )
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${parts.join('')}</svg>`
+}
+
+// ---- ask the agent (T-E28) ----
+
+// The ask packet: 1 shape in both terminal plugins. This file and .opencode/tui/agon-trade.tsx
+// each hold this same tiny builder (this plugin cannot import repo code), and both tests check it
+// against the same expected text. Every value is a string the screen already shows, formatted by the
+// screen's own code, so the packet's numbers are the screen's. Only numbers, times, the mint (base58
+// checked), our own range and kind words go in: never a token's name or symbol, nor any text the
+// server or a token's creator wrote (OP-38). Lines, in order:
+//   Agon screen: mint <mint>, range <range>, slot <slot>
+//   price <p>, 24h <change>, high <h>, low <l>, vol <v>      (or: 24h stats not sent)
+//   liq <liq>[, flagged: reserve over 100 times its 24h volume]
+//   candle <time> UTC: O <o> H <h> L <l> C <c>                (or: candle not sent)
+//   book <kind>: mid <m>, best bid <b>, best ask <a>          (each only if shown; or: book not sent)
+//   selected trade <time> UTC <side> at <price> for <usd>     (only when a trade is selected)
+//   ages: candles <a>, book <a>, trades <a>
+//   the instruction, ASK_LINE
+export type Ask = {
+  mint: string
+  range: string
+  slot: string | null
+  stats: { price: string; change: string; high: string; low: string; vol: string } | null
+  liq: string | null
+  flagged: boolean
+  candle: { time: string; o: string; h: string; l: string; c: string } | null
+  book: { kind: string; mid: string | null; bid: string | null; ask: string | null } | null
+  trade: { time: string; side: string; price: string; usd: string } | null
+  ages: { candles: string | null; book: string | null; trades: string | null }
+}
+export const ASK_LINE =
+  'Explain what this shows and what check_trade would say before any trade; do not trade.'
+const NS = 'not sent'
+// The book's figures, each left out when the screen shows none (a curve draws no mid and no levels).
+const bookFigures = (b: NonNullable<Ask['book']>) => {
+  const parts = [
+    b.mid && `mid ${b.mid}`,
+    b.bid && `best bid ${b.bid}`,
+    b.ask && `best ask ${b.ask}`,
+  ]
+  return parts.some(Boolean) ? `: ${parts.filter(Boolean).join(', ')}` : ''
+}
+export const askPacket = (a: Ask) =>
+  [
+    `Agon screen: mint ${a.mint}, range ${a.range}, slot ${a.slot ?? 'not read'}`,
+    a.stats
+      ? `price ${a.stats.price}, 24h ${a.stats.change}, high ${a.stats.high}, low ${a.stats.low}, vol ${a.stats.vol}`
+      : `24h stats ${NS}`,
+    `liq ${a.liq ?? NS}${a.flagged ? ', flagged: reserve over 100 times its 24h volume' : ''}`,
+    a.candle
+      ? `candle ${a.candle.time} UTC: O ${a.candle.o} H ${a.candle.h} L ${a.candle.l} C ${a.candle.c}`
+      : `candle ${NS}`,
+    a.book ? `book ${a.book.kind}${bookFigures(a.book)}` : `book ${NS}`,
+    ...(a.trade
+      ? [
+          `selected trade ${a.trade.time} UTC ${a.trade.side} at ${a.trade.price} for ${a.trade.usd}`,
+        ]
+      : []),
+    `ages: candles ${a.ages.candles ?? NS}, book ${a.ages.book ?? NS}, trades ${a.ages.trades ?? NS}`,
+    ASK_LINE,
+  ].join('\n')
+
+// Our words for the server's 3 book kinds; the server's own label is never passed on.
+const KIND: Record<string, string> = {
+  orderbook: 'order book',
+  'amm-liquidity': 'AMM liquidity',
+  'amm-curve': 'AMM curve',
+}
+
+// A candle the chart can draw: every field a finite number.
+const candleOk = (k: Candle | undefined) =>
+  !!k && [k.t, k.open, k.high, k.low, k.close, k.volume].every((v) => num(v) !== null)
+
+/**
+ * The ask packet for what the trade view shows: /market's answer, the range and the status slot on
+ * screen, and the newest candle, which the readout under the chart shows. Each value goes through the
+ * formatter the screen uses for it. This view has no trade selection, so no trade line. Pure.
+ */
+export function askOf(m: Market, mint: string, range: string, slot: number | null): string {
+  const s = m.stats24h && !m.stats24h.error ? m.stats24h : null
+  const liq = s?.liquidityUsd
+  const liqText = num(liq?.value) === null ? null : big(liq!.value)
+  const c = m.candles && !m.candles.error ? m.candles : null
+  // The readout under the chart shows the newest candle only when every candle is readable.
+  const k = c?.list?.every(candleOk) ? c.list.at(-1) : undefined
+  const b = m.book && !('error' in m.book) && KIND[m.book.kind] ? m.book : null
+  const t = m.trades && !m.trades.error ? m.trades : null
+  return askPacket({
+    mint,
+    range,
+    slot: slot === null ? null : String(slot),
+    stats: s && {
+      price: usd(s.price) ?? NS,
+      change: move(s.changePct) ?? NS,
+      high: usd(s.high) ?? NS,
+      low: usd(s.low) ?? NS,
+      vol: big(s.volumeUsd) ?? NS,
+    },
+    liq: liqText,
+    flagged: liqText !== null && typeof liq?.flag === 'string' && liq.flag !== '',
+    candle: k
+      ? { time: utc(k.t), o: usd(k.open)!, h: usd(k.high)!, l: usd(k.low)!, c: usd(k.close)! }
+      : null,
+    book: b && {
+      kind: KIND[b.kind]!,
+      mid: b.kind === 'amm-curve' ? null : usd(b.mid),
+      bid: usd(b.bids?.[0]?.price),
+      ask: usd(b.asks?.[0]?.price),
+    },
+    trade: null,
+    ages: {
+      candles: c ? age(c.fetchedAt) : null,
+      book: b ? age(b.fetchedAt) : null,
+      trades: t ? age(t.fetchedAt) : null,
+    },
+  })
 }
 
 // ---- the trade view ----
@@ -942,6 +1058,29 @@ async function pane($: Dollar, e: Site) {
   const book = bookPanel(els, m, side)
   const trades = tradesPanel(els, m, side)
 
+  // Ask (T-E28): the screen as numbers and the mint, into the prompt. On the row with Buy, Sell and
+  // Check where the 4 fit, else on its own row.
+  const ask = (
+    <Button
+      key="ask"
+      hotkey="a"
+      label="Ask"
+      onPress={() =>
+        m
+          ? draft(askOf(m, mint, range, num(s?.dataSlot)))
+          : $.ui.toast(
+              `Nothing to ask about yet: /market has not answered for ${short(mint)} ${range}${marketError ? ` (${marketError})` : ''}. Press Ask again once the header shows a price. Nothing was filled.`,
+            )
+      }
+    />
+  )
+  const askFits =
+    [
+      ['Buy', 'b'],
+      ['Sell', 's'],
+      ['Check', 'c'],
+      ['Ask', 'a'],
+    ].reduce((n, [l, k]) => n + buttonCells(l!, false, k) + 1, -1) <= width
   const actions = (
     <Box key="actions" flexDirection="column">
       <Box flexDirection="row" gap={1} flexWrap="nowrap">
@@ -976,7 +1115,9 @@ async function pane($: Dollar, e: Site) {
             )
           }
         />
+        {askFits && ask}
       </Box>
+      {!askFits && ask}
       {lines(
         els,
         'act-note',
@@ -1031,18 +1172,25 @@ function chartBlock(
   const { Box, Text } = els
   const c = m?.candles
   const list = c?.list ?? []
-  if (!m || c?.error || list.length === 0)
+  // A candle with a field that is not a number is not drawn around: the whole chart says so.
+  const bad = list.findIndex((k) => !candleOk(k))
+  const error =
+    c?.error ??
+    (bad >= 0
+      ? `/market sent candle ${bad + 1} of ${list.length} with a field that is not a number, so no chart is drawn rather than a guess. Refresh, or update the server.`
+      : undefined)
+  if (!m || error || list.length === 0)
     return (
       <Box key="chart" flexDirection="column">
         {lines(
           els,
           'chart-msg',
           wrap(
-            c?.error ?? (m ? `/market sent 0 candles for ${range}` : 'candles load with /market'),
+            error ?? (m ? `/market sent 0 candles for ${range}` : 'candles load with /market'),
             width,
           ),
-          c?.error ? 'yellow' : undefined,
-          !c?.error,
+          error ? 'yellow' : undefined,
+          !error,
         )}
       </Box>
     )
