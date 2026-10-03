@@ -3301,7 +3301,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-E25, The Claude Code plugin in the repo, with the trade view and the status band
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/280 | Owner: jishnu-baruah | Branch: feature/t-e25-claude-code
+- Status: done
 - Depends-on: T-C33, T-C34
 - Touches: plugins/claude-code/
 - Serves: UX (judged) ; the same trade view in Claude Code's terminal and desktop app
@@ -3367,7 +3367,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-C38, /discover: the market list and its safety numbers, computed once for every surface
-- Status: in-review https://github.com/manjeetsharma0796/agon-dev/pull/289 | Owner: jishnu-baruah | Branch: feature/t-c38-discover
+- Status: done
 - Depends-on: T-C33
 - Touches: packages/mcp/src/discover.ts, packages/mcp/src/discover.test.ts, packages/mcp/src/serve.ts
 - Serves: UX (judged) ; the market list a trader expects, the same on the web, in opencode and in
@@ -3406,4 +3406,30 @@ _(empty)_
   liquidity with its reserve-to-volume flag (T-C37) instead of "liquidity: /market sends none"; every
   number equal to the server's; read at 80 and 140 columns with no overprinted line
 - Evidence: <PR link, screens>
+- Kill criterion: none
+
+### T-E27, The market list in Claude Code, from /discover
+- Status: open
+- Depends-on: T-C38, T-E25
+- Touches: plugins/claude-code/
+- Serves: UX (judged) ; the same market list in Claude Code as in opencode, from 1 source
+- Acceptance: the pane gains a markets view reading `GET /discover` with 0 direct upstream calls: the 6
+  lists, sort, safety columns (holders, top 10 %, dev %, mint and freeze authority, bonding curve % on
+  about to graduate), a figure not sent shown as not sent; choosing a row opens it in the trade view;
+  names and symbols only from `display` and never in a prompt; read at 60, 80 and 140 columns with no
+  line wider than the pane; `claude plugin validate` and `claude plugin test` pass; seen live once
+- Evidence: <PR link, screenshot>
+- Kill criterion: none
+
+### T-E28, Ask the agent from the terminal: the screen's context in the prompt, mints only
+- Status: open
+- Depends-on: T-E26, T-E27
+- Touches: .opencode/tui/agon-discovery.tsx, .opencode/tui/agon-trade.tsx, plugins/claude-code/
+- Serves: UX (judged) ; the copilot sees what the person sees without the person retyping it
+- Acceptance: pressing `a` (opencode) or an Ask button (Claude Code) fills the prompt, never sends, with
+  a context packet built from what the server returned: mint, range, price, change, liquidity, the
+  latest candle, the book's kind and best levels, and the selected trade if any; under 400 tokens like
+  `check_trade`, measured on 3 tokens; 0 token names or symbols, asserted by a test that injects a
+  name into every field the server sends; the packet's numbers equal the screen's
+- Evidence: <PR link>
 - Kill criterion: none
