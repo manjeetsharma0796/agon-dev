@@ -434,7 +434,16 @@ export function createMarket(
       fresh.promise.then(
         (value) =>
           Object.assign(fresh, { at: Date.now(), settled: true, good: { value, at: Date.now() } }),
-        () => Object.assign(fresh, { at: Date.now(), settled: true, ttl: TTL.failure }),
+        // The key that got the 429 is asked again when its pause ends, if that is under 15 s.
+        (error: unknown) =>
+          Object.assign(fresh, {
+            at: Date.now(),
+            settled: true,
+            ttl:
+              error instanceof RateLimited
+                ? Math.min(TTL.failure, error.pauseS * 1000)
+                : TTL.failure,
+          }),
       )
       cache.set(key, fresh)
       entry = fresh
@@ -444,7 +453,9 @@ export function createMarket(
       e.promise.then(
         (value): Got<T> => ({ value: value as T, stale: null }),
         (error: unknown) => {
-          if (!e.good) throw error
+          // A pool that is gone, or a book this server cannot read, is an answer, not an outage.
+          if (!e.good || error instanceof NoPool || (error instanceof DepthError && !error.retry))
+            throw error
           return staleGot<T>(e.good, error)
         },
       )
@@ -541,7 +552,12 @@ export function createMarket(
       const { ageSeconds, error } = got.stale
       return {
         usd: got.value.usd,
-        at: `${got.value.at} (the last good price, ${ageSeconds} s old, because ${failure('its refresh', error)})`,
+        // No countdown here: the book is cached as a success and would carry it out of date.
+        at: `${got.value.at} (the last good price, ${ageSeconds} s old, because its refresh ${
+          statusOf(error) === 429 || error instanceof CoolingDown
+            ? 'met a GeckoTerminal 429 and this server is pausing its calls'
+            : `failed: ${error instanceof Error ? error.message : String(error)}`
+        })`,
       }
     },
   })
@@ -605,7 +621,8 @@ export function createMarket(
         if (hourly.status === 'rejected')
           return { ...at, error: failure('24h stats', hourly.reason), liquidityUsd }
         const h = hourly.value.value
-        const s = stats24h(h.candles, Date.now() / 1000)
+        // The 24 h the candles were fetched for: a stale value must not lose an hour to the clock.
+        const s = stats24h(h.candles, Date.parse(h.fetchedAt) / 1000)
         return s
           ? {
               ...at,
@@ -619,6 +636,7 @@ export function createMarket(
               fetchedAt: h.fetchedAt,
               liquidityUsd,
               error: `24h stats: pool ${p.address} has 0 hourly candles in the last 24 hours, usually no trade. Pick a mint that trades, or try again later.`,
+              ...staleness(hourly.value, '24h stats'),
             }
       })(),
       trades:

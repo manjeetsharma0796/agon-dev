@@ -283,6 +283,11 @@ describe('a 429 cools the whole queue down', () => {
     await pending
     const next = calls.find((c) => c.at > failedAt)!
     expect(next.at - failedAt).toBe(5_000)
+    // The block that got the 429 is asked again once its 5 s pause is over, not after 15 s.
+    const later = market.get(SOL, '5m')
+    await vi.advanceTimersByTimeAsync(SPACING_MS * 2)
+    await later
+    expect(calls.filter((c) => c.url.includes('/trades'))).toHaveLength(1)
   })
 
   test('a pause longer than the queue waits fails fast with the cool-down named, and calls nothing', async () => {
@@ -346,6 +351,8 @@ describe('a 429 cools the whole queue down', () => {
     expect(a.indicators).toMatchObject({ stale: true })
     // The book reads the chain fresh and says its USD price is the last good one.
     expect('basis' in a.book && a.book.basis).toMatch(/the last good price, \d+ s old/)
+    // The book is cached as a success, so its basis carries no countdown that would go out of date.
+    expect('basis' in a.book && a.book.basis).not.toMatch(/more s/)
 
     // Polled every 5 s through the pause: every answer is stale data, and 0 upstream calls.
     const failedAt = calls.at(-1)!.at
@@ -383,7 +390,8 @@ describe('a 429 cools the whole queue down', () => {
     // 5.5 s on the pause is over and the trades refresh is in flight (2 s); an asker waits for it.
     await vi.advanceTimersByTimeAsync(5_500)
     const after = market.get(SOL, '1h')
-    await vi.advanceTimersByTimeAsync(SPACING_MS)
+    // Trades, the quote price, then the candles asked again once their 5 s pause is over.
+    await vi.advanceTimersByTimeAsync(3 * SPACING_MS)
     const a = await after
     expect('stale' in a.trades).toBe(false)
     expect(JSON.stringify(a)).not.toMatch(/for -\d+ more s/)
@@ -423,6 +431,53 @@ describe('a 429 cools the whole queue down', () => {
     await vi.advanceTimersByTimeAsync(5_000)
     expect(done).toBe(true)
     expect((await after).trades).toMatchObject({ stale: true })
+  })
+
+  test('stale 24h stats keep the window they were fetched for, not one that moved on', async () => {
+    vi.setSystemTime(new Date('2026-10-03T12:58:30Z'))
+    const { upstream } = fakeGecko()
+    let failing = false
+    const market = createMarket(
+      async (url) => {
+        if (failing) throw rateLimited()
+        return upstream(url)
+      },
+      SPACING_MS,
+      fakeChain().chain,
+    )
+    const warm = market.get(SOL, '1h')
+    await vi.advanceTimersByTimeAsync(15_000)
+    expect((await warm).stats24h).toMatchObject({ price: 100.5 })
+    // 13:00:45: a new hour, and the refresh gets a 429.
+    await vi.advanceTimersByTimeAsync(120_000)
+    failing = true
+    const pending = market.get(SOL, '1h')
+    await vi.advanceTimersByTimeAsync(0)
+    const s = (await pending).stats24h
+    expect(s).toMatchObject({ stale: true })
+    expect('method' in s && s.method).not.toMatch(/had no candle/)
+  })
+
+  test('a pool that is gone on refresh is a 404, not the last good pool served stale', async () => {
+    const { upstream } = fakeGecko()
+    let gone = false
+    const market = createMarket(
+      async (url) => {
+        if (gone && url.includes('/tokens/'))
+          throw Object.assign(new Error('GeckoTerminal answered 404'), { status: 404 })
+        return upstream(url)
+      },
+      SPACING_MS,
+      fakeChain().chain,
+    )
+    const warm = serve(`?mint=${SOL}`, market)
+    await vi.advanceTimersByTimeAsync(15_000)
+    expect((await warm).status).toBe(200)
+    gone = true
+    await vi.advanceTimersByTimeAsync(10 * 60_000)
+    const r = serve(`?mint=${SOL}`, market)
+    await vi.advanceTimersByTimeAsync(5_000)
+    expect((await r).status).toBe(404)
   })
 
   test('Retry-After is read as seconds or an HTTP date, capped, and ignored when unreadable', () => {
