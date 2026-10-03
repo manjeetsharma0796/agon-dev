@@ -432,6 +432,12 @@ test('the book is honest when missing, failed or a curve; a bad mint and a down 
   const pane = await $.ui.mount(PANE('terminal', 80))
   await pane.press({ key: 'refresh' })
   expect(await shown(band)).toContain('○ server offline')
+  // At 60 columns the warning is shortened, never dropped, and the price says why it is missing.
+  const narrow = await $.ui.mount(BAND('terminal', 60))
+  const n = await shown(narrow)
+  expect(n).toContain('○ server')
+  expect(n).toContain('BONK: /market')
+  expect(await widest(narrow)).toBeLessThanOrEqual(60)
   const flat = (await shown(pane)).replace(/\n/g, ' ')
   expect(flat).toContain(
     '○ server offline: the Agon server is not answering at http://127.0.0.1:8787',

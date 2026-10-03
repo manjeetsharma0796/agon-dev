@@ -3312,7 +3312,7 @@ _(empty)_
   recent trades; read at 60, 80 and 140 columns; every number equal to `/market`'s; mints only reach the
   prompt, never a token's name
 - Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/280 ; `claude plugin validate` passes and
-  `claude plugin test` 3 pass on Claude Code 2.1.288; the coordinator ran it live against a real server
+  `claude plugin test` 4 pass on Claude Code 2.1.288; the coordinator ran it live against a real server
 - Finding: 3 upstream hosts became 1 (the Agon server). `claude plugin validate` and `claude plugin test`
   both run with an empty `CLAUDE_CONFIG_DIR` and no API key in 0.6 s, so CI could run them with no secret,
   but no workflow installs `claude` and workflows are outside Touches: skipped by name. The terminal's
@@ -3321,8 +3321,12 @@ _(empty)_
   ("SOL $119.44073547737729"); they are now rounded by the opencode trade view's rules ($119.441, $165.2M,
   2 decimal percents), and toPrecision's 2.110e-7 below 1e-6 is shown as 0.0000002110. Live on desktop the
   band read "Connecting" while the pane read "Live" from the same value; both now share 1 reading and
-  redraw on each poll. `/market` sends no liquidity, so the header says so. Terminal candles are half-block
-  only, at least 12 rows. T-C35's book is drawn as a ladder of up to 10 a side, or a curve's move table.
+  redraw on each poll. Live in a maximized Windows Terminal (128 columns) the docked pane drew past its
+  visible edge: the axis and the last-price marker never showed, and Ink's wrapped flex rows came out as
+  blank lines. Every line is now laid out to a known width (body less 2, checked against the terminal less
+  the transcript), with no wrapping rows, tested at 60, 80 and 140. Liquidity comes from T-C37's
+  `liquidityUsd` with its flag. Terminal candles are half-block only, at least 12 rows. T-C35's book is
+  drawn as a ladder of up to 10 a side, or a curve's move table.
 - Kill criterion: none
 
 ### T-C37, /market sends liquidity, and /status says plainly when the network is not set

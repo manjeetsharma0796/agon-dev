@@ -315,6 +315,9 @@ const network = (s: Status) => {
 
 type Part = { text: string; prio: number; color?: string; bold?: boolean; dim?: boolean }
 const cells = (s: string) => [...s].length
+// Text shortened to `width` cells, marked with `..` when cut; the full text is in the pane.
+const clip = (s: string, width: number) =>
+  cells(s) <= width ? s : `${[...s].slice(0, Math.max(0, width - 2)).join('')}..`
 // The parts that fit `width`, lowest `prio` first, kept in their order, 2 spaces apart.
 function fit(parts: Part[], width: number) {
   const keep = new Set<Part>()
@@ -447,20 +450,24 @@ async function band($: Dollar, e: RenderInput<'AbovePrompt'>) {
   const price = usd(stats?.price)
   const room = width - buttonCells(toggleLabel, true) - buttonCells('trade', false) - 4
   const solText = s ? sol(s, mint) : null
+  // The connection is always shown, shortened to the room it has: a stale price never sits there
+  // without its offline or reconnecting warning. A failed price keeps its cause, shortened too.
+  // At most half the room, so the token's price or its cause still fits beside it.
+  const connText = clip(conn, Math.min(40, Math.max(12, Math.floor(room / 2))))
   const parts = fit(
     [
-      {
-        text: cells(conn) > 40 ? `${[...conn].slice(0, 38).join('')}..` : conn,
-        prio: 0,
-        color: connTone,
-      },
+      { text: connText, prio: 0, color: connTone },
       ...(s ? [{ text: ping(s), prio: 4 }] : []),
       ...(solText ? [{ text: solText, prio: 3 }] : []),
       {
         text: price
           ? `${labelOf(mint)} ${price}`
-          : `${labelOf(mint)}: ${current?.error ? 'not loaded, open the trade view' : 'loading'}`,
+          : clip(
+              `${labelOf(mint)}: ${current?.error ?? stats?.error ?? 'loading from /market'}`,
+              Math.max(10, room - cells(connText) - 2),
+            ),
         prio: 1,
+        color: current?.error || stats?.error ? 'yellow' : undefined,
       },
       ...(price && move(stats?.changePct)
         ? [{ text: move(stats?.changePct)!, prio: 2, color: tone(stats?.changePct) }]
@@ -932,11 +939,17 @@ function chartBlock(
   const last = list[lastI]!
   // The axis column is as wide as its widest label, and the candles take the rest.
   const step = num(c?.stepSeconds) ?? 0
-  const guess = buckets(list, step, Math.max(10, width - 16))
-  const axisCells = Math.max(
-    ...[usd(guess.hi)!, usd(guess.lo)!, `◀${usd(last.close)}`, 'vol'].map(cells),
-  )
-  const w = buckets(list, step, Math.max(10, width - axisCells - 1))
+  // The labels depend on the window drawn and the window on the labels' width, so it settles in a
+  // few passes; the axis column keeps the widest width seen, so no label is cut.
+  const axisOf = (b: ReturnType<typeof buckets>) =>
+    Math.max(...[usd(b.hi)!, usd(b.lo)!, `◀${usd(last.close)}`, 'vol'].map(cells))
+  let axisCells = axisOf(buckets(list, step, Math.max(10, width - 16)))
+  let w = buckets(list, step, Math.max(10, width - axisCells - 1))
+  for (let pass = 0; pass < 3 && axisOf(w) > axisCells; pass++) {
+    axisCells = axisOf(w)
+    w = buckets(list, step, Math.max(10, width - axisCells - 1))
+  }
+  axisCells = Math.max(axisCells, axisOf(w))
   const d = dirOf(last)
   const maV = ma?.values?.[lastI] ?? null
   const emaV = ema?.values?.[lastI] ?? null
