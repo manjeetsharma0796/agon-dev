@@ -3489,7 +3489,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-C39, The server serves token logos, so both terminals show them by default with 0 outside calls
-- Status: open
+- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-c39-logos
 - Depends-on: T-C38, T-E26, T-E27
 - Touches: packages/mcp/src/logo.ts, packages/mcp/src/logo.test.ts, packages/mcp/src/serve.ts,
   .opencode/tui/agon-discovery.tsx, plugins/claude-code/
