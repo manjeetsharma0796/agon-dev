@@ -1,14 +1,14 @@
 {
   "name": "agon",
-  "version": "0.2.0",
-  "description": "Agon inside Claude Code: a status band above the prompt and a read-only trade view whose every number comes from your Agon server; Buy and Sell only fill your prompt with the token's mint",
+  "version": "0.3.0",
+  "description": "Agon inside Claude Code: a status band above the prompt, a read-only trade view and a market list whose every number comes from your Agon server; Buy and Sell only fill your prompt with the token's mint",
   "author": { "name": "jishnu-baruah" },
   "types": "./types/index.d.ts",
   "userConfig": {
     "serverUrl": {
       "type": "string",
       "title": "Agon server",
-      "description": "Where the Agon server answers /status and /market. The default is the address docs/public/agent-setup.md starts it on.",
+      "description": "Where the Agon server answers /status, /market and /discover. The default is the address docs/public/agent-setup.md starts it on.",
       "default": "http://127.0.0.1:8787"
     }
   }

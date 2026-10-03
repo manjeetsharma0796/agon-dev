@@ -3433,7 +3433,7 @@ _(empty)_
 - Kill criterion: none
 
 ### T-E27, The market list in Claude Code, from /discover
-- Status: claimed 2026-10-03 | Owner: jishnu-baruah | Branch: feature/t-e27-claude-markets
+- Status: done
 - Depends-on: T-C38, T-E25
 - Touches: plugins/claude-code/
 - Serves: UX (judged) ; the same market list in Claude Code as in opencode, from 1 source
@@ -3442,7 +3442,19 @@ _(empty)_
   about to graduate), a figure not sent shown as not sent; choosing a row opens it in the trade view;
   names and symbols only from `display` and never in a prompt; read at 60, 80 and 140 columns with no
   line wider than the pane; `claude plugin validate` and `claude plugin test` pass; seen live once
-- Evidence: <PR link, screenshot>
+- Evidence: https://github.com/manjeetsharma0796/agon-dev/pull/293 ; live 2026-10-03, Claude Code 2.1.288 in a
+  normal-size Windows Terminal window against this branch's server (AGON_NET_MODE=live, fork): `/agon`
+  then `m` drew trending, 20 of 50 rows on screen, 8 columns in a pane about 79 wide, every row inside it;
+  `claude plugin validate` passes, `claude plugin test` 7 pass 0 fail, both locally since CI has no
+  `claude` CLI. The test's fetch stub throws on any host but the Agon server: 0 upstream calls across 6
+  lists, 4 sorts, 2 surfaces and 3 widths
+- Finding: 6 of the first 20 trending tokens live still had mint authority on and 1 had freeze authority
+  on, so those 2 words sit ahead of liquidity in the column priority. The server already running on this
+  machine answered `/discover` with 404 although T-C38 is merged (a build from before it); the plugin
+  says so and the live run used this branch's build on another port, `serverUrl` set through
+  `claude --settings` `pluginConfigs`. `cells()` counted code points, so a 1-emoji symbol pushed its row
+  1 column past the pane; wide characters and emoji now count 2 and combining marks 0. Lists were ranked
+  over the server's default 1h beside a 24h change column; the plugin now asks for `interval=24h`
 - Kill criterion: none
 
 ### T-E28, Ask the agent from the terminal: the screen's context in the prompt, mints only
@@ -3456,4 +3468,19 @@ _(empty)_
   `check_trade`, measured on 3 tokens; 0 token names or symbols, asserted by a test that injects a
   name into every field the server sends; the packet's numbers equal the screen's
 - Evidence: <PR link>
+- Kill criterion: none
+
+### T-C39, The server serves token logos, so both terminals show them by default with 0 outside calls
+- Status: open
+- Depends-on: T-C38, T-E26, T-E27
+- Touches: packages/mcp/src/logo.ts, packages/mcp/src/logo.test.ts, packages/mcp/src/serve.ts,
+  .opencode/tui/agon-discovery.tsx, plugins/claude-code/
+- Serves: UX (judged) ; logos back on by default, without the plugins calling an outside image host
+- Acceptance: `GET /logo?mint=&size=` returns a small PNG for a mint whose icon URL `/discover` already
+  holds, fetched once through 1 image proxy and cached by mint (a logo changes rarely), at most 64 by 64,
+  https only, at most 256 KB upstream, content type checked as an image before it is served; an unknown
+  mint or a failed fetch answers 404 with the reason and the client draws the first letter; both
+  plugins turn logos on by default and read them only from `/logo`, asserted by the 0-outside-call
+  tests already in T-E26 and T-E27; seen live in both terminals
+- Evidence: <PR link, screenshots>
 - Kill criterion: none

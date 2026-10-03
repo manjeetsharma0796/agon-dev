@@ -89,6 +89,42 @@ export type Status = {
   solPrice?: Reading<{ usd: number; blockId: number | null }>
 }
 
+// GET /discover?list=&sort= (packages/mcp/src/discover.ts). A figure is sent with its value or named
+// as not sent, never 0. `display` is text the token creator chose: for a person to read only.
+export type Figure = { value: number | null; notSent?: string; source?: string; at?: string }
+export type Authority = {
+  value: 'disabled' | 'enabled' | null
+  authority?: string | null
+  notSent?: string
+}
+export type Token = {
+  mint: string
+  display?: { untrusted?: true; name?: string | null; symbol?: string | null }
+  price?: Figure
+  change?: Partial<Record<'5m' | '1h' | '6h' | '24h', Figure>>
+  volume24h?: Figure
+  marketCap?: Figure
+  liquidity?: Figure
+  holders?: Figure
+  topHoldersPct?: Figure
+  devPct?: Figure
+  mintAuthority?: Authority
+  freezeAuthority?: Authority
+  bondingCurvePct?: Figure & { graduatedAt?: string }
+  age?: Figure
+}
+export type Discover = {
+  list?: string
+  sort?: string
+  source?: { name?: string; fetchedAt?: string; ageSeconds?: number }
+  authority?: string
+  count?: number
+  tokens?: Token[]
+  leftOut?: string | null
+  error?: string
+}
+export type View = 'trade' | 'markets'
+
 // An answer and the request it answers, or why there is none.
 export type Loaded<T> = { key: string; body: T | null; error: string | null }
 
@@ -104,6 +140,10 @@ declare module 'claude-code' {
       market: Loaded<Market> | null
       status: Loaded<Status> | null
       mintNote: string | null
+      view: View
+      list: string
+      sort: string
+      discover: Loaded<Discover> | null
     }
   }
 }
